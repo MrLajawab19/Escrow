@@ -1,12 +1,20 @@
-function App() {
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Buyer from "./pages/Buyer";
+import Seller from "./pages/Seller";
+import Dispute from "./pages/Dispute";
+import Navbar from "./components/Navbar";
+
+export default function App() {
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-100">
-      <h1 className="text-4xl font-bold text-blue-600 underline">
-        Tailwind is working! 🚀
-      </h1>
-    </div>
+    <Router>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/buyer" element={<Buyer />} />
+        <Route path="/seller" element={<Seller />} />
+        <Route path="/dispute" element={<Dispute />} />
+      </Routes>
+    </Router>
   );
 }
-
-export default App;
-
