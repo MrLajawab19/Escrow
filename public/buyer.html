@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EscrowX - Buyer</title>
-  <link rel="stylesheet" href="/escrowx.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <header>
@@ -15,18 +15,35 @@
     <h1>EscrowX - Buyer</h1>
   </header>
   <main>
-    <section class="form-section">
-      <h2>Create New Escrow</h2>
-      <form id="escrowForm">
-        <input type="text" id="buyerName" placeholder="Your Name" required>
-        <input type="text" id="sellerName" placeholder="Seller Name" required>
-        <input type="number" id="amount" placeholder="Amount" min="1" required>
-        <button type="submit">Create Escrow</button>
+    <section class="scope-box" id="scopeBox">
+      <h2>Scope Box <span id="scopeBoxToggle" style="float:right;cursor:pointer;">▼</span></h2>
+      <form id="scopeForm" enctype="multipart/form-data">
+        <input type="text" id="buyerName" name="buyerName" placeholder="Your Name" required>
+        <input type="text" id="sellerName" name="sellerName" placeholder="Seller Name" required>
+        <input type="text" id="productName" name="productName" placeholder="Product Name" required>
+        <select id="howFound" name="howFound" required>
+          <option value="">How did you find this seller?</option>
+          <option value="Referral">Referral</option>
+          <option value="Social Media">Social Media</option>
+          <option value="Marketplace">Marketplace</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="url" id="sellerHandle" name="sellerHandle" placeholder="Seller's online handle/profile link">
+        <textarea id="productDetails" name="productDetails" placeholder="Product details" rows="3" required></textarea>
+        <input type="number" id="deliveryDays" name="deliveryDays" placeholder="Delivery deadline (days)" min="1" required>
+        <input type="file" id="scopeAttachment" name="attachment" accept=".jpg,.jpeg,.png,.mp4">
+        <label><input type="checkbox" id="acceptTerms" name="acceptTerms" required> I accept the terms and confirm the scope</label>
+        <button type="submit">Submit Scope</button>
       </form>
+      <div id="scopeStatus"></div>
     </section>
     <section class="list-section">
       <h2>Your Escrow Transactions</h2>
       <div id="escrowList"></div>
+    </section>
+    <section class="dispute-tracker" id="disputeTracker">
+      <h2>Dispute Tracker</h2>
+      <div id="disputeList"></div>
     </section>
   </main>
   <script src="/buyer.js"></script>
