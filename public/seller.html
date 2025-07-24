@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EscrowX - Seller</title>
+  <link rel="stylesheet" href="/escrowx.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/buyer.html">Buyer</a>
+      <a href="/seller.html" class="active">Seller</a>
+    </nav>
+    <h1>EscrowX - Seller</h1>
+  </header>
+  <main>
+    <section class="form-section">
+      <label for="sellerName">Your Name:</label>
+      <input type="text" id="sellerName" placeholder="Seller Name" required>
+      <button id="loadEscrows">Load Escrows</button>
+    </section>
+    <section class="list-section">
+      <h2>Incoming Escrow Orders</h2>
+      <div id="escrowList"></div>
+    </section>
+  </main>
+  <script src="/seller.js"></script>
+</body>
+</html> 

@@ -1,1 +1,0 @@
-EscrowX is a secure web-based platform that connects buyers and sellers of digital services through a smart escrow system. Buyers submit clear service requirements (with attachments), and funds are held safely until the agreed service is delivered. If any dispute arises, a trusted moderation team steps in to resolve the issue fairly.

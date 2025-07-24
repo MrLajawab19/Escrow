@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EscrowX - Buyer</title>
+  <link rel="stylesheet" href="/escrowx.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/buyer.html" class="active">Buyer</a>
+      <a href="/seller.html">Seller</a>
+    </nav>
+    <h1>EscrowX - Buyer</h1>
+  </header>
+  <main>
+    <section class="form-section">
+      <h2>Create New Escrow</h2>
+      <form id="escrowForm">
+        <input type="text" id="buyerName" placeholder="Your Name" required>
+        <input type="text" id="sellerName" placeholder="Seller Name" required>
+        <input type="number" id="amount" placeholder="Amount" min="1" required>
+        <button type="submit">Create Escrow</button>
+      </form>
+    </section>
+    <section class="list-section">
+      <h2>Your Escrow Transactions</h2>
+      <div id="escrowList"></div>
+    </section>
+  </main>
+  <script src="/buyer.js"></script>
+</body>
+</html> 
