@@ -9,13 +9,17 @@ const escrows = [];
 const disputes = [];
 
 // Helper: get multer from app
-function getUpload(req) {
-  return req.app.locals.upload;
+function getUpload() {
+  return (req, res, next) => {
+    const multer = require('multer');
+    const upload = multer({ dest: 'uploads/' });
+    return upload.single('attachment')(req, res, next);
+  };
 }
 
 // --- SCOPE BOX FLOW ---
 // Buyer submits scope
-router.post('/scope/submit', getUpload({}).single('attachment'), (req, res) => {
+router.post('/scope/submit', getUpload(), (req, res) => {
   const { productName, sellerName, howFound, sellerHandle, productDetails, deliveryDays, buyerName, acceptTerms } = req.body;
   if (!productName || !sellerName || !buyerName || !acceptTerms) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -102,7 +106,7 @@ router.get('/scope/buyer', (req, res) => {
 });
 
 // Buyer edits scope if change requested
-router.post('/scope/edit', getUpload({}).single('attachment'), (req, res) => {
+router.post('/scope/edit', getUpload(), (req, res) => {
   const { scopeId, productName, productDetails, deliveryDays } = req.body;
   const scope = scopes.find(s => s.id === scopeId);
   if (!scope) return res.status(404).json({ error: 'Scope not found' });
@@ -171,7 +175,7 @@ router.get('/list', (req, res) => {
 });
 
 // --- DISPUTE HANDLING ---
-router.post('/dispute/raise', getUpload({}).single('evidence'), (req, res) => {
+router.post('/dispute/raise', getUpload(), (req, res) => {
   const { escrowId, subject, description, atFault, raisedBy } = req.body;
   if (!escrowId || !subject || !description || !atFault || !raisedBy) {
     return res.status(400).json({ error: 'Missing fields' });

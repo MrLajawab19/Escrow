@@ -3,49 +3,163 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EscrowX - Buyer</title>
+  <title>EscrowX - Buyer Dashboard</title>
   <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
   <header>
     <nav>
-      <a href="/buyer.html" class="active">Buyer</a>
-      <a href="/seller.html">Seller</a>
+      <a href="/buyer.html" class="logo">EscrowX</a>
+      <div class="nav-links">
+        <a href="/buyer.html" class="active">Buyer</a>
+        <a href="/seller.html">Seller</a>
+      </div>
     </nav>
-    <h1>EscrowX - Buyer</h1>
   </header>
+
   <main>
-    <section class="scope-box" id="scopeBox">
-      <h2>Scope Box <span id="scopeBoxToggle" style="float:right;cursor:pointer;">▼</span></h2>
-      <form id="scopeForm" enctype="multipart/form-data">
-        <input type="text" id="buyerName" name="buyerName" placeholder="Your Name" required>
-        <input type="text" id="sellerName" name="sellerName" placeholder="Seller Name" required>
-        <input type="text" id="productName" name="productName" placeholder="Product Name" required>
-        <select id="howFound" name="howFound" required>
-          <option value="">How did you find this seller?</option>
-          <option value="Referral">Referral</option>
-          <option value="Social Media">Social Media</option>
-          <option value="Marketplace">Marketplace</option>
-          <option value="Other">Other</option>
-        </select>
-        <input type="url" id="sellerHandle" name="sellerHandle" placeholder="Seller's online handle/profile link">
-        <textarea id="productDetails" name="productDetails" placeholder="Product details" rows="3" required></textarea>
-        <input type="number" id="deliveryDays" name="deliveryDays" placeholder="Delivery deadline (days)" min="1" required>
-        <input type="file" id="scopeAttachment" name="attachment" accept=".jpg,.jpeg,.png,.mp4">
-        <label><input type="checkbox" id="acceptTerms" name="acceptTerms" required> I accept the terms and confirm the scope</label>
-        <button type="submit">Submit Scope</button>
-      </form>
-      <div id="scopeStatus"></div>
-    </section>
-    <section class="list-section">
-      <h2>Your Escrow Transactions</h2>
-      <div id="escrowList"></div>
-    </section>
-    <section class="dispute-tracker" id="disputeTracker">
-      <h2>Dispute Tracker</h2>
-      <div id="disputeList"></div>
-    </section>
+    <!-- Buyer Dashboard -->
+    <div class="dashboard-card">
+      <h1>Welcome, <span id="buyerName">John Doe</span>!</h1>
+      <p class="text-muted">Create a new escrow transaction with confidence</p>
+      
+      <div class="form-group">
+        <label class="form-label">Buying From</label>
+        <input type="text" class="form-input" id="platformName" placeholder="Enter platform name (e.g., Fiverr, Upwork)">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Platform Link</label>
+        <input type="url" class="form-input" id="platformLink" placeholder="Paste the platform URL here">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Product Price</label>
+        <div class="flex gap-2">
+          <select class="form-select" style="width: 100px;">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+          </select>
+          <input type="number" class="form-input" id="productPrice" placeholder="Enter amount" min="1">
+        </div>
+      </div>
+      
+      <button class="btn btn-primary" onclick="openScopeBox()">
+        📦 Open Scope Box
+      </button>
+    </div>
+
+    <!-- Order Summary -->
+    <div id="orderSummary" class="order-summary hidden">
+      <div class="summary-header">
+        <h2 class="summary-title">Order Summary</h2>
+        <div class="timer">
+          <span class="timer-icon">⏰</span>
+          <span id="countdown">72:00:00</span>
+        </div>
+      </div>
+      <div id="orderDetails"></div>
+      <div class="flex gap-4 mt-3">
+        <button class="btn btn-success" onclick="releaseFunds()">Release Funds</button>
+        <button class="btn btn-danger" onclick="raiseDispute()">Raise Dispute</button>
+      </div>
+    </div>
+
+    <!-- Animation Container -->
+    <div id="animationContainer" class="animation-container hidden">
+      <div class="postman-animation">
+        <div class="postman"></div>
+        <div class="letter"></div>
+        <div class="letterbox"></div>
+      </div>
+      <p class="text-center mt-2">Sending scope box to seller...</p>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="dashboard-card">
+      <h2>Transaction History</h2>
+      <div id="transactionList"></div>
+    </div>
   </main>
+
+  <!-- Scope Box Modal -->
+  <div id="scopeModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">📦 Scope Box</h2>
+        <button class="modal-close" onclick="closeScopeBox()">&times;</button>
+      </div>
+      
+      <form id="scopeForm" enctype="multipart/form-data">
+        <div class="form-group">
+          <label class="form-label">Product Type</label>
+          <select class="form-select" name="productType" required>
+            <option value="">Select product type</option>
+            <option value="design">Design & Creative</option>
+            <option value="development">Programming & Tech</option>
+            <option value="writing">Writing & Translation</option>
+            <option value="marketing">Digital Marketing</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Product Link</label>
+          <input type="url" class="form-input" name="productLink" placeholder="Link to the product/service">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Detailed Description</label>
+          <textarea class="form-textarea" name="description" placeholder="Describe what you're buying in detail..." required></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Upload Attachments</label>
+          <div class="file-upload" onclick="document.getElementById('attachments').click()">
+            <div class="upload-icon">📎</div>
+            <p>Click to upload images, videos, or PDFs</p>
+            <p class="text-muted">Max 10MB per file</p>
+            <input type="file" id="attachments" name="attachments" multiple accept=".jpg,.jpeg,.png,.mp4,.pdf" style="display: none;">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Quality Conditions</label>
+          <textarea class="form-textarea" name="qualityConditions" placeholder="Specify your requirements and quality standards..." required></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Deadline</label>
+          <input type="datetime-local" class="form-input" name="deadline" required>
+        </div>
+        
+        <div class="flex gap-4">
+          <button type="button" class="btn btn-outline" onclick="closeScopeBox()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Pay & Lock Funds</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Customer Support Chat -->
+  <div class="chat-icon" onclick="toggleChat()">
+    💬
+  </div>
+  
+  <div id="chatBox" class="chat-box">
+    <div class="chat-header">
+      Customer Support
+    </div>
+    <div class="chat-messages">
+      <p><strong>EscrowX Bot:</strong> Hello! How can I help you today?</p>
+    </div>
+    <div class="chat-input">
+      <input type="text" class="form-input" placeholder="Type your message..." onkeypress="handleChatInput(event)">
+    </div>
+  </div>
+
   <script src="/buyer.js"></script>
 </body>
 </html> 

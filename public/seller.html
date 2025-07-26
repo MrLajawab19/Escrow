@@ -3,36 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EscrowX - Seller</title>
+  <title>EscrowX - Seller Dashboard</title>
   <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
   <header>
     <nav>
-      <a href="/buyer.html">Buyer</a>
-      <a href="/seller.html" class="active">Seller</a>
+      <a href="/seller.html" class="logo">EscrowX</a>
+      <div class="nav-links">
+        <a href="/buyer.html">Buyer</a>
+        <a href="/seller.html" class="active">Seller</a>
+      </div>
     </nav>
-    <h1>EscrowX - Seller</h1>
   </header>
+
   <main>
-    <section class="form-section">
-      <label for="sellerName">Your Name:</label>
-      <input type="text" id="sellerName" placeholder="Seller Name" required>
-      <button id="loadScopes">Load Scopes</button>
-    </section>
-    <section class="scope-box" id="scopeRequests">
-      <h2>Incoming Scope Requests</h2>
-      <div id="scopeList"></div>
-    </section>
-    <section class="list-section">
-      <h2>Incoming Escrow Orders</h2>
-      <div id="escrowList"></div>
-    </section>
-    <section class="dispute-tracker" id="disputeTracker">
-      <h2>Dispute Tracker</h2>
-      <div id="disputeList"></div>
-    </section>
+    <!-- Seller Dashboard -->
+    <div class="dashboard-card">
+      <h1>Seller Dashboard</h1>
+      <p class="text-muted">Manage your incoming escrow requests</p>
+      
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <div class="flex gap-2">
+          <input type="text" class="form-input" id="sellerName" placeholder="Enter your name">
+          <button class="btn btn-primary" onclick="loadIncomingRequests()">Load Requests</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incoming Scope Requests -->
+    <div class="dashboard-card">
+      <h2>📬 Incoming Scope Requests</h2>
+      <div id="scopeRequestsList"></div>
+    </div>
+
+    <!-- Active Orders -->
+    <div class="dashboard-card">
+      <h2>📋 Active Orders</h2>
+      <div id="activeOrdersList"></div>
+    </div>
+
+    <!-- Order History -->
+    <div class="dashboard-card">
+      <h2>📊 Order History</h2>
+      <div id="orderHistoryList"></div>
+    </div>
   </main>
+
+  <!-- Customer Support Chat -->
+  <div class="chat-icon" onclick="toggleChat()">
+    💬
+  </div>
+  
+  <div id="chatBox" class="chat-box">
+    <div class="chat-header">
+      Customer Support
+    </div>
+    <div class="chat-messages">
+      <p><strong>EscrowX Bot:</strong> Hello! How can I help you today?</p>
+    </div>
+    <div class="chat-input">
+      <input type="text" class="form-input" placeholder="Type your message..." onkeypress="handleChatInput(event)">
+    </div>
+  </div>
+
   <script src="/seller.js"></script>
 </body>
 </html> 

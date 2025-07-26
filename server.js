@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const escrowRoutes = require('./routes/escrow');
-const multer = require('multer');
 const fs = require('fs');
 
 const app = express();
@@ -14,16 +13,10 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
-// Multer setup for file uploads
-const upload = multer({ dest: uploadDir });
-app.use('/uploads', express.static(uploadDir));
-
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(uploadDir));
 app.use('/escrow', escrowRoutes);
-
-// Expose multer for use in routes
-app.locals.upload = upload;
 
 // Cron-like job for auto-release
 const escrowModule = require('./routes/escrow');
