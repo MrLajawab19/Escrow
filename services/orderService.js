@@ -50,19 +50,45 @@ async function updateOrderStatus(orderId, newStatus, byUserId, additionalData = 
 
 // Create new order
 async function createOrder(orderData) {
-  const { buyerId, sellerId, scopeBox } = orderData;
+  const { 
+    buyerId, 
+    sellerId, 
+    buyerName,
+    platform,
+    productLink,
+    country,
+    currency,
+    sellerContact,
+    escrowLink,
+    scopeBox 
+  } = orderData;
   
   const logEntry = {
     event: 'ORDER_CREATED',
     byUserId: buyerId,
     timestamp: new Date().toISOString(),
+    buyerName,
+    platform,
+    productLink,
+    country,
+    currency,
+    sellerContact,
+    escrowLink,
     scopeBox
   };
 
   return await Order.create({
     buyerId,
     sellerId,
+    buyerName,
+    platform,
+    productLink,
+    country,
+    currency,
+    sellerContact,
+    escrowLink,
     scopeBox,
+    status: 'PLACED',
     orderLogs: [logEntry]
   });
 }

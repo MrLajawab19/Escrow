@@ -1,27 +1,63 @@
 const orderService = require('../services/orderService');
+const { v4: uuidv4 } = require('uuid');
 
 // POST /api/orders - Create new order
 async function createOrder(req, res) {
   try {
-    const { buyerId, sellerId, scopeBox } = req.body;
+    const { 
+      buyerName, 
+      platform, 
+      productLink, 
+      country, 
+      currency, 
+      sellerContact, 
+      scopeBox 
+    } = req.body;
 
     // Validation
-    if (!buyerId || !sellerId || !scopeBox) {
+    if (!buyerName || !platform || !productLink || !country || !currency || !sellerContact || !scopeBox) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: buyerId, sellerId, scopeBox'
+        message: 'Missing required fields: buyerName, platform, productLink, country, currency, sellerContact, scopeBox'
       });
     }
+
+    // Validate scopeBox fields
+    if (!scopeBox.productType || !scopeBox.productLink || !scopeBox.description || !scopeBox.condition) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required scopeBox fields: productType, productLink, description, condition'
+      });
+    }
+
+    // Generate unique IDs and escrow link
+    const buyerId = uuidv4();
+    const sellerId = uuidv4();
+    const escrowLink = `https://escrowx.app/order/${Math.random().toString(36).substring(2, 8)}`;
 
     const order = await orderService.createOrder({
       buyerId,
       sellerId,
+      buyerName,
+      platform,
+      productLink,
+      country,
+      currency,
+      sellerContact,
+      escrowLink,
       scopeBox
     });
 
+    // Simulate sending email/SMS
+    console.log(`Escrow link sent to seller: ${sellerContact}`);
+    console.log(`Order created for buyer: ${buyerName}`);
+
     res.status(201).json({
       success: true,
-      data: order,
+      data: {
+        ...order,
+        escrowLink
+      },
       message: 'Order created successfully'
     });
   } catch (error) {

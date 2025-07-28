@@ -1,12 +1,19 @@
 const express = require('express');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const cors = require('cors');
 const escrowRoutes = require('./routes/escrow');
 const orderRoutes = require('./routes/orders');
 const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Enable CORS for React frontend
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  credentials: true
+}));
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');

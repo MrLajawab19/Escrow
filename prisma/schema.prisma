@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PLACED
+  ESCROW_FUNDED
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  DISPUTED
+  RELEASED
+  REFUNDED
+}
+
+enum DisputeStatus {
+  OPEN
+  RESPONDED
+  RESOLVED
+}
+
+enum DisputeReason {
+  QUALITY_ISSUE
+  DEADLINE_MISSED
+  FAKE_DELIVERY
+  INCOMPLETE_WORK
+  OTHER
+}
+
+model Order {
+  id           String    @id @default(uuid())
+  buyerName    String
+  platform     String
+  productLink  String
+  country      String
+  currency     String
+  scopeBox     Json
+  sellerContact String
+  status       OrderStatus @default(PLACED)
+  escrowLink   String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  orderLogs    Json[]
+  dispute      Dispute?
+}
+
+model Dispute {
+  id                  String         @id @default(uuid())
+  order               Order          @relation(fields: [orderId], references: [id])
+  orderId             String         @unique
+  userId              String
+  reason              DisputeReason
+  description         String
+  evidenceUrls        String[]
+  requestedResolution String?
+  status              DisputeStatus  @default(OPEN)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+} 

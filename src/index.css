@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  color: #213547;
+  background-color: #ffffff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Custom utility classes for modal buttons and inputs */
+.input {
+  @apply border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary-500 transition;
+}
+.btn {
+  @apply px-4 py-3 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm min-h-[44px] flex items-center justify-center;
+}
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50;
+}
+.btn-outline {
+  @apply border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50 active:bg-blue-100 disabled:border-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed;
+}
+.btn-xs {
+  @apply text-xs px-3 py-2 rounded-md min-h-[32px];
+}
+.btn-sm {
+  @apply px-3 py-2 text-sm min-h-[36px];
+}
+.btn-lg {
+  @apply px-6 py-4 text-lg min-h-[52px];
+}
+.animate-fadeIn {
+  animation: fadeIn 0.2s;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+} 

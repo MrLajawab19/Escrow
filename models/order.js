@@ -29,14 +29,63 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: true
       }
     },
+    buyerName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
+    platform: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
+    productLink: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
+    country: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
+    currency: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
+    sellerContact: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
+    escrowLink: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
     scopeBox: {
       type: DataTypes.JSONB,
       allowNull: false,
       validate: {
         notEmpty: true,
         isValidScopeBox(value) {
-          if (!value.title || !value.description || !value.deliverables || !value.deadline || !value.price) {
-            throw new Error('Scope box must contain title, description, deliverables, deadline, and price');
+          if (!value.productType || !value.productLink || !value.description || !value.condition) {
+            throw new Error('Scope box must contain productType, productLink, description, and condition');
           }
         }
       }
