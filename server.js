@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
 const escrowRoutes = require('./routes/escrow');
 const orderRoutes = require('./routes/orders');
+const authRoutes = require('./routes/auth');
 const fs = require('fs');
 
 const app = express();
@@ -26,6 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(uploadDir));
 app.use('/escrow', escrowRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/auth', authRoutes);
 
 // Cron-like job for auto-release
 const escrowModule = require('./routes/escrow');

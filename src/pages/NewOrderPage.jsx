@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -11,8 +11,8 @@ const conditions = ['New', 'Used', 'Refurbished', 'Other'];
 export default function NewOrderPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [buyerData, setBuyerData] = useState(null);
   const [form, setForm] = useState({
-    buyerName: '',
     platform: '',
     productLink: '',
     country: '',
@@ -30,9 +30,36 @@ export default function NewOrderPage() {
   });
   const [filePreviews, setFilePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [orderLink, setOrderLink] = useState('');
-  const [showToast, setShowToast] = useState(false);
+  const [orderData, setOrderData] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [showFundingModal, setShowFundingModal] = useState(false);
+  const [fundingData, setFundingData] = useState({
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    cardholderName: '',
+    amount: ''
+  });
+  const [fundingLoading, setFundingLoading] = useState(false);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('buyerToken');
+    const data = localStorage.getItem('buyerData');
+    
+    if (!token || !data) {
+      navigate('/buyer/auth');
+      return;
+    }
+
+    try {
+      setBuyerData(JSON.parse(data));
+    } catch (error) {
+      console.error('Error parsing buyer data:', error);
+      navigate('/buyer/auth');
+    }
+  }, [navigate]);
 
   const handleInput = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -93,7 +120,7 @@ export default function NewOrderPage() {
     });
   };
 
-  const validateStep1 = () => form.buyerName && form.platform && form.productLink && form.country && form.currency;
+  const validateStep1 = () => form.platform && form.productLink && form.country && form.currency;
   const validateStep2 = () => form.scopeBox.productType && form.scopeBox.productLink && form.scopeBox.description && form.scopeBox.condition && form.scopeBox.deadline && form.scopeBox.price;
   const validateStep3 = () => form.sellerContact;
 
@@ -102,9 +129,13 @@ export default function NewOrderPage() {
     setError('');
     
     try {
+      const token = localStorage.getItem('buyerToken');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
       // Prepare the data for the API
       const orderData = {
-        buyerName: form.buyerName,
         platform: form.platform,
         productLink: form.productLink,
         country: form.country,
@@ -121,25 +152,91 @@ export default function NewOrderPage() {
         }
       };
 
-      const response = await axios.post('http://localhost:3000/api/orders', orderData);
+      const response = await axios.post('/api/orders', orderData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
       if (response.data.success) {
-        setOrderLink(response.data.data.escrowLink);
-        setShowToast(true);
-        setTimeout(() => {
-          setShowToast(false);
-          navigate('/buyer');
-        }, 2000);
+        setOrderData(response.data.data);
+        setFundingData(prev => ({ ...prev, amount: response.data.data.price }));
+        setShowFundingModal(true);
       } else {
         setError(response.data.message || 'Failed to create order');
       }
     } catch (error) {
       console.error('Error creating order:', error);
+      if (error.response?.status === 401) {
+        navigate('/buyer/auth');
+        return;
+      }
       setError(error.response?.data?.message || 'Failed to create order. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleFundingSubmit = async (e) => {
+    e.preventDefault();
+    setFundingLoading(true);
+    setError('');
+
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Fund the escrow
+      const token = localStorage.getItem('buyerToken');
+      const fundResponse = await axios.post(`/api/orders/${orderData.orderId}/fund-escrow`, {
+        buyerId: buyerData.id,
+        paymentMethod: 'credit_card',
+        amount: fundingData.amount
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (fundResponse.data.success) {
+        setShowFundingModal(false);
+        setShowSuccess(true);
+        
+        // Redirect to order tracking page after 3 seconds
+        setTimeout(() => {
+          navigate(`/buyer/order/${orderData.orderId}`);
+        }, 3000);
+      } else {
+        setError('Failed to fund escrow. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error funding escrow:', error);
+      setError('Payment failed. Please check your card details and try again.');
+    } finally {
+      setFundingLoading(false);
+    }
+  };
+
+  const handleFundingInput = (e) => {
+    const { name, value } = e.target;
+    setFundingData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Show loading if buyer data is not loaded yet
+  if (!buyerData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex flex-col items-center py-4 px-4 sm:py-8 sm:px-2">
@@ -147,7 +244,7 @@ export default function NewOrderPage() {
       <div className="w-full max-w-2xl mb-4">
         <div className="flex items-center justify-between">
           <button 
-            onClick={() => navigate('/buyer')}
+            onClick={() => navigate('/buyer/dashboard')}
             className="flex items-center text-blue-600 hover:text-blue-700 font-medium"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,6 +254,14 @@ export default function NewOrderPage() {
           </button>
           <h1 className="text-xl font-bold text-gray-900">Create New Order</h1>
           <div className="w-20"></div> {/* Spacer for centering */}
+        </div>
+        
+        {/* Welcome Message */}
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-800">
+            Welcome, <span className="font-semibold">{buyerData.firstName} {buyerData.lastName}</span>! 
+            Create a new escrow order to protect your payment.
+          </p>
         </div>
       </div>
       
@@ -171,10 +276,10 @@ export default function NewOrderPage() {
           <div className="w-4 sm:w-8 h-1 bg-gray-200 mx-1 sm:mx-2 rounded" />
           <div className={`flex-1 text-center text-xs sm:text-sm ${step === 4 ? 'text-blue-600 font-bold' : 'text-gray-400'}`}>Confirm</div>
         </div>
+        
         {/* Step 1: Order Details */}
         {step === 1 && (
           <div className="space-y-4">
-            <input name="buyerName" value={form.buyerName} onChange={handleInput} placeholder="Buyer Name" className="input w-full" required />
             <select name="platform" value={form.platform} onChange={handleInput} className="input w-full" required>
               <option value="">Select Platform</option>
               {platforms.map(p => <option key={p}>{p}</option>)}
@@ -199,6 +304,7 @@ export default function NewOrderPage() {
             </div>
           </div>
         )}
+        
         {/* Step 2: Scope Box */}
         {step === 2 && (
           <div className="space-y-4">
@@ -336,9 +442,7 @@ export default function NewOrderPage() {
               <p className="text-xs text-gray-500">Enter the total project cost</p>
             </div>
             
-            <div
-              className="flex flex-col sm:flex-row gap-3 pt-4"
-            >
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button className="btn btn-outline w-full sm:w-auto" onClick={() => setStep(1)}>Back</button>
               <button 
                 className="btn btn-primary w-full sm:w-auto sm:min-w-[120px]" 
@@ -350,6 +454,7 @@ export default function NewOrderPage() {
             </div>
           </div>
         )}
+        
         {/* Step 3: Seller Contact */}
         {step === 3 && (
           <div className="space-y-4">
@@ -366,13 +471,14 @@ export default function NewOrderPage() {
             </div>
           </div>
         )}
+        
         {/* Step 4: Confirmation */}
         {step === 4 && (
           <div className="space-y-6 text-center">
             <div className="text-4xl mb-2">🎉</div>
             <div className="text-lg font-bold">Review & Confirm</div>
             <div className="bg-gray-50 rounded p-4 text-left text-sm sm:text-base">
-              <div><b>Buyer:</b> {form.buyerName}</div>
+              <div><b>Buyer:</b> {buyerData.firstName} {buyerData.lastName}</div>
               <div><b>Platform:</b> {form.platform}</div>
               <div><b>Product Link:</b> {form.productLink}</div>
               <div><b>Country:</b> {form.country}</div>
@@ -413,23 +519,156 @@ export default function NewOrderPage() {
               disabled={loading} 
               onClick={handleSubmit}
             >
-              {loading ? 'Creating...' : 'Create Order & Send Link'}
+              {loading ? 'Creating Order...' : 'Create Order & Proceed to Payment'}
             </button>
-            {orderLink && (
-              <div className="mt-4">
-                <div className="font-semibold">Escrow Order Link:</div>
-                <div className="bg-gray-100 rounded p-2 flex items-center justify-between">
-                  <span className="truncate text-blue-600">{orderLink}</span>
-                  <button className="btn btn-xs ml-2" onClick={() => navigator.clipboard.writeText(orderLink)}>Copy</button>
-                </div>
-              </div>
-            )}
           </div>
         )}
         {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
       </div>
-      {showToast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded shadow-lg animate-fadeIn">Order Created! Link sent to seller.</div>
+      
+      {/* Funding Modal */}
+      {showFundingModal && orderData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">💳</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Fund Escrow</h3>
+              <p className="text-gray-600">
+                Complete payment to secure your order and send scope box to seller.
+              </p>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="text-sm">
+                <div><b>Order ID:</b> {orderData.orderId}</div>
+                <div><b>Amount:</b> <span className="text-green-600 font-semibold">{orderData.price}</span></div>
+                <div><b>Status:</b> <span className="text-blue-600 font-semibold">Pending Payment</span></div>
+              </div>
+            </div>
+            
+            <form onSubmit={handleFundingSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Card Number
+                </label>
+                <input
+                  type="text"
+                  name="cardNumber"
+                  value={fundingData.cardNumber}
+                  onChange={handleFundingInput}
+                  placeholder="1234 5678 9012 3456"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="text"
+                    name="expiryDate"
+                    value={fundingData.expiryDate}
+                    onChange={handleFundingInput}
+                    placeholder="MM/YY"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    CVV
+                  </label>
+                  <input
+                    type="text"
+                    name="cvv"
+                    value={fundingData.cvv}
+                    onChange={handleFundingInput}
+                    placeholder="123"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cardholder Name
+                </label>
+                <input
+                  type="text"
+                  name="cardholderName"
+                  value={fundingData.cardholderName}
+                  onChange={handleFundingInput}
+                  placeholder="John Doe"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowFundingModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={fundingLoading}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {fundingLoading ? 'Processing...' : `Pay ${orderData.price}`}
+                </button>
+              </div>
+            </form>
+            
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+              <p className="font-medium">🔒 Secure Payment</p>
+              <p>Your payment is processed securely. Funds will be held in escrow until the project is completed.</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Success Modal */}
+      {showSuccess && orderData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="text-center">
+              <div className="text-6xl mb-4">✅</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Order Created & Funded!</h3>
+              <p className="text-gray-600 mb-4">
+                Your escrow order has been created, funded, and the scope box has been sent to the seller.
+              </p>
+              
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="text-sm">
+                  <div><b>Order ID:</b> {orderData.orderId}</div>
+                  <div><b>Status:</b> <span className="text-green-600 font-semibold">ESCROW_FUNDED</span></div>
+                  <div><b>Amount Paid:</b> {orderData.price}</div>
+                  <div><b>Seller Notified:</b> ✅</div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="text-sm text-gray-600">
+                  <b>Scope Box:</b> Sent to seller
+                </div>
+                <div className="text-sm text-gray-600">
+                  <b>Tracking Link:</b> {orderData.orderTrackingLink}
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-500 mt-4">
+                Redirecting to order tracking page...
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

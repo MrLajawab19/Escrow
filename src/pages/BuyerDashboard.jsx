@@ -16,65 +16,83 @@ const BuyerDashboard = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // Mock data for demonstration - replace with actual API call
-      const mockOrders = [
-        {
-          id: 'order-123',
-          buyerId: 'buyer-123',
-          sellerId: 'seller-456',
-          scopeBox: {
-            title: 'Logo Design Project',
-            description: 'Create a modern logo for tech startup',
-            deliverables: ['Logo in PNG', 'Logo in SVG', 'Brand guidelines'],
-            deadline: '2024-02-15T00:00:00.000Z',
-            price: 500
-          },
-          status: 'SUBMITTED',
-          deliveryFiles: [],
-          createdAt: '2024-01-15T00:00:00.000Z',
-          updatedAt: '2024-01-20T00:00:00.000Z',
-          orderLogs: []
-        },
-        {
-          id: 'order-124',
-          buyerId: 'buyer-123',
-          sellerId: 'seller-789',
-          scopeBox: {
-            title: 'Website Development',
-            description: 'Build a responsive website with modern design',
-            deliverables: ['HTML/CSS', 'JavaScript', 'Responsive design'],
-            deadline: '2024-03-01T00:00:00.000Z',
-            price: 1200
-          },
-          status: 'IN_PROGRESS',
-          deliveryFiles: [],
-          createdAt: '2024-01-10T00:00:00.000Z',
-          updatedAt: '2024-01-10T00:00:00.000Z',
-          orderLogs: []
-        },
-        {
-          id: 'order-125',
-          buyerId: 'buyer-123',
-          sellerId: 'seller-101',
-          scopeBox: {
-            title: 'Mobile App Design',
-            description: 'Design UI/UX for mobile application',
-            deliverables: ['Wireframes', 'Mockups', 'Prototype'],
-            deadline: '2024-02-28T00:00:00.000Z',
-            price: 800
-          },
-          status: 'DISPUTED',
-          deliveryFiles: [],
-          createdAt: '2024-01-05T00:00:00.000Z',
-          updatedAt: '2024-01-18T00:00:00.000Z',
-          orderLogs: []
-        }
-      ];
+      setError(null);
+      
+      const token = localStorage.getItem('buyerToken');
+      if (!token) {
+        setError('Authentication required');
+        return;
+      }
 
-      setOrders(mockOrders);
+      const response = await axios.get('/api/orders/buyer', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        // Combine real orders with demo mock orders for better testing
+        const realOrders = response.data.data;
+        
+        // Add demo mock orders for testing action buttons
+        const demoOrders = [
+          {
+            id: 'demo-submitted-order',
+            buyerId: 'demo-buyer',
+            sellerId: 'demo-seller',
+            scopeBox: {
+              title: 'Logo Design Project',
+              description: 'Create a modern logo for tech startup with brand guidelines',
+              deliverables: ['Logo in PNG', 'Logo in SVG', 'Brand guidelines'],
+              deadline: '2024-02-15T00:00:00.000Z',
+              price: 500
+            },
+            status: 'SUBMITTED',
+            deliveryFiles: ['final-logo.svg', 'logo-guidelines.pdf'],
+            createdAt: '2024-01-15T00:00:00.000Z',
+            updatedAt: '2024-01-20T00:00:00.000Z',
+            orderLogs: [],
+            platform: 'Fiverr',
+            productLink: 'https://www.fiverr.com/projects/123456',
+            country: 'USA',
+            currency: 'USD',
+            sellerContact: 'seller@example.com'
+          },
+          {
+            id: 'demo-disputed-order',
+            buyerId: 'demo-buyer',
+            sellerId: 'demo-seller',
+            scopeBox: {
+              title: 'Website Development',
+              description: 'Build a responsive e-commerce website with payment integration',
+              deliverables: ['HTML/CSS', 'JavaScript', 'Responsive design'],
+              deadline: '2024-03-01T00:00:00.000Z',
+              price: 1200
+            },
+            status: 'DISPUTED',
+            deliveryFiles: [],
+            createdAt: '2024-01-10T00:00:00.000Z',
+            updatedAt: '2024-01-18T00:00:00.000Z',
+            orderLogs: [],
+            platform: 'Upwork',
+            productLink: 'https://www.upwork.com/projects/789012',
+            country: 'UK',
+            currency: 'GBP',
+            sellerContact: 'seller@example.com'
+          }
+        ];
+        
+        setOrders([...realOrders, ...demoOrders]);
+      } else {
+        setError(response.data.message || 'Failed to load orders');
+      }
     } catch (err) {
       console.error('Error fetching orders:', err);
-      setError('Failed to load orders');
+      if (err.response?.status === 401) {
+        setError('Authentication required. Please login again.');
+      } else {
+        setError('Failed to load orders');
+      }
     } finally {
       setLoading(false);
     }

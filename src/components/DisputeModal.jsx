@@ -5,25 +5,33 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
   const [formData, setFormData] = useState({
     reason: '',
     description: '',
-    evidenceFile: null,
+    evidenceFiles: [],
     requestedResolution: ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [notification, setNotification] = useState(null);
 
   const disputeReasons = [
     { value: 'QUALITY_ISSUE', label: 'Quality Issue' },
     { value: 'DEADLINE_MISSED', label: 'Deadline Missed' },
     { value: 'FAKE_DELIVERY', label: 'Fake Delivery' },
     { value: 'INCOMPLETE_WORK', label: 'Incomplete Work' },
+    { value: 'COMMUNICATION_ISSUE', label: 'Communication Issue' },
+    { value: 'SCOPE_CREEP', label: 'Scope Creep' },
+    { value: 'PAYMENT_ISSUE', label: 'Payment Issue' },
     { value: 'OTHER', label: 'Other' }
   ];
 
   const resolutionOptions = [
-    { value: 'REFUND', label: 'Refund' },
-    { value: 'REVISION', label: 'Revision' },
+    { value: 'FULL_REFUND', label: 'Full Refund' },
     { value: 'PARTIAL_REFUND', label: 'Partial Refund' },
-    { value: 'OTHER', label: 'Other' }
+    { value: 'REVISION', label: 'Revision Required' },
+    { value: 'EXTENSION', label: 'Deadline Extension' },
+    { value: 'REPLACEMENT', label: 'Replacement Work' },
+    { value: 'DISCOUNT', label: 'Discount on Future Work' },
+    { value: 'ESCALATION', label: 'Escalate to Support' },
+    { value: 'CUSTOM', label: 'Custom Resolution' }
   ];
 
   const handleInputChange = (e) => {
@@ -42,37 +50,79 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type and size
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain'];
-      const maxSize = 5 * 1024 * 1024; // 5MB
+    const files = Array.from(e.target.files);
+    const maxFiles = 5; // Maximum 5 files
+    const maxSize = 5 * 1024 * 1024; // 5MB per file
+    const allowedTypes = [
+      'image/jpeg', 
+      'image/png', 
+      'image/gif', 
+      'application/pdf', 
+      'text/plain',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
 
+    // Check if adding these files would exceed the limit
+    if (formData.evidenceFiles.length + files.length > maxFiles) {
+      setErrors(prev => ({
+        ...prev,
+        evidenceFiles: `Maximum ${maxFiles} files allowed`
+      }));
+      return;
+    }
+
+    const validFiles = [];
+    const invalidFiles = [];
+
+    files.forEach(file => {
+      // Validate file type
       if (!allowedTypes.includes(file.type)) {
-        setErrors(prev => ({
-          ...prev,
-          evidenceFile: 'Please upload a valid file type (JPEG, PNG, GIF, PDF, or TXT)'
-        }));
+        invalidFiles.push(`${file.name} - Invalid file type`);
         return;
       }
 
+      // Validate file size
       if (file.size > maxSize) {
-        setErrors(prev => ({
-          ...prev,
-          evidenceFile: 'File size must be less than 5MB'
-        }));
+        invalidFiles.push(`${file.name} - File too large (max 5MB)`);
         return;
       }
 
+      validFiles.push(file);
+    });
+
+    if (invalidFiles.length > 0) {
+      setErrors(prev => ({
+        ...prev,
+        evidenceFiles: invalidFiles.join(', ')
+      }));
+    }
+
+    if (validFiles.length > 0) {
       setFormData(prev => ({
         ...prev,
-        evidenceFile: file
+        evidenceFiles: [...prev.evidenceFiles, ...validFiles]
       }));
       setErrors(prev => ({
         ...prev,
-        evidenceFile: ''
+        evidenceFiles: ''
       }));
     }
+  };
+
+  const removeFile = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      evidenceFiles: prev.evidenceFiles.filter((_, i) => i !== index)
+    }));
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const validateForm = () => {
@@ -88,8 +138,19 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
       newErrors.description = 'Description must be at least 10 characters';
     }
 
+    if (!formData.requestedResolution) {
+      newErrors.requestedResolution = 'Please select a resolution';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
   };
 
   const handleSubmit = async (e) => {
@@ -104,16 +165,17 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
     try {
       // Create FormData for file upload
       const submitData = new FormData();
+      submitData.append('userId', userType === 'buyer' ? 'buyer-123' : 'seller-456'); // Mock user ID
       submitData.append('reason', formData.reason);
       submitData.append('description', formData.description);
       submitData.append('requestedResolution', formData.requestedResolution);
-      submitData.append('userId', userType === 'buyer' ? 'buyer-123' : 'seller-456'); // Mock user ID
 
-      if (formData.evidenceFile) {
-        submitData.append('evidence', formData.evidenceFile);
-      }
+      // Append multiple files
+      formData.evidenceFiles.forEach((file, index) => {
+        submitData.append('evidence', file);
+      });
 
-      const response = await axios.post(`/api/orders/${orderId}/dispute`, submitData, {
+      const response = await axios.patch(`/api/orders/${orderId}/dispute`, submitData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -121,14 +183,14 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
 
       console.log('Dispute submitted', response.data);
       
-      // Show success toast (you can implement your own toast system)
-      alert('Dispute raised successfully!');
+      // Show success notification
+      showNotification('Dispute raised successfully!', 'success');
       
       // Reset form and close modal
       setFormData({
         reason: '',
         description: '',
-        evidenceFile: null,
+        evidenceFiles: [],
         requestedResolution: ''
       });
       setErrors({});
@@ -141,7 +203,7 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
 
     } catch (error) {
       console.error('Error raising dispute:', error);
-      alert('Failed to raise dispute. Please try again.');
+      showNotification('Failed to raise dispute. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -151,7 +213,7 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
     setFormData({
       reason: '',
       description: '',
-      evidenceFile: null,
+      evidenceFiles: [],
       requestedResolution: ''
     });
     setErrors({});
@@ -161,164 +223,240 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-            <span className="text-red-500 mr-2">🚨</span>
-            Raise Dispute
-          </h2>
-          <button
-            onClick={handleCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Reason */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reason for Dispute *
-            </label>
-            <select
-              name="reason"
-              value={formData.reason}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.reason ? 'border-red-500' : 'border-gray-300'
-              }`}
-            >
-              <option value="">Select a reason</option>
-              {disputeReasons.map(reason => (
-                <option key={reason.value} value={reason.value}>
-                  {reason.label}
-                </option>
-              ))}
-            </select>
-            {errors.reason && (
-              <p className="text-red-500 text-sm mt-1">{errors.reason}</p>
-            )}
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description *
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              rows={4}
-              placeholder="Please provide detailed information about the issue..."
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.description ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.description && (
-              <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-            )}
-          </div>
-
-          {/* Evidence Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Evidence (Optional)
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept="image/*,.pdf,.txt"
-                className="hidden"
-                id="evidence-upload"
-              />
-              <label htmlFor="evidence-upload" className="cursor-pointer">
-                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <p className="mt-1 text-sm text-gray-600">
-                  {formData.evidenceFile ? formData.evidenceFile.name : 'Click to upload evidence'}
-                </p>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF, PDF, TXT up to 5MB</p>
-              </label>
-            </div>
-            {formData.evidenceFile && (
-              <div className="mt-2 flex items-center justify-between bg-gray-50 p-2 rounded">
-                <span className="text-sm text-gray-600">{formData.evidenceFile.name}</span>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, evidenceFile: null }))}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <>
+      {/* Notification Popup */}
+      {notification && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className={`bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all duration-300 ${
+            notification.type === 'success' ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'
+          }`}>
+            <div className="flex items-center">
+              <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                notification.type === 'success' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {notification.type === 'success' ? (
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </button>
+                )}
               </div>
-            )}
-            {errors.evidenceFile && (
-              <p className="text-red-500 text-sm mt-1">{errors.evidenceFile}</p>
-            )}
+              <div className="ml-4">
+                <h3 className={`text-lg font-medium ${
+                  notification.type === 'success' ? 'text-green-900' : 'text-red-900'
+                }`}>
+                  {notification.type === 'success' ? 'Success!' : 'Error'}
+                </h3>
+                <p className={`text-sm ${
+                  notification.type === 'success' ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setNotification(null)}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  notification.type === 'success' 
+                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                OK
+              </button>
+            </div>
           </div>
+        </div>
+      )}
 
-          {/* Requested Resolution */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Preferred Resolution (Optional)
-            </label>
-            <select
-              name="requestedResolution"
-              value={formData.requestedResolution}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select resolution</option>
-              {resolutionOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex space-x-3 pt-4">
+      {/* Main Modal */}
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+              <span className="text-red-500 mr-2">🚨</span>
+              Raise Dispute
+            </h2>
             <button
-              type="button"
               onClick={handleCancel}
-              disabled={loading}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 flex items-center justify-center"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Submitting...
-                </>
-              ) : (
-                'Raise Dispute'
-              )}
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-        </form>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Reason */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reason for Dispute *
+              </label>
+              <select
+                name="reason"
+                value={formData.reason}
+                onChange={handleInputChange}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.reason ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Select a reason</option>
+                {disputeReasons.map(reason => (
+                  <option key={reason.value} value={reason.value}>
+                    {reason.label}
+                  </option>
+                ))}
+              </select>
+              {errors.reason && (
+                <p className="text-red-500 text-sm mt-1">{errors.reason}</p>
+              )}
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description *
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+                placeholder="Please provide detailed information about the issue..."
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.description ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.description && (
+                <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+              )}
+            </div>
+
+            {/* Evidence Upload - Multiple Files */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Evidence Files (Optional)
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
+                  multiple
+                  className="hidden"
+                  id="evidence-upload"
+                />
+                <label htmlFor="evidence-upload" className="cursor-pointer">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Click to upload evidence files
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    PDF, DOC, DOCX, JPG, PNG, GIF, TXT up to 5MB each (Max 5 files)
+                  </p>
+                </label>
+              </div>
+              
+              {/* File List */}
+              {formData.evidenceFiles.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Uploaded Files:</p>
+                  {formData.evidenceFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-sm text-gray-700">{file.name}</span>
+                        <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {errors.evidenceFiles && (
+                <p className="text-red-500 text-sm mt-1">{errors.evidenceFiles}</p>
+              )}
+            </div>
+
+            {/* Requested Resolution - Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Requested Resolution *
+              </label>
+              <select
+                name="requestedResolution"
+                value={formData.requestedResolution}
+                onChange={handleInputChange}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.requestedResolution ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Select a resolution</option>
+                {resolutionOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {errors.requestedResolution && (
+                <p className="text-red-500 text-sm mt-1">{errors.requestedResolution}</p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-1">🚨</span>
+                    Raise Dispute
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

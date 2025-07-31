@@ -24,6 +24,8 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
         return 'bg-green-100 text-green-800';
       case 'REFUNDED':
         return 'bg-gray-100 text-gray-800';
+      case 'CANCELLED':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -47,6 +49,8 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
         return '🎉';
       case 'REFUNDED':
         return '↩️';
+      case 'CANCELLED':
+        return '❌';
       default:
         return '📄';
     }
@@ -134,6 +138,49 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             ✅ Approve
+          </button>
+        )}
+
+        {/* Cancel Order Button (for buyers when order is not accepted by seller) */}
+        {userType === 'buyer' && (order.status === 'PLACED' || order.status === 'ESCROW_FUNDED') && (
+          <button
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem('buyerToken');
+                const response = await fetch(`/api/orders/${order.id}/cancel`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  if (result.success) {
+                    // Update the order status locally
+                    if (onOrderUpdate) {
+                      onOrderUpdate({
+                        ...order,
+                        status: 'CANCELLED'
+                      });
+                    }
+                    alert('Order cancelled successfully');
+                  } else {
+                    alert(result.message || 'Failed to cancel order');
+                  }
+                } else {
+                  alert('Failed to cancel order');
+                }
+              } catch (error) {
+                console.error('Error cancelling order:', error);
+                alert('Error cancelling order');
+              }
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center"
+          >
+            <span className="mr-1">❌</span>
+            Cancel Order
           </button>
         )}
 

@@ -36,6 +36,13 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: true
       }
     },
+    buyerEmail: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        isEmail: true
+      }
+    },
     platform: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -78,14 +85,22 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: true
       }
     },
+    orderTrackingLink: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true
+      }
+    },
     scopeBox: {
       type: DataTypes.JSONB,
       allowNull: false,
       validate: {
         notEmpty: true,
         isValidScopeBox(value) {
-          if (!value.productType || !value.productLink || !value.description || !value.condition) {
-            throw new Error('Scope box must contain productType, productLink, description, and condition');
+          if (!value.productType || !value.productLink || !value.description || 
+              !value.condition || !value.deadline || !value.price) {
+            throw new Error('Scope box must contain productType, productLink, description, condition, deadline, and price');
           }
         }
       }
@@ -99,7 +114,8 @@ module.exports = (sequelize, DataTypes) => {
         'APPROVED',
         'DISPUTED',
         'RELEASED',
-        'REFUNDED'
+        'REFUNDED',
+        'CANCELLED'
       ),
       defaultValue: 'PLACED',
       allowNull: false

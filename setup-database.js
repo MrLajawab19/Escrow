@@ -10,7 +10,14 @@ async function setupDatabase() {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
     
-    // Sync all models
+    // Import all models explicitly
+    const Order = require('./models/order')(sequelize, Sequelize.DataTypes);
+    const Buyer = require('./models/buyer')(sequelize, Sequelize.DataTypes);
+    const Seller = require('./models/seller')(sequelize, Sequelize.DataTypes);
+    
+    console.log('✅ Models loaded successfully.');
+    
+    // Drop all tables and recreate them
     await sequelize.sync({ force: true });
     console.log('✅ Database tables created successfully.');
     
