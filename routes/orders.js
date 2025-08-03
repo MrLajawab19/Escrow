@@ -47,16 +47,29 @@ router.patch('/:id/submit', orderController.submitDelivery);
 router.patch('/:id/approve', orderController.approveDelivery);
 router.patch('/:id/dispute', upload.array('evidence', 5), orderController.raiseDispute);
 
+// Seller action routes
+router.patch('/:id/accept', orderController.acceptOrder);
+router.patch('/:id/reject', orderController.rejectOrder);
+router.patch('/:id/request-changes', orderController.requestChanges);
+
+// Buyer action routes
+router.patch('/:id/accept-changes', orderController.acceptChanges);
+router.patch('/:id/reject-changes', orderController.rejectChanges);
+
 // Admin routes
 router.patch('/:id/release', orderController.releaseFunds);
 router.patch('/:id/refund', orderController.refundBuyer);
 
-// Query routes
+// Query routes - SPECIFIC ROUTES FIRST
 router.get('/buyer', orderController.getBuyerOrders);
+router.get('/seller', orderController.getSellerOrders);
 router.get('/user/:userId', orderController.getOrdersByUser);
+
+// PARAMETERIZED ROUTES LAST
 router.get('/:id', orderController.getOrder);
 
 // Buyer actions
 router.patch('/:id/cancel', orderController.cancelOrder);
+router.patch('/:id/release', orderController.releaseFunds);
 
 module.exports = router; 

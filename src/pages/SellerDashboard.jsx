@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import OrderCard from '../components/OrderCard';
+import MyDisputesPage from '../components/MyDisputesPage';
+import NotificationModal from '../components/NotificationModal';
 import axios from 'axios';
 
 const SellerDashboard = () => {
@@ -12,6 +14,8 @@ const SellerDashboard = () => {
   const [showRequestChanges, setShowRequestChanges] = useState(false);
   const [requestChangesOrder, setRequestChangesOrder] = useState(null);
   const [modifiedScopeBox, setModifiedScopeBox] = useState(null);
+  const [showMyDisputes, setShowMyDisputes] = useState(false);
+  const [notification, setNotification] = useState({ isOpen: false, title: '', message: '', type: 'success' });
 
   useEffect(() => {
     fetchOrders();
@@ -20,100 +24,32 @@ const SellerDashboard = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // Mock data for demonstration - replace with actual API call
-      const mockOrders = [
-        {
-          id: 'order-123',
-          buyerId: 'buyer-123',
-          sellerId: 'seller-456',
-          scopeBox: {
-            title: 'Logo Design Project',
-            description: 'Create a modern logo for tech startup',
-            deliverables: ['Logo in PNG', 'Logo in SVG', 'Brand guidelines'],
-            deadline: '2024-02-15T00:00:00.000Z',
-            price: 500,
-            attachments: [
-              '/uploads/sample1.jpg',
-              '/uploads/sample2.png',
-              '/uploads/sample3.mp4',
-              '/uploads/sample4.pdf'
-            ]
-          },
-          status: 'SUBMITTED',
-          deliveryFiles: ['logo-final.png', 'brand-guidelines.pdf'],
-          createdAt: '2024-01-15T00:00:00.000Z',
-          updatedAt: '2024-01-20T00:00:00.000Z',
-          orderLogs: []
-        },
-        {
-          id: 'order-126',
-          buyerId: 'buyer-456',
-          sellerId: 'seller-456',
-          scopeBox: {
-            title: 'UI/UX Design',
-            description: 'Design user interface for mobile app',
-            deliverables: ['Wireframes', 'Mockups', 'Prototype'],
-            deadline: '2024-02-20T00:00:00.000Z',
-            price: 800
-          },
-          status: 'IN_PROGRESS',
-          deliveryFiles: [],
-          createdAt: '2024-01-12T00:00:00.000Z',
-          updatedAt: '2024-01-12T00:00:00.000Z',
-          orderLogs: []
-        },
-        {
-          id: 'order-127',
-          buyerId: 'buyer-789',
-          sellerId: 'seller-456',
-          scopeBox: {
-            title: 'Website Development',
-            description: 'Build e-commerce website',
-            deliverables: ['HTML/CSS', 'JavaScript', 'Database'],
-            deadline: '2024-03-01T00:00:00.000Z',
-            price: 1500,
-            attachments: [
-              '/uploads/website-mockup.jpg',
-              '/uploads/design-specs.pdf',
-              '/uploads/logo-assets.zip',
-              '/uploads/color-palette.png'
-            ]
-          },
-          status: 'PLACED',
-          deliveryFiles: [],
-          createdAt: '2024-01-08T00:00:00.000Z',
-          updatedAt: '2024-01-08T00:00:00.000Z',
-          orderLogs: []
-        },
-        {
-          id: 'order-128',
-          buyerId: 'buyer-101',
-          sellerId: 'seller-456',
-          scopeBox: {
-            title: 'Mobile App Development',
-            description: 'Create iOS and Android app for food delivery',
-            deliverables: ['iOS App', 'Android App', 'Admin Panel'],
-            deadline: '2024-03-15T00:00:00.000Z',
-            price: 2500,
-            attachments: [
-              '/uploads/app-wireframes.pdf',
-              '/uploads/brand-guidelines.pdf',
-              '/uploads/user-stories.docx',
-              '/uploads/api-specs.json'
-            ]
-          },
-          status: 'PLACED',
-          deliveryFiles: [],
-          createdAt: '2024-01-10T00:00:00.000Z',
-          updatedAt: '2024-01-10T00:00:00.000Z',
-          orderLogs: []
-        }
-      ];
+      setError(null);
+      
+      const token = localStorage.getItem('sellerToken');
+      if (!token) {
+        setError('Authentication required');
+        return;
+      }
 
-      setOrders(mockOrders);
+      const response = await axios.get('/api/orders/seller', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        setOrders(response.data.data);
+      } else {
+        setError(response.data.message || 'Failed to load orders');
+      }
     } catch (err) {
       console.error('Error fetching orders:', err);
+      if (err.response?.status === 401) {
+        setError('Authentication required. Please login again.');
+      } else {
       setError('Failed to load orders');
+      }
     } finally {
       setLoading(false);
     }
@@ -127,12 +63,30 @@ const SellerDashboard = () => {
     );
   };
 
-  const handleAcceptOrder = (order) => {
-    // Update order status to IN_PROGRESS
+  const handleAcceptOrder = async (order) => {
+    try {
+      const token = localStorage.getItem('sellerToken');
+      if (!token) {
+        setNotification({
+          isOpen: true,
+          title: 'Authentication Required',
+          message: 'Please login to perform this action.',
+          type: 'error'
+        });
+        return;
+      }
+
+      const response = await axios.patch(`/api/orders/${order.id}/accept`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        // Update the order status locally
     const updatedOrder = {
       ...order,
-      status: 'IN_PROGRESS',
-      updatedAt: new Date().toISOString()
+          status: 'ACCEPTED'
     };
     
     setOrders(prevOrders => 
@@ -141,20 +95,60 @@ const SellerDashboard = () => {
       )
     );
     
-    // Close the modal and set selected order to show details
+        // Close modals
     setScopeBoxOrder(null);
     setShowRequests(false);
     setSelectedOrder(updatedOrder);
     
-    // Status change will be visible in the orders list
+        setNotification({
+          isOpen: true,
+          title: 'Success',
+          message: 'Order accepted successfully!',
+          type: 'success'
+        });
+      } else {
+        setNotification({
+          isOpen: true,
+          title: 'Error',
+          message: 'Failed to accept order: ' + response.data.message,
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error accepting order:', error);
+      setNotification({
+        isOpen: true,
+        title: 'Error',
+        message: 'Error accepting order. Please try again.',
+        type: 'error'
+      });
+    }
   };
 
-  const handleRejectOrder = (order) => {
-    // Update order status to REJECTED
+  const handleRejectOrder = async (order) => {
+    try {
+      const token = localStorage.getItem('sellerToken');
+      if (!token) {
+        setNotification({
+          isOpen: true,
+          title: 'Authentication Required',
+          message: 'Please login to perform this action.',
+          type: 'error'
+        });
+        return;
+      }
+
+      const response = await axios.patch(`/api/orders/${order.id}/reject`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        // Update the order status locally
     const updatedOrder = {
       ...order,
-      status: 'REJECTED',
-      updatedAt: new Date().toISOString()
+          status: 'REJECTED'
     };
     
     setOrders(prevOrders => 
@@ -163,15 +157,37 @@ const SellerDashboard = () => {
       )
     );
     
-    // Close the modal and set selected order to show details
+        // Close modals
     setScopeBoxOrder(null);
     setShowRequests(false);
     setSelectedOrder(updatedOrder);
     
-    // Status change will be visible in the orders list
+        setNotification({
+          isOpen: true,
+          title: 'Success',
+          message: 'Order rejected successfully!',
+          type: 'success'
+        });
+      } else {
+        setNotification({
+          isOpen: true,
+          title: 'Error',
+          message: 'Failed to reject order: ' + response.data.message,
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      setNotification({
+        isOpen: true,
+        title: 'Error',
+        message: 'Error rejecting order. Please try again.',
+        type: 'error'
+      });
+    }
   };
 
-  const handleRequestChanges = (order) => {
+  const handleRequestChanges = async (order) => {
     // Set the order for request changes and initialize modified scope box
     setRequestChangesOrder(order);
     setModifiedScopeBox({
@@ -190,8 +206,30 @@ const SellerDashboard = () => {
     }));
   };
 
-  const handleSubmitChanges = () => {
-    // Update the order with modified scope box and change status
+  const handleSubmitChanges = async () => {
+    try {
+      const token = localStorage.getItem('sellerToken');
+      if (!token) {
+        setNotification({
+          isOpen: true,
+          title: 'Authentication Required',
+          message: 'Please login to perform this action.',
+          type: 'error'
+        });
+        return;
+      }
+
+      const response = await axios.patch(`/api/orders/${requestChangesOrder.id}/request-changes`, {
+        scopeBox: modifiedScopeBox,
+        changesRequested: true
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        // Update the order status locally
     const updatedOrder = {
       ...requestChangesOrder,
       scopeBox: modifiedScopeBox,
@@ -214,6 +252,30 @@ const SellerDashboard = () => {
     
     // Set selected order to show the updated status
     setSelectedOrder(updatedOrder);
+        
+        setNotification({
+          isOpen: true,
+          title: 'Success',
+          message: 'Changes requested successfully!',
+          type: 'success'
+        });
+      } else {
+        setNotification({
+          isOpen: true,
+          title: 'Error',
+          message: 'Failed to request changes: ' + response.data.message,
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error requesting changes:', error);
+      setNotification({
+        isOpen: true,
+        title: 'Error',
+        message: 'Error requesting changes. Please try again.',
+        type: 'error'
+      });
+    }
   };
 
   if (loading) {
@@ -257,6 +319,13 @@ const SellerDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">Welcome, Seller</span>
+              <button
+                onClick={() => setShowMyDisputes(true)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+              >
+                <span className="mr-1">🚨</span>
+                My Disputes
+              </button>
               <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" onClick={() => setShowRequests(true)}>
                 View Requests
               </button>
@@ -265,27 +334,61 @@ const SellerDashboard = () => {
         </div>
       </div>
 
+      {/* My Disputes Modal */}
+      {showMyDisputes && (
+        <MyDisputesPage
+          userType="seller"
+          onClose={() => setShowMyDisputes(false)}
+        />
+      )}
+
       {/* Requests Modal */}
       {showRequests && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative animate-fadeIn">
+          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full p-6 relative animate-fadeIn max-h-[80vh] overflow-y-auto">
             <button className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-2xl" onClick={() => setShowRequests(false)}>&times;</button>
-            <h2 className="text-xl font-bold mb-4 text-blue-700">Requested Orders</h2>
-            {orders.filter(order => order.status === 'PLACED').length === 0 ? (
-              <div className="text-gray-500 text-center py-8">No request orders found.</div>
+            <h2 className="text-xl font-bold mb-4 text-blue-700">Order Requests</h2>
+            {orders.filter(order => order.status === 'ESCROW_FUNDED').length === 0 ? (
+              <div className="text-gray-500 text-center py-8">
+                <div className="text-4xl mb-4">📭</div>
+                <p>No pending order requests found.</p>
+                <p className="text-sm mt-2">New orders from buyers will appear here.</p>
+              </div>
             ) : (
               <div className="space-y-4">
-                {orders.filter(order => order.status === 'PLACED').map(order => (
-                  <div key={order.id} className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between bg-gray-50">
-                    <div>
-                      <div className="font-semibold text-gray-800">{order.scopeBox?.title || 'Untitled Order'}</div>
-                      <div className="text-gray-500 text-sm">Deadline: {order.scopeBox?.deadline ? new Date(order.scopeBox.deadline).toLocaleDateString() : 'N/A'}</div>
-                      <div className="text-gray-500 text-sm">Price: ${order.scopeBox?.price || 0}</div>
+                {orders.filter(order => order.status === 'ESCROW_FUNDED').map(order => (
+                  <div key={order.id} className="border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-800 text-lg">
+                          {order.scopeBox?.title || 'Untitled Order'}
+                        </div>
+                        <div className="text-gray-600 mt-1">
+                          From: {order.buyerName || 'Unknown Buyer'}
+                        </div>
+                        <div className="text-gray-500 text-sm mt-2">
+                          <span className="font-medium">Deadline:</span> {order.scopeBox?.deadline ? new Date(order.scopeBox.deadline).toLocaleDateString() : 'N/A'}
+                        </div>
+                        <div className="text-gray-500 text-sm">
+                          <span className="font-medium">Price:</span> ${order.scopeBox?.price || 0}
+                        </div>
+                        <div className="text-gray-500 text-sm">
+                          <span className="font-medium">Platform:</span> {order.platform || 'N/A'}
+                        </div>
+                        {order.scopeBox?.description && (
+                          <div className="text-gray-600 text-sm mt-2">
+                            <span className="font-medium">Description:</span> {order.scopeBox.description.substring(0, 100)}...
+                          </div>
+                        )}
                     </div>
-                    <div className="mt-3 md:mt-0">
-                      <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700" onClick={() => setScopeBoxOrder(order)}>
-                        Scope Box
+                      <div className="mt-3 md:mt-0 md:ml-4">
+                        <button 
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                          onClick={() => setScopeBoxOrder(order)}
+                        >
+                          View Details
                       </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -409,113 +512,124 @@ const SellerDashboard = () => {
       )}
 
       {/* Request Changes Modal */}
-      {showRequestChanges && requestChangesOrder && modifiedScopeBox && (
+      {showRequestChanges && requestChangesOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
           <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto">
-            <button 
-              className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-2xl" 
-              onClick={() => {
-                setShowRequestChanges(false);
-                setRequestChangesOrder(null);
-                setModifiedScopeBox(null);
-              }}
-            >
-              &times;
-            </button>
-            <h2 className="text-2xl font-bold mb-6 text-yellow-600">
-              Request Changes - {requestChangesOrder.scopeBox?.title}
-            </h2>
+            <button className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-2xl" onClick={() => setShowRequestChanges(false)}>&times;</button>
+            <h2 className="text-xl font-bold mb-4 text-yellow-700">Request Changes to Scope Box</h2>
             
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">Modify Scope Box Details</h3>
-                <p className="text-sm text-gray-600 mb-4">Edit the scope box details below. Changes will be sent to the buyer for approval.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Original Scope Box */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h3 className="font-semibold text-gray-800 mb-3">Original Scope Box</h3>
+                <div className="space-y-2 text-sm">
+                  <div><span className="font-medium">Title:</span> {requestChangesOrder.scopeBox?.title}</div>
+                  <div><span className="font-medium">Description:</span> {requestChangesOrder.scopeBox?.description}</div>
+                  <div><span className="font-medium">Product Type:</span> {requestChangesOrder.scopeBox?.productType}</div>
+                  <div><span className="font-medium">Price:</span> ${requestChangesOrder.scopeBox?.price}</div>
+                  <div><span className="font-medium">Deadline:</span> {requestChangesOrder.scopeBox?.deadline ? new Date(requestChangesOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</div>
+                  <div><span className="font-medium">Deliverables:</span>
+                    <ul className="list-disc ml-4 mt-1">
+                      {(requestChangesOrder.scopeBox?.deliverables || []).map((d, i) => <li key={i}>{d}</li>)}
+                    </ul>
+                  </div>
+                </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Modified Scope Box Form */}
+              <div className="border rounded-lg p-4 bg-blue-50">
+                <h3 className="font-semibold text-blue-800 mb-3">Proposed Changes</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                     <input
                       type="text"
-                      value={modifiedScopeBox.title || ''}
+                      value={modifiedScopeBox?.title || ''}
                       onChange={(e) => handleScopeBoxChange('title', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Price ($)</label>
-                    <input
-                      type="number"
-                      value={modifiedScopeBox.price || ''}
-                      onChange={(e) => handleScopeBoxChange('price', parseFloat(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea
+                      value={modifiedScopeBox?.description || ''}
+                      onChange={(e) => handleScopeBoxChange('description', e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Deadline</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Type</label>
                     <input
-                      type="date"
-                      value={modifiedScopeBox.deadline ? modifiedScopeBox.deadline.split('T')[0] : ''}
-                      onChange={(e) => handleScopeBoxChange('deadline', e.target.value + 'T00:00:00.000Z')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      type="text"
+                      value={modifiedScopeBox?.productType || ''}
+                      onChange={(e) => handleScopeBoxChange('productType', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                      <input
+                        type="number"
+                        value={modifiedScopeBox?.price || ''}
+                        onChange={(e) => handleScopeBoxChange('price', parseFloat(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                      <input
+                        type="date"
+                        value={modifiedScopeBox?.deadline ? new Date(modifiedScopeBox.deadline).toISOString().split('T')[0] : ''}
+                        onChange={(e) => handleScopeBoxChange('deadline', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
                 
-                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea
-                      value={modifiedScopeBox.description || ''}
-                      onChange={(e) => handleScopeBoxChange('description', e.target.value)}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Deliverables (comma-separated)</label>
+                    <input
+                      type="text"
+                      value={modifiedScopeBox?.deliverables?.join(', ') || ''}
+                      onChange={(e) => handleScopeBoxChange('deliverables', e.target.value.split(',').map(d => d.trim()))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Logo in PNG format, Logo in SVG format, Brand guidelines"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Deliverables (one per line)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Changes</label>
                     <textarea
-                      value={modifiedScopeBox.deliverables?.join('\n') || ''}
-                      onChange={(e) => handleScopeBoxChange('deliverables', e.target.value.split('\n').filter(item => item.trim()))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                      placeholder="Enter each deliverable on a new line"
+                      value={modifiedScopeBox?.changeReason || ''}
+                      onChange={(e) => handleScopeBoxChange('changeReason', e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Explain why these changes are needed..."
                     />
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                <h4 className="font-medium text-yellow-800 mb-2">📝 Changes Summary</h4>
-                <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• Title: {requestChangesOrder.scopeBox?.title} → {modifiedScopeBox.title}</li>
-                  <li>• Price: ${requestChangesOrder.scopeBox?.price} → ${modifiedScopeBox.price}</li>
-                  <li>• Description: {requestChangesOrder.scopeBox?.description?.length || 0} chars → {modifiedScopeBox.description?.length || 0} chars</li>
-                  <li>• Deliverables: {requestChangesOrder.scopeBox?.deliverables?.length || 0} items → {modifiedScopeBox.deliverables?.length || 0} items</li>
-                </ul>
-              </div>
             </div>
             
-            <div className="mt-6 flex justify-between items-center">
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-6">
               <button 
-                onClick={() => {
-                  setShowRequestChanges(false);
-                  setRequestChangesOrder(null);
-                  setModifiedScopeBox(null);
-                }}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                onClick={() => setShowRequestChanges(false)}
               >
                 Cancel
               </button>
               <button 
+                className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
                 onClick={handleSubmitChanges}
-                className="px-6 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-medium"
               >
-                Submit Changes to Buyer
+                Submit Changes Request
               </button>
             </div>
           </div>
@@ -659,6 +773,15 @@ const SellerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+      />
     </div>
   );
 };

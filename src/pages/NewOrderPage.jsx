@@ -192,7 +192,13 @@ export default function NewOrderPage() {
       const fundResponse = await axios.post(`/api/orders/${orderData.orderId}/fund-escrow`, {
         buyerId: buyerData.id,
         paymentMethod: 'credit_card',
-        amount: fundingData.amount
+        amount: fundingData.amount,
+        cardDetails: {
+          cardNumber: '4111111111111111', // Demo card number
+          expiryMonth: '12',
+          expiryYear: '2026',
+          cvv: '123'
+        }
       }, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -212,7 +218,11 @@ export default function NewOrderPage() {
       }
     } catch (error) {
       console.error('Error funding escrow:', error);
-      setError('Payment failed. Please check your card details and try again.');
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else {
+        setError('Payment failed. Please check your card details and try again.');
+      }
     } finally {
       setFundingLoading(false);
     }

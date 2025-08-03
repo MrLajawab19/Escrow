@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
+const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) => {
   const [formData, setFormData] = useState({
     reason: '',
     description: '',
@@ -163,9 +163,26 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
     setLoading(true);
 
     try {
+      // Get authentication token
+      const token = userType === 'buyer' 
+        ? localStorage.getItem('buyerToken') 
+        : localStorage.getItem('sellerToken');
+      
+      if (!token) {
+        throw new Error('Authentication required. Please login again.');
+      }
+
       // Create FormData for file upload
       const submitData = new FormData();
-      submitData.append('userId', userType === 'buyer' ? 'buyer-123' : 'seller-456'); // Mock user ID
+      
+      // Use order data to get correct IDs
+      const buyerId = order?.buyerId || 'buyer-123';
+      const sellerId = order?.sellerId || 'seller-456';
+      
+      submitData.append('orderId', orderId);
+      submitData.append('buyerId', buyerId);
+      submitData.append('sellerId', sellerId);
+      submitData.append('raisedBy', userType);
       submitData.append('reason', formData.reason);
       submitData.append('description', formData.description);
       submitData.append('requestedResolution', formData.requestedResolution);
@@ -175,13 +192,25 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
         submitData.append('evidence', file);
       });
 
-      const response = await axios.patch(`/api/orders/${orderId}/dispute`, submitData, {
+      console.log('Submitting dispute with data:', {
+        orderId,
+        buyerId,
+        sellerId,
+        raisedBy: userType,
+        reason: formData.reason,
+        description: formData.description,
+        requestedResolution: formData.requestedResolution,
+        evidenceFiles: formData.evidenceFiles.length
+      });
+
+      const response = await axios.post('/api/disputes', submitData, {
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      console.log('Dispute submitted', response.data);
+      console.log('Dispute submitted successfully:', response.data);
       
       // Show success notification
       showNotification('Dispute raised successfully!', 'success');
@@ -203,7 +232,22 @@ const DisputeModal = ({ isOpen, onClose, orderId, onSubmit, userType }) => {
 
     } catch (error) {
       console.error('Error raising dispute:', error);
-      showNotification('Failed to raise dispute. Please try again.', 'error');
+      
+      // Log detailed error information
+      if (error.response) {
+        console.error('Response error:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      } else if (error.request) {
+        console.error('Request error:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to raise dispute. Please try again.';
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
     }

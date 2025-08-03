@@ -1,6 +1,12 @@
 const orderService = require('../services/orderService');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
+const { Sequelize } = require('sequelize');
+const config = require('../config/config.json');
+
+// Initialize Sequelize
+const sequelize = new Sequelize(config.development);
+const Seller = require('../models/seller')(sequelize, Sequelize.DataTypes);
 
 // Helper function to verify buyer token
 function verifyBuyerToken(req) {
@@ -11,8 +17,10 @@ function verifyBuyerToken(req) {
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+    console.log('Decoded token:', decoded);
     return decoded;
   } catch (error) {
+    console.error('Token verification error:', error);
     throw new Error('Invalid authentication token');
   }
 }
@@ -77,7 +85,35 @@ async function createOrder(req, res) {
 
     // Generate unique order ID and escrow link
     const orderId = uuidv4();
-    const sellerId = uuidv4();
+    
+    // Find or create seller based on sellerContact (email)
+    let sellerId;
+    try {
+      const seller = await Seller.findOne({ where: { email: sellerContact } });
+      
+      if (seller) {
+        sellerId = seller.id;
+      } else {
+        // If seller doesn't exist, create a placeholder seller
+        const newSeller = await Seller.create({
+          id: uuidv4(),
+          email: sellerContact,
+          firstName: 'Seller',
+          lastName: 'User',
+          phone: sellerContact,
+          country: 'US',
+          businessName: 'Freelance Seller',
+          isVerified: true,
+          status: 'active'
+        });
+        sellerId = newSeller.id;
+      }
+    } catch (error) {
+      console.error('Error finding/creating seller:', error);
+      // Fallback to generating a new seller ID
+      sellerId = uuidv4();
+    }
+    
     const escrowLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/order/${orderId}`;
     const orderTrackingLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/buyer/order/${orderId}`;
 
@@ -132,22 +168,23 @@ async function createOrder(req, res) {
     console.log(`   Escrow Link: ${escrowLink}`);
     console.log(`   Tracking Link: ${orderTrackingLink}`);
 
-    res.status(201).json({
-      success: true,
-      data: {
-        orderId,
-        escrowLink,
-        orderTrackingLink,
-        status: order.status,
-        buyerName: buyerData.firstName + ' ' + buyerData.lastName,
-        platform,
-        productType: scopeBox.productType,
-        price: `${currency} ${price.toFixed(2)}`,
-        deadline: deadline.toLocaleDateString(),
-        createdAt: order.createdAt
-      },
-      message: 'Order created successfully! Escrow link has been sent to the seller.'
-    });
+        res.status(201).json({
+          success: true,
+          data: {
+            id: order.id,
+            orderId: orderId,
+            escrowLink,
+            orderTrackingLink,
+            status: order.status,
+            buyerName: buyerData.firstName + ' ' + buyerData.lastName,
+            platform,
+            productType: scopeBox.productType,
+            price: `${currency} ${price.toFixed(2)}`,
+            deadline: deadline.toLocaleDateString(),
+            createdAt: order.createdAt
+          },
+          message: 'Order created successfully! Escrow link has been sent to the seller.'
+        });
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({
@@ -236,7 +273,7 @@ async function sendScopeBoxToSeller(sellerContact, scopeData) {
 async function fundEscrow(req, res) {
   try {
     const { id } = req.params;
-    const { buyerId, paymentMethod, amount } = req.body;
+    const { buyerId, paymentMethod, amount, cardDetails } = req.body;
 
     if (!buyerId) {
       return res.status(400).json({
@@ -256,11 +293,79 @@ async function fundEscrow(req, res) {
       });
     }
 
-    // Simulate payment processing
+    // Validate payment method
+    if (!paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment method is required'
+      });
+    }
+
+    // Validate card details for credit card payments
+    if (paymentMethod === 'credit_card') {
+      if (!cardDetails) {
+        return res.status(400).json({
+          success: false,
+          message: 'Card details are required for credit card payments'
+        });
+      }
+
+      // Validate card number (basic validation)
+      if (!cardDetails.cardNumber || cardDetails.cardNumber.length < 13) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid card number. Please check your card details and try again.'
+        });
+      }
+
+      // Validate expiry date
+      if (!cardDetails.expiryMonth || !cardDetails.expiryYear) {
+        return res.status(400).json({
+          success: false,
+          message: 'Card expiry date is required. Please check your card details and try again.'
+        });
+      }
+
+      // Validate CVV
+      if (!cardDetails.cvv || cardDetails.cvv.length < 3) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid CVV. Please check your card details and try again.'
+        });
+      }
+
+      // Check if card is expired
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11
+
+      if (parseInt(cardDetails.expiryYear) < currentYear || 
+          (parseInt(cardDetails.expiryYear) === currentYear && parseInt(cardDetails.expiryMonth) < currentMonth)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Card has expired. Please use a valid card.'
+        });
+      }
+    }
+
+    // Simulate payment processing with validation
     console.log(`💳 Processing payment for order ${id}:`);
     console.log(`   Amount: ${amount}`);
     console.log(`   Payment Method: ${paymentMethod}`);
     console.log(`   Buyer: ${buyerData.firstName} ${buyerData.lastName}`);
+
+    // Simulate payment processing delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Simulate payment success (in real implementation, this would call a payment gateway)
+    const paymentSuccess = Math.random() > 0.1; // 90% success rate for demo
+
+    if (!paymentSuccess) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment failed. Please check your card details and try again.'
+      });
+    }
 
     // Fund the escrow
     const order = await orderService.fundEscrow(id, buyerId);
@@ -284,7 +389,7 @@ async function fundEscrow(req, res) {
     res.json({
       success: true,
       data: order,
-      message: 'Escrow funded successfully and scope box sent to seller'
+      message: 'Payment processed successfully and escrow funded'
     });
   } catch (error) {
     console.error('Error funding escrow:', error);
@@ -427,25 +532,36 @@ async function raiseDispute(req, res) {
   }
 }
 
-// PATCH /api/orders/:id/release - Release funds (admin)
+// PATCH /api/orders/:id/release - Release funds to seller (buyer only)
 async function releaseFunds(req, res) {
   try {
     const { id } = req.params;
-    const { adminId } = req.body;
 
-    if (!adminId) {
-      return res.status(400).json({
+    // Verify buyer authentication
+    let buyerData;
+    try {
+      buyerData = verifyBuyerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
         success: false,
-        message: 'adminId is required'
+        message: 'Authentication required. Please login as a buyer.'
       });
     }
 
-    const order = await orderService.releaseFunds(id, adminId);
+    const order = await orderService.releaseFunds(id, buyerData.userId);
+
+    // Send confirmation to buyer
+    try {
+      await sendBuyerReleaseConfirmation(buyerData.email, order);
+    } catch (notificationError) {
+      console.error('Error sending buyer confirmation:', notificationError);
+      // Don't fail the entire operation if notification fails
+    }
 
     res.json({
       success: true,
       data: order,
-      message: 'Funds released successfully'
+      message: 'Funds released successfully to seller. Order completed.'
     });
   } catch (error) {
     console.error('Error releasing funds:', error);
@@ -454,6 +570,25 @@ async function releaseFunds(req, res) {
       message: error.message || 'Failed to release funds'
     });
   }
+}
+
+// Send confirmation to buyer about fund release
+async function sendBuyerReleaseConfirmation(buyerEmail, order) {
+  const { id, scopeBox } = order;
+  
+  console.log('📧 Sending release confirmation to buyer:', buyerEmail);
+  console.log('   Subject: Funds Released - Order', id);
+  console.log('   Message: Your funds have been released to the seller');
+  console.log('   Order ID:', id);
+  console.log('   Amount:', scopeBox?.price || 0);
+  console.log('   Status: COMPLETED');
+  
+  // In a real implementation, you would:
+  // 1. Send email to buyer
+  // 2. Update buyer's transaction history
+  // 3. Send receipt/invoice
+  
+  console.log('✅ Release confirmation sent to buyer');
 }
 
 // PATCH /api/orders/:id/refund - Refund buyer (admin)
@@ -541,6 +676,65 @@ async function getBuyerOrders(req, res) {
   }
 }
 
+// GET /api/orders/seller - Get all orders for authenticated seller
+async function getSellerOrders(req, res) {
+  try {
+    // Verify seller authentication
+    let sellerData;
+    try {
+      sellerData = verifySellerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login as a seller.'
+      });
+    }
+
+    const orders = await orderService.getSellerOrders(sellerData.userId);
+
+    res.json({
+      success: true,
+      data: orders
+    });
+  } catch (error) {
+    console.error('Error fetching seller orders:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch orders'
+    });
+  }
+}
+
+// Helper function to verify seller token
+function verifySellerToken(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Access token required');
+  }
+
+  const token = authHeader.substring(7);
+  const jwt = require('jsonwebtoken');
+  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    if (decoded.role !== 'seller') {
+      throw new Error('Seller access required');
+    }
+
+    return {
+      userId: decoded.userId,
+      email: decoded.email,
+      firstName: decoded.firstName,
+      lastName: decoded.lastName,
+      role: decoded.role
+    };
+  } catch (error) {
+    throw new Error('Invalid token');
+  }
+}
+
 // PATCH /api/orders/:id/cancel - Cancel order (buyer only)
 async function cancelOrder(req, res) {
   try {
@@ -595,6 +789,167 @@ async function getOrdersByUser(req, res) {
   }
 }
 
+// PATCH /api/orders/:id/accept - Accept order (seller only)
+async function acceptOrder(req, res) {
+  try {
+    const { id } = req.params;
+    
+    // Verify seller authentication
+    let sellerData;
+    try {
+      sellerData = verifySellerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login as a seller.'
+      });
+    }
+
+    const order = await orderService.acceptOrder(id, sellerData.userId);
+
+    res.json({
+      success: true,
+      data: order,
+      message: 'Order accepted successfully'
+    });
+  } catch (error) {
+    console.error('Error accepting order:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to accept order'
+    });
+  }
+}
+
+// PATCH /api/orders/:id/reject - Reject order (seller only)
+async function rejectOrder(req, res) {
+  try {
+    const { id } = req.params;
+    
+    // Verify seller authentication
+    let sellerData;
+    try {
+      sellerData = verifySellerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login as a seller.'
+      });
+    }
+
+    const order = await orderService.rejectOrder(id, sellerData.userId);
+
+    res.json({
+      success: true,
+      data: order,
+      message: 'Order rejected successfully'
+    });
+  } catch (error) {
+    console.error('Error rejecting order:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to reject order'
+    });
+  }
+}
+
+// PATCH /api/orders/:id/request-changes - Request changes to order (seller only)
+async function requestChanges(req, res) {
+  try {
+    const { id } = req.params;
+    const { scopeBox, changesRequested } = req.body;
+    
+    // Verify seller authentication
+    let sellerData;
+    try {
+      sellerData = verifySellerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login as a seller.'
+      });
+    }
+
+    const order = await orderService.requestChanges(id, sellerData.userId, { scopeBox, changesRequested });
+
+    res.json({
+      success: true,
+      data: order,
+      message: 'Changes requested successfully'
+    });
+  } catch (error) {
+    console.error('Error requesting changes:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to request changes'
+    });
+  }
+}
+
+// PATCH /api/orders/:id/accept-changes - Accept changes (buyer only)
+async function acceptChanges(req, res) {
+  try {
+    const { id } = req.params;
+    
+    // Verify buyer authentication
+    let buyerData;
+    try {
+      buyerData = verifyBuyerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login as a buyer.'
+      });
+    }
+
+    const order = await orderService.acceptChanges(id, buyerData.userId);
+
+    res.json({
+      success: true,
+      data: order,
+      message: 'Changes accepted successfully. Order status updated to IN_PROGRESS.'
+    });
+  } catch (error) {
+    console.error('Error accepting changes:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to accept changes'
+    });
+  }
+}
+
+// PATCH /api/orders/:id/reject-changes - Reject changes (buyer only)
+async function rejectChanges(req, res) {
+  try {
+    const { id } = req.params;
+    
+    // Verify buyer authentication
+    let buyerData;
+    try {
+      buyerData = verifyBuyerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login as a buyer.'
+      });
+    }
+
+    const order = await orderService.rejectChanges(id, buyerData.userId);
+
+    res.json({
+      success: true,
+      data: order,
+      message: 'Changes rejected successfully. Order status updated to REJECTED.'
+    });
+  } catch (error) {
+    console.error('Error rejecting changes:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to reject changes'
+    });
+  }
+}
+
 module.exports = {
   createOrder,
   fundEscrow,
@@ -606,6 +961,12 @@ module.exports = {
   refundBuyer,
   getOrder,
   getBuyerOrders,
+  getSellerOrders,
   cancelOrder,
-  getOrdersByUser
+  getOrdersByUser,
+  acceptOrder,
+  rejectOrder,
+  requestChanges,
+  acceptChanges,
+  rejectChanges
 }; 

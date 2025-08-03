@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import DisputeModal from './DisputeModal';
-import DisputeTracker from './DisputeTracker';
 
-const OrderCard = ({ order, userType, onOrderUpdate }) => {
+const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
   const [showDisputeModal, setShowDisputeModal] = useState(false);
-  const [showDisputeTracker, setShowDisputeTracker] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+
+  const showNotification = (message, type = 'info') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 4000);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -12,11 +18,19 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
         return 'bg-blue-100 text-blue-800';
       case 'ESCROW_FUNDED':
         return 'bg-yellow-100 text-yellow-800';
+      case 'ACCEPTED':
+        return 'bg-green-100 text-green-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
+      case 'CHANGES_REQUESTED':
+        return 'bg-orange-100 text-orange-800';
       case 'IN_PROGRESS':
         return 'bg-orange-100 text-orange-800';
       case 'SUBMITTED':
         return 'bg-purple-100 text-purple-800';
       case 'APPROVED':
+        return 'bg-green-100 text-green-800';
+      case 'COMPLETED':
         return 'bg-green-100 text-green-800';
       case 'DISPUTED':
         return 'bg-red-100 text-red-800';
@@ -37,12 +51,20 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
         return '📋';
       case 'ESCROW_FUNDED':
         return '💰';
+      case 'ACCEPTED':
+        return '✅';
+      case 'REJECTED':
+        return '❌';
+      case 'CHANGES_REQUESTED':
+        return '🔄';
       case 'IN_PROGRESS':
         return '⚡';
       case 'SUBMITTED':
         return '📤';
       case 'APPROVED':
         return '✅';
+      case 'COMPLETED':
+        return '🎉';
       case 'DISPUTED':
         return '🚨';
       case 'RELEASED':
@@ -128,16 +150,50 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
-        {/* Approve Button (for buyers when SUBMITTED) */}
+        {/* Release Funds Button (for buyers when SUBMITTED) */}
         {userType === 'buyer' && order.status === 'SUBMITTED' && (
           <button
-            onClick={() => {
-              // Handle approve logic
-              console.log('Approve order:', order.id);
+            onClick={async () => {
+              try {
+                // Show loading state
+                showNotification('Processing fund release...', 'info');
+                
+                const token = localStorage.getItem('buyerToken');
+                const response = await fetch(`/api/orders/${order.id}/release`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  if (result.success) {
+                    // Update the order status locally
+                    if (onOrderUpdate) {
+                      onOrderUpdate({
+                        ...order,
+                        status: 'COMPLETED'
+                      });
+                    }
+                    showNotification('✅ Funds released successfully! Payment sent to seller. Order completed.', 'success');
+                  } else {
+                    showNotification(result.message || 'Failed to release funds', 'error');
+                  }
+                } else {
+                  const errorData = await response.json();
+                  showNotification(errorData.message || 'Failed to release funds', 'error');
+                }
+              } catch (error) {
+                console.error('Error releasing funds:', error);
+                showNotification('Error releasing funds. Please try again.', 'error');
+              }
             }}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
           >
-            ✅ Approve
+            <span className="mr-1">💰</span>
+            Release Funds
           </button>
         )}
 
@@ -165,22 +221,38 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
                         status: 'CANCELLED'
                       });
                     }
-                    alert('Order cancelled successfully');
+                    showNotification('Order cancelled successfully!', 'success');
                   } else {
-                    alert(result.message || 'Failed to cancel order');
+                    showNotification(result.message || 'Failed to cancel order', 'error');
                   }
                 } else {
-                  alert('Failed to cancel order');
+                  showNotification('Failed to cancel order', 'error');
                 }
               } catch (error) {
                 console.error('Error cancelling order:', error);
-                alert('Error cancelling order');
+                showNotification('Error cancelling order', 'error');
               }
             }}
             className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center"
           >
             <span className="mr-1">❌</span>
             Cancel Order
+          </button>
+        )}
+
+        {/* Review Changes Button (for buyers when CHANGES_REQUESTED) */}
+        {userType === 'buyer' && order.status === 'CHANGES_REQUESTED' && (
+          <button
+            onClick={() => {
+              // This will trigger the changes review modal in the parent component
+              if (onReviewChanges) {
+                onReviewChanges(order);
+              }
+            }}
+            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center"
+          >
+            <span className="mr-1">🔄</span>
+            Review Changes
           </button>
         )}
 
@@ -196,13 +268,53 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
         )}
 
         {/* View Dispute Button (when DISPUTED) */}
-        {order.status === 'DISPUTED' && (
+        {/* Removed - disputes are now managed through the centralized My Disputes page */}
+
+        {/* Order Delivered Button (for sellers when IN_PROGRESS) */}
+        {userType === 'seller' && order.status === 'IN_PROGRESS' && (
           <button
-            onClick={() => setShowDisputeTracker(true)}
-            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center"
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem('sellerToken');
+                const response = await fetch(`/api/orders/${order.id}/submit`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    sellerId: 'seller-id', // This should come from auth
+                    deliveryFiles: ['final-delivery.zip', 'project-documentation.pdf', 'source-code.zip']
+                  })
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  if (result.success) {
+                    // Update the order status locally
+                    if (onOrderUpdate) {
+                      onOrderUpdate({
+                        ...order,
+                        status: 'SUBMITTED',
+                        deliveryFiles: ['final-delivery.zip', 'project-documentation.pdf', 'source-code.zip']
+                      });
+                    }
+                    showNotification('Order delivered successfully! Buyer will be notified for approval.', 'success');
+                  } else {
+                    showNotification(result.message || 'Failed to deliver order', 'error');
+                  }
+                } else {
+                  showNotification('Failed to deliver order', 'error');
+                }
+              } catch (error) {
+                console.error('Error delivering order:', error);
+                showNotification('Error delivering order', 'error');
+              }
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
           >
-            <span className="mr-1">📋</span>
-            View Dispute
+            <span className="mr-1">📦</span>
+            Order Delivered
           </button>
         )}
 
@@ -292,12 +404,54 @@ const OrderCard = ({ order, userType, onOrderUpdate }) => {
         userType={userType}
       />
 
-      {/* Dispute Tracker */}
-      <DisputeTracker
-        isOpen={showDisputeTracker}
-        onClose={() => setShowDisputeTracker(false)}
-        orderId={order.id}
-      />
+      {/* Dispute Tracker - Removed since disputes are now managed centrally */}
+
+      {/* Notification Popup */}
+      {notification.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 transform transition-all ${
+            notification.type === 'success' ? 'border-l-4 border-green-500' : 
+            notification.type === 'error' ? 'border-l-4 border-red-500' : 
+            'border-l-4 border-blue-500'
+          }`}>
+            <div className="flex items-center">
+              <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                notification.type === 'success' ? 'bg-green-100' : 
+                notification.type === 'error' ? 'bg-red-100' : 
+                'bg-blue-100'
+              }`}>
+                {notification.type === 'success' ? (
+                  <span className="text-green-600 text-xl">✅</span>
+                ) : notification.type === 'error' ? (
+                  <span className="text-red-600 text-xl">❌</span>
+                ) : (
+                  <span className="text-blue-600 text-xl">ℹ️</span>
+                )}
+              </div>
+              <div className="ml-4">
+                <p className={`text-sm font-medium ${
+                  notification.type === 'success' ? 'text-green-800' : 
+                  notification.type === 'error' ? 'text-red-800' : 
+                  'text-blue-800'
+                }`}>
+                  {notification.type === 'success' ? 'Success' : 
+                   notification.type === 'error' ? 'Error' : 
+                   'Information'}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setNotification({ show: false, message: '', type: '' })}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

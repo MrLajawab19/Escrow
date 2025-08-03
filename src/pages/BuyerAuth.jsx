@@ -67,6 +67,8 @@ const BuyerAuth = () => {
       if (isLogin) {
         // Login
         console.log('Attempting login with:', { email: formData.email });
+        console.log('Making request to:', '/api/auth/buyer/login');
+        
         const response = await axios.post('/api/auth/buyer/login', {
           email: formData.email,
           password: formData.password
@@ -76,7 +78,8 @@ const BuyerAuth = () => {
           }
         });
 
-        console.log('Login response:', response.data);
+        console.log('Login response status:', response.status);
+        console.log('Login response data:', response.data);
 
         if (response.data.success) {
           // Store token and user data
@@ -125,6 +128,8 @@ const BuyerAuth = () => {
       console.error('Auth error:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.message);
+      console.error('Error config:', error.config);
       setError(error.response?.data?.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);

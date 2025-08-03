@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import OrderCard from '../components/OrderCard';
+import MyDisputesPage from '../components/MyDisputesPage';
+import ChangesReviewModal from '../components/ChangesReviewModal';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
@@ -8,6 +10,9 @@ const BuyerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showNewOrder, setShowNewOrder] = useState(false);
+  const [showMyDisputes, setShowMyDisputes] = useState(false);
+  const [showChangesReview, setShowChangesReview] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -31,58 +36,7 @@ const BuyerDashboard = () => {
       });
 
       if (response.data.success) {
-        // Combine real orders with demo mock orders for better testing
-        const realOrders = response.data.data;
-        
-        // Add demo mock orders for testing action buttons
-        const demoOrders = [
-          {
-            id: 'demo-submitted-order',
-            buyerId: 'demo-buyer',
-            sellerId: 'demo-seller',
-            scopeBox: {
-              title: 'Logo Design Project',
-              description: 'Create a modern logo for tech startup with brand guidelines',
-              deliverables: ['Logo in PNG', 'Logo in SVG', 'Brand guidelines'],
-              deadline: '2024-02-15T00:00:00.000Z',
-              price: 500
-            },
-            status: 'SUBMITTED',
-            deliveryFiles: ['final-logo.svg', 'logo-guidelines.pdf'],
-            createdAt: '2024-01-15T00:00:00.000Z',
-            updatedAt: '2024-01-20T00:00:00.000Z',
-            orderLogs: [],
-            platform: 'Fiverr',
-            productLink: 'https://www.fiverr.com/projects/123456',
-            country: 'USA',
-            currency: 'USD',
-            sellerContact: 'seller@example.com'
-          },
-          {
-            id: 'demo-disputed-order',
-            buyerId: 'demo-buyer',
-            sellerId: 'demo-seller',
-            scopeBox: {
-              title: 'Website Development',
-              description: 'Build a responsive e-commerce website with payment integration',
-              deliverables: ['HTML/CSS', 'JavaScript', 'Responsive design'],
-              deadline: '2024-03-01T00:00:00.000Z',
-              price: 1200
-            },
-            status: 'DISPUTED',
-            deliveryFiles: [],
-            createdAt: '2024-01-10T00:00:00.000Z',
-            updatedAt: '2024-01-18T00:00:00.000Z',
-            orderLogs: [],
-            platform: 'Upwork',
-            productLink: 'https://www.upwork.com/projects/789012',
-            country: 'UK',
-            currency: 'GBP',
-            sellerContact: 'seller@example.com'
-          }
-        ];
-        
-        setOrders([...realOrders, ...demoOrders]);
+        setOrders(response.data.data);
       } else {
         setError(response.data.message || 'Failed to load orders');
       }
@@ -100,8 +54,26 @@ const BuyerDashboard = () => {
 
   const handleOrderUpdate = (updatedOrder) => {
     setOrders(prevOrders => 
-      prevOrders.map(order => 
-        order.id === updatedOrder.id ? updatedOrder : order
+      prevOrders.map(o => 
+        o.id === updatedOrder.id ? updatedOrder : o
+      )
+    );
+  };
+
+  const handleReviewChanges = (order) => {
+    setSelectedOrder(order);
+    setShowChangesReview(true);
+  };
+
+  const handleChangesReviewClose = () => {
+    setShowChangesReview(false);
+    setSelectedOrder(null);
+  };
+
+  const handleChangesReviewUpdate = (updatedOrder) => {
+    setOrders(prevOrders => 
+      prevOrders.map(o => 
+        o.id === updatedOrder.id ? updatedOrder : o
       )
     );
   };
@@ -147,6 +119,13 @@ const BuyerDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">Welcome, Buyer</span>
+              <button
+                onClick={() => setShowMyDisputes(true)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+              >
+                <span className="mr-1">🚨</span>
+                My Disputes
+              </button>
               <Link
                 to="/buyer/new-order"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -157,6 +136,14 @@ const BuyerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* My Disputes Modal */}
+      {showMyDisputes && (
+        <MyDisputesPage
+          userType="buyer"
+          onClose={() => setShowMyDisputes(false)}
+        />
+      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -250,6 +237,7 @@ const BuyerDashboard = () => {
                     order={order}
                     userType="buyer"
                     onOrderUpdate={handleOrderUpdate}
+                    onReviewChanges={handleReviewChanges}
                   />
                 ))}
               </div>
@@ -257,6 +245,15 @@ const BuyerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Changes Review Modal */}
+      {showChangesReview && selectedOrder && (
+        <ChangesReviewModal
+          order={selectedOrder}
+          onClose={handleChangesReviewClose}
+          onUpdate={handleChangesReviewUpdate}
+        />
+      )}
     </div>
   );
 };

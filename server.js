@@ -5,6 +5,7 @@ const cors = require('cors');
 const escrowRoutes = require('./routes/escrow');
 const orderRoutes = require('./routes/orders');
 const authRoutes = require('./routes/auth');
+const disputeRoutes = require('./routes/disputes');
 const fs = require('fs');
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/uploads', express.static(uploadDir));
 app.use('/escrow', escrowRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/disputes', disputeRoutes);
 
 // Cron-like job for auto-release
 const escrowModule = require('./routes/escrow');

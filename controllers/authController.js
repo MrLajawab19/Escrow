@@ -116,6 +116,8 @@ async function buyerLogin(req, res) {
       { 
         userId: buyer.id, 
         email: buyer.email, 
+        firstName: buyer.firstName,
+        lastName: buyer.lastName,
         role: 'buyer' 
       },
       JWT_SECRET,
@@ -263,6 +265,8 @@ async function sellerLogin(req, res) {
       { 
         userId: seller.id, 
         email: seller.email, 
+        firstName: seller.firstName,
+        lastName: seller.lastName,
         role: 'seller' 
       },
       JWT_SECRET,

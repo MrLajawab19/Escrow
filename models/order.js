@@ -109,9 +109,13 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM(
         'PLACED',
         'ESCROW_FUNDED', 
+        'ACCEPTED',
+        'REJECTED',
+        'CHANGES_REQUESTED',
         'IN_PROGRESS',
         'SUBMITTED',
         'APPROVED',
+        'COMPLETED',
         'DISPUTED',
         'RELEASED',
         'REFUNDED',
@@ -130,17 +134,18 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true
     },
     orderLogs: {
-      type: DataTypes.ARRAY(DataTypes.JSONB),
-      defaultValue: [],
-      allowNull: false,
+      type: DataTypes.JSONB,
+      allowNull: true,
       validate: {
         isValidLogs(value) {
-          if (!Array.isArray(value)) {
+          if (value && !Array.isArray(value)) {
             throw new Error('Order logs must be an array');
           }
-          for (const log of value) {
-            if (!log.event || !log.byUserId || !log.timestamp) {
-              throw new Error('Each log must contain event, byUserId, and timestamp');
+          if (value) {
+            for (const log of value) {
+              if (!log.event || !log.byUserId || !log.timestamp) {
+                throw new Error('Each log must contain event, byUserId, and timestamp');
+              }
             }
           }
         }
