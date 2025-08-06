@@ -57,11 +57,11 @@ async function createOrder(req, res) {
     }
 
     // Validate scopeBox fields
-    if (!scopeBox.productType || !scopeBox.productLink || !scopeBox.description || 
+    if (!scopeBox.title || !scopeBox.productType || !scopeBox.productLink || !scopeBox.description || 
         !scopeBox.condition || !scopeBox.deadline || !scopeBox.price) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required scopeBox fields: productType, productLink, description, condition, deadline, price'
+        message: 'Missing required scopeBox fields: title, productType, productLink, description, condition, deadline, price'
       });
     }
 

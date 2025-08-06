@@ -7,6 +7,7 @@ const conditions = ['New', 'Used', 'Refurbished', 'Other'];
 
 export default function ScopeBoxModal({ open, onClose, onSubmit, initialData }) {
   const [form, setForm] = useState(initialData || {
+    title: '',
     productType: '',
     productLink: '',
     description: '',
@@ -28,7 +29,7 @@ export default function ScopeBoxModal({ open, onClose, onSubmit, initialData }) 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.productType || !form.productLink || !form.description || !form.condition) {
+    if (!form.title || !form.productType || !form.productLink || !form.description || !form.condition) {
       setError('Please fill all required fields.');
       return;
     }
@@ -44,6 +45,14 @@ export default function ScopeBoxModal({ open, onClose, onSubmit, initialData }) 
         <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={onClose}>&times;</button>
         <h3 className="text-lg font-bold mb-4">Scope Box</h3>
         <form onSubmit={handleSubmit} className="space-y-3">
+          <input 
+            name="title" 
+            value={form.title} 
+            onChange={handleInput} 
+            placeholder="Project Title" 
+            className="input w-full" 
+            required 
+          />
           <select name="productType" value={form.productType} onChange={handleInput} className="input w-full" required>
             <option value="">Product Type</option>
             {productTypes.map(pt => <option key={pt}>{pt}</option>)}

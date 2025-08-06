@@ -151,36 +151,43 @@ const SellerAuth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden flex items-center justify-center p-4">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse-glow"></div>
+      </div>
+
+      <div className="max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-4">
-            <span className="text-white text-2xl font-bold">E</span>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-2xl mb-4 shadow-lg">
+            <span className="text-white text-3xl font-bold">E</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">EscrowX</h1>
-          <p className="text-gray-600 mt-2">Seller Portal</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent font-inter">EscrowX</h1>
+          <p className="text-white/80 mt-2 font-inter">Seller Portal</p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent font-inter">
               {isLogin ? 'Welcome Back' : 'Join as Seller'}
             </h2>
-            <p className="text-gray-600 mt-2">
+            <p className="text-white/80 mt-2 font-inter">
               {isLogin ? 'Sign in to your seller account' : 'Create your seller account'}
             </p>
           </div>
 
           {/* Error/Success Messages */}
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+            <div className="mb-4 p-3 bg-red-500/10 backdrop-blur-sm border border-red-500/20 text-red-400 rounded-lg font-inter">
               {error}
             </div>
           )}
           {success && (
-            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
+            <div className="mb-4 p-3 bg-emerald-500/10 backdrop-blur-sm border border-emerald-500/20 text-emerald-400 rounded-lg font-inter">
               {success}
             </div>
           )}
@@ -191,7 +198,7 @@ const SellerAuth = () => {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-white font-inter mb-1">
                       First Name *
                     </label>
                     <input
@@ -199,12 +206,12 @@ const SellerAuth = () => {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                       placeholder="Jane"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-white font-inter mb-1">
                       Last Name *
                     </label>
                     <input
@@ -212,13 +219,13 @@ const SellerAuth = () => {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                       placeholder="Smith"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white font-inter mb-1">
                     Business Name *
                   </label>
                   <input
@@ -226,12 +233,12 @@ const SellerAuth = () => {
                     name="businessName"
                     value={formData.businessName}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                     placeholder="Jane's Design Studio"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white font-inter mb-1">
                     Phone Number
                   </label>
                   <input
@@ -239,38 +246,38 @@ const SellerAuth = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-white font-inter mb-1">
                     Country
                   </label>
                   <select
                     name="country"
                     value={formData.country}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                   >
-                    <option value="">Select Country</option>
-                    <option value="US">United States</option>
-                    <option value="CA">Canada</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="IN">India</option>
-                    <option value="AU">Australia</option>
-                    <option value="DE">Germany</option>
-                    <option value="FR">France</option>
-                    <option value="JP">Japan</option>
-                    <option value="BR">Brazil</option>
-                    <option value="MX">Mexico</option>
+                                    <option value="" className="text-gray-800 bg-gray-900">Select Country</option>
+                <option value="US" className="text-gray-800 bg-gray-900">United States</option>
+                <option value="CA" className="text-gray-800 bg-gray-900">Canada</option>
+                <option value="UK" className="text-gray-800 bg-gray-900">United Kingdom</option>
+                <option value="IN" className="text-gray-800 bg-gray-900">India</option>
+                <option value="AU" className="text-gray-800 bg-gray-900">Australia</option>
+                <option value="DE" className="text-gray-800 bg-gray-900">Germany</option>
+                <option value="FR" className="text-gray-800 bg-gray-900">France</option>
+                <option value="JP" className="text-gray-800 bg-gray-900">Japan</option>
+                <option value="BR" className="text-gray-800 bg-gray-900">Brazil</option>
+                <option value="MX" className="text-gray-800 bg-gray-900">Mexico</option>
                   </select>
                 </div>
               </>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white font-inter mb-1">
                 Email Address *
               </label>
               <input
@@ -278,13 +285,13 @@ const SellerAuth = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                 placeholder="jane@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white font-inter mb-1">
                 Password *
               </label>
               <input
@@ -292,14 +299,14 @@ const SellerAuth = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                 placeholder="••••••••"
               />
             </div>
 
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white font-inter mb-1">
                   Confirm Password *
                 </label>
                 <input
@@ -307,7 +314,7 @@ const SellerAuth = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                   placeholder="••••••••"
                 />
               </div>
@@ -316,7 +323,7 @@ const SellerAuth = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="w-full py-3 px-4 rounded-xl font-medium bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-lg font-inter"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
@@ -334,11 +341,11 @@ const SellerAuth = () => {
 
           {/* Toggle Mode */}
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-white/80 font-inter">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button
                 onClick={toggleMode}
-                className="ml-2 text-green-600 hover:text-green-700 font-medium"
+                className="ml-2 text-emerald-400 hover:text-emerald-300 font-medium font-inter transition-all duration-300 hover:scale-105"
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
               </button>
@@ -348,7 +355,7 @@ const SellerAuth = () => {
           {/* Forgot Password */}
           {isLogin && (
             <div className="mt-4 text-center">
-              <button className="text-sm text-gray-500 hover:text-gray-700">
+              <button className="text-sm text-white/60 hover:text-white/80 font-inter transition-all duration-300">
                 Forgot your password?
               </button>
             </div>
@@ -356,7 +363,7 @@ const SellerAuth = () => {
 
           {/* Note about approval */}
           {!isLogin && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm">
+            <div className="mt-4 p-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 rounded-lg text-sm font-inter">
               <p className="font-medium">Note:</p>
               <p>Seller accounts require approval before you can start accepting orders. We'll review your application within 24-48 hours.</p>
             </div>
@@ -365,11 +372,11 @@ const SellerAuth = () => {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-white/60 font-inter">
             By continuing, you agree to our{' '}
-            <a href="#" className="text-green-600 hover:text-green-700">Terms of Service</a>
+            <a href="#" className="text-emerald-400 hover:text-emerald-300 font-inter transition-all duration-300">Terms of Service</a>
             {' '}and{' '}
-            <a href="#" className="text-green-600 hover:text-green-700">Privacy Policy</a>
+            <a href="#" className="text-emerald-400 hover:text-emerald-300 font-inter transition-all duration-300">Privacy Policy</a>
           </p>
         </div>
       </div>

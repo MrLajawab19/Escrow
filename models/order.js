@@ -98,9 +98,9 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         notEmpty: true,
         isValidScopeBox(value) {
-          if (!value.productType || !value.productLink || !value.description || 
+          if (!value.title || !value.productType || !value.productLink || !value.description || 
               !value.condition || !value.deadline || !value.price) {
-            throw new Error('Scope box must contain productType, productLink, description, condition, deadline, and price');
+            throw new Error('Scope box must contain title, productType, productLink, description, condition, deadline, and price');
           }
         }
       }

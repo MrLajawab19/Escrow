@@ -32,72 +32,90 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Admin Login
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Test admin dashboard functionality
-          </p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+      </div>
+      
+      <div className="max-w-md w-full relative z-10">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 shadow-lg">
+            <span className="text-2xl font-bold text-white">A</span>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">Admin Panel</h1>
+          <p className="mt-2 text-white/80 font-inter">EscrowX Administration</p>
         </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div className="rounded-md shadow-sm -space-y-px">
+
+        {/* Auth Card */}
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 transition-all duration-300 hover:shadow-3xl">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-semibold text-white font-inter">
+              Admin Login
+            </h2>
+            <p className="mt-2 text-white/80 font-inter">
+              Test admin dashboard functionality
+            </p>
+          </div>
+
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="mb-4 p-4 border border-red-500/20 rounded-xl bg-red-500/10 text-red-400 backdrop-blur-sm">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 p-4 border border-emerald-500/20 rounded-xl bg-emerald-500/10 text-emerald-400 backdrop-blur-sm">
+              {success}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
+              <label className="block text-sm font-medium mb-2 text-white font-inter">
+                Email Address
+              </label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                placeholder="admin@escrowx.com"
                 value={credentials.email}
                 onChange={(e) => setCredentials({...credentials, email: e.target.value})}
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label className="block text-sm font-medium mb-2 text-white font-inter">
+                Password
+              </label>
               <input
                 id="password"
                 name="password"
                 type="password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                 placeholder="Password"
                 value={credentials.password}
                 onChange={(e) => setCredentials({...credentials, password: e.target.value})}
               />
             </div>
-          </div>
 
-          {error && (
-            <div className="text-red-600 text-sm text-center">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="text-green-600 text-sm text-center">
-              {success}
-            </div>
-          )}
-
-          <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl font-medium bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-lg font-inter"
             >
               {loading ? 'Logging in...' : 'Sign in as Admin'}
             </button>
-          </div>
-        </form>
+          </form>
 
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
+          <div className="mt-6 text-center">
+            <p className="text-xs text-white/60 font-inter">
             Default credentials: admin@escrowx.com / admin123
           </p>
         </div>

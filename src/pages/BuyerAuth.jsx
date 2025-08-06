@@ -152,36 +152,42 @@ const BuyerAuth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+      </div>
+      
+      <div className="max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-            <span className="text-white text-2xl font-bold">E</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 shadow-lg">
+            <span className="text-2xl font-bold text-white">E</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">EscrowX</h1>
-          <p className="text-gray-600 mt-2">Secure Escrow Services</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">EscrowX</h1>
+          <p className="mt-2 text-white/80 font-inter">Secure Escrow Services</p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 transition-all duration-300 hover:shadow-3xl">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <h2 className="text-2xl font-semibold text-white font-inter">
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </h2>
-            <p className="text-gray-600 mt-2">
+            <p className="mt-2 text-white/80 font-inter">
               {isLogin ? 'Sign in to your buyer account' : 'Join EscrowX as a buyer'}
             </p>
           </div>
 
           {/* Error/Success Messages */}
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+            <div className="mb-4 p-4 border border-red-500/20 rounded-xl bg-red-500/10 text-red-400 backdrop-blur-sm">
               {error}
             </div>
           )}
           {success && (
-            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
+            <div className="mb-4 p-4 border border-emerald-500/20 rounded-xl bg-emerald-500/10 text-emerald-400 backdrop-blur-sm">
               {success}
             </div>
           )}
@@ -192,20 +198,20 @@ const BuyerAuth = () => {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name *
-                    </label>
+                                  <label className="block text-sm font-medium mb-1 text-white font-inter">
+                First Name *
+              </label>
                     <input
                       type="text"
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                       placeholder="John"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1 text-white font-inter">
                       Last Name *
                     </label>
                     <input
@@ -213,34 +219,34 @@ const BuyerAuth = () => {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                       placeholder="Doe"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="+1 (555) 123-4567"
-                  />
+                                  <label className="block text-sm font-medium mb-1 text-white font-inter">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
+                  placeholder="+1 (555) 123-4567"
+                />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Country
-                  </label>
-                  <select
-                    name="country"
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
+                                  <label className="block text-sm font-medium mb-1 text-white font-inter">
+                  Country
+                </label>
+                <select
+                  name="country"
+                  value={formData.country}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white"
+                >
                     <option value="">Select Country</option>
                     <option value="US">United States</option>
                     <option value="CA">Canada</option>
@@ -258,7 +264,7 @@ const BuyerAuth = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1 text-white font-inter">
                 Email Address *
               </label>
               <input
@@ -266,13 +272,13 @@ const BuyerAuth = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                 placeholder="john@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1 text-white font-inter">
                 Password *
               </label>
               <input
@@ -280,14 +286,14 @@ const BuyerAuth = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                 placeholder="••••••••"
               />
             </div>
 
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1 text-white font-inter">
                   Confirm Password *
                 </label>
                 <input
@@ -295,7 +301,7 @@ const BuyerAuth = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                   placeholder="••••••••"
                 />
               </div>
@@ -304,7 +310,7 @@ const BuyerAuth = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="w-full py-3 px-4 rounded-xl font-medium bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-lg"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
@@ -322,11 +328,11 @@ const BuyerAuth = () => {
 
           {/* Toggle Mode */}
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-white/80 font-inter">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button
                 onClick={toggleMode}
-                className="ml-2 text-blue-600 hover:text-blue-700 font-medium"
+                className="ml-2 font-medium transition-all duration-200 hover:underline text-cyan-400 hover:text-cyan-300"
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
               </button>
@@ -336,7 +342,7 @@ const BuyerAuth = () => {
           {/* Forgot Password */}
           {isLogin && (
             <div className="mt-4 text-center">
-              <button className="text-sm text-gray-500 hover:text-gray-700">
+              <button className="text-sm transition-all duration-200 hover:underline text-white/80 font-inter">
                 Forgot your password?
               </button>
             </div>
@@ -345,11 +351,11 @@ const BuyerAuth = () => {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-white/80 font-inter">
             By continuing, you agree to our{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-700">Terms of Service</a>
+            <a href="#" className="transition-all duration-200 hover:underline text-cyan-400 hover:text-cyan-300">Terms of Service</a>
             {' '}and{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-700">Privacy Policy</a>
+            <a href="#" className="transition-all duration-200 hover:underline text-cyan-400 hover:text-cyan-300">Privacy Policy</a>
           </p>
         </div>
       </div>
