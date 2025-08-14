@@ -5,8 +5,174 @@ import axios from 'axios';
 const platforms = ['Upwork', 'Fiverr', 'Freelancer', 'Other'];
 const countries = ['India', 'USA', 'UK', 'Canada', 'Other'];
 const currencies = ['USD', 'INR', 'EUR', 'GBP', 'Other'];
-const productTypes = ['Logo Design', 'Website', 'App', 'Document', 'Video', 'Other'];
+const serviceTypes = [
+  '🎨 Digital Creative Services',
+  '💻 Freelance Development Services',
+  '📝 Content and Copywriting Services',
+  '📢 Social Media & Marketing Services',
+  '🧑‍🏫 Education & Mentorship',
+  '🕹️ Gaming & Digital Goods',
+  '💾 Digital Products / Tools',
+  '🕵️ Grey/Hacker Services',
+  '🤝 Service Exchange & Arbitrage',
+  '📲 Account Services',
+  '🔗 Affiliate & Referral Services',
+  '📌 Miscellaneous Services'
+];
+
+// Product types mapped to service types
+const productTypeMapping = {
+  '🎨 Digital Creative Services': [
+    'Logo design',
+    'Poster/flyer/banner design',
+    'Social media post creation',
+    'Video editing',
+    'Motion graphics',
+    'NFT art creation',
+    'Illustration / Comics',
+    '3D modeling / rendering'
+  ],
+  '💻 Freelance Development Services': [
+    'Website development',
+    'App development',
+    'Landing page creation',
+    'Script writing',
+    'Web scraping tools',
+    'Discord/Telegram bots',
+    'API integrations',
+    'SaaS product prototypes'
+  ],
+  '📝 Content and Copywriting Services': [
+    'Blog writing',
+    'SEO writing',
+    'Ghostwriting',
+    'Copywriting for ads',
+    'Social media captions',
+    'Email marketing content',
+    'Reddit/Quora answers'
+  ],
+  '📢 Social Media & Marketing Services': [
+    'Instagram growth',
+    'YouTube promotion',
+    'Telegram promotion',
+    'Twitter growth',
+    'Reddit upvotes',
+    'Influencer shoutouts',
+    'SEO services',
+    'Ad campaign setup'
+  ],
+  '🧑‍🏫 Education & Mentorship': [
+    'Exam tutoring',
+    'Freelance/startup mentorship',
+    'Career guidance',
+    'Skill courses',
+    'Crypto/stock mentorship',
+    'Language classes'
+  ],
+  '🕹️ Gaming & Digital Goods': [
+    'Gaming account sales',
+    'In-game currency',
+    'Modded apps/APKs',
+    'Cheats',
+    'Gift cards',
+    'Game boosting',
+    'Custom avatars'
+  ],
+  '💾 Digital Products / Tools': [
+    'Notion templates',
+    'Resume templates',
+    'UI kits',
+    'Course PDFs',
+    'Instagram templates',
+    'Trading indicators',
+    'Premium bots'
+  ],
+  '🕵️ Grey/Hacker Services': [
+    'Account recovery',
+    'Database access',
+    'Fake ID/certificate',
+    'SIM swapping',
+    'Crypto scam tools',
+    'Bot farms'
+  ],
+  '🤝 Service Exchange & Arbitrage': [
+    'Restricted platform purchasing',
+    'Currency conversion',
+    'Group buying'
+  ],
+  '📲 Account Services': [
+    'Selling verified accounts',
+    'Username sniping',
+    'Channel growth',
+    'Page recovery'
+  ],
+  '🔗 Affiliate & Referral Services': [
+    'Affiliate link promotion',
+    'Referral traffic generation'
+  ],
+  '📌 Miscellaneous Services': [
+    'Astrology/Tarot reading',
+    'Manifestation coaching',
+    'Fitness/diet plans',
+    'Resume building',
+    'LinkedIn optimization',
+    'Online therapy',
+    'Voiceover'
+  ]
+};
+
 const conditions = ['New', 'Used', 'Refurbished', 'Other'];
+const logoStyles = ['Minimalist', 'Vintage', 'Modern', 'Hand-drawn', '3D'];
+// Poster/Flyer/Banner constants
+const posterResolutions = ['72 DPI', '150 DPI', '300 DPI'];
+const posterOrientations = ['Portrait', 'Landscape', 'Square'];
+const posterDesignStyles = ['Minimalist', 'Corporate', 'Vintage', 'Bold', 'Artistic', 'Other'];
+// Social Media Post constants
+const socialFormats = ['Image', 'Carousel', 'Reel/Short Video', 'Story'];
+const socialAspectRatios = ['1:1', '4:5', '16:9', '9:16', 'Custom'];
+const socialResolutions = ['1080×1080', '1920×1080', '1080×1920', 'Custom'];
+// Video Editing constants
+const videoSoftwares = ['Adobe Premiere Pro', 'Final Cut Pro', 'DaVinci Resolve', 'Sony Vegas', 'Blender', 'After Effects', 'Other'];
+const videoResolutions = ['720p', '1080p', '4K'];
+const videoFrameRates = ['24 FPS', '30 FPS', '60 FPS', '90 FPS', '120 FPS'];
+const videoFileFormats = ['MP4', 'MOV', 'AVI', 'MKV'];
+// Motion Graphics constants
+const motionStyles = ['Explainer', 'Kinetic Typography', '3D Motion', 'Infographic', 'Abstract', 'Other'];
+const motionResolutions = ['720p', '1080p', '4K'];
+const motionFrameRates = ['24 FPS', '30 FPS', '60 FPS', '90 FPS', '120 FPS'];
+const motionFileFormats = ['MP4', 'MOV', 'GIF', 'WEBM'];
+// NFT Art constants
+const nftTypes = ['1/1 Artwork', 'Generative Collection', 'Animated NFT', '3D NFT', 'Other'];
+const nftStyles = ['Abstract', 'Cartoon', 'Realistic', 'Pixel Art', '3D Render', 'Other'];
+const nftResolutions = ['1080x1080', '2048x2048', '4096x4096', 'Custom'];
+const nftFileFormats = ['PNG', 'JPG', 'GIF', 'MP4', 'GLB'];
+const nftBlockchains = ['Ethereum', 'Polygon', 'Solana', 'Tezos', 'Other'];
+// Illustration/Comics constants
+const illustrationTypes = ['Single Artwork', 'Comic Strip', 'Full Comic Book', 'Character Design', 'Other'];
+const illustrationStyles = ['Manga', 'Western Comic', 'Realistic', 'Cartoon', 'Minimalist', 'Other'];
+const illustrationResolutions = ['1080x1080', '2048x2048', '4096x4096', 'Custom'];
+const illustrationFileFormats = ['PNG', 'JPG', 'PDF', 'PSD', 'AI'];
+const illustrationColorOptions = ['Full Color', 'Black & White'];
+// 3D Modeling/Rendering constants
+const modelTypes = ['Product Visualization', 'Architectural', 'Character', 'Environment', 'Other'];
+const detailLevels = ['Low Poly', 'Mid Poly', 'High Poly'];
+const renderingQualities = ['Draft', 'Standard', 'Photorealistic'];
+const modelFileFormats = ['OBJ', 'FBX', 'STL', 'BLEND', 'GLB', 'Other'];
+const textureFormats = ['JPG', 'PNG', 'TIFF'];
+const renderResolutions = ['1080p', '1440p', '4K', 'Custom'];
+
+// Website Development constants
+const websiteTypes = ['Business', 'eCommerce', 'Blog', 'Portfolio', 'Web App', 'Other'];
+const technologyStacks = ['HTML/CSS/JS', 'React', 'Angular', 'Vue', 'PHP', 'Laravel', 'Django', 'Node.js', 'WordPress', 'Shopify', 'Other'];
+const browserCompatibility = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Other'];
+const hostingResponsibility = ['Buyer', 'Seller', 'Shared'];
+const securityRequirements = ['SSL', 'User Authentication', 'Data Encryption', 'Other'];
+
+// App Development constants
+const appTypes = ['Android', 'iOS', 'Cross-platform', 'Web App', 'Other'];
+const developmentFrameworks = ['React Native', 'Flutter', 'Swift', 'Kotlin', 'Java', 'Xamarin', 'Ionic', 'NativeScript', 'Other'];
+const appSecurityRequirements = ['Data Encryption', 'Secure Authentication', 'API Security', 'Other'];
+const appStoreSubmissionResp = ['Buyer', 'Seller', 'Not Applicable'];
 
 export default function NewOrderPage() {
   const navigate = useNavigate();
@@ -15,6 +181,7 @@ export default function NewOrderPage() {
   const [form, setForm] = useState({
     platform: '',
     productLink: '',
+    serviceType: '',
     country: '',
     currency: '',
     sellerContact: '',
@@ -27,6 +194,143 @@ export default function NewOrderPage() {
       condition: '',
       deadline: '',
       price: '',
+      logoSpecific: {
+        businessName: '',
+        keywordIndustry: '',
+        logoStyle: '',
+        colorPreferred: ''
+      },
+      posterSpecific: {
+        width: '',
+        height: '',
+        resolution: '',
+        orientation: '',
+        textContent: '',
+        brandColors: '',
+        fonts: '',
+        designStyle: ''
+      },
+      socialPostSpecific: {
+        postFormat: '',
+        aspectRatio: '',
+        resolution: '',
+        postCount: '',
+        finalCaption: '',
+        hashtags: ''
+      },
+      videoEditingSpecific: {
+        duration: '',
+        software: '',
+        resolution: '',
+        frameRate: '',
+        format: '',
+        audioTrack: '',
+        videoCount: '',
+        storyboard: ''
+      },
+              motionGraphicsSpecific: {
+          animationStyle: '',
+          duration: '',
+          resolution: '',
+          frameRate: '',
+          format: '',
+          audioRequired: '',
+          textRequired: '',
+          storyboardText: '',
+          storyboardPdf: null,
+          referenceFiles: [],
+          brandGuidelinesPdf: null
+        },
+        nftArtSpecific: {
+          nftType: '',
+          nftTypeOther: '',
+          artworkStyle: '',
+          artworkStyleOther: '',
+          resolution: '',
+          resolutionCustom: '',
+          fileFormat: '',
+          blockchain: '',
+          blockchainOther: '',
+          metadataRequired: '',
+          numberOfArtworks: '',
+          ownershipTransfer: '',
+          refMoodboardFiles: [],
+          styleGuidePdf: null,
+          metadataTemplate: null
+        },
+        illustrationSpecific: {
+          illustrationType: '',
+          illustrationTypeOther: '',
+          artworkStyle: '',
+          artworkStyleOther: '',
+          numberOfPages: '',
+          resolution: '',
+          resolutionCustom: '',
+          fileFormat: '',
+          colorOption: '',
+          textRequired: '',
+          scriptDialogue: '',
+          ownershipTransfer: '',
+          refArtworkFiles: [],
+          scriptStoryboard: null,
+          guidelinesPdf: null
+        },
+        model3dSpecific: {
+          modelType: '',
+          modelTypeOther: '',
+          detailLevel: '',
+          renderingQuality: '',
+          fileFormat: '',
+          fileFormatOther: '',
+          textureRequired: '',
+          textureFormat: '',
+          animationRequired: '',
+          animationDuration: '',
+          numberOfViews: '',
+          renderResolution: '',
+          renderResolutionCustom: '',
+          ownershipTransfer: '',
+          refModelFiles: [],
+          technicalDrawings: null,
+          guidelinesPdf: null
+        },
+        appDevelopmentSpecific: {
+          appType: '',
+          appTypeOther: '',
+          developmentFrameworks: [],
+          targetOsVersions: [],
+          numberOfScreens: '',
+          offlineFunctionality: '',
+          userAuthentication: '',
+          backendResponsibility: '',
+          keyFeatures: '',
+          thirdPartyIntegrations: '',
+          securityRequirements: [],
+          securityRequirementsOther: '',
+          performanceTargets: '',
+          sourceCodeDelivery: '',
+          appStoreSubmission: '',
+          documentation: '',
+          uiuxMockups: [],
+          guidelines: null
+        },
+        websiteDevelopmentSpecific: {
+          websiteType: '',
+          websiteTypeOther: '',
+          technologyStack: [],
+          numberOfPages: '',
+          responsiveDesign: '',
+          browserCompatibility: [],
+          hostingResponsibility: '',
+          keyFeatures: '',
+          adminPanel: '',
+          thirdPartyIntegrations: '',
+          securityRequirements: [],
+          securityRequirementsOther: '',
+          codeOwnership: '',
+          sourceCodeDelivery: '',
+          documentation: ''
+        }
     },
   });
   const [filePreviews, setFilePreviews] = useState([]);
@@ -64,14 +368,204 @@ export default function NewOrderPage() {
   }, [navigate]);
 
   const handleInput = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // If service type changes, reset product type in scope box
+    if (name === 'serviceType') {
+      setForm(prev => ({
+        ...prev,
+        scopeBox: { ...prev.scopeBox, productType: '' }
+      }));
+    }
   };
   const handleScopeInput = (e) => {
     setForm({ ...form, scopeBox: { ...form.scopeBox, [e.target.name]: e.target.value } });
   };
+
+  // Get available product types based on selected service type
+  const getAvailableProductTypes = () => {
+    if (!form.serviceType) return [];
+    return productTypeMapping[form.serviceType] || [];
+  };
+
+  // Check if logo design is selected
+  const isLogoDesignSelected = () => {
+    return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === 'Logo design';
+  };
+
+  // Check if poster/flyer/banner is selected
+  const isPosterDesignSelected = () => {
+    return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === 'Poster/flyer/banner design';
+  };
+
+  // Check if social media post creation is selected
+  const isSocialPostSelected = () => {
+    return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === 'Social media post creation';
+  };
+
+  // Check if video editing selected
+  const isVideoEditingSelected = () => {
+    return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === 'Video editing';
+  };
+
+  // Check if motion graphics selected
+  const isMotionGraphicsSelected = () => {
+    return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === 'Motion graphics';
+  };
+
+  // Check if NFT Art Creation selected
+  const isNftArtSelected = () => {
+    return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === 'NFT art creation';
+  };
+
+  // Check if Illustration/Comics selected
+  const isIllustrationSelected = () => {
+    return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === 'Illustration / Comics';
+  };
+
+  // Check if 3D Modeling/Rendering selected
+  const is3dModelingSelected = () => {
+    return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === '3D modeling / rendering';
+  };
+
+  // Check if Website Development selected
+  const isWebsiteDevelopmentSelected = () => {
+    return form.serviceType === '💻 Freelance Development Services' && form.scopeBox.productType === 'Website development';
+  };
+
+  // Check if App Development selected
+  const isAppDevelopmentSelected = () => {
+    return form.serviceType === '💻 Freelance Development Services' && form.scopeBox.productType === 'App development';
+  };
+
+  // Handle logo-specific inputs
+  const handleLogoInput = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        logoSpecific: {
+          ...prev.scopeBox.logoSpecific,
+          [name]: value
+        }
+      }
+    }));
+  };
+
+  // Handle website development specific inputs
+  const handleWebsiteInput = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        websiteDevelopmentSpecific: {
+          ...prev.scopeBox.websiteDevelopmentSpecific,
+          [name]: value
+        }
+      }
+    }));
+  };
+
+  // Handle multi-select inputs for website development
+  const handleWebsiteMultiSelect = (fieldName, value, checked) => {
+    setForm(prev => {
+      const currentValues = prev.scopeBox.websiteDevelopmentSpecific[fieldName] || [];
+      let newValues;
+      
+      if (checked) {
+        newValues = [...currentValues, value];
+      } else {
+        newValues = currentValues.filter(v => v !== value);
+      }
+      
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          websiteDevelopmentSpecific: {
+            ...prev.scopeBox.websiteDevelopmentSpecific,
+            [fieldName]: newValues
+          }
+        }
+      };
+    });
+  };
+
+  // Handle app development inputs
+  const handleAppInput = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        appDevelopmentSpecific: {
+          ...prev.scopeBox.appDevelopmentSpecific,
+          [name]: value
+        }
+      }
+    }));
+  };
+
+  const handleAppMultiSelect = (fieldName, value, checked) => {
+    setForm(prev => {
+      const currentValues = prev.scopeBox.appDevelopmentSpecific[fieldName] || [];
+      const newValues = checked ? [...currentValues, value] : currentValues.filter(v => v !== value);
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          appDevelopmentSpecific: {
+            ...prev.scopeBox.appDevelopmentSpecific,
+            [fieldName]: newValues
+          }
+        }
+      };
+    });
+  };
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    const newFilePreviews = files.map(f => ({ name: f.name, type: f.type, size: f.size }));
+    
+    // Filter files based on selected type
+    let allowedTypes;
+    if (isLogoDesignSelected()) {
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.svg', '.pdf', '.ai', '.eps'];
+    } else if (isPosterDesignSelected()) {
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.svg', '.pdf', '.psd', '.ai'];
+    } else if (isSocialPostSelected()) {
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.mp4'];
+    } else if (isVideoEditingSelected()) {
+      allowedTypes = ['.mp4', '.mov', '.avi', '.mkv'];
+    } else if (isMotionGraphicsSelected()) {
+      // Allow all for motion graphics as requested
+      allowedTypes = ['*'];
+    } else if (isNftArtSelected()) {
+      // Allow all for NFT art as requested
+      allowedTypes = ['*'];
+    } else if (isIllustrationSelected()) {
+      // Allow all for illustration as requested
+      allowedTypes = ['*'];
+    } else if (is3dModelingSelected()) {
+      // Allow 3D and image formats for 3D modeling
+      allowedTypes = ['.obj', '.fbx', '.stl', '.blend', '.glb', '.jpg', '.jpeg', '.png', '.tiff', '.pdf', '.dwg'];
+    } else if (isWebsiteDevelopmentSelected()) {
+      // Allow common file types for website development
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.txt', '.zip', '.rar', '.psd', '.ai', '.sketch', '.fig'];
+    } else if (isAppDevelopmentSelected()) {
+      // Allow only zip/rar/pdf/png/jpg/mp4 for app development; explicitly disallow APK/IPA
+      allowedTypes = ['.zip', '.rar', '.pdf', '.png', '.jpg', '.mp4'];
+    } else {
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
+    }
+    
+    const filteredFiles = files.filter(file => {
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      return allowedTypes.includes(fileExtension);
+    });
+    
+    const newFilePreviews = filteredFiles.map(f => ({ name: f.name, type: f.type, size: f.size }));
     
     // Combine with existing files, avoiding duplicates
     const existingNames = filePreviews.map(f => f.name);
@@ -85,7 +579,41 @@ export default function NewOrderPage() {
   const handleDrop = (e) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files);
-    const newFilePreviews = files.map(f => ({ name: f.name, type: f.type, size: f.size }));
+    
+    // Filter files based on selected type
+    let allowedTypes;
+    if (isLogoDesignSelected()) {
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.svg', '.pdf', '.ai', '.eps'];
+    } else if (isPosterDesignSelected()) {
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.svg', '.pdf', '.psd', '.ai'];
+    } else if (isSocialPostSelected()) {
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.mp4'];
+    } else if (isVideoEditingSelected()) {
+      allowedTypes = ['.mp4', '.mov', '.avi', '.mkv'];
+    } else if (isMotionGraphicsSelected()) {
+      allowedTypes = ['*'];
+    } else if (isNftArtSelected()) {
+      allowedTypes = ['*'];
+    } else if (isIllustrationSelected()) {
+      allowedTypes = ['*'];
+    } else if (is3dModelingSelected()) {
+      allowedTypes = ['.obj', '.fbx', '.stl', '.blend', '.glb', '.jpg', '.jpeg', '.png', '.tiff', '.pdf', '.dwg'];
+    } else if (isWebsiteDevelopmentSelected()) {
+      // Allow common file types for website development
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.txt', '.zip', '.rar', '.psd', '.ai', '.sketch', '.fig'];
+    } else if (isAppDevelopmentSelected()) {
+      // Allow only zip/rar/pdf/png/jpg/mp4 for app development; explicitly disallow APK/IPA
+      allowedTypes = ['.zip', '.rar', '.pdf', '.png', '.jpg', '.mp4'];
+    } else {
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
+    }
+    
+    const filteredFiles = files.filter(file => {
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      return allowedTypes.includes(fileExtension);
+    });
+    
+    const newFilePreviews = filteredFiles.map(f => ({ name: f.name, type: f.type, size: f.size }));
     
     // Combine with existing files, avoiding duplicates
     const existingNames = filePreviews.map(f => f.name);
@@ -122,8 +650,76 @@ export default function NewOrderPage() {
     });
   };
 
-  const validateStep1 = () => form.platform && form.productLink && form.country && form.currency;
-  const validateStep2 = () => form.scopeBox.title && form.scopeBox.productType && form.scopeBox.productLink && form.scopeBox.description && form.scopeBox.condition && form.scopeBox.deadline && form.scopeBox.price;
+  const validateStep1 = () => form.platform && form.productLink && form.serviceType && form.country && form.currency;
+  const validateStep2 = () => {
+    const baseValidation = form.scopeBox.title && form.scopeBox.productType && form.scopeBox.productLink && form.scopeBox.description && form.scopeBox.deadline && form.scopeBox.price && form.serviceType;
+    
+    // For logo design, validate logo-specific fields and skip condition
+    if (isLogoDesignSelected()) {
+      return baseValidation && 
+             form.scopeBox.logoSpecific.businessName && 
+             form.scopeBox.logoSpecific.keywordIndustry && 
+             form.scopeBox.logoSpecific.logoStyle && 
+             form.scopeBox.logoSpecific.colorPreferred;
+    }
+    
+    // For poster design, validate poster-specific fields and skip condition
+    if (isPosterDesignSelected()) {
+      const p = form.scopeBox.posterSpecific;
+      return baseValidation && p.width && p.height && p.resolution && p.orientation && p.textContent && p.brandColors && p.fonts && p.designStyle;
+    }
+
+    // For social post, validate social-post-specific fields and skip condition
+    if (isSocialPostSelected()) {
+      const s = form.scopeBox.socialPostSpecific;
+      return baseValidation && s.postFormat && s.aspectRatio && s.resolution && s.postCount && s.finalCaption && s.hashtags;
+    }
+
+    // For video editing, validate video-specific fields and skip condition
+    if (isVideoEditingSelected()) {
+      const v = form.scopeBox.videoEditingSpecific;
+      return baseValidation && v.duration && v.software && v.resolution && v.frameRate && v.format && v.audioTrack && v.videoCount && v.storyboard;
+    }
+
+    // For motion graphics, validate motion-specific fields and skip condition
+    if (isMotionGraphicsSelected()) {
+      const m = form.scopeBox.motionGraphicsSpecific;
+      return baseValidation && m.animationStyle && m.duration && m.resolution && m.frameRate && m.format && m.audioRequired && m.textRequired;
+    }
+
+    // For NFT art, validate nft-specific fields and skip condition
+    if (isNftArtSelected()) {
+      const n = form.scopeBox.nftArtSpecific;
+      return baseValidation && n.nftType && (n.nftType !== 'Other' ? true : !!n.nftTypeOther) && n.artworkStyle && (n.artworkStyle !== 'Other' ? true : !!n.artworkStyleOther) && n.resolution && (n.resolution !== 'Custom' ? true : !!n.resolutionCustom) && n.fileFormat && n.blockchain && (n.blockchain !== 'Other' ? true : !!n.blockchainOther) && n.metadataRequired && n.numberOfArtworks && n.ownershipTransfer;
+    }
+
+    // For illustration/comics, validate illustration-specific fields and skip condition
+    if (isIllustrationSelected()) {
+      const i = form.scopeBox.illustrationSpecific;
+      return baseValidation && i.illustrationType && (i.illustrationType !== 'Other' ? true : !!i.illustrationTypeOther) && i.artworkStyle && (i.artworkStyle !== 'Other' ? true : !!i.artworkStyleOther) && i.numberOfPages && i.resolution && (i.resolution !== 'Custom' ? true : !!i.resolutionCustom) && i.fileFormat && i.colorOption && i.textRequired && (i.textRequired === 'Yes' ? !!i.scriptDialogue : true) && i.ownershipTransfer;
+    }
+
+    // For 3D modeling/rendering, validate 3d-specific fields and skip condition
+    if (is3dModelingSelected()) {
+      const m = form.scopeBox.model3dSpecific;
+      return baseValidation && m.modelType && (m.modelType !== 'Other' ? true : !!m.modelTypeOther) && m.detailLevel && m.renderingQuality && m.fileFormat && (m.fileFormat !== 'Other' ? true : !!m.fileFormatOther) && m.textureRequired && (m.textureRequired === 'Yes' ? true : !!m.textureFormat) && m.animationRequired && (m.animationRequired === 'Yes' ? !!m.animationDuration : true) && m.numberOfViews && m.renderResolution && (m.renderResolution !== 'Custom' ? true : !!m.renderResolutionCustom) && m.ownershipTransfer;
+    }
+
+    // For website development, validate website-specific fields and skip condition
+    if (isWebsiteDevelopmentSelected()) {
+      const w = form.scopeBox.websiteDevelopmentSpecific;
+      return baseValidation && w.websiteType && (w.websiteType !== 'Other' ? true : !!w.websiteTypeOther) && w.technologyStack.length > 0 && w.numberOfPages && w.responsiveDesign && w.browserCompatibility.length > 0 && w.hostingResponsibility && w.keyFeatures && w.adminPanel && w.thirdPartyIntegrations && w.securityRequirements.length > 0 && (w.securityRequirements.includes('Other') ? !!w.securityRequirementsOther : true) && w.codeOwnership && w.sourceCodeDelivery && w.documentation;
+    }
+    
+    // For app development, validate app-specific fields and skip condition
+    if (isAppDevelopmentSelected()) {
+      const a = form.scopeBox.appDevelopmentSpecific;
+      return baseValidation && a.appType && (a.appType !== 'Other' ? true : !!a.appTypeOther) && a.developmentFrameworks.length > 0 && a.targetOsVersions.length > 0 && a.numberOfScreens && a.offlineFunctionality && a.userAuthentication && a.backendResponsibility && a.keyFeatures && a.thirdPartyIntegrations && a.securityRequirements.length > 0 && (a.securityRequirements.includes('Other') ? !!a.securityRequirementsOther : true) && a.performanceTargets && a.sourceCodeDelivery && a.appStoreSubmission && a.documentation;
+    }
+
+    // For other services, validate condition field
+    return baseValidation && form.scopeBox.condition;
+  };
   const validateStep3 = () => form.sellerContact;
 
   const handleSubmit = async () => {
@@ -140,6 +736,7 @@ export default function NewOrderPage() {
       const orderData = {
         platform: form.platform,
         productLink: form.productLink,
+        serviceType: form.serviceType,
         country: form.country,
         currency: form.currency,
         sellerContact: form.sellerContact,
@@ -152,6 +749,45 @@ export default function NewOrderPage() {
           condition: form.scopeBox.condition,
           deadline: form.scopeBox.deadline,
           price: form.scopeBox.price,
+          logoSpecific: isLogoDesignSelected() ? form.scopeBox.logoSpecific : null,
+          posterSpecific: isPosterDesignSelected() ? form.scopeBox.posterSpecific : null,
+          socialPostSpecific: isSocialPostSelected() ? form.scopeBox.socialPostSpecific : null,
+          videoEditingSpecific: isVideoEditingSelected() ? form.scopeBox.videoEditingSpecific : null,
+          motionGraphicsSpecific: isMotionGraphicsSelected() ? {
+            ...form.scopeBox.motionGraphicsSpecific,
+            // Strip File objects to names for transport (example simplification)
+            storyboardPdf: form.scopeBox.motionGraphicsSpecific.storyboardPdf ? form.scopeBox.motionGraphicsSpecific.storyboardPdf.name : null,
+            referenceFiles: (form.scopeBox.motionGraphicsSpecific.referenceFiles || []).map(f => f.name),
+            brandGuidelinesPdf: form.scopeBox.motionGraphicsSpecific.brandGuidelinesPdf ? form.scopeBox.motionGraphicsSpecific.brandGuidelinesPdf.name : null,
+          } : null,
+          nftArtSpecific: isNftArtSelected() ? {
+            ...form.scopeBox.nftArtSpecific,
+            refMoodboardFiles: (form.scopeBox.nftArtSpecific.refMoodboardFiles || []).map(f => f.name),
+            styleGuidePdf: form.scopeBox.nftArtSpecific.styleGuidePdf ? form.scopeBox.nftArtSpecific.styleGuidePdf.name : null,
+            metadataTemplate: form.scopeBox.nftArtSpecific.metadataTemplate ? form.scopeBox.nftArtSpecific.metadataTemplate.name : null,
+          } : null,
+          illustrationSpecific: isIllustrationSelected() ? {
+            ...form.scopeBox.illustrationSpecific,
+            refArtworkFiles: (form.scopeBox.illustrationSpecific.refArtworkFiles || []).map(f => f.name),
+            scriptStoryboard: form.scopeBox.illustrationSpecific.scriptStoryboard ? form.scopeBox.illustrationSpecific.scriptStoryboard.name : null,
+            guidelinesPdf: form.scopeBox.illustrationSpecific.guidelinesPdf ? form.scopeBox.illustrationSpecific.guidelinesPdf.name : null,
+          } : null,
+          model3dSpecific: is3dModelingSelected() ? {
+            ...form.scopeBox.model3dSpecific,
+            refModelFiles: (form.scopeBox.model3dSpecific.refModelFiles || []).map(f => f.name),
+            technicalDrawings: form.scopeBox.model3dSpecific.technicalDrawings ? form.scopeBox.model3dSpecific.technicalDrawings.name : null,
+            guidelinesPdf: form.scopeBox.model3dSpecific.guidelinesPdf ? form.scopeBox.model3dSpecific.guidelinesPdf.name : null,
+          } : null,
+          appDevelopmentSpecific: isAppDevelopmentSelected() ? {
+            ...form.scopeBox.appDevelopmentSpecific,
+            uiuxMockups: (form.scopeBox.appDevelopmentSpecific.uiuxMockups || []).map(f => f.name),
+            guidelines: form.scopeBox.appDevelopmentSpecific.guidelines ? form.scopeBox.appDevelopmentSpecific.guidelines.name : null,
+          } : null,
+          websiteDevelopmentSpecific: isWebsiteDevelopmentSelected() ? {
+            ...form.scopeBox.websiteDevelopmentSpecific,
+            wireframes: (form.scopeBox.websiteDevelopmentSpecific.wireframes || []).map(f => f.name),
+            guidelines: form.scopeBox.websiteDevelopmentSpecific.guidelines ? form.scopeBox.websiteDevelopmentSpecific.guidelines.name : null,
+          } : null,
         }
       };
 
@@ -315,17 +951,21 @@ export default function NewOrderPage() {
           {step === 1 && (
             <div className="space-y-4">
               <select name="platform" value={form.platform} onChange={handleInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                <option value="" className="text-gray-800 bg-gray-900">Select Platform</option>
-                {platforms.map(p => <option key={p} className="text-gray-800 bg-gray-900">{p}</option>)}
+                <option value="" className="text-white bg-slate-800">Select Platform</option>
+                {platforms.map(p => <option key={p} value={p} className="text-white bg-slate-800">{p}</option>)}
               </select>
-              <input name="productLink" value={form.productLink} onChange={handleInput} placeholder="Product Link" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
+              <input name="productLink" value={form.productLink} onChange={handleInput} placeholder="Seller's Platform Link" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
+              <select name="serviceType" value={form.serviceType} onChange={handleInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
+                <option value="" className="text-white bg-slate-800">Type of Service</option>
+                {serviceTypes.map(st => <option key={st} value={st} className="text-white bg-slate-800">{st}</option>)}
+              </select>
               <select name="country" value={form.country} onChange={handleInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                <option value="" className="text-gray-800 bg-gray-900">Select Country</option>
-                {countries.map(c => <option key={c} className="text-gray-800 bg-gray-900">{c}</option>)}
+                <option value="" className="text-white bg-slate-800">Select Country</option>
+                {countries.map(c => <option key={c} value={c} className="text-white bg-slate-800">{c}</option>)}
               </select>
               <select name="currency" value={form.currency} onChange={handleInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                <option value="" className="text-gray-800 bg-gray-900">Select Currency</option>
-                {currencies.map(c => <option key={c} className="text-gray-800 bg-gray-900">{c}</option>)}
+                <option value="" className="text-white bg-slate-800">Select Currency</option>
+                {currencies.map(c => <option key={c} value={c} className="text-white bg-slate-800">{c}</option>)}
               </select>
               <div className="flex justify-end pt-4">
                 <button 
@@ -342,6 +982,14 @@ export default function NewOrderPage() {
         {/* Step 2: Scope Box */}
         {step === 2 && (
           <div className="space-y-4">
+            {/* Service Type Dependency Notice */}
+            {!form.serviceType && (
+              <div className="p-3 bg-yellow-500/10 backdrop-blur-sm border border-yellow-500/20 rounded-lg">
+                <p className="text-sm text-yellow-300 font-inter">
+                  ⚠️ Please go back to Step 1 and select a "Type of Service" to enable Product Type selection.
+                </p>
+              </div>
+            )}
             <input 
               name="title" 
               value={form.scopeBox.title} 
@@ -350,12 +998,1176 @@ export default function NewOrderPage() {
               className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
               required 
             />
-            <select name="productType" value={form.scopeBox.productType} onChange={handleScopeInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                              <option value="" className="text-gray-800 bg-gray-900">Product Type</option>
-                {productTypes.map(pt => <option key={pt} className="text-gray-800 bg-gray-900">{pt}</option>)}
+            <select name="productType" value={form.scopeBox.productType} onChange={handleScopeInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required disabled={!form.serviceType}>
+                              <option value="" className="text-white bg-slate-800">
+                {!form.serviceType ? 'Please select Type of Service first' : 'Product Type'}
+              </option>
+                {getAvailableProductTypes().map(pt => <option key={pt} value={pt} className="text-white bg-slate-800">{pt}</option>)}
             </select>
             <input name="productLink" value={form.scopeBox.productLink} onChange={handleScopeInput} placeholder="Product Link" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
             <textarea name="description" value={form.scopeBox.description} onChange={handleScopeInput} placeholder="Description / Requirements" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none" required />
+            
+            {/* Logo Specific Module */}
+            {isLogoDesignSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🎨</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Logo Specific Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input 
+                    name="businessName" 
+                    value={form.scopeBox.logoSpecific.businessName} 
+                    onChange={handleLogoInput} 
+                    placeholder="Business Name" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required 
+                  />
+                  <input 
+                    name="keywordIndustry" 
+                    value={form.scopeBox.logoSpecific.keywordIndustry} 
+                    onChange={handleLogoInput} 
+                    placeholder="Keyword / Industry" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required 
+                  />
+                  <select 
+                    name="logoStyle" 
+                    value={form.scopeBox.logoSpecific.logoStyle} 
+                    onChange={handleLogoInput} 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Logo Style</option>
+                    {logoStyles.map(style => <option key={style} value={style} className="text-white bg-slate-800">{style}</option>)}
+                  </select>
+                  <input 
+                    name="colorPreferred" 
+                    value={form.scopeBox.logoSpecific.colorPreferred} 
+                    onChange={handleLogoInput} 
+                    placeholder="Color Preferred (e.g., #FF0000 or 'Blue, Red')" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required 
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Social Media Post Specific Module */}
+            {isSocialPostSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">📱</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Social Media Post Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select
+                    name="postFormat"
+                    value={form.scopeBox.socialPostSpecific.postFormat}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, socialPostSpecific: { ...prev.scopeBox.socialPostSpecific, postFormat: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Post Format</option>
+                    {socialFormats.map(f => <option key={f} value={f} className="text-white bg-slate-800">{f}</option>)}
+                  </select>
+                  <select
+                    name="aspectRatio"
+                    value={form.scopeBox.socialPostSpecific.aspectRatio}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, socialPostSpecific: { ...prev.scopeBox.socialPostSpecific, aspectRatio: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Aspect Ratio</option>
+                    {socialAspectRatios.map(a => <option key={a} value={a} className="text-white bg-slate-800">{a}</option>)}
+                  </select>
+                  <select
+                    name="resolution"
+                    value={form.scopeBox.socialPostSpecific.resolution}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, socialPostSpecific: { ...prev.scopeBox.socialPostSpecific, resolution: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Resolution</option>
+                    {socialResolutions.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  <input
+                    type="number"
+                    name="postCount"
+                    value={form.scopeBox.socialPostSpecific.postCount}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, socialPostSpecific: { ...prev.scopeBox.socialPostSpecific, postCount: e.target.value }}}))}
+                    placeholder="Post Count"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <textarea
+                    name="finalCaption"
+                    value={form.scopeBox.socialPostSpecific.finalCaption}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, socialPostSpecific: { ...prev.scopeBox.socialPostSpecific, finalCaption: e.target.value }}}))}
+                    placeholder="Final Caption/Text (exact wording)"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                    required
+                  />
+                  <textarea
+                    name="hashtags"
+                    value={form.scopeBox.socialPostSpecific.hashtags}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, socialPostSpecific: { ...prev.scopeBox.socialPostSpecific, hashtags: e.target.value }}}))}
+                    placeholder="#hashtags list"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* App Development Specific Module */}
+            {isAppDevelopmentSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">📱</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">App Development Specific</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select name="appType" value={form.scopeBox.appDevelopmentSpecific.appType} onChange={handleAppInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
+                    <option value="" className="text-white bg-slate-800">App Type</option>
+                    {appTypes.map(t => <option key={t} value={t} className="text-white bg-slate-800">{t}</option>)}
+                  </select>
+                  {form.scopeBox.appDevelopmentSpecific.appType === 'Other' && (
+                    <input name="appTypeOther" value={form.scopeBox.appDevelopmentSpecific.appTypeOther} onChange={handleAppInput} placeholder="Define App Type" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
+                  )}
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm text-white/80 font-inter mb-2">Development Framework (Multi-select)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {developmentFrameworks.map(fr => (
+                        <label key={fr} className="flex items-center space-x-2 text-white/90 font-inter">
+                          <input type="checkbox" checked={form.scopeBox.appDevelopmentSpecific.developmentFrameworks.includes(fr)} onChange={(e) => handleAppMultiSelect('developmentFrameworks', fr, e.target.checked)} className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" />
+                          <span className="text-sm">{fr}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm text-white/80 font-inter mb-2">Target OS & Versions (Multi-select)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {['Android 9', 'Android 10', 'Android 11', 'Android 12', 'Android 13', 'iOS 14', 'iOS 15', 'iOS 16', 'iOS 17'].map(v => (
+                        <label key={v} className="flex items-center space-x-2 text-white/90 font-inter">
+                          <input type="checkbox" checked={form.scopeBox.appDevelopmentSpecific.targetOsVersions.includes(v)} onChange={(e) => handleAppMultiSelect('targetOsVersions', v, e.target.checked)} className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" />
+                          <span className="text-sm">{v}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <input type="number" name="numberOfScreens" value={form.scopeBox.appDevelopmentSpecific.numberOfScreens} onChange={handleAppInput} placeholder="Number of Screens" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
+                  <select name="offlineFunctionality" value={form.scopeBox.appDevelopmentSpecific.offlineFunctionality} onChange={handleAppInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
+                    <option value="" className="text-white bg-slate-800">Offline Functionality Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <select name="userAuthentication" value={form.scopeBox.appDevelopmentSpecific.userAuthentication} onChange={handleAppInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
+                    <option value="" className="text-white bg-slate-800">User Authentication Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <select name="backendResponsibility" value={form.scopeBox.appDevelopmentSpecific.backendResponsibility} onChange={handleAppInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
+                    <option value="" className="text-white bg-slate-800">Hosting/Backend Deployment Responsibility</option>
+                    {hostingResponsibility.map(hr => <option key={hr} value={hr} className="text-white bg-slate-800">{hr}</option>)}
+                  </select>
+                  <div className="sm:col-span-2">
+                    <textarea name="keyFeatures" value={form.scopeBox.appDevelopmentSpecific.keyFeatures} onChange={handleAppInput} placeholder="Key Features (list exact functional requirements)" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none" required />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <textarea name="thirdPartyIntegrations" value={form.scopeBox.appDevelopmentSpecific.thirdPartyIntegrations} onChange={handleAppInput} placeholder="Third-party Integrations" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none" required />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm text-white/80 font-inter mb-2">Security Requirements (Multi-select)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {appSecurityRequirements.map(sec => (
+                        <label key={sec} className="flex items-center space-x-2 text-white/90 font-inter">
+                          <input type="checkbox" checked={form.scopeBox.appDevelopmentSpecific.securityRequirements.includes(sec)} onChange={(e) => handleAppMultiSelect('securityRequirements', sec, e.target.checked)} className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" />
+                          <span className="text-sm">{sec}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {form.scopeBox.appDevelopmentSpecific.securityRequirements.includes('Other') && (
+                      <input name="securityRequirementsOther" value={form.scopeBox.appDevelopmentSpecific.securityRequirementsOther} onChange={handleAppInput} placeholder="Define Other Security Requirements" className="mt-2 w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
+                    )}
+                  </div>
+                  <input name="performanceTargets" value={form.scopeBox.appDevelopmentSpecific.performanceTargets} onChange={handleAppInput} placeholder="Performance Targets (e.g., launch time < 3s)" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
+                  <select name="sourceCodeDelivery" value={form.scopeBox.appDevelopmentSpecific.sourceCodeDelivery} onChange={handleAppInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
+                    <option value="" className="text-white bg-slate-800">Source Code Delivery Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <select name="appStoreSubmission" value={form.scopeBox.appDevelopmentSpecific.appStoreSubmission} onChange={handleAppInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
+                    <option value="" className="text-white bg-slate-800">App Store Submission Responsibility</option>
+                    {appStoreSubmissionResp.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  <select name="documentation" value={form.scopeBox.appDevelopmentSpecific.documentation} onChange={handleAppInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
+                    <option value="" className="text-white bg-slate-800">Documentation Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                </div>
+
+                {/* App Development Attachments */}
+                <div className="mt-4 grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">UI/UX Mockups (Image/PDF upload)</label>
+                    <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, appDevelopmentSpecific: { ...prev.scopeBox.appDevelopmentSpecific, uiuxMockups: Array.from(e.target.files || []) }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Guidelines (PDF upload)</label>
+                    <input type="file" accept=".pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, appDevelopmentSpecific: { ...prev.scopeBox.appDevelopmentSpecific, guidelines: e.target.files?.[0] || null }}}))} />
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Video Editing Specific Module */}
+            {isVideoEditingSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🎬</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Video Editing Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input
+                    name="duration"
+                    value={form.scopeBox.videoEditingSpecific.duration}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, videoEditingSpecific: { ...prev.scopeBox.videoEditingSpecific, duration: e.target.value }}}))}
+                    placeholder="Required Duration (mm:ss)"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <select
+                    name="software"
+                    value={form.scopeBox.videoEditingSpecific.software}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, videoEditingSpecific: { ...prev.scopeBox.videoEditingSpecific, software: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Editing Software</option>
+                    {videoSoftwares.map(s => <option key={s} value={s} className="text-white bg-slate-800">{s}</option>)}
+                  </select>
+                  <select
+                    name="resolution"
+                    value={form.scopeBox.videoEditingSpecific.resolution}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, videoEditingSpecific: { ...prev.scopeBox.videoEditingSpecific, resolution: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Resolution</option>
+                    {videoResolutions.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  <select
+                    name="frameRate"
+                    value={form.scopeBox.videoEditingSpecific.frameRate}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, videoEditingSpecific: { ...prev.scopeBox.videoEditingSpecific, frameRate: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Frame Rate</option>
+                    {videoFrameRates.map(fr => <option key={fr} value={fr} className="text-white bg-slate-800">{fr}</option>)}
+                  </select>
+                  <select
+                    name="format"
+                    value={form.scopeBox.videoEditingSpecific.format}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, videoEditingSpecific: { ...prev.scopeBox.videoEditingSpecific, format: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Video Format</option>
+                    {videoFileFormats.map(v => <option key={v} value={v} className="text-white bg-slate-800">{v}</option>)}
+                  </select>
+                  <select
+                    name="audioTrack"
+                    value={form.scopeBox.videoEditingSpecific.audioTrack}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, videoEditingSpecific: { ...prev.scopeBox.videoEditingSpecific, audioTrack: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Audio Track Required?</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <input
+                    type="number"
+                    name="videoCount"
+                    value={form.scopeBox.videoEditingSpecific.videoCount}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, videoEditingSpecific: { ...prev.scopeBox.videoEditingSpecific, videoCount: e.target.value }}}))}
+                    placeholder="Number of Videos to Deliver"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <textarea
+                    name="storyboard"
+                    value={form.scopeBox.videoEditingSpecific.storyboard}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, videoEditingSpecific: { ...prev.scopeBox.videoEditingSpecific, storyboard: e.target.value }}}))}
+                    placeholder="Storyboard / Sequence Description"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* NFT Art Creation Details Module */}
+            {isNftArtSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🧬</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">NFT Art Creation Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select
+                    name="nftType"
+                    value={form.scopeBox.nftArtSpecific.nftType}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, nftType: e.target.value, nftTypeOther: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">NFT Type</option>
+                    {nftTypes.map(t => <option key={t} value={t} className="text-white bg-slate-800">{t}</option>)}
+                  </select>
+                  {form.scopeBox.nftArtSpecific.nftType === 'Other' && (
+                    <input
+                      name="nftTypeOther"
+                      value={form.scopeBox.nftArtSpecific.nftTypeOther}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, nftTypeOther: e.target.value }}}))}
+                      placeholder="Define NFT Type"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="artworkStyle"
+                    value={form.scopeBox.nftArtSpecific.artworkStyle}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, artworkStyle: e.target.value, artworkStyleOther: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Artwork Style</option>
+                    {nftStyles.map(s => <option key={s} value={s} className="text-white bg-slate-800">{s}</option>)}
+                  </select>
+                  {form.scopeBox.nftArtSpecific.artworkStyle === 'Other' && (
+                    <input
+                      name="artworkStyleOther"
+                      value={form.scopeBox.nftArtSpecific.artworkStyleOther}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, artworkStyleOther: e.target.value }}}))}
+                      placeholder="Define Artwork Style"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="resolution"
+                    value={form.scopeBox.nftArtSpecific.resolution}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, resolution: e.target.value, resolutionCustom: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Resolution</option>
+                    {nftResolutions.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  {form.scopeBox.nftArtSpecific.resolution === 'Custom' && (
+                    <input
+                      name="resolutionCustom"
+                      value={form.scopeBox.nftArtSpecific.resolutionCustom}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, resolutionCustom: e.target.value }}}))}
+                      placeholder="Custom Resolution (e.g., 3500x3500)"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="fileFormat"
+                    value={form.scopeBox.nftArtSpecific.fileFormat}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, fileFormat: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">File Format</option>
+                    {nftFileFormats.map(f => <option key={f} value={f} className="text-white bg-slate-800">{f}</option>)}
+                  </select>
+                  <select
+                    name="blockchain"
+                    value={form.scopeBox.nftArtSpecific.blockchain}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, blockchain: e.target.value, blockchainOther: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Blockchain Preference</option>
+                    {nftBlockchains.map(b => <option key={b} value={b} className="text-white bg-slate-800">{b}</option>)}
+                  </select>
+                  {form.scopeBox.nftArtSpecific.blockchain === 'Other' && (
+                    <input
+                      name="blockchainOther"
+                      value={form.scopeBox.nftArtSpecific.blockchainOther}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, blockchainOther: e.target.value }}}))}
+                      placeholder="Define Blockchain"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="metadataRequired"
+                    value={form.scopeBox.nftArtSpecific.metadataRequired}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, metadataRequired: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Metadata Required?</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <input
+                    type="number"
+                    name="numberOfArtworks"
+                    value={form.scopeBox.nftArtSpecific.numberOfArtworks}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, numberOfArtworks: e.target.value }}}))}
+                    placeholder="Number of Artworks to Deliver"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <select
+                    name="ownershipTransfer"
+                    value={form.scopeBox.nftArtSpecific.ownershipTransfer}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, ownershipTransfer: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Ownership Rights Transfer?</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                </div>
+
+                {/* NFT Attachments */}
+                <div className="mt-4 grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Reference Artwork / Moodboard (PNG, JPG, GIF) — multiple</label>
+                    <input type="file" multiple accept=".png,.jpg,.jpeg,.gif" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, refMoodboardFiles: Array.from(e.target.files || []) }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Style Guide / Brand Guidelines (PDF)</label>
+                    <input type="file" accept=".pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, styleGuidePdf: e.target.files?.[0] || null }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Metadata Template (CSV or TXT)</label>
+                    <input type="file" accept=".csv,.txt" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, nftArtSpecific: { ...prev.scopeBox.nftArtSpecific, metadataTemplate: e.target.files?.[0] || null }}}))} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Illustration / Comics Details Module */}
+            {isIllustrationSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🎨</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Illustration / Comics Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select
+                    name="illustrationType"
+                    value={form.scopeBox.illustrationSpecific.illustrationType}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, illustrationType: e.target.value, illustrationTypeOther: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Illustration Type</option>
+                    {illustrationTypes.map(t => <option key={t} value={t} className="text-white bg-slate-800">{t}</option>)}
+                  </select>
+                  {form.scopeBox.illustrationSpecific.illustrationType === 'Other' && (
+                    <input
+                      name="illustrationTypeOther"
+                      value={form.scopeBox.illustrationSpecific.illustrationTypeOther}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, illustrationTypeOther: e.target.value }}}))}
+                      placeholder="Define Illustration Type"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="artworkStyle"
+                    value={form.scopeBox.illustrationSpecific.artworkStyle}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, artworkStyle: e.target.value, artworkStyleOther: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Artwork Style</option>
+                    {illustrationStyles.map(s => <option key={s} value={s} className="text-white bg-slate-800">{s}</option>)}
+                  </select>
+                  {form.scopeBox.illustrationSpecific.artworkStyle === 'Other' && (
+                    <input
+                      name="artworkStyleOther"
+                      value={form.scopeBox.illustrationSpecific.artworkStyleOther}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, artworkStyleOther: e.target.value }}}))}
+                      placeholder="Define Artwork Style"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <input
+                    type="number"
+                    name="numberOfPages"
+                    value={form.scopeBox.illustrationSpecific.numberOfPages}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, numberOfPages: e.target.value }}}))}
+                    placeholder="Number of Pages / Panels"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <select
+                    name="resolution"
+                    value={form.scopeBox.illustrationSpecific.resolution}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, resolution: e.target.value, resolutionCustom: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Resolution</option>
+                    {illustrationResolutions.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  {form.scopeBox.illustrationSpecific.resolution === 'Custom' && (
+                    <input
+                      name="resolutionCustom"
+                      value={form.scopeBox.illustrationSpecific.resolutionCustom}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, resolutionCustom: e.target.value }}}))}
+                      placeholder="Custom Resolution (e.g., 3500x3500)"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="fileFormat"
+                    value={form.scopeBox.illustrationSpecific.fileFormat}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, fileFormat: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">File Format</option>
+                    {illustrationFileFormats.map(f => <option key={f} value={f} className="text-white bg-slate-800">{f}</option>)}
+                  </select>
+                  <select
+                    name="colorOption"
+                    value={form.scopeBox.illustrationSpecific.colorOption}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, colorOption: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Color or Black & White</option>
+                    {illustrationColorOptions.map(c => <option key={c} value={c} className="text-white bg-slate-800">{c}</option>)}
+                  </select>
+                  <select
+                    name="textRequired"
+                    value={form.scopeBox.illustrationSpecific.textRequired}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, textRequired: e.target.value, scriptDialogue: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Text / Dialogue Required?</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  {form.scopeBox.illustrationSpecific.textRequired === 'Yes' && (
+                    <textarea
+                      name="scriptDialogue"
+                      value={form.scopeBox.illustrationSpecific.scriptDialogue}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, scriptDialogue: e.target.value }}}))}
+                      placeholder="Script or Dialogue Content"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                      required
+                    />
+                  )}
+                  <select
+                    name="ownershipTransfer"
+                    value={form.scopeBox.illustrationSpecific.ownershipTransfer}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, ownershipTransfer: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Ownership Rights Transfer?</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                </div>
+
+                {/* Illustration Attachments */}
+                <div className="mt-4 grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Reference Artwork / Style Samples (PNG, JPG, PDF) — multiple</label>
+                    <input type="file" multiple accept=".png,.jpg,.jpeg,.pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, refArtworkFiles: Array.from(e.target.files || []) }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Script / Storyboard (TXT, DOCX, PDF)</label>
+                    <input type="file" accept=".txt,.docx,.pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, scriptStoryboard: e.target.files?.[0] || null }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Guidelines or Style Guide (PDF)</label>
+                    <input type="file" accept=".pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, illustrationSpecific: { ...prev.scopeBox.illustrationSpecific, guidelinesPdf: e.target.files?.[0] || null }}}))} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3D Modeling / Rendering Details Module */}
+            {is3dModelingSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🎯</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">3D Modeling / Rendering Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select
+                    name="modelType"
+                    value={form.scopeBox.model3dSpecific.modelType}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, modelType: e.target.value, modelTypeOther: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Model Type</option>
+                    {modelTypes.map(t => <option key={t} value={t} className="text-white bg-slate-800">{t}</option>)}
+                  </select>
+                  {form.scopeBox.model3dSpecific.modelType === 'Other' && (
+                    <input
+                      name="modelTypeOther"
+                      value={form.scopeBox.model3dSpecific.modelTypeOther}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, modelTypeOther: e.target.value }}}))}
+                      placeholder="Define Model Type"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="detailLevel"
+                    value={form.scopeBox.model3dSpecific.detailLevel}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, detailLevel: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Level of Detail</option>
+                    {detailLevels.map(d => <option key={d} value={d} className="text-white bg-slate-800">{d}</option>)}
+                  </select>
+                  <select
+                    name="renderingQuality"
+                    value={form.scopeBox.model3dSpecific.renderingQuality}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, renderingQuality: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Rendering Quality</option>
+                    {renderingQualities.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  <select
+                    name="fileFormat"
+                    value={form.scopeBox.model3dSpecific.fileFormat}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, fileFormat: e.target.value, fileFormatOther: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">File Format</option>
+                    {modelFileFormats.map(f => <option key={f} value={f} className="text-white bg-slate-800">{f}</option>)}
+                  </select>
+                  {form.scopeBox.model3dSpecific.fileFormat === 'Other' && (
+                    <input
+                      name="fileFormatOther"
+                      value={form.scopeBox.model3dSpecific.fileFormatOther}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, fileFormatOther: e.target.value }}}))}
+                      placeholder="Define File Format"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="textureRequired"
+                    value={form.scopeBox.model3dSpecific.textureRequired}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, textureRequired: e.target.value, textureFormat: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Texture Requirements</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  {form.scopeBox.model3dSpecific.textureRequired === 'Yes' && (
+                    <select
+                      name="textureFormat"
+                      value={form.scopeBox.model3dSpecific.textureFormat}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, textureFormat: e.target.value }}}))}
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    >
+                      <option value="" className="text-white bg-slate-800">Texture Format</option>
+                      {textureFormats.map(t => <option key={t} value={t} className="text-white bg-slate-800">{t}</option>)}
+                    </select>
+                  )}
+                  <select
+                    name="animationRequired"
+                    value={form.scopeBox.model3dSpecific.animationRequired}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, animationRequired: e.target.value, animationDuration: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Animation Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  {form.scopeBox.model3dSpecific.animationRequired === 'Yes' && (
+                    <input
+                      type="number"
+                      name="animationDuration"
+                      value={form.scopeBox.model3dSpecific.animationDuration}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, animationDuration: e.target.value }}}))}
+                      placeholder="Duration in seconds"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <input
+                    type="number"
+                    name="numberOfViews"
+                    value={form.scopeBox.model3dSpecific.numberOfViews}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, numberOfViews: e.target.value }}}))}
+                    placeholder="Number of Views / Renders Needed"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <select
+                    name="renderResolution"
+                    value={form.scopeBox.model3dSpecific.renderResolution}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, renderResolution: e.target.value, renderResolutionCustom: '' }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Resolution for Renders</option>
+                    {renderResolutions.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  {form.scopeBox.model3dSpecific.renderResolution === 'Custom' && (
+                    <input
+                      name="renderResolutionCustom"
+                      value={form.scopeBox.model3dSpecific.renderResolutionCustom}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, renderResolutionCustom: e.target.value }}}))}
+                      placeholder="Custom Resolution (e.g., 2560x1440)"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <select
+                    name="ownershipTransfer"
+                    value={form.scopeBox.model3dSpecific.ownershipTransfer}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, ownershipTransfer: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Ownership Rights Transfer?</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                </div>
+
+                {/* 3D Modeling Attachments */}
+                <div className="mt-4 grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Reference Models / Inspiration Images (JPG, PNG, OBJ, FBX) — multiple</label>
+                    <input type="file" multiple accept=".jpg,.jpeg,.png,.obj,.fbx" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, refModelFiles: Array.from(e.target.files || []) }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Technical Drawings / Blueprints (PDF, DWG)</label>
+                    <input type="file" accept=".pdf,.dwg" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, technicalDrawings: e.target.files?.[0] || null }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Guidelines or Style Guide (PDF)</label>
+                    <input type="file" accept=".pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, model3dSpecific: { ...prev.scopeBox.model3dSpecific, guidelinesPdf: e.target.files?.[0] || null }}}))} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Motion Graphics — Dispute-Focused Module */}
+            {isMotionGraphicsSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🎞️</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Motion Graphics — Dispute-Focused</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select
+                    name="animationStyle"
+                    value={form.scopeBox.motionGraphicsSpecific.animationStyle}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, animationStyle: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Animation Style</option>
+                    {motionStyles.map(ms => <option key={ms} value={ms} className="text-white bg-slate-800">{ms}</option>)}
+                  </select>
+                  <input
+                    name="duration"
+                    value={form.scopeBox.motionGraphicsSpecific.duration}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, duration: e.target.value }}}))}
+                    placeholder="Required Duration (mm:ss)"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <select
+                    name="resolution"
+                    value={form.scopeBox.motionGraphicsSpecific.resolution}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, resolution: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Resolution</option>
+                    {motionResolutions.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  <select
+                    name="frameRate"
+                    value={form.scopeBox.motionGraphicsSpecific.frameRate}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, frameRate: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus-border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Frame Rate</option>
+                    {motionFrameRates.map(fr => <option key={fr} value={fr} className="text-white bg-slate-800">{fr}</option>)}
+                  </select>
+                  <select
+                    name="format"
+                    value={form.scopeBox.motionGraphicsSpecific.format}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, format: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">File Format</option>
+                    {motionFileFormats.map(f => <option key={f} value={f} className="text-white bg-slate-800">{f}</option>)}
+                  </select>
+                  <select
+                    name="audioRequired"
+                    value={form.scopeBox.motionGraphicsSpecific.audioRequired}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, audioRequired: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Audio/SFX Required?</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <select
+                    name="textRequired"
+                    value={form.scopeBox.motionGraphicsSpecific.textRequired}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, textRequired: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Text/Caption Integration?</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                </div>
+
+                {/* Dispute-Focused Attachments */}
+                <div className="mt-4 grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Storyboard / Script (PDF or write below)</label>
+                    <input type="file" accept=".pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, storyboardPdf: e.target.files?.[0] || null }}}))} />
+                    <textarea
+                      name="storyboardText"
+                      value={form.scopeBox.motionGraphicsSpecific.storyboardText}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, storyboardText: e.target.value }}}))}
+                      placeholder="Or describe storyboard/sequence here"
+                      className="mt-2 w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Reference Animations (MP4, MOV, GIF)</label>
+                    <input type="file" multiple accept=".mp4,.mov,.gif" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, referenceFiles: Array.from(e.target.files || []) }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Brand Guidelines Document (PDF) — Optional</label>
+                    <input type="file" accept=".pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, motionGraphicsSpecific: { ...prev.scopeBox.motionGraphicsSpecific, brandGuidelinesPdf: e.target.files?.[0] || null }}}))} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Website Development Specific Module */}
+            {isWebsiteDevelopmentSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🌐</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Website Development Specific</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select
+                    name="websiteType"
+                    value={form.scopeBox.websiteDevelopmentSpecific.websiteType}
+                    onChange={handleWebsiteInput}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Website Type</option>
+                    {websiteTypes.map(wt => <option key={wt} value={wt} className="text-white bg-slate-800">{wt}</option>)}
+                  </select>
+                  {form.scopeBox.websiteDevelopmentSpecific.websiteType === 'Other' && (
+                    <input
+                      name="websiteTypeOther"
+                      value={form.scopeBox.websiteDevelopmentSpecific.websiteTypeOther}
+                      onChange={handleWebsiteInput}
+                      placeholder="Define Website Type"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  )}
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm text-white/80 font-inter mb-2">Technology Stack (Multi-select)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {technologyStacks.map(tech => (
+                        <label key={tech} className="flex items-center space-x-2 text-white/90 font-inter">
+                          <input
+                            type="checkbox"
+                            checked={form.scopeBox.websiteDevelopmentSpecific.technologyStack.includes(tech)}
+                            onChange={(e) => handleWebsiteMultiSelect('technologyStack', tech, e.target.checked)}
+                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500"
+                          />
+                          <span className="text-sm">{tech}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <input
+                    type="number"
+                    name="numberOfPages"
+                    value={form.scopeBox.websiteDevelopmentSpecific.numberOfPages}
+                    onChange={handleWebsiteInput}
+                    placeholder="Number of Pages"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <select
+                    name="responsiveDesign"
+                    value={form.scopeBox.websiteDevelopmentSpecific.responsiveDesign}
+                    onChange={handleWebsiteInput}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Responsive Design Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm text-white/80 font-inter mb-2">Browser Compatibility Requirement (Multi-select)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {browserCompatibility.map(browser => (
+                        <label key={browser} className="flex items-center space-x-2 text-white/90 font-inter">
+                          <input
+                            type="checkbox"
+                            checked={form.scopeBox.websiteDevelopmentSpecific.browserCompatibility.includes(browser)}
+                            onChange={(e) => handleWebsiteMultiSelect('browserCompatibility', browser, e.target.checked)}
+                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500"
+                          />
+                          <span className="text-sm">{browser}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <select
+                    name="hostingResponsibility"
+                    value={form.scopeBox.websiteDevelopmentSpecific.hostingResponsibility}
+                    onChange={handleWebsiteInput}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Hosting & Deployment Responsibility</option>
+                    {hostingResponsibility.map(hr => <option key={hr} value={hr} className="text-white bg-slate-800">{hr}</option>)}
+                  </select>
+                  <div className="sm:col-span-2">
+                    <textarea
+                      name="keyFeatures"
+                      value={form.scopeBox.websiteDevelopmentSpecific.keyFeatures}
+                      onChange={handleWebsiteInput}
+                      placeholder="Key Features (list exact functional requirements)"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                      required
+                    />
+                  </div>
+                  <select
+                    name="adminPanel"
+                    value={form.scopeBox.websiteDevelopmentSpecific.adminPanel}
+                    onChange={handleWebsiteInput}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Admin Panel Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <div className="sm:col-span-2">
+                    <textarea
+                      name="thirdPartyIntegrations"
+                      value={form.scopeBox.websiteDevelopmentSpecific.thirdPartyIntegrations}
+                      onChange={handleWebsiteInput}
+                      placeholder="Third-party Integrations"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm text-white/80 font-inter mb-2">Security Requirements (Multi-select)</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {securityRequirements.map(security => (
+                        <label key={security} className="flex items-center space-x-2 text-white/90 font-inter">
+                          <input
+                            type="checkbox"
+                            checked={form.scopeBox.websiteDevelopmentSpecific.securityRequirements.includes(security)}
+                            onChange={(e) => handleWebsiteMultiSelect('securityRequirements', security, e.target.checked)}
+                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500"
+                          />
+                          <span className="text-sm">{security}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {form.scopeBox.websiteDevelopmentSpecific.securityRequirements.includes('Other') && (
+                      <input
+                        name="securityRequirementsOther"
+                        value={form.scopeBox.websiteDevelopmentSpecific.securityRequirementsOther}
+                        onChange={handleWebsiteInput}
+                        placeholder="Define Other Security Requirements"
+                        className="mt-2 w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        required
+                      />
+                    )}
+                  </div>
+                  <select
+                    name="codeOwnership"
+                    value={form.scopeBox.websiteDevelopmentSpecific.codeOwnership}
+                    onChange={handleWebsiteInput}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Code Ownership Transfer Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <select
+                    name="sourceCodeDelivery"
+                    value={form.scopeBox.websiteDevelopmentSpecific.sourceCodeDelivery}
+                    onChange={handleWebsiteInput}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Source Code Delivery Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                  <select
+                    name="documentation"
+                    value={form.scopeBox.websiteDevelopmentSpecific.documentation}
+                    onChange={handleWebsiteInput}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Documentation Requirement</option>
+                    <option value="Yes" className="text-white bg-slate-800">Yes</option>
+                    <option value="No" className="text-white bg-slate-800">No</option>
+                  </select>
+                </div>
+
+                {/* Website Development Attachments */}
+                <div className="mt-4 grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Wireframes / Mockups (Image/PDF upload)</label>
+                    <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, websiteDevelopmentSpecific: { ...prev.scopeBox.websiteDevelopmentSpecific, wireframes: Array.from(e.target.files || []) }}}))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Guidelines (PDF upload)</label>
+                    <input type="file" accept=".pdf" className="w-full text-white" onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, websiteDevelopmentSpecific: { ...prev.scopeBox.websiteDevelopmentSpecific, guidelines: e.target.files?.[0] || null }}}))} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Poster/Flyer/Banner Specific Module */}
+            {isPosterDesignSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🖼️</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Poster/Flyer/Banner Specific Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input 
+                      type="number"
+                      name="width" 
+                      value={form.scopeBox.posterSpecific.width}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, posterSpecific: { ...prev.scopeBox.posterSpecific, width: e.target.value }}}))}
+                      placeholder="Width (px/in)" 
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                    <input 
+                      type="number"
+                      name="height" 
+                      value={form.scopeBox.posterSpecific.height}
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, posterSpecific: { ...prev.scopeBox.posterSpecific, height: e.target.value }}}))}
+                      placeholder="Height (px/in)" 
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  </div>
+                  <select 
+                    name="resolution"
+                    value={form.scopeBox.posterSpecific.resolution}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, posterSpecific: { ...prev.scopeBox.posterSpecific, resolution: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Resolution</option>
+                    {posterResolutions.map(r => <option key={r} value={r} className="text-white bg-slate-800">{r}</option>)}
+                  </select>
+                  <select 
+                    name="orientation"
+                    value={form.scopeBox.posterSpecific.orientation}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, posterSpecific: { ...prev.scopeBox.posterSpecific, orientation: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Orientation</option>
+                    {posterOrientations.map(o => <option key={o} value={o} className="text-white bg-slate-800">{o}</option>)}
+                  </select>
+                  <textarea
+                    name="textContent"
+                    value={form.scopeBox.posterSpecific.textContent}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, posterSpecific: { ...prev.scopeBox.posterSpecific, textContent: e.target.value }}}))}
+                    placeholder="Text Content (exact wording)"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                    required
+                  />
+                  <input
+                    name="brandColors"
+                    value={form.scopeBox.posterSpecific.brandColors}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, posterSpecific: { ...prev.scopeBox.posterSpecific, brandColors: e.target.value }}}))}
+                    placeholder="Brand Colors (HEX or names)"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <input
+                    name="fonts"
+                    value={form.scopeBox.posterSpecific.fonts}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, posterSpecific: { ...prev.scopeBox.posterSpecific, fonts: e.target.value }}}))}
+                    placeholder="Fonts to Use"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  />
+                  <select 
+                    name="designStyle"
+                    value={form.scopeBox.posterSpecific.designStyle}
+                    onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, posterSpecific: { ...prev.scopeBox.posterSpecific, designStyle: e.target.value }}}))}
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    required
+                  >
+                    <option value="" className="text-white bg-slate-800">Design Style</option>
+                    {posterDesignStyles.map(s => <option key={s} value={s} className="text-white bg-slate-800">{s}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+            
             <div
               className="border-2 border-dashed border-white/30 rounded-xl p-6 text-center cursor-pointer bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300"
               onDrop={handleDrop}
@@ -364,7 +2176,19 @@ export default function NewOrderPage() {
               <input 
                 type="file" 
                 multiple 
-                accept=".jpg,.jpeg,.png,.pdf,.mp4,.doc,.docx,.txt,.zip,.rar" 
+                accept={
+                  isLogoDesignSelected() ? ".jpg,.jpeg,.png,.svg,.pdf,.ai,.eps" :
+                  isPosterDesignSelected() ? ".jpg,.jpeg,.png,.svg,.pdf,.psd,.ai" :
+                  isSocialPostSelected() ? ".jpg,.jpeg,.png,.gif,.mp4" :
+                  isVideoEditingSelected() ? ".mp4,.mov,.avi,.mkv" :
+                  isMotionGraphicsSelected() ? "*" :
+                  isNftArtSelected() ? "*" :
+                  isIllustrationSelected() ? "*" :
+                  is3dModelingSelected() ? ".obj,.fbx,.stl,.blend,.glb,.jpg,.jpeg,.png,.tiff,.pdf,.dwg" :
+                  isWebsiteDevelopmentSelected() ? ".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.zip,.rar,.psd,.ai,.sketch,.fig" :
+                  isAppDevelopmentSelected() ? ".zip,.rar,.pdf,.png,.jpg,.mp4" :
+                  ".jpg,.jpeg,.png,.pdf,.mp4,.doc,.docx,.txt,.zip,.rar"
+                } 
                 onChange={handleFileChange} 
                 className="hidden" 
                 id="file-upload" 
@@ -376,7 +2200,27 @@ export default function NewOrderPage() {
                   Click to browse or drag & drop multiple files here
                 </div>
                 <div className="text-xs text-white/60 font-inter">
-                  Supported: Images, PDFs, Videos, Documents, Archives
+                  {isLogoDesignSelected() 
+                    ? "Supported: Images (JPG, PNG, SVG), Vector files (AI, EPS), PDFs" 
+                    : isPosterDesignSelected() 
+                      ? "Supported: JPG, PNG, SVG, PDF, PSD, AI"
+                      : isSocialPostSelected()
+                        ? "Supported: JPG, PNG, GIF, MP4"
+                        : isVideoEditingSelected()
+                          ? "Supported: MP4, MOV, AVI, MKV"
+                          : isMotionGraphicsSelected()
+                            ? "Supported: All common file types"
+                            : isNftArtSelected()
+                              ? "Supported: All common file types"
+                              : isIllustrationSelected()
+                                ? "Supported: All common file types"
+                                : is3dModelingSelected()
+                                  ? "Supported: 3D models (OBJ, FBX, STL, BLEND, GLB), Images (JPG, PNG, TIFF), PDF, DWG"
+                                  : isWebsiteDevelopmentSelected()
+                                    ? "Supported: Images (JPG, PNG), PDFs, Documents (DOC, DOCX, TXT), Design files (PSD, AI, SKETCH, FIG), Archives (ZIP, RAR)"
+                                    : isAppDevelopmentSelected()
+                                      ? "Supported: ZIP, RAR, PDF, PNG, JPG, MP4 (APK/IPA uploads are blocked until final delivery)"
+                                      : "Supported: Images, PDFs, Videos, Documents, Archives"}
                 </div>
                 <label htmlFor="file-upload" className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white rounded-lg transition-all duration-300 cursor-pointer font-inter font-medium hover:scale-105">
                   Choose Files
@@ -436,10 +2280,12 @@ export default function NewOrderPage() {
                 </div>
               )}
             </div>
+              {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected()) && (
             <select name="condition" value={form.scopeBox.condition} onChange={handleScopeInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                              <option value="" className="text-gray-800 bg-gray-900">Condition of Product</option>
-                {conditions.map(c => <option key={c} className="text-gray-800 bg-gray-900">{c}</option>)}
+                                <option value="" className="text-white bg-slate-800">Condition of Product</option>
+                  {conditions.map(c => <option key={c} value={c} className="text-white bg-slate-800">{c}</option>)}
             </select>
+              )}
             
             {/* Deadline Field */}
             <div className="space-y-2">
@@ -539,7 +2385,8 @@ export default function NewOrderPage() {
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-4 text-left text-sm sm:text-base">
               <div className="text-white font-inter"><b>Buyer:</b> {buyerData.firstName} {buyerData.lastName}</div>
               <div className="text-white font-inter"><b>Platform:</b> {form.platform}</div>
-              <div className="text-white font-inter"><b>Product Link:</b> {form.productLink}</div>
+              <div className="text-white font-inter"><b>Seller's Platform Link:</b> {form.productLink}</div>
+              <div className="text-white font-inter"><b>Type of Service:</b> {form.serviceType}</div>
               <div className="text-white font-inter"><b>Country:</b> {form.country}</div>
               <div className="text-white font-inter"><b>Currency:</b> {form.currency}</div>
               
@@ -567,10 +2414,166 @@ export default function NewOrderPage() {
                 <div><b>Type:</b> {form.scopeBox.productType}</div>
                 <div><b>Link:</b> {form.scopeBox.productLink}</div>
                 <div><b>Description:</b> {form.scopeBox.description}</div>
-                <div><b>Condition:</b> {form.scopeBox.condition}</div>
+                {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected()) && <div><b>Condition:</b> {form.scopeBox.condition}</div>}
                 <div><b>Attachments:</b> {filePreviews.length > 0 ? filePreviews.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ') : 'None'}</div>
                 <div><b>Deadline:</b> {formatDeadline(form.scopeBox.deadline)}</div>
                 <div><b>Price:</b> {formatPrice(form.scopeBox.price, form.currency)}</div>
+                
+                {/* Logo Specific Details */}
+                {isLogoDesignSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">🎨 Logo Specific Details:</div>
+                    <div><b>Business Name:</b> {form.scopeBox.logoSpecific.businessName}</div>
+                    <div><b>Keyword/Industry:</b> {form.scopeBox.logoSpecific.keywordIndustry}</div>
+                    <div><b>Logo Style:</b> {form.scopeBox.logoSpecific.logoStyle}</div>
+                    <div><b>Color Preferred:</b> {form.scopeBox.logoSpecific.colorPreferred}</div>
+                  </div>
+                )}
+                {isPosterDesignSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">🖼️ Poster/Flyer/Banner Details:</div>
+                    <div><b>Size:</b> {form.scopeBox.posterSpecific.width} × {form.scopeBox.posterSpecific.height}</div>
+                    <div><b>Resolution:</b> {form.scopeBox.posterSpecific.resolution}</div>
+                    <div><b>Orientation:</b> {form.scopeBox.posterSpecific.orientation}</div>
+                    <div><b>Design Style:</b> {form.scopeBox.posterSpecific.designStyle}</div>
+                    <div><b>Brand Colors:</b> {form.scopeBox.posterSpecific.brandColors}</div>
+                    <div><b>Fonts:</b> {form.scopeBox.posterSpecific.fonts}</div>
+                    <div><b>Text Content:</b> {form.scopeBox.posterSpecific.textContent}</div>
+                  </div>
+                )}
+                {isSocialPostSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">📱 Social Media Post Details:</div>
+                    <div><b>Format:</b> {form.scopeBox.socialPostSpecific.postFormat}</div>
+                    <div><b>Aspect Ratio:</b> {form.scopeBox.socialPostSpecific.aspectRatio}</div>
+                    <div><b>Resolution:</b> {form.scopeBox.socialPostSpecific.resolution}</div>
+                    <div><b>Post Count:</b> {form.scopeBox.socialPostSpecific.postCount}</div>
+                    <div><b>Caption:</b> {form.scopeBox.socialPostSpecific.finalCaption}</div>
+                    <div><b>Hashtags:</b> {form.scopeBox.socialPostSpecific.hashtags}</div>
+                  </div>
+                )}
+                {isVideoEditingSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">🎬 Video Editing Details:</div>
+                    <div><b>Duration:</b> {form.scopeBox.videoEditingSpecific.duration}</div>
+                    <div><b>Software:</b> {form.scopeBox.videoEditingSpecific.software}</div>
+                    <div><b>Resolution:</b> {form.scopeBox.videoEditingSpecific.resolution}</div>
+                    <div><b>Frame Rate:</b> {form.scopeBox.videoEditingSpecific.frameRate}</div>
+                    <div><b>Format:</b> {form.scopeBox.videoEditingSpecific.format}</div>
+                    <div><b>Audio Track:</b> {form.scopeBox.videoEditingSpecific.audioTrack}</div>
+                    <div><b>Videos:</b> {form.scopeBox.videoEditingSpecific.videoCount}</div>
+                    <div><b>Storyboard:</b> {form.scopeBox.videoEditingSpecific.storyboard}</div>
+                  </div>
+                )}
+                {isMotionGraphicsSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">🎞️ Motion Graphics Details:</div>
+                    <div><b>Style:</b> {form.scopeBox.motionGraphicsSpecific.animationStyle}</div>
+                    <div><b>Duration:</b> {form.scopeBox.motionGraphicsSpecific.duration}</div>
+                    <div><b>Resolution:</b> {form.scopeBox.motionGraphicsSpecific.resolution}</div>
+                    <div><b>Frame Rate:</b> {form.scopeBox.motionGraphicsSpecific.frameRate}</div>
+                    <div><b>Format:</b> {form.scopeBox.motionGraphicsSpecific.format}</div>
+                    <div><b>Audio/SFX:</b> {form.scopeBox.motionGraphicsSpecific.audioRequired}</div>
+                    <div><b>Text/Caption:</b> {form.scopeBox.motionGraphicsSpecific.textRequired}</div>
+                    <div><b>Storyboard (text):</b> {form.scopeBox.motionGraphicsSpecific.storyboardText || '—'}</div>
+                    <div><b>Storyboard (PDF):</b> {form.scopeBox.motionGraphicsSpecific.storyboardPdf ? form.scopeBox.motionGraphicsSpecific.storyboardPdf.name : '—'}</div>
+                    <div><b>Reference Files:</b> {(form.scopeBox.motionGraphicsSpecific.referenceFiles || []).map(f => f.name || f).join(', ') || '—'}</div>
+                    <div><b>Brand Guidelines (PDF):</b> {form.scopeBox.motionGraphicsSpecific.brandGuidelinesPdf ? form.scopeBox.motionGraphicsSpecific.brandGuidelinesPdf.name : '—'}</div>
+                  </div>
+                )}
+                {isNftArtSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">🧬 NFT Art Details:</div>
+                    <div><b>NFT Type:</b> {form.scopeBox.nftArtSpecific.nftType}{form.scopeBox.nftArtSpecific.nftType === 'Other' ? ` — ${form.scopeBox.nftArtSpecific.nftTypeOther}` : ''}</div>
+                    <div><b>Artwork Style:</b> {form.scopeBox.nftArtSpecific.artworkStyle}{form.scopeBox.nftArtSpecific.artworkStyle === 'Other' ? ` — ${form.scopeBox.nftArtSpecific.artworkStyleOther}` : ''}</div>
+                    <div><b>Resolution:</b> {form.scopeBox.nftArtSpecific.resolution === 'Custom' ? form.scopeBox.nftArtSpecific.resolutionCustom : form.scopeBox.nftArtSpecific.resolution}</div>
+                    <div><b>File Format:</b> {form.scopeBox.nftArtSpecific.fileFormat}</div>
+                    <div><b>Blockchain:</b> {form.scopeBox.nftArtSpecific.blockchain}{form.scopeBox.nftArtSpecific.blockchain === 'Other' ? ` — ${form.scopeBox.nftArtSpecific.blockchainOther}` : ''}</div>
+                    <div><b>Metadata Required:</b> {form.scopeBox.nftArtSpecific.metadataRequired}</div>
+                    <div><b># of Artworks:</b> {form.scopeBox.nftArtSpecific.numberOfArtworks}</div>
+                    <div><b>Ownership Transfer:</b> {form.scopeBox.nftArtSpecific.ownershipTransfer}</div>
+                    <div><b>Reference Files:</b> {(form.scopeBox.nftArtSpecific.refMoodboardFiles || []).map(f => f.name || f).join(', ') || '—'}</div>
+                    <div><b>Style Guide (PDF):</b> {form.scopeBox.nftArtSpecific.styleGuidePdf ? (form.scopeBox.nftArtSpecific.styleGuidePdf.name || form.scopeBox.nftArtSpecific.styleGuidePdf) : '—'}</div>
+                    <div><b>Metadata Template:</b> {form.scopeBox.nftArtSpecific.metadataTemplate ? (form.scopeBox.nftArtSpecific.metadataTemplate.name || form.scopeBox.nftArtSpecific.metadataTemplate) : '—'}</div>
+                  </div>
+                )}
+                {isIllustrationSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">🎨 Illustration/Comics Details:</div>
+                    <div><b>Illustration Type:</b> {form.scopeBox.illustrationSpecific.illustrationType}{form.scopeBox.illustrationSpecific.illustrationType === 'Other' ? ` — ${form.scopeBox.illustrationSpecific.illustrationTypeOther}` : ''}</div>
+                    <div><b>Artwork Style:</b> {form.scopeBox.illustrationSpecific.artworkStyle}{form.scopeBox.illustrationSpecific.artworkStyle === 'Other' ? ` — ${form.scopeBox.illustrationSpecific.artworkStyleOther}` : ''}</div>
+                    <div><b># of Pages/Panels:</b> {form.scopeBox.illustrationSpecific.numberOfPages}</div>
+                    <div><b>Resolution:</b> {form.scopeBox.illustrationSpecific.resolution === 'Custom' ? form.scopeBox.illustrationSpecific.resolutionCustom : form.scopeBox.illustrationSpecific.resolution}</div>
+                    <div><b>File Format:</b> {form.scopeBox.illustrationSpecific.fileFormat}</div>
+                    <div><b>Color Option:</b> {form.scopeBox.illustrationSpecific.colorOption}</div>
+                    <div><b>Text/Dialogue Required:</b> {form.scopeBox.illustrationSpecific.textRequired}</div>
+                    {form.scopeBox.illustrationSpecific.textRequired === 'Yes' && <div><b>Script/Dialogue:</b> {form.scopeBox.illustrationSpecific.scriptDialogue}</div>}
+                    <div><b>Ownership Transfer:</b> {form.scopeBox.illustrationSpecific.ownershipTransfer}</div>
+                    <div><b>Reference Files:</b> {(form.scopeBox.illustrationSpecific.refArtworkFiles || []).map(f => f.name || f).join(', ') || '—'}</div>
+                    <div><b>Script/Storyboard:</b> {form.scopeBox.illustrationSpecific.scriptStoryboard ? (form.scopeBox.illustrationSpecific.scriptStoryboard.name || form.scopeBox.illustrationSpecific.scriptStoryboard) : '—'}</div>
+                    <div><b>Guidelines (PDF):</b> {form.scopeBox.illustrationSpecific.guidelinesPdf ? (form.scopeBox.illustrationSpecific.guidelinesPdf.name || form.scopeBox.illustrationSpecific.guidelinesPdf) : '—'}</div>
+                  </div>
+                )}
+                {is3dModelingSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">🎯 3D Modeling/Rendering Details:</div>
+                    <div><b>Model Type:</b> {form.scopeBox.model3dSpecific.modelType}{form.scopeBox.model3dSpecific.modelType === 'Other' ? ` — ${form.scopeBox.model3dSpecific.modelTypeOther}` : ''}</div>
+                    <div><b>Level of Detail:</b> {form.scopeBox.model3dSpecific.detailLevel}</div>
+                    <div><b>Rendering Quality:</b> {form.scopeBox.model3dSpecific.renderingQuality}</div>
+                    <div><b>File Format:</b> {form.scopeBox.model3dSpecific.fileFormat}{form.scopeBox.model3dSpecific.fileFormat === 'Other' ? ` — ${form.scopeBox.model3dSpecific.fileFormatOther}` : ''}</div>
+                    <div><b>Texture Required:</b> {form.scopeBox.model3dSpecific.textureRequired}</div>
+                    {form.scopeBox.model3dSpecific.textureRequired === 'Yes' && <div><b>Texture Format:</b> {form.scopeBox.model3dSpecific.textureFormat}</div>}
+                    <div><b>Animation Required:</b> {form.scopeBox.model3dSpecific.animationRequired}</div>
+                    {form.scopeBox.model3dSpecific.animationRequired === 'Yes' && <div><b>Animation Duration:</b> {form.scopeBox.model3dSpecific.animationDuration} seconds</div>}
+                    <div><b># of Views/Renders:</b> {form.scopeBox.model3dSpecific.numberOfViews}</div>
+                    <div><b>Render Resolution:</b> {form.scopeBox.model3dSpecific.renderResolution === 'Custom' ? form.scopeBox.model3dSpecific.renderResolutionCustom : form.scopeBox.model3dSpecific.renderResolution}</div>
+                    <div><b>Ownership Transfer:</b> {form.scopeBox.model3dSpecific.ownershipTransfer}</div>
+                    <div><b>Reference Files:</b> {(form.scopeBox.model3dSpecific.refModelFiles || []).map(f => f.name || f).join(', ') || '—'}</div>
+                    <div><b>Technical Drawings:</b> {form.scopeBox.model3dSpecific.technicalDrawings ? (form.scopeBox.model3dSpecific.technicalDrawings.name || form.scopeBox.model3dSpecific.technicalDrawings) : '—'}</div>
+                    <div><b>Guidelines (PDF):</b> {form.scopeBox.model3dSpecific.guidelinesPdf ? (form.scopeBox.model3dSpecific.guidelinesPdf.name || form.scopeBox.model3dSpecific.guidelinesPdf) : '—'}</div>
+                  </div>
+                )}
+                {isAppDevelopmentSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">📱 App Development Details:</div>
+                    <div><b>App Type:</b> {form.scopeBox.appDevelopmentSpecific.appType}{form.scopeBox.appDevelopmentSpecific.appType === 'Other' ? ` — ${form.scopeBox.appDevelopmentSpecific.appTypeOther}` : ''}</div>
+                    <div><b>Frameworks:</b> {form.scopeBox.appDevelopmentSpecific.developmentFrameworks.join(', ')}</div>
+                    <div><b>Target OS & Versions:</b> {form.scopeBox.appDevelopmentSpecific.targetOsVersions.join(', ')}</div>
+                    <div><b># of Screens:</b> {form.scopeBox.appDevelopmentSpecific.numberOfScreens}</div>
+                    <div><b>Offline Functionality:</b> {form.scopeBox.appDevelopmentSpecific.offlineFunctionality}</div>
+                    <div><b>User Authentication:</b> {form.scopeBox.appDevelopmentSpecific.userAuthentication}</div>
+                    <div><b>Backend Responsibility:</b> {form.scopeBox.appDevelopmentSpecific.backendResponsibility}</div>
+                    <div><b>Key Features:</b> {form.scopeBox.appDevelopmentSpecific.keyFeatures}</div>
+                    <div><b>Third-party Integrations:</b> {form.scopeBox.appDevelopmentSpecific.thirdPartyIntegrations}</div>
+                    <div><b>Security Requirements:</b> {form.scopeBox.appDevelopmentSpecific.securityRequirements.includes('Other') ? form.scopeBox.appDevelopmentSpecific.securityRequirements.filter(s => s !== 'Other').join(', ') + (form.scopeBox.appDevelopmentSpecific.securityRequirementsOther ? `, Other: ${form.scopeBox.appDevelopmentSpecific.securityRequirementsOther}` : '') : form.scopeBox.appDevelopmentSpecific.securityRequirements.join(', ')}</div>
+                    <div><b>Performance Targets:</b> {form.scopeBox.appDevelopmentSpecific.performanceTargets}</div>
+                    <div><b>Source Code Delivery:</b> {form.scopeBox.appDevelopmentSpecific.sourceCodeDelivery}</div>
+                    <div><b>App Store Submission:</b> {form.scopeBox.appDevelopmentSpecific.appStoreSubmission}</div>
+                    <div><b>Documentation:</b> {form.scopeBox.appDevelopmentSpecific.documentation}</div>
+                    <div><b>UI/UX Mockups:</b> {(form.scopeBox.appDevelopmentSpecific.uiuxMockups || []).map(f => f.name || f).join(', ') || '—'}</div>
+                    <div><b>Guidelines:</b> {form.scopeBox.appDevelopmentSpecific.guidelines ? (form.scopeBox.appDevelopmentSpecific.guidelines.name || form.scopeBox.appDevelopmentSpecific.guidelines) : '—'}</div>
+                  </div>
+                )}
+                {isWebsiteDevelopmentSelected() && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                    <div className="text-cyan-400 font-semibold mb-2">🌐 Website Development Details:</div>
+                    <div><b>Website Type:</b> {form.scopeBox.websiteDevelopmentSpecific.websiteType}{form.scopeBox.websiteDevelopmentSpecific.websiteType === 'Other' ? ` — ${form.scopeBox.websiteDevelopmentSpecific.websiteTypeOther}` : ''}</div>
+                    <div><b>Technology Stack:</b> {form.scopeBox.websiteDevelopmentSpecific.technologyStack.join(', ')}</div>
+                    <div><b>Number of Pages:</b> {form.scopeBox.websiteDevelopmentSpecific.numberOfPages}</div>
+                    <div><b>Responsive Design:</b> {form.scopeBox.websiteDevelopmentSpecific.responsiveDesign}</div>
+                    <div><b>Browser Compatibility:</b> {form.scopeBox.websiteDevelopmentSpecific.browserCompatibility.join(', ')}</div>
+                    <div><b>Hosting Responsibility:</b> {form.scopeBox.websiteDevelopmentSpecific.hostingResponsibility}</div>
+                    <div><b>Key Features:</b> {form.scopeBox.websiteDevelopmentSpecific.keyFeatures}</div>
+                    <div><b>Admin Panel:</b> {form.scopeBox.websiteDevelopmentSpecific.adminPanel}</div>
+                    <div><b>Third-party Integrations:</b> {form.scopeBox.websiteDevelopmentSpecific.thirdPartyIntegrations}</div>
+                    <div><b>Security Requirements:</b> {form.scopeBox.websiteDevelopmentSpecific.securityRequirements.includes('Other') ? form.scopeBox.websiteDevelopmentSpecific.securityRequirements.filter(s => s !== 'Other').join(', ') + (form.scopeBox.websiteDevelopmentSpecific.securityRequirementsOther ? `, Other: ${form.scopeBox.websiteDevelopmentSpecific.securityRequirementsOther}` : '') : form.scopeBox.websiteDevelopmentSpecific.securityRequirements.join(', ')}</div>
+                    <div><b>Code Ownership:</b> {form.scopeBox.websiteDevelopmentSpecific.codeOwnership}</div>
+                    <div><b>Source Code Delivery:</b> {form.scopeBox.websiteDevelopmentSpecific.sourceCodeDelivery}</div>
+                    <div><b>Documentation:</b> {form.scopeBox.websiteDevelopmentSpecific.documentation}</div>
+                    <div><b>Wireframes/Mockups:</b> {(form.scopeBox.websiteDevelopmentSpecific.wireframes || []).map(f => f.name || f).join(', ') || '—'}</div>
+                    <div><b>Guidelines:</b> {form.scopeBox.websiteDevelopmentSpecific.guidelines ? (form.scopeBox.websiteDevelopmentSpecific.guidelines.name || form.scopeBox.websiteDevelopmentSpecific.guidelines) : '—'}</div>
+                  </div>
+                )}
               </div>
               <div className="mt-2 text-white font-inter"><b>Seller Contact:</b> {form.sellerContact}</div>
             </div>
