@@ -41,7 +41,7 @@ export default function NewOrderModal({ open, onClose, onOrderCreated }) {
     setLoading(true);
     setTimeout(() => {
       const fakeId = Math.random().toString(36).substring(2, 8);
-      setOrderLink(`https://escrowx.app/order/${fakeId}`);
+      setOrderLink(`https://scrowx.app/order/${fakeId}`);
       setLoading(false);
       setShowToast(true);
       setTimeout(() => {

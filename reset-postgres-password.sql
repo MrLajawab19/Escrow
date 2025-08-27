@@ -1,2 +1,2 @@
 -- Reset PostgreSQL password
-ALTER USER postgres PASSWORD 'escrowx123'; 
+ALTER USER postgres PASSWORD 'scrowx123'; 

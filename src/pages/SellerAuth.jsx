@@ -165,7 +165,7 @@ const SellerAuth = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-2xl mb-4 shadow-lg">
             <span className="text-white text-3xl font-bold">E</span>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent font-inter">EscrowX</h1>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent font-inter">ScrowX</h1>
           <p className="text-white/80 mt-2 font-inter">Seller Portal</p>
         </div>
 

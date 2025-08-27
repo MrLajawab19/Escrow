@@ -90,7 +90,7 @@ const authenticateAdmin = async (req, res, next) => {
     if (token === 'admin-mock-token') {
       req.user = {
         userId: 'admin-mock-id',
-        email: 'admin@escrowx.com',
+        email: 'admin@scrowx.com',
         firstName: 'Admin',
         lastName: 'User',
         role: 'admin'

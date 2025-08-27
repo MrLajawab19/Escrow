@@ -40,5 +40,5 @@ setInterval(() => {
 }, 60 * 60 * 1000); // every hour
 
 app.listen(PORT, () => {
-  console.log(`EscrowX server running on http://localhost:${PORT}`);
+  console.log(`ScrowX server running on http://localhost:${PORT}`);
 }); 

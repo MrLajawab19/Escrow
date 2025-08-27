@@ -52,7 +52,8 @@ const productTypeMapping = {
     'Reddit/Quora answers'
   ],
   '📢 Social Media & Marketing Services': [
-    'Instagram growth',
+    'Instagram Growth',
+    'Instagram Promotion',
     'YouTube promotion',
     'Telegram promotion',
     'Twitter growth',
@@ -173,6 +174,12 @@ const appTypes = ['Android', 'iOS', 'Cross-platform', 'Web App', 'Other'];
 const developmentFrameworks = ['React Native', 'Flutter', 'Swift', 'Kotlin', 'Java', 'Xamarin', 'Ionic', 'NativeScript', 'Other'];
 const appSecurityRequirements = ['Data Encryption', 'Secure Authentication', 'API Security', 'Other'];
 const appStoreSubmissionResp = ['Buyer', 'Seller', 'Not Applicable'];
+
+// Instagram Growth constants
+const instagramGrowthServices = ['Followers Growth', 'Likes on Reels', 'Comments on Reels'];
+
+// Instagram Promotion constants
+const instagramPromotionServices = ['Logo Promotion', 'Song Promotion', 'Story Promotion', 'Repost Promotion', 'Link Promotion (via Broadcast Channel)'];
 
 export default function NewOrderPage() {
   const navigate = useNavigate();
@@ -330,6 +337,26 @@ export default function NewOrderPage() {
           codeOwnership: '',
           sourceCodeDelivery: '',
           documentation: ''
+        },
+        instagramGrowthSpecific: {
+          selectedServices: [],
+          targetFollowers: '',
+          targetLikes: '',
+          targetComments: '',
+          targetAccount: '',
+          growthDuration: '',
+          additionalRequirements: ''
+        },
+        instagramPromotionSpecific: {
+          selectedServices: [],
+          targetAccount: '',
+          promotionDuration: '',
+          logoFiles: [],
+          songFiles: [],
+          storyFiles: [],
+          repostContent: '',
+          linkUrl: '',
+          additionalRequirements: ''
         }
     },
   });
@@ -371,7 +398,7 @@ export default function NewOrderPage() {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
     
-    // If service type changes, reset product type in scope box
+                // If service type changes, reset product type in XBox
     if (name === 'serviceType') {
       setForm(prev => ({
         ...prev,
@@ -437,6 +464,16 @@ export default function NewOrderPage() {
   // Check if App Development selected
   const isAppDevelopmentSelected = () => {
     return form.serviceType === '💻 Freelance Development Services' && form.scopeBox.productType === 'App development';
+  };
+
+  // Check if Instagram Growth is selected
+  const isInstagramGrowthSelected = () => {
+    return form.serviceType === '📢 Social Media & Marketing Services' && form.scopeBox.productType === 'Instagram Growth';
+  };
+
+  // Check if Instagram Promotion is selected
+  const isInstagramPromotionSelected = () => {
+    return form.serviceType === '📢 Social Media & Marketing Services' && form.scopeBox.productType === 'Instagram Promotion';
   };
 
   // Handle logo-specific inputs
@@ -525,6 +562,86 @@ export default function NewOrderPage() {
       };
     });
   };
+
+  // Handle Instagram Growth specific inputs
+  const handleInstagramGrowthInput = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        instagramGrowthSpecific: {
+          ...prev.scopeBox.instagramGrowthSpecific,
+          [name]: value
+        }
+      }
+    }));
+  };
+
+  // Handle Instagram Growth multi-select services
+  const handleInstagramGrowthMultiSelect = (value, checked) => {
+    setForm(prev => {
+      const currentValues = prev.scopeBox.instagramGrowthSpecific.selectedServices || [];
+      let newValues;
+      
+      if (checked) {
+        newValues = [...currentValues, value];
+      } else {
+        newValues = currentValues.filter(v => v !== value);
+      }
+      
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          instagramGrowthSpecific: {
+            ...prev.scopeBox.instagramGrowthSpecific,
+            selectedServices: newValues
+          }
+        }
+      };
+    });
+  };
+
+  // Handle Instagram Promotion specific inputs
+  const handleInstagramPromotionInput = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        instagramPromotionSpecific: {
+          ...prev.scopeBox.instagramPromotionSpecific,
+          [name]: value
+        }
+      }
+    }));
+  };
+
+  // Handle Instagram Promotion multi-select services
+  const handleInstagramPromotionMultiSelect = (value, checked) => {
+    setForm(prev => {
+      const currentValues = prev.scopeBox.instagramPromotionSpecific.selectedServices || [];
+      let newValues;
+      
+      if (checked) {
+        newValues = [...currentValues, value];
+      } else {
+        newValues = currentValues.filter(v => v !== value);
+      }
+      
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          instagramPromotionSpecific: {
+            ...prev.scopeBox.instagramPromotionSpecific,
+            selectedServices: newValues
+          }
+        }
+      };
+    });
+  };
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     
@@ -556,6 +673,12 @@ export default function NewOrderPage() {
     } else if (isAppDevelopmentSelected()) {
       // Allow only zip/rar/pdf/png/jpg/mp4 for app development; explicitly disallow APK/IPA
       allowedTypes = ['.zip', '.rar', '.pdf', '.png', '.jpg', '.mp4'];
+    } else if (isInstagramGrowthSelected()) {
+      // Allow common file types for Instagram growth services
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.txt'];
+    } else if (isInstagramPromotionSelected()) {
+      // Allow common file types for Instagram promotion services
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.pdf', '.doc', '.docx', '.txt'];
     } else {
       allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
     }
@@ -604,6 +727,12 @@ export default function NewOrderPage() {
     } else if (isAppDevelopmentSelected()) {
       // Allow only zip/rar/pdf/png/jpg/mp4 for app development; explicitly disallow APK/IPA
       allowedTypes = ['.zip', '.rar', '.pdf', '.png', '.jpg', '.mp4'];
+    } else if (isInstagramGrowthSelected()) {
+      // Allow common file types for Instagram growth services
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.txt'];
+    } else if (isInstagramPromotionSelected()) {
+      // Allow common file types for Instagram promotion services
+      allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.pdf', '.doc', '.docx', '.txt'];
     } else {
       allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
     }
@@ -940,7 +1069,7 @@ export default function NewOrderPage() {
           <div className="flex items-center justify-between mb-6 sm:mb-8">
             <div className={`flex-1 text-center text-xs sm:text-sm font-inter ${step >= 1 ? 'text-cyan-400 font-bold' : 'text-white/40'}`}>Order Details</div>
             <div className={`w-4 sm:w-8 h-1 mx-1 sm:mx-2 rounded ${step >= 1 ? 'bg-gradient-to-r from-cyan-400 to-emerald-400' : 'bg-white/20'}`} />
-            <div className={`flex-1 text-center text-xs sm:text-sm font-inter ${step >= 2 ? 'text-cyan-400 font-bold' : 'text-white/40'}`}>Scope Box</div>
+            <div className={`flex-1 text-center text-xs sm:text-sm font-inter ${step >= 2 ? 'text-cyan-400 font-bold' : 'text-white/40'}`}>XBox</div>
             <div className={`w-4 sm:w-8 h-1 mx-1 sm:mx-2 rounded ${step >= 2 ? 'bg-gradient-to-r from-cyan-400 to-emerald-400' : 'bg-white/20'}`} />
             <div className={`flex-1 text-center text-xs sm:text-sm font-inter ${step >= 3 ? 'text-cyan-400 font-bold' : 'text-white/40'}`}>Seller</div>
             <div className={`w-4 sm:w-8 h-1 mx-1 sm:mx-2 rounded ${step >= 3 ? 'bg-gradient-to-r from-cyan-400 to-emerald-400' : 'bg-white/20'}`} />
@@ -979,7 +1108,7 @@ export default function NewOrderPage() {
             </div>
           )}
         
-        {/* Step 2: Scope Box */}
+        {/* Step 2: XBox */}
         {step === 2 && (
           <div className="space-y-4">
             {/* Service Type Dependency Notice */}
@@ -1115,6 +1244,164 @@ export default function NewOrderPage() {
                     placeholder="#hashtags list"
                     className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
                     required
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Instagram Growth Specific Module */}
+            {isInstagramGrowthSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">📈</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Instagram Growth Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm text-white/80 font-inter mb-2">Growth Services (Multi-select)</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {instagramGrowthServices.map(service => (
+                        <label key={service} className="flex items-center space-x-2 text-white/90 font-inter">
+                          <input 
+                            type="checkbox" 
+                            checked={form.scopeBox.instagramGrowthSpecific.selectedServices.includes(service)} 
+                            onChange={(e) => handleInstagramGrowthMultiSelect(service, e.target.checked)} 
+                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" 
+                          />
+                          <span className="text-sm">{service}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <input 
+                    name="targetFollowers" 
+                    value={form.scopeBox.instagramGrowthSpecific.targetFollowers} 
+                    onChange={handleInstagramGrowthInput} 
+                    placeholder="Target Followers Count" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                  />
+                  <input 
+                    name="targetLikes" 
+                    value={form.scopeBox.instagramGrowthSpecific.targetLikes} 
+                    onChange={handleInstagramGrowthInput} 
+                    placeholder="Target Likes Count" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                  />
+                  <input 
+                    name="targetComments" 
+                    value={form.scopeBox.instagramGrowthSpecific.targetComments} 
+                    onChange={handleInstagramGrowthInput} 
+                    placeholder="Target Comments Count" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                  />
+                  <input 
+                    name="targetAccount" 
+                    value={form.scopeBox.instagramGrowthSpecific.targetAccount} 
+                    onChange={handleInstagramGrowthInput} 
+                    placeholder="Target Instagram Account (@username)" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required 
+                  />
+                  <input 
+                    name="growthDuration" 
+                    value={form.scopeBox.instagramGrowthSpecific.growthDuration} 
+                    onChange={handleInstagramGrowthInput} 
+                    placeholder="Growth Duration (e.g., 30 days)" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required 
+                  />
+                  <textarea 
+                    name="additionalRequirements" 
+                    value={form.scopeBox.instagramGrowthSpecific.additionalRequirements} 
+                    onChange={handleInstagramGrowthInput} 
+                    placeholder="Additional Requirements or Notes" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none sm:col-span-2" 
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Instagram Promotion Specific Module */}
+            {isInstagramPromotionSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">📢</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Instagram Promotion Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm text-white/80 font-inter mb-2">Promotion Services (Multi-select)</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {instagramPromotionServices.map(service => (
+                        <label key={service} className="flex items-center space-x-2 text-white/90 font-inter">
+                          <input 
+                            type="checkbox" 
+                            checked={form.scopeBox.instagramPromotionSpecific.selectedServices.includes(service)} 
+                            onChange={(e) => handleInstagramPromotionMultiSelect(service, e.target.checked)} 
+                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" 
+                          />
+                          <span className="text-sm">{service}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <input 
+                    name="targetAccount" 
+                    value={form.scopeBox.instagramPromotionSpecific.targetAccount} 
+                    onChange={handleInstagramPromotionInput} 
+                    placeholder="Target Instagram Account (@username)" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required 
+                  />
+                  <input 
+                    name="promotionDuration" 
+                    value={form.scopeBox.instagramPromotionSpecific.promotionDuration} 
+                    onChange={handleInstagramPromotionInput} 
+                    placeholder="Promotion Duration (e.g., 7 days)" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required 
+                  />
+                  <input 
+                    name="logoFiles" 
+                    value={form.scopeBox.instagramPromotionSpecific.logoFiles} 
+                    onChange={handleInstagramPromotionInput} 
+                    placeholder="Logo Files (if Logo Promotion selected)" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                  />
+                  <input 
+                    name="songFiles" 
+                    value={form.scopeBox.instagramPromotionSpecific.songFiles} 
+                    onChange={handleInstagramPromotionInput} 
+                    placeholder="Song Files (if Song Promotion selected)" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                  />
+                  <input 
+                    name="storyFiles" 
+                    value={form.scopeBox.instagramPromotionSpecific.storyFiles} 
+                    placeholder="Story Files (if Story Promotion selected)" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    readOnly 
+                  />
+                  <input 
+                    name="repostContent" 
+                    value={form.scopeBox.instagramPromotionSpecific.repostContent} 
+                    onChange={handleInstagramPromotionInput} 
+                    placeholder="Repost Content Description" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                  />
+                  <input 
+                    name="linkUrl" 
+                    value={form.scopeBox.instagramPromotionSpecific.linkUrl} 
+                    onChange={handleInstagramPromotionInput} 
+                    placeholder="Link URL (if Link Promotion selected)" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                  />
+                  <textarea 
+                    name="additionalRequirements" 
+                    value={form.scopeBox.instagramPromotionSpecific.additionalRequirements} 
+                    onChange={handleInstagramPromotionInput} 
+                    placeholder="Additional Requirements or Notes" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none sm:col-span-2" 
                   />
                 </div>
               </div>
@@ -2168,6 +2455,8 @@ export default function NewOrderPage() {
               </div>
             )}
             
+
+            
             <div
               className="border-2 border-dashed border-white/30 rounded-xl p-6 text-center cursor-pointer bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300"
               onDrop={handleDrop}
@@ -2187,6 +2476,8 @@ export default function NewOrderPage() {
                   is3dModelingSelected() ? ".obj,.fbx,.stl,.blend,.glb,.jpg,.jpeg,.png,.tiff,.pdf,.dwg" :
                   isWebsiteDevelopmentSelected() ? ".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.zip,.rar,.psd,.ai,.sketch,.fig" :
                   isAppDevelopmentSelected() ? ".zip,.rar,.pdf,.png,.jpg,.mp4" :
+                  isInstagramGrowthSelected() ? ".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" :
+                  isInstagramPromotionSelected() ? ".jpg,.jpeg,.png,.gif,.mp4,.pdf,.doc,.docx,.txt" :
                   ".jpg,.jpeg,.png,.pdf,.mp4,.doc,.docx,.txt,.zip,.rar"
                 } 
                 onChange={handleFileChange} 
@@ -2218,9 +2509,13 @@ export default function NewOrderPage() {
                                   ? "Supported: 3D models (OBJ, FBX, STL, BLEND, GLB), Images (JPG, PNG, TIFF), PDF, DWG"
                                   : isWebsiteDevelopmentSelected()
                                     ? "Supported: Images (JPG, PNG), PDFs, Documents (DOC, DOCX, TXT), Design files (PSD, AI, SKETCH, FIG), Archives (ZIP, RAR)"
-                                    : isAppDevelopmentSelected()
-                                      ? "Supported: ZIP, RAR, PDF, PNG, JPG, MP4 (APK/IPA uploads are blocked until final delivery)"
-                                      : "Supported: Images, PDFs, Videos, Documents, Archives"}
+                                    :                   isAppDevelopmentSelected()
+                    ? "Supported: ZIP, RAR, PDF, PNG, JPG, MP4 (APK/IPA uploads are blocked until final delivery)"
+                    : isInstagramGrowthSelected()
+                      ? "Supported: Images (JPG, PNG), PDFs, Documents (DOC, DOCX, TXT)"
+                      : isInstagramPromotionSelected()
+                        ? "Supported: Images (JPG, PNG, GIF), Videos (MP4), PDFs, Documents (DOC, DOCX, TXT)"
+                        : "Supported: Images, PDFs, Videos, Documents, Archives"}
                 </div>
                 <label htmlFor="file-upload" className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white rounded-lg transition-all duration-300 cursor-pointer font-inter font-medium hover:scale-105">
                   Choose Files
@@ -2408,7 +2703,7 @@ export default function NewOrderPage() {
                 </div>
               </div>
               
-              <div className="mt-2 text-white font-inter"><b>Scope Box:</b></div>
+              <div className="mt-2 text-white font-inter"><b>XBox:</b></div>
               <div className="ml-4 text-white/90 font-inter">
                 <div><b>Title:</b> {form.scopeBox.title}</div>
                 <div><b>Type:</b> {form.scopeBox.productType}</div>
@@ -2597,7 +2892,7 @@ export default function NewOrderPage() {
               <div className="text-6xl mb-4">💳</div>
               <h3 className="text-2xl font-bold text-white mb-4">Fund Escrow</h3>
               <p className="text-white/80">
-                Complete payment to secure your order and send scope box to seller.
+                Complete payment to secure your order and send XBox to seller.
               </p>
             </div>
             
@@ -2705,7 +3000,7 @@ export default function NewOrderPage() {
               <div className="text-6xl mb-6">✅</div>
               <h3 className="text-2xl font-bold text-white mb-4">Order Created & Funded!</h3>
               <p className="text-white/80 mb-6">
-                Your escrow order has been created, funded, and the scope box has been sent to the seller.
+                Your escrow order has been created, funded, and the XBox has been sent to the seller.
               </p>
               
               <div className="bg-emerald-500/10 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-4 mb-6">
@@ -2719,7 +3014,7 @@ export default function NewOrderPage() {
               
               <div className="space-y-2">
                 <div className="text-sm text-white/70">
-                  <b>Scope Box:</b> Sent to seller
+                  <b>XBox:</b> Sent to seller
                 </div>
                 <div className="text-sm text-white/70">
                   <b>Tracking Link:</b> {orderData.orderTrackingLink}

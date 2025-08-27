@@ -7,7 +7,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "revert-orders": "node revert-orders.js"
+    "revert-orders": "node revert-orders.js",
+    "revert-mock-orders": "node revert-mock-orders.js",
+    "server": "node server.js"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",

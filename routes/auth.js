@@ -15,30 +15,23 @@ router.post('/admin/login', (req, res) => {
   // Mock admin login for testing
   const { email, password } = req.body;
   
-  if (email === 'admin@escrowx.com' && password === 'admin123') {
+  if (email === 'admin@scrowx.com' && password === 'admin123') {
     const jwt = require('jsonwebtoken');
     const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     
-    const token = jwt.sign(
-      {
-        userId: 'admin-mock-id',
-        email: 'admin@escrowx.com',
-        firstName: 'Admin',
-        lastName: 'User',
-        role: 'admin'
-      },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    
+    const adminToken = jwt.sign({
+      userId: 'admin',
+      email: 'admin@scrowx.com',
+      role: 'admin'
+    }, JWT_SECRET, { expiresIn: '24h' });
+
     res.json({
       success: true,
-      token,
+      message: 'Admin login successful',
+      token: adminToken,
       user: {
-        id: 'admin-mock-id',
-        email: 'admin@escrowx.com',
-        firstName: 'Admin',
-        lastName: 'User',
+        id: 'admin',
+        email: 'admin@scrowx.com',
         role: 'admin'
       }
     });

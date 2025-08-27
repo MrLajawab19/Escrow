@@ -165,7 +165,7 @@ const BuyerAuth = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 shadow-lg">
             <span className="text-2xl font-bold text-white">E</span>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">EscrowX</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">ScrowX</h1>
           <p className="mt-2 text-white/80 font-inter">Secure Escrow Services</p>
         </div>
 
@@ -176,7 +176,7 @@ const BuyerAuth = () => {
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </h2>
             <p className="mt-2 text-white/80 font-inter">
-              {isLogin ? 'Sign in to your buyer account' : 'Join EscrowX as a buyer'}
+              {isLogin ? 'Sign in to your buyer account' : 'Join ScrowX as a buyer'}
             </p>
           </div>
 

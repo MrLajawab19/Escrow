@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const AdminLogin = () => {
-  const [credentials, setCredentials] = useState({
-    email: 'admin@escrowx.com',
-    password: 'admin123'
+  const [formData, setFormData] = useState({
+    email: 'admin@scrowx.com',
+    password: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,7 +17,7 @@ const AdminLogin = () => {
     setSuccess('');
 
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/admin/login', credentials);
+      const response = await axios.post('http://localhost:3000/api/auth/admin/login', formData);
       
       if (response.data.success) {
         localStorage.setItem('adminToken', response.data.token);
@@ -46,7 +46,7 @@ const AdminLogin = () => {
             <span className="text-2xl font-bold text-white">A</span>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">Admin Panel</h1>
-          <p className="mt-2 text-white/80 font-inter">EscrowX Administration</p>
+          <p className="mt-2 text-white/80 font-inter">ScrowX Administration</p>
         </div>
 
         {/* Auth Card */}
@@ -84,9 +84,9 @@ const AdminLogin = () => {
                 type="email"
                 required
                 className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
-                placeholder="admin@escrowx.com"
-                value={credentials.email}
-                onChange={(e) => setCredentials({...credentials, email: e.target.value})}
+                placeholder="admin@scrowx.com"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
             </div>
             <div>
@@ -100,8 +100,8 @@ const AdminLogin = () => {
                 required
                 className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                 placeholder="Password"
-                value={credentials.password}
-                onChange={(e) => setCredentials({...credentials, password: e.target.value})}
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
             </div>
 
@@ -116,7 +116,7 @@ const AdminLogin = () => {
 
           <div className="mt-6 text-center">
             <p className="text-xs text-white/60 font-inter">
-            Default credentials: admin@escrowx.com / admin123
+            Default credentials: admin@scrowx.com / admin123
           </p>
         </div>
       </div>

@@ -56,7 +56,7 @@ const HomePage = ({ onAuthClear }) => {
         <div className="text-center mb-12 sm:mb-16 animate-fade-in">
           <div className="text-6xl sm:text-8xl mb-6 animate-bounce-slow">🏦</div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-inter font-black mb-6 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-            Welcome to EscrowX
+            Welcome to ScrowX
           </h1>
           <p className="text-lg sm:text-xl lg:text-2xl mb-8 max-w-3xl mx-auto px-4 text-white/90 font-inter font-medium">
             Secure escrow platform for freelance and digital product transactions. 
@@ -92,7 +92,7 @@ const HomePage = ({ onAuthClear }) => {
           </div>
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl animate-slide-up shadow-lg" style={{animationDelay: '0.1s'}}>
             <div className="text-4xl sm:text-5xl mb-6 animate-bounce-slow">💰</div>
-            <h3 className="text-xl sm:text-2xl font-inter font-bold mb-4 text-white">Secure Escrow</h3>
+            <h3 className="text-xl sm:text-2xl font-inter font-bold mb-4 text-white">ScrowX</h3>
             <p className="text-white/80 font-inter">
               Funds held securely with blockchain-level encryption until both parties are satisfied. 
               No more payment disputes or delivery issues.
@@ -248,7 +248,7 @@ function App() {
                   className="text-2xl font-inter font-black transition-all duration-300 hover:opacity-80 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent" 
                   onClick={handleHomeClick}
                 >
-                  EscrowX
+                  ScrowX
                 </Link>
               </div>
               
