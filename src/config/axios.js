@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Set base URL for API calls to backend server
-axios.defaults.baseURL = 'http://localhost:3000';
+// Set base URL for API calls from env (fallback to 3001 where backend runs)
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // Add request interceptor to include auth token
 axios.interceptors.request.use(

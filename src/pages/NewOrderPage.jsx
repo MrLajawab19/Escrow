@@ -177,9 +177,22 @@ const appStoreSubmissionResp = ['Buyer', 'Seller', 'Not Applicable'];
 
 // Instagram Growth constants
 const instagramGrowthServices = ['Followers Growth', 'Likes on Reels', 'Comments on Reels'];
+const growthMethods = ['Organic Growth', 'Paid Advertising', 'Influencer Collaborations', 'Content Strategy', 'Engagement Pods', 'Other'];
 
 // Instagram Promotion constants
 const instagramPromotionServices = ['Logo Promotion', 'Song Promotion', 'Story Promotion', 'Repost Promotion', 'Link Promotion (via Broadcast Channel)'];
+const logoPromotionPlacements = ['Feed Post', 'Story', 'Reel', 'Profile Highlight'];
+const songPromotionFormats = ['Reel', 'Story', 'Post'];
+const storyTypes = ['Static Image', 'Video', 'Poll/Quiz', 'Link Swipe Up'];
+
+// YouTube Promotion constants
+const youtubePromotionTypes = ['Views', 'Subscribers', 'Likes', 'Comments', 'Shares'];
+const promotionMethods = ['Organic', 'Ads via Google Ads', 'Influencer Shoutouts'];
+
+// Influencer Shoutout Promotion constants
+const influencerPlatforms = ['Instagram', 'YouTube', 'Both'];
+const instagramPromotionTypes = ['Reel', 'Post', 'Story', 'Caption Mention', 'Link in Bio'];
+const youtubePromotionTypesInfluencer = ['Shorts', 'Full Video Mention', 'Caption Mention', 'Pinned Comment', 'Link in Description'];
 
 export default function NewOrderPage() {
   const navigate = useNavigate();
@@ -340,23 +353,104 @@ export default function NewOrderPage() {
         },
         instagramGrowthSpecific: {
           selectedServices: [],
-          targetFollowers: '',
-          targetLikes: '',
-          targetComments: '',
-          targetAccount: '',
-          growthDuration: '',
-          additionalRequirements: ''
+          // Followers Growth fields
+          accountHandle: '',
+          targetFollowerCount: '',
+          baselineFollowers: '',
+          growthMethod: '',
+          geographyTargeting: '',
+          campaignStartDate: '',
+          campaignEndDate: '',
+          // Likes on Reels fields
+          reelLinksLikes: [''],
+          targetLikesPerReel: '',
+          likesDeliveryDeadline: '',
+          // Comments on Reels fields
+          reelLinksComments: [''],
+          targetCommentsCount: '',
+          commentGuidelines: '',
+          // Common attachments
+          brandGuidelinesPdf: null,
+          referenceContentFiles: []
         },
         instagramPromotionSpecific: {
           selectedServices: [],
-          targetAccount: '',
-          promotionDuration: '',
-          logoFiles: [],
-          songFiles: [],
-          storyFiles: [],
-          repostContent: '',
+          // Logo Promotion fields
+          logoAssetFiles: [],
+          logoPromotionPlacement: '',
+          logoNumberOfPromotions: '',
+          logoDuration: '',
+          // Song Promotion fields
+          songFileOrLink: '',
+          songPromotionFormat: '',
+          songNumberOfPromotions: '',
+          songCampaignStartDate: '',
+          songCampaignEndDate: '',
+          // Story Promotion fields
+          storyType: '',
+          numberOfStories: '',
+          storyDurationLive: '',
+          swipeLinkCTA: '',
+          // Repost Promotion fields
+          originalPostLink: '',
+          numberOfReposts: '',
+          repostDurationLive: '',
+          // Link Promotion fields
+          channelHandle: '',
+          numberOfLinkDrops: '',
+          linkUrls: [''],
+          expectedReachClicks: '',
+          // Common attachments
+          brandGuidelinesPdf: null,
+          creativeAssetsZip: null
+        },
+        youtubePromotionSpecific: {
+          channelUrl: '',
+          promotionTypes: [],
+          // Target fields (conditional)
+          viewsTarget: '',
+          subscribersTarget: '',
+          likesTarget: '',
+          commentsTarget: '',
+          sharesTarget: '',
+          // Common fields
+          videoLinks: [''],
+          campaignStartDate: '',
+          campaignEndDate: '',
+          geographyTargeting: '',
+          promotionMethod: '',
+          // Attachments
+          brandGuidelinesPdf: null,
+          contentRestrictionsPdf: null
+        },
+        influencerShoutoutSpecific: {
+          platform: '',
+          influencerHandle: '',
+          promotionTypes: [],
+          // Instagram conditional fields
+          reelDuration: '',
+          numberOfReels: '',
+          numberOfPosts: '',
+          captionTextHashtags: '',
+          numberOfStories: '',
+          storyDurationLive: '',
+          swipeLinkCTA: '',
           linkUrl: '',
-          additionalRequirements: ''
+          linkDurationDays: '',
+          // YouTube conditional fields
+          videoLength: '',
+          numberOfShorts: '',
+          mentionTimestamp: '',
+          numberOfMentions: '',
+          captionText: '',
+          // Campaign details
+          campaignStartDate: '',
+          campaignEndDate: '',
+          geographyTargeting: '',
+          deliverables: '',
+          // Attachments
+          brandGuidelinesPdf: null,
+          creativeAssetsZip: null
         }
     },
   });
@@ -476,6 +570,16 @@ export default function NewOrderPage() {
     return form.serviceType === '📢 Social Media & Marketing Services' && form.scopeBox.productType === 'Instagram Promotion';
   };
 
+  // Check if YouTube Promotion is selected
+  const isYouTubePromotionSelected = () => {
+    return form.serviceType === '📢 Social Media & Marketing Services' && form.scopeBox.productType === 'YouTube promotion';
+  };
+
+  // Check if Influencer Shoutout is selected
+  const isInfluencerShoutoutSelected = () => {
+    return form.serviceType === '📢 Social Media & Marketing Services' && form.scopeBox.productType === 'Influencer shoutouts';
+  };
+
   // Handle logo-specific inputs
   const handleLogoInput = (e) => {
     const { name, value } = e.target;
@@ -578,6 +682,66 @@ export default function NewOrderPage() {
     }));
   };
 
+  // Handle reel links array updates
+  const handleReelLinksUpdate = (type, index, value) => {
+    setForm(prev => {
+      const fieldName = type === 'likes' ? 'reelLinksLikes' : 'reelLinksComments';
+      const currentLinks = [...prev.scopeBox.instagramGrowthSpecific[fieldName]];
+      currentLinks[index] = value;
+      
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          instagramGrowthSpecific: {
+            ...prev.scopeBox.instagramGrowthSpecific,
+            [fieldName]: currentLinks
+          }
+        }
+      };
+    });
+  };
+
+  // Add new reel link input
+  const addReelLink = (type) => {
+    setForm(prev => {
+      const fieldName = type === 'likes' ? 'reelLinksLikes' : 'reelLinksComments';
+      const currentLinks = [...prev.scopeBox.instagramGrowthSpecific[fieldName]];
+      currentLinks.push('');
+      
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          instagramGrowthSpecific: {
+            ...prev.scopeBox.instagramGrowthSpecific,
+            [fieldName]: currentLinks
+          }
+        }
+      };
+    });
+  };
+
+  // Remove reel link input
+  const removeReelLink = (type, index) => {
+    setForm(prev => {
+      const fieldName = type === 'likes' ? 'reelLinksLikes' : 'reelLinksComments';
+      const currentLinks = [...prev.scopeBox.instagramGrowthSpecific[fieldName]];
+      currentLinks.splice(index, 1);
+      
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          instagramGrowthSpecific: {
+            ...prev.scopeBox.instagramGrowthSpecific,
+            [fieldName]: currentLinks
+          }
+        }
+      };
+    });
+  };
+
   // Handle Instagram Growth multi-select services
   const handleInstagramGrowthMultiSelect = (value, checked) => {
     setForm(prev => {
@@ -642,6 +806,180 @@ export default function NewOrderPage() {
       };
     });
   };
+
+  // Handle Instagram Promotion link URLs
+  const handlePromotionLinkUrlsUpdate = (index, value) => {
+    setForm(prev => {
+      const currentLinks = [...prev.scopeBox.instagramPromotionSpecific.linkUrls];
+      currentLinks[index] = value;
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          instagramPromotionSpecific: {
+            ...prev.scopeBox.instagramPromotionSpecific,
+            linkUrls: currentLinks
+          }
+        }
+      };
+    });
+  };
+
+  const addPromotionLinkUrl = () => {
+    setForm(prev => {
+      const currentLinks = [...prev.scopeBox.instagramPromotionSpecific.linkUrls];
+      currentLinks.push('');
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          instagramPromotionSpecific: {
+            ...prev.scopeBox.instagramPromotionSpecific,
+            linkUrls: currentLinks
+          }
+        }
+      };
+    });
+  };
+
+  const removePromotionLinkUrl = (index) => {
+    setForm(prev => {
+      const currentLinks = [...prev.scopeBox.instagramPromotionSpecific.linkUrls];
+      currentLinks.splice(index, 1);
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          instagramPromotionSpecific: {
+            ...prev.scopeBox.instagramPromotionSpecific,
+            linkUrls: currentLinks
+          }
+        }
+      };
+    });
+  };
+
+  // YouTube Promotion handlers
+  const handleYouTubePromotionInput = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        youtubePromotionSpecific: {
+          ...prev.scopeBox.youtubePromotionSpecific,
+          [name]: value
+        }
+      }
+    }));
+  };
+
+  const handleYouTubePromotionMultiSelect = (value, checked) => {
+    setForm(prev => {
+      const currentValues = prev.scopeBox.youtubePromotionSpecific.promotionTypes || [];
+      let newValues;
+      if (checked) {
+        newValues = [...currentValues, value];
+      } else {
+        newValues = currentValues.filter(v => v !== value);
+      }
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          youtubePromotionSpecific: {
+            ...prev.scopeBox.youtubePromotionSpecific,
+            promotionTypes: newValues
+          }
+        }
+      };
+    });
+  };
+
+  const handleYouTubeVideoLinksUpdate = (index, value) => {
+    setForm(prev => {
+      const currentLinks = [...prev.scopeBox.youtubePromotionSpecific.videoLinks];
+      currentLinks[index] = value;
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          youtubePromotionSpecific: {
+            ...prev.scopeBox.youtubePromotionSpecific,
+            videoLinks: currentLinks
+          }
+        }
+      };
+    });
+  };
+
+  const addYouTubeVideoLink = () => {
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        youtubePromotionSpecific: {
+          ...prev.scopeBox.youtubePromotionSpecific,
+          videoLinks: [...prev.scopeBox.youtubePromotionSpecific.videoLinks, '']
+        }
+      }
+    }));
+  };
+
+  const removeYouTubeVideoLink = (index) => {
+    setForm(prev => {
+      const currentLinks = [...prev.scopeBox.youtubePromotionSpecific.videoLinks];
+      currentLinks.splice(index, 1);
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          youtubePromotionSpecific: {
+            ...prev.scopeBox.youtubePromotionSpecific,
+            videoLinks: currentLinks
+          }
+        }
+      };
+    });
+  };
+
+  // Influencer Shoutout handlers
+  const handleInfluencerShoutoutInput = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        influencerShoutoutSpecific: {
+          ...prev.scopeBox.influencerShoutoutSpecific,
+          [name]: value
+        }
+      }
+    }));
+  };
+
+  const handleInfluencerShoutoutMultiSelect = (field, value, checked) => {
+    setForm(prev => {
+      const currentValues = prev.scopeBox.influencerShoutoutSpecific[field] || [];
+      let newValues;
+      if (checked) {
+        newValues = [...currentValues, value];
+      } else {
+        newValues = currentValues.filter(v => v !== value);
+      }
+      return {
+        ...prev,
+        scopeBox: {
+          ...prev.scopeBox,
+          influencerShoutoutSpecific: {
+            ...prev.scopeBox.influencerShoutoutSpecific,
+            [field]: newValues
+          }
+        }
+      };
+    });
+  };
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     
@@ -674,11 +1012,17 @@ export default function NewOrderPage() {
       // Allow only zip/rar/pdf/png/jpg/mp4 for app development; explicitly disallow APK/IPA
       allowedTypes = ['.zip', '.rar', '.pdf', '.png', '.jpg', '.mp4'];
     } else if (isInstagramGrowthSelected()) {
-      // Allow common file types for Instagram growth services
-      allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.txt'];
+      // Allow only PDF, PNG, JPG, MP4 for Instagram growth services
+      allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4'];
     } else if (isInstagramPromotionSelected()) {
       // Allow common file types for Instagram promotion services
       allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.pdf', '.doc', '.docx', '.txt'];
+    } else if (isYouTubePromotionSelected()) {
+      // Allow only PDF, PNG, JPG, MP4, ZIP for YouTube promotion services
+      allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
+    } else if (isInfluencerShoutoutSelected()) {
+      // Allow only PDF, PNG, JPG, MP4, ZIP for Influencer Shoutout services
+      allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
     } else {
       allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
     }
@@ -728,11 +1072,17 @@ export default function NewOrderPage() {
       // Allow only zip/rar/pdf/png/jpg/mp4 for app development; explicitly disallow APK/IPA
       allowedTypes = ['.zip', '.rar', '.pdf', '.png', '.jpg', '.mp4'];
     } else if (isInstagramGrowthSelected()) {
-      // Allow common file types for Instagram growth services
-      allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.txt'];
+      // Allow only PDF, PNG, JPG, MP4 for Instagram growth services
+      allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4'];
     } else if (isInstagramPromotionSelected()) {
       // Allow common file types for Instagram promotion services
       allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.pdf', '.doc', '.docx', '.txt'];
+    } else if (isYouTubePromotionSelected()) {
+      // Allow only PDF, PNG, JPG, MP4, ZIP for YouTube promotion services
+      allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
+    } else if (isInfluencerShoutoutSelected()) {
+      // Allow only PDF, PNG, JPG, MP4, ZIP for Influencer Shoutout services
+      allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
     } else {
       allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
     }
@@ -846,6 +1196,31 @@ export default function NewOrderPage() {
       return baseValidation && a.appType && (a.appType !== 'Other' ? true : !!a.appTypeOther) && a.developmentFrameworks.length > 0 && a.targetOsVersions.length > 0 && a.numberOfScreens && a.offlineFunctionality && a.userAuthentication && a.backendResponsibility && a.keyFeatures && a.thirdPartyIntegrations && a.securityRequirements.length > 0 && (a.securityRequirements.includes('Other') ? !!a.securityRequirementsOther : true) && a.performanceTargets && a.sourceCodeDelivery && a.appStoreSubmission && a.documentation;
     }
 
+    // For Instagram Growth, validate growth-specific fields and skip condition
+    if (isInstagramGrowthSelected()) {
+      const ig = form.scopeBox.instagramGrowthSpecific;
+      const hasSelectedServices = ig.selectedServices.length > 0;
+      
+      let serviceValidation = true;
+      
+      // Validate Followers Growth fields if selected
+      if (ig.selectedServices.includes('Followers Growth')) {
+        serviceValidation = serviceValidation && ig.accountHandle && ig.targetFollowerCount && ig.baselineFollowers && ig.growthMethod && ig.geographyTargeting && ig.campaignStartDate && ig.campaignEndDate;
+      }
+      
+      // Validate Likes on Reels fields if selected
+      if (ig.selectedServices.includes('Likes on Reels')) {
+        serviceValidation = serviceValidation && ig.reelLinksLikes.some(link => link.trim()) && ig.targetLikesPerReel && ig.likesDeliveryDeadline;
+      }
+      
+      // Validate Comments on Reels fields if selected
+      if (ig.selectedServices.includes('Comments on Reels')) {
+        serviceValidation = serviceValidation && ig.reelLinksComments.some(link => link.trim()) && ig.targetCommentsCount && ig.commentGuidelines;
+      }
+      
+      return baseValidation && hasSelectedServices && serviceValidation;
+    }
+
     // For other services, validate condition field
     return baseValidation && form.scopeBox.condition;
   };
@@ -916,6 +1291,27 @@ export default function NewOrderPage() {
             ...form.scopeBox.websiteDevelopmentSpecific,
             wireframes: (form.scopeBox.websiteDevelopmentSpecific.wireframes || []).map(f => f.name),
             guidelines: form.scopeBox.websiteDevelopmentSpecific.guidelines ? form.scopeBox.websiteDevelopmentSpecific.guidelines.name : null,
+          } : null,
+          instagramGrowthSpecific: isInstagramGrowthSelected() ? {
+            ...form.scopeBox.instagramGrowthSpecific,
+            brandGuidelinesPdf: form.scopeBox.instagramGrowthSpecific.brandGuidelinesPdf ? form.scopeBox.instagramGrowthSpecific.brandGuidelinesPdf.name : null,
+            referenceContentFiles: (form.scopeBox.instagramGrowthSpecific.referenceContentFiles || []).map(f => f.name),
+          } : null,
+          instagramPromotionSpecific: isInstagramPromotionSelected() ? {
+            ...form.scopeBox.instagramPromotionSpecific,
+            logoAssetFiles: (form.scopeBox.instagramPromotionSpecific.logoAssetFiles || []).map(f => f.name),
+            brandGuidelinesPdf: form.scopeBox.instagramPromotionSpecific.brandGuidelinesPdf ? form.scopeBox.instagramPromotionSpecific.brandGuidelinesPdf.name : null,
+            creativeAssetsZip: form.scopeBox.instagramPromotionSpecific.creativeAssetsZip ? form.scopeBox.instagramPromotionSpecific.creativeAssetsZip.name : null,
+          } : null,
+          youtubePromotionSpecific: isYouTubePromotionSelected() ? {
+            ...form.scopeBox.youtubePromotionSpecific,
+            brandGuidelinesPdf: form.scopeBox.youtubePromotionSpecific.brandGuidelinesPdf ? form.scopeBox.youtubePromotionSpecific.brandGuidelinesPdf.name : null,
+            contentRestrictionsPdf: form.scopeBox.youtubePromotionSpecific.contentRestrictionsPdf ? form.scopeBox.youtubePromotionSpecific.contentRestrictionsPdf.name : null,
+          } : null,
+          influencerShoutoutSpecific: isInfluencerShoutoutSelected() ? {
+            ...form.scopeBox.influencerShoutoutSpecific,
+            brandGuidelinesPdf: form.scopeBox.influencerShoutoutSpecific.brandGuidelinesPdf ? form.scopeBox.influencerShoutoutSpecific.brandGuidelinesPdf.name : null,
+            creativeAssetsZip: form.scopeBox.influencerShoutoutSpecific.creativeAssetsZip ? form.scopeBox.influencerShoutoutSpecific.creativeAssetsZip.name : null,
           } : null,
         }
       };
@@ -1256,68 +1652,233 @@ export default function NewOrderPage() {
                   <span className="text-2xl mr-2">📈</span>
                   <h3 className="text-lg font-semibold text-white font-inter">Instagram Growth Details</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm text-white/80 font-inter mb-2">Growth Services (Multi-select)</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {instagramGrowthServices.map(service => (
-                        <label key={service} className="flex items-center space-x-2 text-white/90 font-inter">
-                          <input 
-                            type="checkbox" 
-                            checked={form.scopeBox.instagramGrowthSpecific.selectedServices.includes(service)} 
-                            onChange={(e) => handleInstagramGrowthMultiSelect(service, e.target.checked)} 
-                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" 
-                          />
-                          <span className="text-sm">{service}</span>
-                        </label>
-                      ))}
+                
+                {/* Growth Goals Section */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Growth Goals</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {instagramGrowthServices.map(service => (
+                      <label key={service} className="flex items-center space-x-2 text-white/90 font-inter p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all">
+                        <input 
+                          type="checkbox" 
+                          checked={form.scopeBox.instagramGrowthSpecific.selectedServices.includes(service)} 
+                          onChange={(e) => handleInstagramGrowthMultiSelect(service, e.target.checked)} 
+                          className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" 
+                        />
+                        <span className="text-sm font-medium">{service}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Conditional Fields Based on Selected Services */}
+                {form.scopeBox.instagramGrowthSpecific.selectedServices.includes('Followers Growth') && (
+                  <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-orange-300 font-inter mb-3">Followers Growth Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input 
+                        name="accountHandle" 
+                        value={form.scopeBox.instagramGrowthSpecific.accountHandle} 
+                        onChange={handleInstagramGrowthInput} 
+                        placeholder="Account Handle / IG User ID" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="number" 
+                        name="targetFollowerCount" 
+                        value={form.scopeBox.instagramGrowthSpecific.targetFollowerCount} 
+                        onChange={handleInstagramGrowthInput} 
+                        placeholder="Target Follower Count" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="number" 
+                        name="baselineFollowers" 
+                        value={form.scopeBox.instagramGrowthSpecific.baselineFollowers} 
+                        onChange={handleInstagramGrowthInput} 
+                        placeholder="Baseline Followers (current count)" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <select 
+                        name="growthMethod" 
+                        value={form.scopeBox.instagramGrowthSpecific.growthMethod} 
+                        onChange={handleInstagramGrowthInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required
+                      >
+                        <option value="" className="text-white bg-slate-800">Growth Method</option>
+                        {growthMethods.map(method => <option key={method} value={method} className="text-white bg-slate-800">{method}</option>)}
+                      </select>
+                      <textarea 
+                        name="geographyTargeting" 
+                        value={form.scopeBox.instagramGrowthSpecific.geographyTargeting} 
+                        onChange={handleInstagramGrowthInput} 
+                        placeholder="Geography / Audience Targeting" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none sm:col-span-2" 
+                        required 
+                      />
+                      <input 
+                        type="date" 
+                        name="campaignStartDate" 
+                        value={form.scopeBox.instagramGrowthSpecific.campaignStartDate} 
+                        onChange={handleInstagramGrowthInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="date" 
+                        name="campaignEndDate" 
+                        value={form.scopeBox.instagramGrowthSpecific.campaignEndDate} 
+                        onChange={handleInstagramGrowthInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
                     </div>
                   </div>
-                  <input 
-                    name="targetFollowers" 
-                    value={form.scopeBox.instagramGrowthSpecific.targetFollowers} 
-                    onChange={handleInstagramGrowthInput} 
-                    placeholder="Target Followers Count" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                  />
-                  <input 
-                    name="targetLikes" 
-                    value={form.scopeBox.instagramGrowthSpecific.targetLikes} 
-                    onChange={handleInstagramGrowthInput} 
-                    placeholder="Target Likes Count" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                  />
-                  <input 
-                    name="targetComments" 
-                    value={form.scopeBox.instagramGrowthSpecific.targetComments} 
-                    onChange={handleInstagramGrowthInput} 
-                    placeholder="Target Comments Count" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                  />
-                  <input 
-                    name="targetAccount" 
-                    value={form.scopeBox.instagramGrowthSpecific.targetAccount} 
-                    onChange={handleInstagramGrowthInput} 
-                    placeholder="Target Instagram Account (@username)" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                    required 
-                  />
-                  <input 
-                    name="growthDuration" 
-                    value={form.scopeBox.instagramGrowthSpecific.growthDuration} 
-                    onChange={handleInstagramGrowthInput} 
-                    placeholder="Growth Duration (e.g., 30 days)" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                    required 
-                  />
-                  <textarea 
-                    name="additionalRequirements" 
-                    value={form.scopeBox.instagramGrowthSpecific.additionalRequirements} 
-                    onChange={handleInstagramGrowthInput} 
-                    placeholder="Additional Requirements or Notes" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none sm:col-span-2" 
-                  />
-                </div>
+                )}
+
+                {form.scopeBox.instagramGrowthSpecific.selectedServices.includes('Likes on Reels') && (
+                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-red-300 font-inter mb-3">Likes on Reels Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm text-white/80 font-inter mb-2">Reel Link(s)</label>
+                        {form.scopeBox.instagramGrowthSpecific.reelLinksLikes.map((link, index) => (
+                          <div key={index} className="flex gap-2 mb-2">
+                            <input 
+                              type="url" 
+                              value={link} 
+                              onChange={(e) => handleReelLinksUpdate('likes', index, e.target.value)} 
+                              placeholder="https://instagram.com/reel/..." 
+                              className="flex-1 px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                              required 
+                            />
+                            {form.scopeBox.instagramGrowthSpecific.reelLinksLikes.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => removeReelLink('likes', index)} 
+                                className="px-3 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl transition-all"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button 
+                          type="button" 
+                          onClick={() => addReelLink('likes')} 
+                          className="text-sm text-cyan-400 hover:text-cyan-300 font-inter"
+                        >
+                          + Add Another Reel Link
+                        </button>
+                      </div>
+                      <input 
+                        type="number" 
+                        name="targetLikesPerReel" 
+                        value={form.scopeBox.instagramGrowthSpecific.targetLikesPerReel} 
+                        onChange={handleInstagramGrowthInput} 
+                        placeholder="Target Likes per Reel" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="datetime-local" 
+                        name="likesDeliveryDeadline" 
+                        value={form.scopeBox.instagramGrowthSpecific.likesDeliveryDeadline} 
+                        onChange={handleInstagramGrowthInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {form.scopeBox.instagramGrowthSpecific.selectedServices.includes('Comments on Reels') && (
+                  <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-purple-300 font-inter mb-3">Comments on Reels Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm text-white/80 font-inter mb-2">Reel Link(s)</label>
+                        {form.scopeBox.instagramGrowthSpecific.reelLinksComments.map((link, index) => (
+                          <div key={index} className="flex gap-2 mb-2">
+                            <input 
+                              type="url" 
+                              value={link} 
+                              onChange={(e) => handleReelLinksUpdate('comments', index, e.target.value)} 
+                              placeholder="https://instagram.com/reel/..." 
+                              className="flex-1 px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                              required 
+                            />
+                            {form.scopeBox.instagramGrowthSpecific.reelLinksComments.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => removeReelLink('comments', index)} 
+                                className="px-3 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-xl transition-all"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button 
+                          type="button" 
+                          onClick={() => addReelLink('comments')} 
+                          className="text-sm text-cyan-400 hover:text-cyan-300 font-inter"
+                        >
+                          + Add Another Reel Link
+                        </button>
+                      </div>
+                      <input 
+                        type="number" 
+                        name="targetCommentsCount" 
+                        value={form.scopeBox.instagramGrowthSpecific.targetCommentsCount} 
+                        onChange={handleInstagramGrowthInput} 
+                        placeholder="Target Number of Comments" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <textarea 
+                        name="commentGuidelines" 
+                        value={form.scopeBox.instagramGrowthSpecific.commentGuidelines} 
+                        onChange={handleInstagramGrowthInput} 
+                        placeholder="Comment Guidelines (acceptable style, tone, or keywords)" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none" 
+                        required 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Common Attachments Section */}
+                {form.scopeBox.instagramGrowthSpecific.selectedServices.length > 0 && (
+                  <div className="mt-6 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-cyan-300 font-inter mb-3">Attachments</h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <label className="block text-sm text-white/80 font-inter mb-1">Brand Guidelines (PDF upload)</label>
+                        <input 
+                          type="file" 
+                          accept=".pdf" 
+                          className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30" 
+                          onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, instagramGrowthSpecific: { ...prev.scopeBox.instagramGrowthSpecific, brandGuidelinesPdf: e.target.files?.[0] || null }}}))} 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-white/80 font-inter mb-1">Reference Content (JPG, PNG, MP4 upload)</label>
+                        <input 
+                          type="file" 
+                          multiple 
+                          accept=".jpg,.jpeg,.png,.mp4" 
+                          className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30" 
+                          onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, instagramGrowthSpecific: { ...prev.scopeBox.instagramGrowthSpecific, referenceContentFiles: Array.from(e.target.files || []) }}}))} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1328,81 +1889,788 @@ export default function NewOrderPage() {
                   <span className="text-2xl mr-2">📢</span>
                   <h3 className="text-lg font-semibold text-white font-inter">Instagram Promotion Details</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm text-white/80 font-inter mb-2">Promotion Services (Multi-select)</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {instagramPromotionServices.map(service => (
-                        <label key={service} className="flex items-center space-x-2 text-white/90 font-inter">
+                
+                {/* Promotion Goals Section */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Promotion Goals</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {instagramPromotionServices.map(service => (
+                      <label key={service} className="flex items-center space-x-2 text-white/90 font-inter p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all">
+                        <input 
+                          type="checkbox" 
+                          checked={form.scopeBox.instagramPromotionSpecific?.selectedServices?.includes(service) || false} 
+                          onChange={(e) => handleInstagramPromotionMultiSelect(service, e.target.checked)} 
+                          className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" 
+                        />
+                        <span className="text-sm font-medium">{service}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Conditional Fields Based on Selected Services */}
+                {form.scopeBox.instagramPromotionSpecific?.selectedServices?.includes('Logo Promotion') && (
+                  <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-orange-300 font-inter mb-3">Logo Promotion Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-white/80 font-inter mb-1">Logo Asset Upload (PNG, JPG, SVG)</label>
+                        <input 
+                          type="file" 
+                          multiple 
+                          accept=".png,.jpg,.jpeg,.svg" 
+                          className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-500/20 file:text-orange-300 hover:file:bg-orange-500/30" 
+                          onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, instagramPromotionSpecific: { ...prev.scopeBox.instagramPromotionSpecific, logoAssetFiles: Array.from(e.target.files || []) }}}))} 
+                        />
+                      </div>
+                      <select 
+                        name="logoPromotionPlacement" 
+                        value={form.scopeBox.instagramPromotionSpecific.logoPromotionPlacement} 
+                        onChange={handleInstagramPromotionInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required
+                      >
+                        <option value="" className="text-white bg-slate-800">Promotion Placement</option>
+                        {logoPromotionPlacements.map(placement => <option key={placement} value={placement} className="text-white bg-slate-800">{placement}</option>)}
+                      </select>
+                      <input 
+                        type="number" 
+                        name="logoNumberOfPromotions" 
+                        value={form.scopeBox.instagramPromotionSpecific.logoNumberOfPromotions} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Number of Promotions" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        name="logoDuration" 
+                        value={form.scopeBox.instagramPromotionSpecific.logoDuration} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Duration (hours/days live)" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {form.scopeBox.instagramPromotionSpecific?.selectedServices?.includes('Song Promotion') && (
+                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-red-300 font-inter mb-3">Song Promotion Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input 
+                        name="songFileOrLink" 
+                        value={form.scopeBox.instagramPromotionSpecific.songFileOrLink} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Song File or Link (MP3, WAV, Spotify/YouTube link)" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter sm:col-span-2" 
+                        required 
+                      />
+                      <select 
+                        name="songPromotionFormat" 
+                        value={form.scopeBox.instagramPromotionSpecific.songPromotionFormat} 
+                        onChange={handleInstagramPromotionInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required
+                      >
+                        <option value="" className="text-white bg-slate-800">Promotion Format</option>
+                        {songPromotionFormats.map(format => <option key={format} value={format} className="text-white bg-slate-800">{format}</option>)}
+                      </select>
+                      <input 
+                        type="number" 
+                        name="songNumberOfPromotions" 
+                        value={form.scopeBox.instagramPromotionSpecific.songNumberOfPromotions} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Number of Promotions" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="date" 
+                        name="songCampaignStartDate" 
+                        value={form.scopeBox.instagramPromotionSpecific.songCampaignStartDate} 
+                        onChange={handleInstagramPromotionInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="date" 
+                        name="songCampaignEndDate" 
+                        value={form.scopeBox.instagramPromotionSpecific.songCampaignEndDate} 
+                        onChange={handleInstagramPromotionInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {form.scopeBox.instagramPromotionSpecific?.selectedServices?.includes('Story Promotion') && (
+                  <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-purple-300 font-inter mb-3">Story Promotion Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <select 
+                        name="storyType" 
+                        value={form.scopeBox.instagramPromotionSpecific.storyType} 
+                        onChange={handleInstagramPromotionInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required
+                      >
+                        <option value="" className="text-white bg-slate-800">Story Type</option>
+                        {storyTypes.map(type => <option key={type} value={type} className="text-white bg-slate-800">{type}</option>)}
+                      </select>
+                      <input 
+                        type="number" 
+                        name="numberOfStories" 
+                        value={form.scopeBox.instagramPromotionSpecific.numberOfStories} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Number of Stories" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        name="storyDurationLive" 
+                        value={form.scopeBox.instagramPromotionSpecific.storyDurationLive} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Duration Each Story Must Stay Live (hours)" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="url" 
+                        name="swipeLinkCTA" 
+                        value={form.scopeBox.instagramPromotionSpecific.swipeLinkCTA} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Swipe Link / CTA (URL)" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {form.scopeBox.instagramPromotionSpecific?.selectedServices?.includes('Repost Promotion') && (
+                  <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-green-300 font-inter mb-3">Repost Promotion Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input 
+                        type="url" 
+                        name="originalPostLink" 
+                        value={form.scopeBox.instagramPromotionSpecific.originalPostLink} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Original Post Link (URL)" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter sm:col-span-2" 
+                        required 
+                      />
+                      <input 
+                        type="number" 
+                        name="numberOfReposts" 
+                        value={form.scopeBox.instagramPromotionSpecific.numberOfReposts} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Number of Reposts" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        name="repostDurationLive" 
+                        value={form.scopeBox.instagramPromotionSpecific.repostDurationLive} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Duration to Stay Live (hours/days)" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {form.scopeBox.instagramPromotionSpecific?.selectedServices?.includes('Link Promotion (via Broadcast Channel)') && (
+                  <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-blue-300 font-inter mb-3">Link Promotion Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input 
+                        name="channelHandle" 
+                        value={form.scopeBox.instagramPromotionSpecific.channelHandle} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Channel Handle" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="number" 
+                        name="numberOfLinkDrops" 
+                        value={form.scopeBox.instagramPromotionSpecific.numberOfLinkDrops} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Number of Link Drops" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm text-white/80 font-inter mb-2">Link URL(s)</label>
+                        {form.scopeBox.instagramPromotionSpecific.linkUrls.map((link, index) => (
+                          <div key={index} className="flex gap-2 mb-2">
+                            <input 
+                              type="url" 
+                              value={link} 
+                              onChange={(e) => handlePromotionLinkUrlsUpdate(index, e.target.value)} 
+                              placeholder="https://example.com" 
+                              className="flex-1 px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                              required 
+                            />
+                            {form.scopeBox.instagramPromotionSpecific.linkUrls.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => removePromotionLinkUrl(index)} 
+                                className="px-3 py-3 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl transition-all"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button 
+                          type="button" 
+                          onClick={addPromotionLinkUrl} 
+                          className="text-sm text-cyan-400 hover:text-cyan-300 font-inter"
+                        >
+                          + Add Another Link URL
+                        </button>
+                      </div>
+                      <input 
+                        type="number" 
+                        name="expectedReachClicks" 
+                        value={form.scopeBox.instagramPromotionSpecific.expectedReachClicks} 
+                        onChange={handleInstagramPromotionInput} 
+                        placeholder="Expected Reach/Clicks" 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter sm:col-span-2" 
+                        required 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Common Attachments Section */}
+                {form.scopeBox.instagramPromotionSpecific?.selectedServices?.length > 0 && (
+                  <div className="mt-6 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-cyan-300 font-inter mb-3">Attachments</h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <label className="block text-sm text-white/80 font-inter mb-1">Brand Guidelines (PDF upload)</label>
+                        <input 
+                          type="file" 
+                          accept=".pdf" 
+                          className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30" 
+                          onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, instagramPromotionSpecific: { ...prev.scopeBox.instagramPromotionSpecific, brandGuidelinesPdf: e.target.files?.[0] || null }}}))} 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-white/80 font-inter mb-1">Creative Assets (ZIP of images/videos)</label>
+                        <input 
+                          type="file" 
+                          accept=".zip" 
+                          className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30" 
+                          onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, instagramPromotionSpecific: { ...prev.scopeBox.instagramPromotionSpecific, creativeAssetsZip: e.target.files?.[0] || null }}}))} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* YouTube Promotion Specific Module */}
+            {isYouTubePromotionSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">📺</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">YouTube Promotion Details</h3>
+                </div>
+                
+                {/* Channel URL / ID */}
+                <div className="mb-6">
+                  <input 
+                    name="channelUrl" 
+                    value={form.scopeBox.youtubePromotionSpecific.channelUrl} 
+                    onChange={handleYouTubePromotionInput} 
+                    placeholder="Channel URL / ID" 
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                    required 
+                  />
+                </div>
+
+                {/* Promotion Type Checkboxes */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Promotion Type</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {youtubePromotionTypes.map(type => (
+                      <label key={type} className="flex items-center space-x-2 text-white/90 font-inter p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all">
+                        <input 
+                          type="checkbox" 
+                          checked={form.scopeBox.youtubePromotionSpecific?.promotionTypes?.includes(type) || false} 
+                          onChange={(e) => handleYouTubePromotionMultiSelect(type, e.target.checked)} 
+                          className="rounded border-white/20 text-red-500 focus:ring-red-500" 
+                        />
+                        <span className="text-sm font-medium">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Conditional Target Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  {form.scopeBox.youtubePromotionSpecific?.promotionTypes?.includes('Views') && (
+                    <input 
+                      type="number" 
+                      name="viewsTarget" 
+                      value={form.scopeBox.youtubePromotionSpecific.viewsTarget} 
+                      onChange={handleYouTubePromotionInput} 
+                      placeholder="Views Target" 
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                      required 
+                    />
+                  )}
+                  
+                  {form.scopeBox.youtubePromotionSpecific?.promotionTypes?.includes('Subscribers') && (
+                    <input 
+                      type="number" 
+                      name="subscribersTarget" 
+                      value={form.scopeBox.youtubePromotionSpecific.subscribersTarget} 
+                      onChange={handleYouTubePromotionInput} 
+                      placeholder="Subscribers Target" 
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                      required 
+                    />
+                  )}
+                  
+                  {form.scopeBox.youtubePromotionSpecific?.promotionTypes?.includes('Likes') && (
+                    <input 
+                      type="number" 
+                      name="likesTarget" 
+                      value={form.scopeBox.youtubePromotionSpecific.likesTarget} 
+                      onChange={handleYouTubePromotionInput} 
+                      placeholder="Likes Target" 
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                      required 
+                    />
+                  )}
+                  
+                  {form.scopeBox.youtubePromotionSpecific?.promotionTypes?.includes('Comments') && (
+                    <input 
+                      type="number" 
+                      name="commentsTarget" 
+                      value={form.scopeBox.youtubePromotionSpecific.commentsTarget} 
+                      onChange={handleYouTubePromotionInput} 
+                      placeholder="Comments Target" 
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                      required 
+                    />
+                  )}
+                  
+                  {form.scopeBox.youtubePromotionSpecific?.promotionTypes?.includes('Shares') && (
+                    <input 
+                      type="number" 
+                      name="sharesTarget" 
+                      value={form.scopeBox.youtubePromotionSpecific.sharesTarget} 
+                      onChange={handleYouTubePromotionInput} 
+                      placeholder="Shares Target" 
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                      required 
+                    />
+                  )}
+                </div>
+
+                {/* Common Fields */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Campaign Details</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Video Links */}
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-2">Video Link(s)</label>
+                      {form.scopeBox.youtubePromotionSpecific.videoLinks.map((link, index) => (
+                        <div key={index} className="flex gap-2 mb-2">
                           <input 
-                            type="checkbox" 
-                            checked={form.scopeBox.instagramPromotionSpecific.selectedServices.includes(service)} 
-                            onChange={(e) => handleInstagramPromotionMultiSelect(service, e.target.checked)} 
-                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500" 
+                            type="url" 
+                            value={link} 
+                            onChange={(e) => handleYouTubeVideoLinksUpdate(index, e.target.value)} 
+                            placeholder="https://youtube.com/watch?v=..." 
+                            className="flex-1 px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                            required 
                           />
-                          <span className="text-sm">{service}</span>
+                          {form.scopeBox.youtubePromotionSpecific.videoLinks.length > 1 && (
+                            <button 
+                              type="button" 
+                              onClick={() => removeYouTubeVideoLink(index)} 
+                              className="px-3 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl transition-all"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button 
+                        type="button" 
+                        onClick={addYouTubeVideoLink} 
+                        className="text-sm text-red-400 hover:text-red-300 font-inter"
+                      >
+                        + Add Another Video Link
+                      </button>
+                    </div>
+
+                    {/* Campaign Duration */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input 
+                        type="date" 
+                        name="campaignStartDate" 
+                        value={form.scopeBox.youtubePromotionSpecific.campaignStartDate} 
+                        onChange={handleYouTubePromotionInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                      <input 
+                        type="date" 
+                        name="campaignEndDate" 
+                        value={form.scopeBox.youtubePromotionSpecific.campaignEndDate} 
+                        onChange={handleYouTubePromotionInput} 
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                        required 
+                      />
+                    </div>
+
+                    {/* Geography / Audience Targeting */}
+                    <textarea 
+                      name="geographyTargeting" 
+                      value={form.scopeBox.youtubePromotionSpecific.geographyTargeting} 
+                      onChange={handleYouTubePromotionInput} 
+                      placeholder="Geography / Audience Targeting (e.g., US, UK, Age 18-35, Gaming audience)" 
+                      rows={3}
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter resize-none" 
+                      required 
+                    />
+
+                    {/* Promotion Method */}
+                    <select 
+                      name="promotionMethod" 
+                      value={form.scopeBox.youtubePromotionSpecific.promotionMethod} 
+                      onChange={handleYouTubePromotionInput} 
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
+                      required
+                    >
+                      <option value="" className="text-white bg-slate-800">Promotion Method</option>
+                      {promotionMethods.map(method => <option key={method} value={method} className="text-white bg-slate-800">{method}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Attachment Fields */}
+                <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <h4 className="text-md font-semibold text-red-300 font-inter mb-3">Attachments</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-1">Brand Guidelines (PDF upload)</label>
+                      <input 
+                        type="file" 
+                        accept=".pdf" 
+                        className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-500/20 file:text-red-300 hover:file:bg-red-500/30" 
+                        onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, youtubePromotionSpecific: { ...prev.scopeBox.youtubePromotionSpecific, brandGuidelinesPdf: e.target.files?.[0] || null }}}))} 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-1">Content Restrictions (PDF/TXT upload)</label>
+                      <input 
+                        type="file" 
+                        accept=".pdf,.txt" 
+                        className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-500/20 file:text-red-300 hover:file:bg-red-500/30" 
+                        onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, youtubePromotionSpecific: { ...prev.scopeBox.youtubePromotionSpecific, contentRestrictionsPdf: e.target.files?.[0] || null }}}))} 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Influencer Shoutout Promotion Specific Module */}
+            {isInfluencerShoutoutSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">📢</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Influencer Shoutout Promotion</h3>
+                </div>
+
+                {/* Platform Selection */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Platform Selection</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {influencerPlatforms.map(platform => (
+                      <label key={platform} className="flex items-center space-x-2 text-white/90 font-inter p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all">
+                        <input
+                          type="checkbox"
+                          checked={form.scopeBox.influencerShoutoutSpecific?.platforms?.includes(platform) || false}
+                          onChange={(e) => handleInfluencerShoutoutMultiSelect('platforms', platform, e.target.checked)}
+                          className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500"
+                        />
+                        <span className="text-sm font-medium">{platform}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Instagram Promotion Types */}
+                {(form.scopeBox.influencerShoutoutSpecific?.platforms?.includes('Instagram') || form.scopeBox.influencerShoutoutSpecific?.platforms?.includes('Both')) && (
+                  <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-orange-300 font-inter mb-3">Instagram Promotion Types</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                      {instagramPromotionTypes.map(type => (
+                        <label key={type} className="flex items-center space-x-2 text-white/90 font-inter p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all">
+                          <input
+                            type="checkbox"
+                            checked={form.scopeBox.influencerShoutoutSpecific?.instagramPromotionTypes?.includes(type) || false}
+                            onChange={(e) => handleInfluencerShoutoutMultiSelect('instagramPromotionTypes', type, e.target.checked)}
+                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500"
+                          />
+                          <span className="text-sm font-medium">{type}</span>
                         </label>
                       ))}
                     </div>
+
+                    {/* Instagram specific fields */}
+                    {form.scopeBox.influencerShoutoutSpecific.instagramPromotionTypes?.includes('Reel') && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <input
+                          type="number"
+                          name="instagramReelCount"
+                          value={form.scopeBox.influencerShoutoutSpecific.instagramReelCount || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Number of Reels"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                        <input
+                          type="text"
+                          name="instagramReelDuration"
+                          value={form.scopeBox.influencerShoutoutSpecific.instagramReelDuration || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Duration Each Reel Stays Live"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                      </div>
+                    )}
+
+                    {form.scopeBox.influencerShoutoutSpecific.instagramPromotionTypes?.includes('Post') && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <input
+                          type="number"
+                          name="instagramPostCount"
+                          value={form.scopeBox.influencerShoutoutSpecific.instagramPostCount || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Number of Posts"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                        <input
+                          type="text"
+                          name="instagramPostDuration"
+                          value={form.scopeBox.influencerShoutoutSpecific.instagramPostDuration || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Duration Each Post Stays Live"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                      </div>
+                    )}
+
+                    {form.scopeBox.influencerShoutoutSpecific.instagramPromotionTypes?.includes('Story') && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <input
+                          type="number"
+                          name="instagramStoryCount"
+                          value={form.scopeBox.influencerShoutoutSpecific.instagramStoryCount || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Number of Stories"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                        <input
+                          type="text"
+                          name="instagramStoryDuration"
+                          value={form.scopeBox.influencerShoutoutSpecific.instagramStoryDuration || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Duration Each Story Stays Live"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                      </div>
+                    )}
+
+                    {form.scopeBox.influencerShoutoutSpecific.instagramPromotionTypes?.includes('Link in Bio') && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <input
+                          type="text"
+                          name="linkInBioDuration"
+                          value={form.scopeBox.influencerShoutoutSpecific.linkInBioDuration || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Duration Link Stays in Bio"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                        <input
+                          type="text"
+                          name="callToActionText"
+                          value={form.scopeBox.influencerShoutoutSpecific.callToActionText || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Call-to-Action Text"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                      </div>
+                    )}
                   </div>
-                  <input 
-                    name="targetAccount" 
-                    value={form.scopeBox.instagramPromotionSpecific.targetAccount} 
-                    onChange={handleInstagramPromotionInput} 
-                    placeholder="Target Instagram Account (@username)" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                    required 
-                  />
-                  <input 
-                    name="promotionDuration" 
-                    value={form.scopeBox.instagramPromotionSpecific.promotionDuration} 
-                    onChange={handleInstagramPromotionInput} 
-                    placeholder="Promotion Duration (e.g., 7 days)" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                    required 
-                  />
-                  <input 
-                    name="logoFiles" 
-                    value={form.scopeBox.instagramPromotionSpecific.logoFiles} 
-                    onChange={handleInstagramPromotionInput} 
-                    placeholder="Logo Files (if Logo Promotion selected)" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                  />
-                  <input 
-                    name="songFiles" 
-                    value={form.scopeBox.instagramPromotionSpecific.songFiles} 
-                    onChange={handleInstagramPromotionInput} 
-                    placeholder="Song Files (if Song Promotion selected)" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                  />
-                  <input 
-                    name="storyFiles" 
-                    value={form.scopeBox.instagramPromotionSpecific.storyFiles} 
-                    placeholder="Story Files (if Story Promotion selected)" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                    readOnly 
-                  />
-                  <input 
-                    name="repostContent" 
-                    value={form.scopeBox.instagramPromotionSpecific.repostContent} 
-                    onChange={handleInstagramPromotionInput} 
-                    placeholder="Repost Content Description" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                  />
-                  <input 
-                    name="linkUrl" 
-                    value={form.scopeBox.instagramPromotionSpecific.linkUrl} 
-                    onChange={handleInstagramPromotionInput} 
-                    placeholder="Link URL (if Link Promotion selected)" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" 
-                  />
-                  <textarea 
-                    name="additionalRequirements" 
-                    value={form.scopeBox.instagramPromotionSpecific.additionalRequirements} 
-                    onChange={handleInstagramPromotionInput} 
-                    placeholder="Additional Requirements or Notes" 
-                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none sm:col-span-2" 
-                  />
+                )}
+
+                {/* YouTube Promotion Types */}
+                {(form.scopeBox.influencerShoutoutSpecific?.platforms?.includes('YouTube') || form.scopeBox.influencerShoutoutSpecific?.platforms?.includes('Both')) && (
+                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-red-300 font-inter mb-3">YouTube Promotion Types</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                      {youtubePromotionTypesInfluencer.map(type => (
+                        <label key={type} className="flex items-center space-x-2 text-white/90 font-inter p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all">
+                          <input
+                            type="checkbox"
+                            checked={form.scopeBox.influencerShoutoutSpecific?.youtubePromotionTypes?.includes(type) || false}
+                            onChange={(e) => handleInfluencerShoutoutMultiSelect('youtubePromotionTypes', type, e.target.checked)}
+                            className="rounded border-white/20 text-cyan-500 focus:ring-cyan-500"
+                          />
+                          <span className="text-sm font-medium">{type}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* YouTube specific fields */}
+                    {form.scopeBox.influencerShoutoutSpecific.youtubePromotionTypes?.includes('Shorts') && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <input
+                          type="number"
+                          name="youtubeShortsCount"
+                          value={form.scopeBox.influencerShoutoutSpecific.youtubeShortsCount || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Number of Shorts"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                        <input
+                          type="text"
+                          name="youtubeShortsDuration"
+                          value={form.scopeBox.influencerShoutoutSpecific.youtubeShortsDuration || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Duration Each Short Stays Live"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                      </div>
+                    )}
+
+                    {form.scopeBox.influencerShoutoutSpecific.youtubePromotionTypes?.includes('Full Video Mention') && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <input
+                          type="number"
+                          name="youtubeVideoCount"
+                          value={form.scopeBox.influencerShoutoutSpecific.youtubeVideoCount || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Number of Videos"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                        <input
+                          type="text"
+                          name="youtubeMentionDuration"
+                          value={form.scopeBox.influencerShoutoutSpecific.youtubeMentionDuration || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Mention Duration (seconds)"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                      </div>
+                    )}
+
+                    {form.scopeBox.influencerShoutoutSpecific.youtubePromotionTypes?.includes('Pinned Comment') && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <input
+                          type="number"
+                          name="youtubePinnedCommentCount"
+                          value={form.scopeBox.influencerShoutoutSpecific.youtubePinnedCommentCount || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Number of Videos"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                        <input
+                          type="text"
+                          name="youtubePinnedDuration"
+                          value={form.scopeBox.influencerShoutoutSpecific.youtubePinnedDuration || ''}
+                          onChange={handleInfluencerShoutoutInput}
+                          placeholder="Duration Pinned"
+                          className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Campaign Details */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Campaign Details</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-1">Campaign Duration</label>
+                      <input
+                        type="text"
+                        name="campaignDuration"
+                        value={form.scopeBox.influencerShoutoutSpecific?.campaignDuration || ''}
+                        onChange={handleInfluencerShoutoutInput}
+                        placeholder="e.g., 7 days, 2 weeks, 1 month"
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      />
+                    </div>
+                    <textarea
+                      name="targetAudience"
+                      value={form.scopeBox.influencerShoutoutSpecific?.targetAudience || ''}
+                      onChange={handleInfluencerShoutoutInput}
+                      placeholder="Target Audience Demographics"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                    />
+                    <textarea
+                      name="geographicTargeting"
+                      value={form.scopeBox.influencerShoutoutSpecific?.geographicTargeting || ''}
+                      onChange={handleInfluencerShoutoutInput}
+                      placeholder="Geographic Targeting"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                    />
+                    <input
+                      type="number"
+                      name="expectedReach"
+                      value={form.scopeBox.influencerShoutoutSpecific?.expectedReach || ''}
+                      onChange={handleInfluencerShoutoutInput}
+                      placeholder="Expected Reach/Impressions"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                    />
+                    <textarea
+                      name="deliverablesTimeline"
+                      value={form.scopeBox.influencerShoutoutSpecific?.deliverablesTimeline || ''}
+                      onChange={handleInfluencerShoutoutInput}
+                      placeholder="Deliverables Timeline"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Attachment Fields */}
+                <div className="mt-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Attachments</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-1">Brand Guidelines (PDF upload)</label>
+                      <input 
+                        type="file" 
+                        accept=".pdf" 
+                        className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-500/20 file:text-red-300 hover:file:bg-red-500/30" 
+                        onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, influencerShoutoutSpecific: { ...prev.scopeBox.influencerShoutoutSpecific, brandGuidelinesPdf: e.target.files?.[0] || null }}}))} 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-1">Creative Assets (ZIP upload)</label>
+                      <input 
+                        type="file" 
+                        accept=".zip" 
+                        className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-500/20 file:text-red-300 hover:file:bg-red-500/30" 
+                        onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, influencerShoutoutSpecific: { ...prev.scopeBox.influencerShoutoutSpecific, creativeAssetsZip: e.target.files?.[0] || null }}}))} 
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -2478,6 +3746,7 @@ export default function NewOrderPage() {
                   isAppDevelopmentSelected() ? ".zip,.rar,.pdf,.png,.jpg,.mp4" :
                   isInstagramGrowthSelected() ? ".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" :
                   isInstagramPromotionSelected() ? ".jpg,.jpeg,.png,.gif,.mp4,.pdf,.doc,.docx,.txt" :
+                  isYouTubePromotionSelected() ? ".pdf,.png,.jpg,.jpeg,.mp4,.zip" :
                   ".jpg,.jpeg,.png,.pdf,.mp4,.doc,.docx,.txt,.zip,.rar"
                 } 
                 onChange={handleFileChange} 
@@ -2515,7 +3784,11 @@ export default function NewOrderPage() {
                       ? "Supported: Images (JPG, PNG), PDFs, Documents (DOC, DOCX, TXT)"
                       : isInstagramPromotionSelected()
                         ? "Supported: Images (JPG, PNG, GIF), Videos (MP4), PDFs, Documents (DOC, DOCX, TXT)"
-                        : "Supported: Images, PDFs, Videos, Documents, Archives"}
+                        : isYouTubePromotionSelected()
+                          ? "Supported: PDF, PNG, JPG, MP4, ZIP"
+                          : isInfluencerShoutoutSelected()
+                            ? "Supported: PDF, PNG, JPG, MP4, ZIP"
+                            : "Supported: Images, PDFs, Videos, Documents, Archives"}
                 </div>
                 <label htmlFor="file-upload" className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white rounded-lg transition-all duration-300 cursor-pointer font-inter font-medium hover:scale-105">
                   Choose Files
@@ -2575,7 +3848,7 @@ export default function NewOrderPage() {
                 </div>
               )}
             </div>
-              {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected()) && (
+              {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected() || isYouTubePromotionSelected() || isInfluencerShoutoutSelected()) && (
             <select name="condition" value={form.scopeBox.condition} onChange={handleScopeInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
                                 <option value="" className="text-white bg-slate-800">Condition of Product</option>
                   {conditions.map(c => <option key={c} value={c} className="text-white bg-slate-800">{c}</option>)}

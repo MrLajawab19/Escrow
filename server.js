@@ -8,8 +8,28 @@ const authRoutes = require('./routes/auth');
 const disputeRoutes = require('./routes/disputes');
 const fs = require('fs');
 
+// Load environment variables manually if dotenv is not available
+function loadEnv() {
+  try {
+    const envPath = path.join(__dirname, '.env');
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      envContent.split('\n').forEach(line => {
+        const [key, value] = line.split('=');
+        if (key && value) {
+          process.env[key.trim()] = value.trim();
+        }
+      });
+    }
+  } catch (error) {
+    console.log('Note: Could not load .env file, using defaults');
+  }
+}
+
+loadEnv();
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+let PORT = Number(process.env.PORT) || 3000;
 
 // Enable CORS for React frontend
 app.use(cors({
@@ -39,6 +59,43 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000); // every hour
 
-app.listen(PORT, () => {
-  console.log(`ScrowX server running on http://localhost:${PORT}`);
-}); 
+function updateEnvFile(port) {
+  const envPath = path.join(__dirname, '.env');
+  let envContent = '';
+  
+  if (fs.existsSync(envPath)) {
+    envContent = fs.readFileSync(envPath, 'utf8');
+  }
+  
+  const newApiUrl = `VITE_API_URL=http://localhost:${port}`;
+  
+  if (envContent.includes('VITE_API_URL=')) {
+    envContent = envContent.replace(/VITE_API_URL=.*/g, newApiUrl);
+  } else {
+    envContent += `\n${newApiUrl}\n`;
+  }
+  
+  fs.writeFileSync(envPath, envContent);
+  console.log(`Updated VITE_API_URL to http://localhost:${port}`);
+}
+
+function startServer(port, attemptsLeft = 3) {
+  const server = app
+    .listen(port, () => {
+      console.log(`ScrowX server running on http://localhost:${port}`);
+      updateEnvFile(port);
+    })
+    .on('error', (err) => {
+      if (err && err.code === 'EADDRINUSE' && attemptsLeft > 0) {
+        const nextPort = port + 1;
+        console.warn(`Port ${port} in use, retrying on ${nextPort}...`);
+        startServer(nextPort, attemptsLeft - 1);
+      } else {
+        console.error('Failed to start server:', err);
+        process.exit(1);
+      }
+    });
+  return server;
+}
+
+startServer(PORT);

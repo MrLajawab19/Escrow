@@ -27,7 +27,9 @@ const authenticateToken = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('Decoded token:', decoded);
+    
+    // Optional: More selective logging (uncomment if needed)
+    // console.log(`Auth: ${decoded.role} ${decoded.email} - ${req.method} ${req.path}`);
 
     // Check if user exists (only for buyer/seller, not admin)
     if (decoded.role !== 'admin') {
