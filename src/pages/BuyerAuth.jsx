@@ -152,18 +152,35 @@ const BuyerAuth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 relative overflow-hidden">
+      {/* Enhanced Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+        {/* Main gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-teal-900/20 to-transparent"></div>
+        
+        {/* Spotlight effect behind logo */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-radial from-teal-400/20 via-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse-glow"></div>
+        
+        {/* Floating background elements */}
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/4 right-20 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl animate-pulse-glow" style={{animationDelay: '2s'}}></div>
       </div>
       
       <div className="max-w-md w-full relative z-10">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 shadow-lg">
-            <span className="text-2xl font-bold text-white">E</span>
+        <div className="text-center mb-8 relative">
+          {/* Logo spotlight background */}
+          <div className="absolute inset-0 flex justify-center items-start pt-2">
+            <div className="w-32 h-32 bg-gradient-radial from-teal-400/30 via-cyan-400/20 to-transparent rounded-full blur-2xl animate-pulse-glow"></div>
+          </div>
+          <div className="relative z-10">
+            <img 
+              src="/Logo.png" 
+              alt="ScrowX Logo" 
+              className="mx-auto mb-4 h-20 w-auto filter brightness-125 contrast-125 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+            />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">ScrowX</h1>
           <p className="mt-2 text-white/80 font-inter">Secure Escrow Services</p>

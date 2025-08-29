@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import BuyerAuth from './pages/BuyerAuth';
 import SellerAuth from './pages/SellerAuth';
 import BuyerDashboard from './pages/BuyerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
 import NewOrderPage from './pages/NewOrderPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './components/AdminDashboard';
+import CustomerCareChatBot from './components/CustomerCareChatBot';
 
 // Route Change Handler Component
 const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
@@ -31,6 +34,8 @@ const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
 
 // Home Page Component with Auto-Logout
 const HomePage = ({ onAuthClear }) => {
+  const navigate = useNavigate();
+  
   useEffect(() => {
     // Check if user is authenticated when homepage loads
     if (localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken')) {
@@ -44,89 +49,101 @@ const HomePage = ({ onAuthClear }) => {
 
   return (
     <div className="min-h-screen bg-gradient-tech relative overflow-hidden">
-      {/* Animated Background Elements */}
+      {/* Enhanced Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl animate-pulse-glow"></div>
+        {/* Enhanced gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-teal-900/20 to-transparent"></div>
+        
+        {/* Spotlight effect behind logo */}
+        <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-radial from-teal-400/20 via-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse-glow"></div>
+        
+        {/* Floating background elements */}
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-2/3 right-20 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl animate-pulse-glow" style={{animationDelay: '2s'}}></div>
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12 sm:mb-16 animate-fade-in">
-          <div className="text-6xl sm:text-8xl mb-6 animate-bounce-slow">🏦</div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-inter font-black mb-6 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+          <div className="mb-8 animate-fade-in relative">
+            {/* Logo spotlight background */}
+            <div className="absolute inset-0 flex justify-center items-center">
+              <div className="w-40 h-40 bg-gradient-radial from-teal-400/30 via-cyan-400/20 to-transparent rounded-full blur-2xl animate-pulse-glow"></div>
+            </div>
+            <img 
+              src="/Logo.png" 
+              alt="ScrowX Logo" 
+              className="relative z-10 mx-auto mb-4 h-24 sm:h-28 lg:h-32 w-auto filter brightness-125 contrast-125 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+            />
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-inter font-black mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
             Welcome to ScrowX
           </h1>
+          <p className="text-xl sm:text-2xl lg:text-3xl mb-6 font-inter font-bold bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+            AI that automates trust in every deal
+          </p>
           <p className="text-lg sm:text-xl lg:text-2xl mb-8 max-w-3xl mx-auto px-4 text-white/90 font-inter font-medium">
             Secure escrow platform for freelance and digital product transactions. 
             Protect your payments and ensure fair delivery with cutting-edge technology.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-            <Link 
-              to="/buyer/auth"
-              className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-inter font-semibold text-lg px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <button 
+              onClick={() => navigate('/buyer/auth')}
+              className="px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-inter font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:from-primary-400 hover:to-primary-500 flex items-center space-x-2 hover:shadow-cyan-500/25 hover:glow-cyan group"
             >
-              <span className="mr-2">🚀</span>
-              Get Started as Buyer
-            </Link>
-            <Link 
-              to="/seller/auth"
-              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-inter font-semibold text-lg px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+              <span className="group-hover:animate-bounce">🚀</span>
+              <span>Get Started as Buyer</span>
+            </button>
+            <button 
+              onClick={() => navigate('/seller/auth')}
+              className="px-8 py-4 bg-gradient-to-r from-secondary-500 to-secondary-600 text-white font-inter font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:from-secondary-400 hover:to-secondary-500 flex items-center space-x-2 hover:shadow-emerald-500/25 hover:glow-emerald group"
             >
-              <span className="mr-2">💼</span>
-              Join as Seller
-            </Link>
+              <span className="group-hover:animate-bounce">💼</span>
+              <span>Join as Seller</span>
+            </button>
           </div>
         </div>
         
-        {/* Feature Highlights */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl animate-slide-up shadow-lg">
-            <div className="text-4xl sm:text-5xl mb-6 animate-bounce-slow">🚨</div>
-            <h3 className="text-xl sm:text-2xl font-inter font-bold mb-4 text-white">Dispute Resolution</h3>
-            <p className="text-white/80 font-inter">
-              Raise disputes and track resolution with evidence upload. 
-              Our AI-powered system ensures fair resolution for all parties.
-            </p>
+        {/* Enhanced Features Grid */}
+        <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-2 group">
+            <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">⚖️</div>
+            <h3 className="text-xl font-inter font-bold text-white mb-3">Dispute Resolution</h3>
+            <p className="text-white/80 font-inter">Raise disputes and track resolution with evidence upload. Our AI-powered system ensures fair resolution for all parties.</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl animate-slide-up shadow-lg" style={{animationDelay: '0.1s'}}>
-            <div className="text-4xl sm:text-5xl mb-6 animate-bounce-slow">💰</div>
-            <h3 className="text-xl sm:text-2xl font-inter font-bold mb-4 text-white">ScrowX</h3>
-            <p className="text-white/80 font-inter">
-              Funds held securely with blockchain-level encryption until both parties are satisfied. 
-              No more payment disputes or delivery issues.
-            </p>
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-teal-500/10 hover:-translate-y-2 group">
+            <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🔒</div>
+            <h3 className="text-xl font-inter font-bold text-white mb-3">ScrowX</h3>
+            <p className="text-white/80 font-inter">Funds held securely with blockchain-level encryption until both parties are satisfied. No more payment disputes or delivery issues.</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl animate-slide-up sm:col-span-2 lg:col-span-1 shadow-lg" style={{animationDelay: '0.2s'}}>
-            <div className="text-4xl sm:text-5xl mb-6 animate-bounce-slow">📋</div>
-            <h3 className="text-xl sm:text-2xl font-inter font-bold mb-4 text-white">Order Tracking</h3>
-            <p className="text-white/80 font-inter">
-              Real-time order status updates and timeline tracking with advanced analytics. 
-              Stay informed throughout the entire process.
-            </p>
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 group">
+            <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">📊</div>
+            <h3 className="text-xl font-inter font-bold text-white mb-3">Order Tracking</h3>
+            <p className="text-white/80 font-inter">Real-time order status updates and timeline tracking with advanced analytics. Stay informed throughout the entire process.</p>
           </div>
         </div>
+      </div>
 
-        {/* How It Works */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 lg:p-12 transition-all duration-300 hover:shadow-xl animate-slide-up shadow-lg" style={{animationDelay: '0.3s'}}>
-          <h2 className="text-3xl sm:text-4xl font-inter font-black mb-8 text-center bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">How It Works</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-            {[
-              { step: '1', title: 'Create Order', desc: 'Buyer creates an order with detailed requirements', icon: '📝' },
-              { step: '2', title: 'Fund Escrow', desc: 'Payment is held securely in escrow', icon: '🔒' },
-              { step: '3', title: 'Work & Deliver', desc: 'Seller completes work and submits delivery', icon: '⚡' },
-              { step: '4', title: 'Release Funds', desc: 'Buyer approves and funds are released', icon: '✅' }
-            ].map((item, index) => (
-              <div key={index} className="text-center group">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-400 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-glow">
-                  <span className="text-2xl">{item.icon}</span>
-                </div>
-                <h4 className="font-inter font-bold mb-3 text-white text-lg">{item.title}</h4>
-                <p className="text-white/70 font-inter text-sm">{item.desc}</p>
+      {/* How It Works */}
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 lg:p-12 transition-all duration-300 hover:shadow-xl animate-slide-up shadow-lg" style={{animationDelay: '0.3s'}}>
+        <h2 className="text-3xl sm:text-4xl font-inter font-black mb-8 text-center bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">How It Works</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          {[
+            { step: '1', title: 'Create Order', desc: 'Buyer creates an order with detailed requirements', icon: '📝' },
+            { step: '2', title: 'Fund Escrow', desc: 'Payment is held securely in escrow', icon: '🔒' },
+            { step: '3', title: 'Work & Deliver', desc: 'Seller completes work and submits delivery', icon: '⚡' },
+            { step: '4', title: 'Release Funds', desc: 'Buyer approves and funds are released', icon: '✅' }
+          ].map((item, index) => (
+            <div key={index} className="text-center group">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-400 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-glow">
+                <span className="text-2xl">{item.icon}</span>
               </div>
-            ))}
-          </div>
+              <h4 className="font-inter font-bold mb-3 text-white text-lg">{item.title}</h4>
+              <p className="text-white/70 font-inter text-sm">{item.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -245,10 +262,14 @@ function App() {
               <div className="flex items-center">
                 <Link 
                   to="/" 
-                  className="text-2xl font-inter font-black transition-all duration-300 hover:opacity-80 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent" 
+                  className="flex items-center space-x-3 transition-all duration-300 hover:opacity-80" 
                   onClick={handleHomeClick}
                 >
-                  ScrowX
+                  <img 
+                    src="/Logo.png" 
+                    alt="ScrowX" 
+                    className="h-14 w-auto filter brightness-125 contrast-125 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+                  />
                 </Link>
               </div>
               
@@ -307,6 +328,12 @@ function App() {
                       className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
                     >
                       Seller Login
+                    </Link>
+                    <Link 
+                      to="/admin/login" 
+                      className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400 hover:shadow-glow"
+                    >
+                      Admin Login
                     </Link>
                   </>
                 )}
@@ -397,6 +424,13 @@ function App() {
                       >
                         Seller Login
                       </Link>
+                      <Link 
+                        to="/admin/login" 
+                        className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Admin Login
+                      </Link>
                     </>
                   )}
                 </div>
@@ -411,12 +445,17 @@ function App() {
             <Route path="/" element={<HomePage onAuthClear={clearAuthState} />} />
             <Route path="/buyer/auth" element={<BuyerAuth />} />
             <Route path="/seller/auth" element={<SellerAuth />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
             <Route path="/buyer/dashboard" element={<ProtectedBuyerRoute><BuyerDashboard /></ProtectedBuyerRoute>} />
             <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewOrderPage /></ProtectedBuyerRoute>} />
             <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderTrackingPage /></ProtectedBuyerRoute>} />
             <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
           </Routes>
         </RouteChangeHandler>
+        
+        {/* Customer Care ChatBot - Always visible */}
+        <CustomerCareChatBot />
       </div>
     </Router>
   );
@@ -440,6 +479,17 @@ const ProtectedSellerRoute = ({ children }) => {
 
   if (!sellerToken || !sellerData) {
     return <Navigate to="/seller/auth" replace />;
+  }
+
+  return children;
+};
+
+const ProtectedAdminRoute = ({ children }) => {
+  const adminToken = localStorage.getItem('adminToken');
+  const adminData = localStorage.getItem('adminData');
+
+  if (!adminToken || !adminData) {
+    return <Navigate to="/admin/login" replace />;
   }
 
   return children;

@@ -6,6 +6,7 @@ const escrowRoutes = require('./routes/escrow');
 const orderRoutes = require('./routes/orders');
 const authRoutes = require('./routes/auth');
 const disputeRoutes = require('./routes/disputes');
+const supportChatRoutes = require('./routes/supportChat');
 const fs = require('fs');
 
 // Load environment variables manually if dotenv is not available
@@ -50,6 +51,7 @@ app.use('/escrow', escrowRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/disputes', disputeRoutes);
+app.use('/api/support-chat', supportChatRoutes);
 
 // Cron-like job for auto-release
 const escrowModule = require('./routes/escrow');

@@ -42,10 +42,15 @@ const AdminLogin = () => {
       <div className="max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 shadow-lg">
-            <span className="text-2xl font-bold text-white">A</span>
+          <div className="mb-4">
+            <img 
+              src="/Logo.png" 
+              alt="ScrowX Logo" 
+              className="mx-auto mb-4 h-24 w-auto filter brightness-125 contrast-125 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+            />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">Admin Panel</h1>
+          <p className="mt-1 text-emerald-300/80 font-inter font-medium">AI that automates trust in every deal</p>
           <p className="mt-2 text-white/80 font-inter">ScrowX Administration</p>
         </div>
 
@@ -116,12 +121,13 @@ const AdminLogin = () => {
 
           <div className="mt-6 text-center">
             <p className="text-xs text-white/60 font-inter">
-            Default credentials: admin@scrowx.com / admin123
-          </p>
+              Default credentials: admin@scrowx.com / admin123
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default AdminLogin; 
+export default AdminLogin;

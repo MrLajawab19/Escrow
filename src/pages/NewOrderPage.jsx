@@ -17,6 +17,7 @@ const serviceTypes = [
   '🤝 Service Exchange & Arbitrage',
   '📲 Account Services',
   '🔗 Affiliate & Referral Services',
+  '🛒 E-Commerce & Online Stores',
   '📌 Miscellaneous Services'
 ];
 
@@ -111,6 +112,13 @@ const productTypeMapping = {
     'Affiliate link promotion',
     'Referral traffic generation'
   ],
+  '🛒 E-Commerce & Online Stores': [
+    'Physical Item Escrow (No COD)'
+    // Reserved space for future sub-services:
+    // 'Digital Storefront Escrow',
+    // 'Wholesale Escrow',
+    // 'Marketplace Integration'
+  ],
   '📌 Miscellaneous Services': [
     'Astrology/Tarot reading',
     'Manifestation coaching',
@@ -193,6 +201,14 @@ const promotionMethods = ['Organic', 'Ads via Google Ads', 'Influencer Shoutouts
 const influencerPlatforms = ['Instagram', 'YouTube', 'Both'];
 const instagramPromotionTypes = ['Reel', 'Post', 'Story', 'Caption Mention', 'Link in Bio'];
 const youtubePromotionTypesInfluencer = ['Shorts', 'Full Video Mention', 'Caption Mention', 'Pinned Comment', 'Link in Description'];
+
+// Gaming Account Sale constants
+const gameNames = ['Fortnite', 'PUBG', 'Call of Duty', 'Apex Legends', 'Valorant', 'League of Legends', 'Dota 2', 'Counter-Strike', 'Overwatch', 'Rocket League', 'FIFA', 'Other'];
+const gamingPlatforms = ['PC', 'PlayStation', 'Xbox', 'Nintendo Switch', 'Mobile', 'Other'];
+
+// E-Commerce Physical Item Escrow constants
+const ecommerceProductTypes = ['Clothing', 'Sneakers', 'Accessories', 'Other'];
+const courierProviders = ['BlueDart', 'Delhivery', 'DTDC', 'Shiprocket', 'Other'];
 
 export default function NewOrderPage() {
   const navigate = useNavigate();
@@ -424,33 +440,64 @@ export default function NewOrderPage() {
           contentRestrictionsPdf: null
         },
         influencerShoutoutSpecific: {
-          platform: '',
-          influencerHandle: '',
-          promotionTypes: [],
-          // Instagram conditional fields
-          reelDuration: '',
-          numberOfReels: '',
-          numberOfPosts: '',
-          captionTextHashtags: '',
-          numberOfStories: '',
-          storyDurationLive: '',
-          swipeLinkCTA: '',
-          linkUrl: '',
-          linkDurationDays: '',
-          // YouTube conditional fields
-          videoLength: '',
-          numberOfShorts: '',
-          mentionTimestamp: '',
-          numberOfMentions: '',
-          captionText: '',
+          platforms: [],
+          instagramPromotionTypes: [],
+          youtubePromotionTypes: [],
+          // Instagram fields
+          instagramReelCount: '',
+          instagramReelDuration: '',
+          instagramPostCount: '',
+          instagramPostDuration: '',
+          instagramStoryCount: '',
+          instagramStoryDuration: '',
+          linkInBioDuration: '',
+          callToActionText: '',
+          // YouTube fields
+          youtubeShortsCount: '',
+          youtubeShortsDuration: '',
+          youtubeVideoCount: '',
+          youtubeMentionDuration: '',
+          youtubePinnedCommentCount: '',
+          youtubePinnedDuration: '',
           // Campaign details
-          campaignStartDate: '',
-          campaignEndDate: '',
-          geographyTargeting: '',
-          deliverables: '',
+          campaignDuration: '',
+          targetAudience: '',
+          geographicTargeting: '',
+          expectedReach: '',
+          deliverablesTimeline: '',
           // Attachments
           brandGuidelinesPdf: null,
           creativeAssetsZip: null
+        },
+        gamingAccountSaleSpecific: {
+          gameName: '',
+          platform: '',
+          accountLevel: '',
+          accountRegion: '',
+          newEmailForTransfer: '',
+          specialConditions: '',
+          screenshotFiles: [],
+          referenceDocumentsPdf: null
+        },
+        ecommercePhysicalItemSpecific: {
+          storeBrandName: '',
+          productName: '',
+          productType: '',
+          productDetails: '',
+          quantity: 1,
+          itemPrice: '',
+          deliveryAddress: '',
+          deliveryDeadline: '',
+          referenceImageFile: null,
+          // Seller delivery fields (Phase 2)
+          trackingId: '',
+          courierProvider: '',
+          dispatchDate: '',
+          proofOfShipmentFiles: [],
+          // Buyer confirmation fields (Phase 3)
+          deliveryReceived: false,
+          itemMatchesDescription: false,
+          verificationPhotos: []
         }
     },
   });
@@ -578,6 +625,16 @@ export default function NewOrderPage() {
   // Check if Influencer Shoutout is selected
   const isInfluencerShoutoutSelected = () => {
     return form.serviceType === '📢 Social Media & Marketing Services' && form.scopeBox.productType === 'Influencer shoutouts';
+  };
+
+  // Check if Gaming Account Sale is selected
+  const isGamingAccountSaleSelected = () => {
+    return form.serviceType === '🕹️ Gaming & Digital Goods' && form.scopeBox.productType === 'Gaming account sales';
+  };
+
+  // Check if E-Commerce Physical Item Escrow is selected
+  const isEcommercePhysicalItemSelected = () => {
+    return form.serviceType === '🛒 E-Commerce & Online Stores' && form.scopeBox.productType === 'Physical Item Escrow (No COD)';
   };
 
   // Handle logo-specific inputs
@@ -980,6 +1037,36 @@ export default function NewOrderPage() {
     });
   };
 
+  // Gaming Account Sale handlers
+  const handleGamingAccountSaleInput = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        gamingAccountSaleSpecific: {
+          ...prev.scopeBox.gamingAccountSaleSpecific,
+          [name]: value
+        }
+      }
+    }));
+  };
+
+  // E-Commerce Physical Item Escrow handlers
+  const handleEcommercePhysicalItemInput = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm(prev => ({
+      ...prev,
+      scopeBox: {
+        ...prev.scopeBox,
+        ecommercePhysicalItemSpecific: {
+          ...prev.scopeBox.ecommercePhysicalItemSpecific,
+          [name]: type === 'checkbox' ? checked : value
+        }
+      }
+    }));
+  };
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     
@@ -1023,8 +1110,79 @@ export default function NewOrderPage() {
     } else if (isInfluencerShoutoutSelected()) {
       // Allow only PDF, PNG, JPG, MP4, ZIP for Influencer Shoutout services
       allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
+    } else if (isGamingAccountSaleSelected()) {
+      // Allow only PNG, JPG, PDF, TXT for Gaming Account Sale services
+      allowedTypes = ['.png', '.jpg', '.jpeg', '.pdf', '.txt'];
+    } else if (isEcommercePhysicalItemSelected()) {
+      // Allow only PNG, JPG, PDF for E-Commerce Physical Item Escrow
+      allowedTypes = ['.png', '.jpg', '.jpeg', '.pdf'];
     } else {
       allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
+    }
+    
+    const validFiles = files.filter(file => {
+      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      return allowedTypes.includes(fileExtension);
+    });
+
+    if (validFiles.length !== files.length) {
+      const invalidFiles = files.filter(file => {
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        return !allowedTypes.includes(fileExtension);
+      });
+      setError(`Invalid file type(s): ${invalidFiles.map(f => f.name).join(', ')}. Allowed types: ${allowedTypes.join(', ')}`);
+      return;
+    }
+
+    // Check file sizes (max 10MB per file)
+    const oversizedFiles = validFiles.filter(file => file.size > 10 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      setError(`File(s) too large: ${oversizedFiles.map(f => f.name).join(', ')}. Maximum size is 10MB per file.`);
+      return;
+    }
+
+    // Additional file type filtering for specific services
+    let allowedTypes2;
+    if (isLogoDesignSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.svg', '.pdf', '.ai', '.eps'];
+    } else if (isPosterDesignSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.svg', '.pdf', '.psd', '.ai'];
+    } else if (isSocialPostSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.psd', '.ai'];
+    } else if (isVideoEditingSelected()) {
+      allowedTypes2 = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.jpg', '.jpeg', '.png', '.pdf'];
+    } else if (isMotionGraphicsSelected()) {
+      allowedTypes2 = ['.mp4', '.mov', '.avi', '.gif', '.jpg', '.jpeg', '.png', '.pdf', '.psd', '.ai', '.ae'];
+    } else if (isNftArtSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.pdf', '.psd', '.ai'];
+    } else if (isIllustrationSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.pdf', '.psd', '.ai', '.sketch'];
+    } else if (is3dModelingSelected()) {
+      // Allow 3D and image formats for 3D modeling
+      allowedTypes2 = ['.obj', '.fbx', '.stl', '.blend', '.glb', '.jpg', '.jpeg', '.png', '.tiff', '.pdf', '.dwg'];
+    } else if (isWebsiteDevelopmentSelected()) {
+      // Allow common file types for website development
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.txt', '.zip', '.rar', '.psd', '.ai', '.sketch', '.fig'];
+    } else if (isAppDevelopmentSelected()) {
+      // Allow only zip/rar/pdf/png/jpg/mp4 for app development; explicitly disallow APK/IPA
+      allowedTypes2 = ['.zip', '.rar', '.pdf', '.png', '.jpg', '.mp4'];
+    } else if (isInstagramGrowthSelected()) {
+      // Allow only PDF, PNG, JPG, MP4 for Instagram growth services
+      allowedTypes2 = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4'];
+    } else if (isInstagramPromotionSelected()) {
+      // Allow common file types for Instagram promotion services
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.pdf', '.doc', '.docx', '.txt'];
+    } else if (isYouTubePromotionSelected()) {
+      // Allow only PDF, PNG, JPG, MP4, ZIP for YouTube promotion services
+      allowedTypes2 = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
+    } else if (isInfluencerShoutoutSelected()) {
+      // Allow only PDF, PNG, JPG, MP4, ZIP for Influencer Shoutout services
+      allowedTypes2 = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
+    } else if (isGamingAccountSaleSelected()) {
+      // Allow only PNG, JPG, PDF, TXT for Gaming Account Sale services
+      allowedTypes2 = ['.png', '.jpg', '.jpeg', '.pdf', '.txt'];
+    } else {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
     }
     
     const filteredFiles = files.filter(file => {
@@ -1083,8 +1241,79 @@ export default function NewOrderPage() {
     } else if (isInfluencerShoutoutSelected()) {
       // Allow only PDF, PNG, JPG, MP4, ZIP for Influencer Shoutout services
       allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
+    } else if (isGamingAccountSaleSelected()) {
+      // Allow only PNG, JPG, PDF, TXT for Gaming Account Sale services
+      allowedTypes = ['.png', '.jpg', '.jpeg', '.pdf', '.txt'];
+    } else if (isEcommercePhysicalItemSelected()) {
+      // Allow only PNG, JPG, PDF for E-Commerce Physical Item Escrow
+      allowedTypes = ['.png', '.jpg', '.jpeg', '.pdf'];
     } else {
       allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
+    }
+    
+    const validFiles = files.filter(file => {
+      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      return allowedTypes.includes(fileExtension);
+    });
+
+    if (validFiles.length !== files.length) {
+      const invalidFiles = files.filter(file => {
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        return !allowedTypes.includes(fileExtension);
+      });
+      setError(`Invalid file type(s): ${invalidFiles.map(f => f.name).join(', ')}. Allowed types: ${allowedTypes.join(', ')}`);
+      return;
+    }
+
+    // Check file sizes (max 10MB per file)
+    const oversizedFiles = validFiles.filter(file => file.size > 10 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      setError(`File(s) too large: ${oversizedFiles.map(f => f.name).join(', ')}. Maximum size is 10MB per file.`);
+      return;
+    }
+
+    // Additional file type filtering for specific services
+    let allowedTypes2;
+    if (isLogoDesignSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.svg', '.pdf', '.ai', '.eps'];
+    } else if (isPosterDesignSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.svg', '.pdf', '.psd', '.ai'];
+    } else if (isSocialPostSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.psd', '.ai'];
+    } else if (isVideoEditingSelected()) {
+      allowedTypes2 = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.jpg', '.jpeg', '.png', '.pdf'];
+    } else if (isMotionGraphicsSelected()) {
+      allowedTypes2 = ['.mp4', '.mov', '.avi', '.gif', '.jpg', '.jpeg', '.png', '.pdf', '.psd', '.ai', '.ae'];
+    } else if (isNftArtSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.pdf', '.psd', '.ai'];
+    } else if (isIllustrationSelected()) {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.pdf', '.psd', '.ai', '.sketch'];
+    } else if (is3dModelingSelected()) {
+      // Allow 3D and image formats for 3D modeling
+      allowedTypes2 = ['.obj', '.fbx', '.stl', '.blend', '.glb', '.jpg', '.jpeg', '.png', '.tiff', '.pdf', '.dwg'];
+    } else if (isWebsiteDevelopmentSelected()) {
+      // Allow common file types for website development
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.txt', '.zip', '.rar', '.psd', '.ai', '.sketch', '.fig'];
+    } else if (isAppDevelopmentSelected()) {
+      // Allow only zip/rar/pdf/png/jpg/mp4 for app development; explicitly disallow APK/IPA
+      allowedTypes2 = ['.zip', '.rar', '.pdf', '.png', '.jpg', '.mp4'];
+    } else if (isInstagramGrowthSelected()) {
+      // Allow only PDF, PNG, JPG, MP4 for Instagram growth services
+      allowedTypes2 = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4'];
+    } else if (isInstagramPromotionSelected()) {
+      // Allow common file types for Instagram promotion services
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.pdf', '.doc', '.docx', '.txt'];
+    } else if (isYouTubePromotionSelected()) {
+      // Allow only PDF, PNG, JPG, MP4, ZIP for YouTube promotion services
+      allowedTypes2 = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
+    } else if (isInfluencerShoutoutSelected()) {
+      // Allow only PDF, PNG, JPG, MP4, ZIP for Influencer Shoutout services
+      allowedTypes2 = ['.pdf', '.png', '.jpg', '.jpeg', '.mp4', '.zip'];
+    } else if (isGamingAccountSaleSelected()) {
+      // Allow only PNG, JPG, PDF, TXT for Gaming Account Sale services
+      allowedTypes2 = ['.png', '.jpg', '.jpeg', '.pdf', '.txt'];
+    } else {
+      allowedTypes2 = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.doc', '.docx', '.txt', '.zip', '.rar'];
     }
     
     const filteredFiles = files.filter(file => {
@@ -1221,6 +1450,18 @@ export default function NewOrderPage() {
       return baseValidation && hasSelectedServices && serviceValidation;
     }
 
+    // For Gaming Account Sale, validate gaming-specific fields and skip condition
+    if (isGamingAccountSaleSelected()) {
+      const g = form.scopeBox.gamingAccountSaleSpecific;
+      return baseValidation && g.gameName && g.platform && g.accountLevel && g.accountRegion && g.newEmailForTransfer;
+    }
+
+    // For E-Commerce Physical Item Escrow, validate e-commerce-specific fields and skip condition
+    if (isEcommercePhysicalItemSelected()) {
+      const e = form.scopeBox.ecommercePhysicalItemSpecific;
+      return baseValidation && e.storeBrandName && e.productName && e.productType && e.productDetails && e.quantity && e.itemPrice && e.deliveryAddress && e.deliveryDeadline;
+    }
+
     // For other services, validate condition field
     return baseValidation && form.scopeBox.condition;
   };
@@ -1312,6 +1553,17 @@ export default function NewOrderPage() {
             ...form.scopeBox.influencerShoutoutSpecific,
             brandGuidelinesPdf: form.scopeBox.influencerShoutoutSpecific.brandGuidelinesPdf ? form.scopeBox.influencerShoutoutSpecific.brandGuidelinesPdf.name : null,
             creativeAssetsZip: form.scopeBox.influencerShoutoutSpecific.creativeAssetsZip ? form.scopeBox.influencerShoutoutSpecific.creativeAssetsZip.name : null,
+          } : null,
+          gamingAccountSaleSpecific: isGamingAccountSaleSelected() ? {
+            ...form.scopeBox.gamingAccountSaleSpecific,
+            screenshotFiles: (form.scopeBox.gamingAccountSaleSpecific.screenshotFiles || []).map(f => f.name),
+            referenceDocumentsPdf: form.scopeBox.gamingAccountSaleSpecific.referenceDocumentsPdf ? form.scopeBox.gamingAccountSaleSpecific.referenceDocumentsPdf.name : null,
+          } : null,
+          ecommercePhysicalItemSpecific: isEcommercePhysicalItemSelected() ? {
+            ...form.scopeBox.ecommercePhysicalItemSpecific,
+            referenceImageFile: form.scopeBox.ecommercePhysicalItemSpecific.referenceImageFile ? form.scopeBox.ecommercePhysicalItemSpecific.referenceImageFile.name : null,
+            proofOfShipmentFiles: (form.scopeBox.ecommercePhysicalItemSpecific.proofOfShipmentFiles || []).map(f => f.name),
+            verificationPhotos: (form.scopeBox.ecommercePhysicalItemSpecific.verificationPhotos || []).map(f => f.name),
           } : null,
         }
       };
@@ -2675,6 +2927,309 @@ export default function NewOrderPage() {
               </div>
             )}
 
+            {/* Gaming Account Sale Specific Module */}
+            {isGamingAccountSaleSelected() && (
+              <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🎮</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Gaming Account Sale - Buyer Requirements</h3>
+                </div>
+
+                {/* Game Details */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Game Details</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <select
+                      name="gameName"
+                      value={form.scopeBox.gamingAccountSaleSpecific.gameName}
+                      onChange={handleGamingAccountSaleInput}
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    >
+                      <option value="" className="text-white bg-slate-800">Game Name</option>
+                      {gameNames.map(game => <option key={game} value={game} className="text-white bg-slate-800">{game}</option>)}
+                    </select>
+                    <select
+                      name="platform"
+                      value={form.scopeBox.gamingAccountSaleSpecific.platform}
+                      onChange={handleGamingAccountSaleInput}
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    >
+                      <option value="" className="text-white bg-slate-800">Platform</option>
+                      {gamingPlatforms.map(platform => <option key={platform} value={platform} className="text-white bg-slate-800">{platform}</option>)}
+                    </select>
+                    <input
+                      type="text"
+                      name="accountLevel"
+                      value={form.scopeBox.gamingAccountSaleSpecific.accountLevel}
+                      onChange={handleGamingAccountSaleInput}
+                      placeholder="Account Level / Rank (expected)"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                    <input
+                      type="text"
+                      name="accountRegion"
+                      value={form.scopeBox.gamingAccountSaleSpecific.accountRegion}
+                      onChange={handleGamingAccountSaleInput}
+                      placeholder="Account Region/Server"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Buyer Requirements */}
+                <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <h4 className="text-md font-semibold text-orange-300 font-inter mb-3">Buyer Requirements</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <input
+                      type="email"
+                      name="newEmailForTransfer"
+                      value={form.scopeBox.gamingAccountSaleSpecific.newEmailForTransfer}
+                      onChange={handleGamingAccountSaleInput}
+                      placeholder="New Email for Transfer (buyer-provided)"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                    <textarea
+                      name="specialConditions"
+                      value={form.scopeBox.gamingAccountSaleSpecific.specialConditions}
+                      onChange={handleGamingAccountSaleInput}
+                      placeholder="Special Conditions (e.g., unlinked from phone, recovery disabled, specific skins/items required)"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[100px] resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Attachment Fields */}
+                <div className="mt-6">
+                  <h4 className="text-md font-semibold text-white/90 font-inter mb-3">Attachments</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-1">Screenshots of Expected Account Level/Rank (PNG, JPG)</label>
+                      <input 
+                        type="file" 
+                        accept=".png,.jpg,.jpeg" 
+                        multiple
+                        className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30" 
+                        onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, gamingAccountSaleSpecific: { ...prev.scopeBox.gamingAccountSaleSpecific, screenshotFiles: Array.from(e.target.files || []) }}}))} 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-1">Reference Documents (PDF)</label>
+                      <input 
+                        type="file" 
+                        accept=".pdf" 
+                        className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30" 
+                        onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, gamingAccountSaleSpecific: { ...prev.scopeBox.gamingAccountSaleSpecific, referenceDocumentsPdf: e.target.files?.[0] || null }}}))} 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* E-Commerce Physical Item Escrow Specific Module */}
+            {isEcommercePhysicalItemSelected() && (
+              <div className="p-4 bg-gradient-to-r from-green-500/10 to-blue-500/10 backdrop-blur-sm border border-green-500/20 rounded-xl">
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">🛒</span>
+                  <h3 className="text-lg font-semibold text-white font-inter">Physical Item Escrow Details</h3>
+                </div>
+
+                {/* Phase 1 - Buyer ScopeBox (Order Proposal) */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-green-300 font-inter mb-3">📦 Product Information</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <input
+                      name="storeBrandName"
+                      value={form.scopeBox.ecommercePhysicalItemSpecific.storeBrandName}
+                      onChange={handleEcommercePhysicalItemInput}
+                      placeholder="Store/Brand Name"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                    <input
+                      name="productName"
+                      value={form.scopeBox.ecommercePhysicalItemSpecific.productName}
+                      onChange={handleEcommercePhysicalItemInput}
+                      placeholder="Product Name"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                    <select
+                      name="productType"
+                      value={form.scopeBox.ecommercePhysicalItemSpecific.productType}
+                      onChange={handleEcommercePhysicalItemInput}
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    >
+                      <option value="" className="text-white bg-slate-800">Product Type</option>
+                      {ecommerceProductTypes.map(type => (
+                        <option key={type} value={type} className="text-white bg-slate-800">{type}</option>
+                      ))}
+                    </select>
+                    <div className="flex gap-2">
+                      <input
+                        name="quantity"
+                        type="number"
+                        min="1"
+                        value={form.scopeBox.ecommercePhysicalItemSpecific.quantity}
+                        onChange={handleEcommercePhysicalItemInput}
+                        placeholder="Quantity"
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        required
+                      />
+                      <input
+                        name="itemPrice"
+                        type="number"
+                        step="0.01"
+                        value={form.scopeBox.ecommercePhysicalItemSpecific.itemPrice}
+                        onChange={handleEcommercePhysicalItemInput}
+                        placeholder="Price per Item"
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <textarea
+                    name="productDetails"
+                    value={form.scopeBox.ecommercePhysicalItemSpecific.productDetails}
+                    onChange={handleEcommercePhysicalItemInput}
+                    placeholder="Product Details (size, color, model, customization, etc.)"
+                    className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[100px] resize-none mb-4"
+                    required
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-green-300 font-inter mb-3">🚚 Delivery Information</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <textarea
+                      name="deliveryAddress"
+                      value={form.scopeBox.ecommercePhysicalItemSpecific.deliveryAddress}
+                      onChange={handleEcommercePhysicalItemInput}
+                      placeholder="Complete Delivery Address"
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter min-h-[80px] resize-none"
+                      required
+                    />
+                    <input
+                      name="deliveryDeadline"
+                      type="datetime-local"
+                      value={form.scopeBox.ecommercePhysicalItemSpecific.deliveryDeadline}
+                      onChange={handleEcommercePhysicalItemInput}
+                      className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-green-300 font-inter mb-3">📎 Attachments</h4>
+                  <div>
+                    <label className="block text-sm text-white/80 font-inter mb-1">Reference Image of Product (PNG, JPG)</label>
+                    <input 
+                      type="file" 
+                      accept=".png,.jpg,.jpeg" 
+                      className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-500/20 file:text-green-300 hover:file:bg-green-500/30" 
+                      onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, ecommercePhysicalItemSpecific: { ...prev.scopeBox.ecommercePhysicalItemSpecific, referenceImageFile: e.target.files?.[0] || null }}}))} 
+                    />
+                  </div>
+                </div>
+
+                {/* Phase 2 - Seller Delivery Details (Hidden until order accepted) */}
+                {form.orderAccepted && (
+                  <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-orange-300 font-inter mb-3">🚛 Seller Delivery Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <input
+                        name="trackingId"
+                        value={form.scopeBox.ecommercePhysicalItemSpecific.trackingId}
+                        onChange={handleEcommercePhysicalItemInput}
+                        placeholder="Tracking ID"
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        required
+                      />
+                      <select
+                        name="courierProvider"
+                        value={form.scopeBox.ecommercePhysicalItemSpecific.courierProvider}
+                        onChange={handleEcommercePhysicalItemInput}
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        required
+                      >
+                        <option value="" className="text-white bg-slate-800">Courier/Logistics Provider</option>
+                        {courierProviders.map(provider => (
+                          <option key={provider} value={provider} className="text-white bg-slate-800">{provider}</option>
+                        ))}
+                      </select>
+                      <input
+                        name="dispatchDate"
+                        type="datetime-local"
+                        value={form.scopeBox.ecommercePhysicalItemSpecific.dispatchDate}
+                        onChange={handleEcommercePhysicalItemInput}
+                        className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/80 font-inter mb-1">Proof of Shipment (Invoice, courier receipt, package photo - PNG, JPG, PDF)</label>
+                      <input 
+                        type="file" 
+                        accept=".png,.jpg,.jpeg,.pdf" 
+                        multiple
+                        className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-500/20 file:text-orange-300 hover:file:bg-orange-500/30" 
+                        onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, ecommercePhysicalItemSpecific: { ...prev.scopeBox.ecommercePhysicalItemSpecific, proofOfShipmentFiles: Array.from(e.target.files || []) }}}))} 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Phase 3 - Buyer Confirmation (Shown after delivery submitted) */}
+                {form.deliverySubmitted && (
+                  <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <h4 className="text-md font-semibold text-blue-300 font-inter mb-3">✅ Buyer Confirmation</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <label className="flex items-center space-x-3 text-white font-inter">
+                        <input
+                          name="deliveryReceived"
+                          type="checkbox"
+                          checked={form.scopeBox.ecommercePhysicalItemSpecific.deliveryReceived}
+                          onChange={handleEcommercePhysicalItemInput}
+                          className="rounded border-white/20 text-blue-500 focus:ring-blue-500"
+                        />
+                        <span>Delivery Received?</span>
+                      </label>
+                      <label className="flex items-center space-x-3 text-white font-inter">
+                        <input
+                          name="itemMatchesDescription"
+                          type="checkbox"
+                          checked={form.scopeBox.ecommercePhysicalItemSpecific.itemMatchesDescription}
+                          onChange={handleEcommercePhysicalItemInput}
+                          className="rounded border-white/20 text-blue-500 focus:ring-blue-500"
+                        />
+                        <span>Item Matches ScopeBox Description?</span>
+                      </label>
+                    </div>
+                    {(!form.scopeBox.ecommercePhysicalItemSpecific.itemMatchesDescription || !form.scopeBox.ecommercePhysicalItemSpecific.deliveryReceived) && (
+                      <div>
+                        <label className="block text-sm text-white/80 font-inter mb-1">Upload Photos for Verification (Required for mismatch/damage reports - PNG, JPG)</label>
+                        <input 
+                          type="file" 
+                          accept=".png,.jpg,.jpeg" 
+                          multiple
+                          className="w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500/20 file:text-blue-300 hover:file:bg-blue-500/30" 
+                          onChange={(e) => setForm(prev => ({...prev, scopeBox: { ...prev.scopeBox, ecommercePhysicalItemSpecific: { ...prev.scopeBox.ecommercePhysicalItemSpecific, verificationPhotos: Array.from(e.target.files || []) }}}))} 
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* App Development Specific Module */}
             {isAppDevelopmentSelected() && (
               <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-xl">
@@ -3848,7 +4403,7 @@ export default function NewOrderPage() {
                 </div>
               )}
             </div>
-              {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected() || isYouTubePromotionSelected() || isInfluencerShoutoutSelected()) && (
+              {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected() || isYouTubePromotionSelected() || isInfluencerShoutoutSelected() || isGamingAccountSaleSelected() || isEcommercePhysicalItemSelected()) && (
             <select name="condition" value={form.scopeBox.condition} onChange={handleScopeInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
                                 <option value="" className="text-white bg-slate-800">Condition of Product</option>
                   {conditions.map(c => <option key={c} value={c} className="text-white bg-slate-800">{c}</option>)}
@@ -3982,7 +4537,7 @@ export default function NewOrderPage() {
                 <div><b>Type:</b> {form.scopeBox.productType}</div>
                 <div><b>Link:</b> {form.scopeBox.productLink}</div>
                 <div><b>Description:</b> {form.scopeBox.description}</div>
-                {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected()) && <div><b>Condition:</b> {form.scopeBox.condition}</div>}
+                {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected() || isGamingAccountSaleSelected() || isEcommercePhysicalItemSelected()) && <div><b>Condition:</b> {form.scopeBox.condition}</div>}
                 <div><b>Attachments:</b> {filePreviews.length > 0 ? filePreviews.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ') : 'None'}</div>
                 <div><b>Deadline:</b> {formatDeadline(form.scopeBox.deadline)}</div>
                 <div><b>Price:</b> {formatPrice(form.scopeBox.price, form.currency)}</div>
