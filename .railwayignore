@@ -1,0 +1,24 @@
+# Frontend files - exclude from Railway backend deployment
+src/
+public/
+index.html
+vite.config.js
+tailwind.config.js
+postcss.config.js
+.netlifyignore
+netlify.toml
+
+# Frontend dependencies
+node_modules/@vitejs/
+node_modules/@types/react*
+node_modules/eslint*
+node_modules/autoprefixer/
+node_modules/tailwindcss/
+node_modules/rollup/
+node_modules/@rollup/
+
+# Development files
+*.log
+.env.local
+.env.development
+.DS_Store
