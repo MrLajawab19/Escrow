@@ -37,8 +37,8 @@ app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:5174',
-    'https://escrow-netlify-app.netlify.app',
-    process.env.FRONTEND_URL || 'https://your-netlify-app.netlify.app'
+    'https://scrowx.netlify.app',
+    process.env.FRONTEND_URL || 'https://scrowx.netlify.app'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
