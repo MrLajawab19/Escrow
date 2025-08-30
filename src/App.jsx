@@ -6,6 +6,7 @@ import BuyerDashboard from './pages/BuyerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
 import NewOrderPage from './pages/NewOrderPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
+import FundOrderPage from './pages/FundOrderPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import CustomerCareChatBot from './components/CustomerCareChatBot';
@@ -465,6 +466,7 @@ function App() {
             <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
             <Route path="/buyer/dashboard" element={<ProtectedBuyerRoute><BuyerDashboard /></ProtectedBuyerRoute>} />
             <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewOrderPage /></ProtectedBuyerRoute>} />
+            <Route path="/buyer/fund-order/:orderId" element={<ProtectedBuyerRoute><FundOrderPage /></ProtectedBuyerRoute>} />
             <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderTrackingPage /></ProtectedBuyerRoute>} />
             <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
           </Routes>

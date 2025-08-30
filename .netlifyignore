@@ -1,0 +1,24 @@
+# Backend files that should not be included in frontend build
+controllers/
+models/
+services/
+migrations/
+scripts/
+middleware/
+config/
+uploads/
+
+# Backend specific files
+server.js
+setup-*.js
+create-*.js
+revert-*.js
+*.sql
+
+# Database and environment files
+.env
+*.db
+*.sqlite
+
+# Node.js backend dependencies that conflict with frontend
+package-lock.json

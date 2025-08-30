@@ -197,6 +197,20 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
           </button>
         )}
 
+        {/* Fund Escrow Button (for buyers when PLACED) */}
+        {userType === 'buyer' && order.status === 'PLACED' && (
+          <button
+            onClick={() => {
+              // Navigate to funding page or show funding modal
+              window.location.href = `/buyer/fund-order/${order.id}`;
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
+          >
+            <span className="mr-1">💳</span>
+            Fund Escrow
+          </button>
+        )}
+
         {/* Cancel Order Button (for buyers when order is not accepted by seller) */}
         {userType === 'buyer' && (order.status === 'PLACED' || order.status === 'ESCROW_FUNDED') && (
           <button

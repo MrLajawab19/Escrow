@@ -438,17 +438,22 @@ async function getBuyerOrders(buyerId) {
   });
 }
 
-// Get seller orders
+// Get seller orders (only show orders that have been paid for)
 async function getSellerOrders(sellerId) {
   return await Order.findAll({
-    where: { sellerId: sellerId },
+    where: { 
+      sellerId: sellerId,
+      status: {
+        [require('sequelize').Op.ne]: 'PLACED' // Exclude orders that haven't been paid for
+      }
+    },
     order: [['createdAt', 'DESC']]
   });
 }
 
 // Get orders by user (buyer or seller)
 async function getOrdersByUser(userId, role = 'buyer') {
-  const whereClause = role === 'buyer' ? { buyerId: userId } : { sellerId: userId };
+  const whereClause = role === 'buyer' ? { buyerId: userId } : { sellerId: userId, status: { [require('sequelize').Op.ne]: 'PLACED' } };
   return await Order.findAll({
     where: whereClause,
     order: [['createdAt', 'DESC']]
