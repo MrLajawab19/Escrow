@@ -87,10 +87,8 @@ const BuyerAuth = () => {
           localStorage.setItem('buyerData', JSON.stringify(response.data.user));
           setSuccess('Login successful! Redirecting...');
           
-          // Force a page reload to update the navigation
-          setTimeout(() => {
-            window.location.href = '/buyer/dashboard';
-          }, 1500);
+          // Navigate immediately without delay
+          navigate('/buyer/dashboard', { replace: true });
         }
       } else {
         // Signup

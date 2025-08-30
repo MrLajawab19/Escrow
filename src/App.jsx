@@ -24,8 +24,8 @@ const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
       localStorage.removeItem('sellerData');
       // Update state to reflect logout
       onAuthClear();
-    } else {
-      // Check auth state on any route change
+    } else if (location.pathname !== '/buyer/auth' && location.pathname !== '/seller/auth') {
+      // Only check auth state on route changes, but not during login flow
       onCheckAuth();
     }
   }, [location.pathname, onAuthClear, onCheckAuth]);

@@ -1,15 +1,17 @@
 [build]
+  command = "cp package-frontend.json package.json && npm install && npm run build"
   publish = "dist"
-  command = "npm ci && npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
-  NPM_FLAGS = "--production=false"
+  NPM_FLAGS = "--legacy-peer-deps"
+  VITE_API_URL = "https://web-production-54d13.up.railway.app"
 
 [[redirects]]
   from = "/api/*"
-  to = "https://web-production-54d13.up.railway.app/api/:splat"
+  to = "https://web-production-54d13.up.railway.app/:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
