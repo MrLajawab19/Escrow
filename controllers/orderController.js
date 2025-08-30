@@ -4,6 +4,112 @@ const jwt = require('jsonwebtoken');
 const { Sequelize } = require('sequelize');
 const config = require('../config/config.json');
 
+// Service-specific field requirements (matching frontend field names)
+const SERVICE_FIELD_REQUIREMENTS = {
+  'Logo design': ['businessName', 'keywordIndustry', 'logoStyle', 'colorPreferred'],
+  'Poster/flyer/banner design': ['width', 'height', 'resolution', 'orientation', 'designStyle', 'brandColors', 'fonts', 'textContent'],
+  'Social media post creation': ['postFormat', 'aspectRatio', 'resolution', 'postCount', 'finalCaption', 'hashtags'],
+  'Video editing': ['duration', 'resolution', 'format', 'editingStyle', 'musicRequired', 'colorGrading'],
+  'Motion graphics': ['duration', 'resolution', 'format', 'animationStyle', 'complexity'],
+  'NFT art creation': ['artStyle', 'resolution', 'format', 'rarity', 'blockchain', 'metadata'],
+  'Illustration / Comics': ['artStyle', 'resolution', 'format', 'pageCount', 'colorScheme'],
+  '3D modeling / rendering': ['modelType', 'resolution', 'format', 'complexity', 'textures', 'lighting'],
+  'Website development': ['websiteType', 'pages', 'features', 'technologies', 'responsiveDesign', 'hosting'],
+  'App development': ['appType', 'platforms', 'features', 'technologies', 'uiDesign'],
+  'Instagram Growth': ['targetFollowers', 'growthStrategy', 'contentType', 'engagement'],
+  'Instagram Promotion': ['promotionGoals', 'targetAudience', 'campaignDuration'],
+  'YouTube promotion': ['channelUrl', 'promotionType', 'campaignDuration', 'audienceTargeting'],
+  'Influencer shoutouts': ['platforms', 'campaignDuration', 'targetAudience', 'expectedReach'],
+  'Gaming account sales': ['gameName', 'platform', 'accountLevel', 'accountRegion', 'newEmail'],
+  'Physical Item Escrow (No COD)': ['itemName', 'itemCondition', 'shippingMethod', 'trackingRequired'],
+  'Content Writing': ['wordCount', 'tone', 'topic', 'targetAudience'],
+  'Script Writing': ['scriptType', 'targetAudience', 'toneStyle', 'wordCount', 'keyMessage'],
+  'Landing Page Creation': ['pagePurpose', 'technologyStack', 'numberOfSections', 'responsiveDesign']
+};
+
+// Function to validate XBox fields based on service type
+function validateXBoxFields(xBox) {
+  // Basic required fields for all services
+  const basicRequiredFields = ['title', 'productType', 'productLink', 'description', 'deadline', 'price'];
+  
+  for (const field of basicRequiredFields) {
+    if (!xBox[field]) {
+      return {
+        isValid: false,
+        message: `Missing required XBox field: ${field}`
+      };
+    }
+  }
+
+  // Service-specific validation
+  const serviceType = xBox.productType;
+  const requiredFields = SERVICE_FIELD_REQUIREMENTS[serviceType];
+  
+  if (requiredFields) {
+    // Check service-specific fields
+    const serviceSpecificKey = getServiceSpecificKey(serviceType);
+    const serviceSpecificData = xBox[serviceSpecificKey];
+    
+    if (!serviceSpecificData) {
+      return {
+        isValid: false,
+        message: `Missing ${serviceType} specific data in XBox`
+      };
+    }
+    
+    for (const field of requiredFields) {
+      if (!serviceSpecificData[field]) {
+        return {
+          isValid: false,
+          message: `Missing required ${serviceType} field: ${field}`
+        };
+      }
+    }
+  } else {
+    // For services without specific requirements, check if condition is needed
+    const servicesWithoutCondition = [
+      'Logo design', 'Poster/flyer/banner design', 'Social media post creation', 
+      'Video editing', 'Motion graphics', 'NFT art creation', 'Illustration / Comics',
+      '3D modeling / rendering', 'Website development', 'Gaming account sales'
+    ];
+    
+    if (!servicesWithoutCondition.includes(serviceType) && !xBox.condition) {
+      return {
+        isValid: false,
+        message: `Missing required XBox field for ${serviceType}: condition`
+      };
+    }
+  }
+  
+  return { isValid: true };
+}
+
+// Helper function to get service-specific data key
+function getServiceSpecificKey(serviceType) {
+  const keyMap = {
+    'Logo design': 'logoSpecific',
+    'Poster/flyer/banner design': 'posterSpecific',
+    'Social media post creation': 'socialPostSpecific',
+    'Video editing': 'videoEditingSpecific',
+    'Motion graphics': 'motionGraphicsSpecific',
+    'NFT art creation': 'nftArtSpecific',
+    'Illustration / Comics': 'illustrationSpecific',
+    '3D modeling / rendering': '3dModelingSpecific',
+    'Website development': 'websiteDevelopmentSpecific',
+    'App development': 'appDevelopmentSpecific',
+    'Instagram Growth': 'instagramGrowthSpecific',
+    'Instagram Promotion': 'instagramPromotionSpecific',
+    'YouTube promotion': 'youtubePromotionSpecific',
+    'Influencer shoutouts': 'influencerShoutoutSpecific',
+    'Gaming account sales': 'gamingAccountSaleSpecific',
+    'Content Writing': 'contentWritingSpecific',
+    'Script Writing': 'scriptWritingSpecific',
+    'Landing Page Creation': 'landingPageSpecific'
+  };
+  
+  return keyMap[serviceType] || 'serviceSpecific';
+}
+
 // Initialize Sequelize
 const sequelize = new Sequelize(config.development);
 const Seller = require('../models/seller')(sequelize, Sequelize.DataTypes);
@@ -45,28 +151,28 @@ async function createOrder(req, res) {
       country, 
       currency, 
       sellerContact, 
-      scopeBox 
+      scopeBox: xBox 
     } = req.body;
 
     // Enhanced validation
-    if (!platform || !productLink || !country || !currency || !sellerContact || !scopeBox) {
+    if (!platform || !productLink || !country || !currency || !sellerContact || !xBox) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: platform, productLink, country, currency, sellerContact, scopeBox'
+        message: 'Missing required fields: platform, productLink, country, currency, sellerContact, xBox'
       });
     }
 
-    // Validate scopeBox fields
-    if (!scopeBox.title || !scopeBox.productType || !scopeBox.productLink || !scopeBox.description || 
-        !scopeBox.condition || !scopeBox.deadline || !scopeBox.price) {
+    // Validate XBox fields with conditional validation based on service type
+    const validationResult = validateXBoxFields(xBox);
+    if (!validationResult.isValid) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required scopeBox fields: title, productType, productLink, description, condition, deadline, price'
+        message: validationResult.message
       });
     }
 
     // Validate price
-    const price = parseFloat(scopeBox.price);
+    const price = parseFloat(xBox.price);
     if (isNaN(price) || price <= 0) {
       return res.status(400).json({
         success: false,
@@ -75,7 +181,7 @@ async function createOrder(req, res) {
     }
 
     // Validate deadline
-    const deadline = new Date(scopeBox.deadline);
+    const deadline = new Date(xBox.deadline);
     if (isNaN(deadline.getTime()) || deadline <= new Date()) {
       return res.status(400).json({
         success: false,
@@ -132,7 +238,7 @@ async function createOrder(req, res) {
       escrowLink,
       orderTrackingLink,
       scopeBox: {
-        ...scopeBox,
+        ...xBox,
         price: price,
         deadline: deadline.toISOString()
       }
@@ -144,7 +250,7 @@ async function createOrder(req, res) {
       escrowLink,
       buyerName: buyerData.firstName + ' ' + buyerData.lastName,
       platform,
-      productType: scopeBox.productType,
+      productType: xBox.productType,
       price: `${currency} ${price.toFixed(2)}`,
       deadline: deadline.toLocaleDateString()
     });
@@ -154,7 +260,7 @@ async function createOrder(req, res) {
       orderId,
       orderTrackingLink,
       platform,
-      productType: scopeBox.productType,
+      productType: xBox.productType,
       price: `${currency} ${price.toFixed(2)}`,
       deadline: deadline.toLocaleDateString()
     });
@@ -163,6 +269,7 @@ async function createOrder(req, res) {
     console.log(`   Order ID: ${orderId}`);
     console.log(`   Buyer: ${buyerData.firstName} ${buyerData.lastName} (${buyerData.email})`);
     console.log(`   Platform: ${platform}`);
+    console.log(`   Service: ${xBox.productType}`);
     console.log(`   Price: ${currency} ${price.toFixed(2)}`);
     console.log(`   Seller Contact: ${sellerContact}`);
     console.log(`   Escrow Link: ${escrowLink}`);
@@ -178,7 +285,7 @@ async function createOrder(req, res) {
             status: order.status,
             buyerName: buyerData.firstName + ' ' + buyerData.lastName,
             platform,
-            productType: scopeBox.productType,
+            productType: xBox.productType,
             price: `${currency} ${price.toFixed(2)}`,
             deadline: deadline.toLocaleDateString(),
             createdAt: order.createdAt

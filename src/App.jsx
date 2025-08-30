@@ -70,12 +70,15 @@ const HomePage = ({ onAuthClear }) => {
           <div className="mb-8 animate-fade-in relative">
             {/* Logo spotlight background */}
             <div className="absolute inset-0 flex justify-center items-center">
-              <div className="w-40 h-40 bg-gradient-radial from-teal-400/30 via-cyan-400/20 to-transparent rounded-full blur-2xl animate-pulse-glow"></div>
+              <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-gradient-radial from-teal-400/35 via-cyan-400/25 to-transparent rounded-full blur-2xl animate-pulse-glow"></div>
             </div>
             <img 
               src="/Logo.png" 
               alt="ScrowX Logo" 
-              className="relative z-10 mx-auto mb-4 h-24 sm:h-28 lg:h-32 w-auto filter brightness-125 contrast-125 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+              className="relative z-10 mx-auto mb-6 h-28 sm:h-32 lg:h-36 xl:h-40 w-auto filter brightness-150 contrast-150 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+              style={{
+                filter: 'brightness(1.5) contrast(1.5) drop-shadow(0 0 30px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 60px rgba(6, 182, 212, 0.3)) drop-shadow(0 0 90px rgba(6, 182, 212, 0.1))'
+              }}
             />
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-inter font-black mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
@@ -256,19 +259,32 @@ function App() {
     <Router>
       <div className="App">
         {/* Navigation */}
-        <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/20 sticky top-0 z-50 backdrop-blur-xl shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center">
+        <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/20 sticky top-0 z-50 backdrop-blur-xl shadow-lg relative overflow-hidden">
+          {/* Enhanced Navigation Background Elements */}
+          <div className="absolute inset-0 overflow-hidden">
+            {/* Subtle gradient background for navigation */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-800 to-teal-900/30"></div>
+          </div>
+          
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="flex items-center justify-between h-18 sm:h-20 md:h-20 py-2">
+              <div className="flex items-center relative">
+                {/* Logo spotlight background - constrained to logo area */}
+                <div className="absolute inset-0 flex items-center justify-start">
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-radial from-teal-400/25 via-cyan-400/15 to-transparent rounded-full blur-lg animate-logo-glow"></div>
+                </div>
                 <Link 
                   to="/" 
-                  className="flex items-center space-x-3 transition-all duration-300 hover:opacity-80" 
+                  className="flex items-center space-x-3 transition-all duration-300 hover:opacity-80 relative z-10" 
                   onClick={handleHomeClick}
                 >
                   <img 
                     src="/Logo.png" 
                     alt="ScrowX" 
-                    className="h-14 w-auto filter brightness-125 contrast-125 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+                    className="h-14 sm:h-16 md:h-18 w-auto filter brightness-150 contrast-150 drop-shadow-2xl hover:scale-105 transition-all duration-300 relative z-10"
+                    style={{
+                      filter: 'brightness(1.5) contrast(1.5) drop-shadow(0 0 25px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 50px rgba(6, 182, 212, 0.3)) drop-shadow(0 0 75px rgba(6, 182, 212, 0.1))'
+                    }}
                   />
                 </Link>
               </div>
@@ -358,7 +374,7 @@ function App() {
 
             {/* Mobile Navigation */}
             {isMobileMenuOpen && (
-              <div className="md:hidden py-4 border-t border-white/20 animate-fade-in">
+              <div className="md:hidden py-4 border-t border-white/20 animate-fade-in relative z-10">
                 <div className="flex flex-col space-y-3">
                   {isBuyerAuthenticated ? (
                     <>

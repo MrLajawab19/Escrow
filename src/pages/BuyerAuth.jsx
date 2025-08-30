@@ -173,17 +173,19 @@ const BuyerAuth = () => {
         <div className="text-center mb-8 relative">
           {/* Logo spotlight background */}
           <div className="absolute inset-0 flex justify-center items-start pt-2">
-            <div className="w-32 h-32 bg-gradient-radial from-teal-400/30 via-cyan-400/20 to-transparent rounded-full blur-2xl animate-pulse-glow"></div>
+            <div className="w-40 h-40 sm:w-48 sm:h-48 bg-gradient-radial from-teal-400/35 via-cyan-400/25 to-transparent rounded-full blur-2xl animate-pulse-glow"></div>
           </div>
           <div className="relative z-10">
             <img 
               src="/Logo.png" 
               alt="ScrowX Logo" 
-              className="mx-auto mb-4 h-20 w-auto filter brightness-125 contrast-125 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+              className="mx-auto mb-6 h-24 sm:h-28 w-auto filter brightness-150 contrast-150 drop-shadow-2xl hover:scale-105 transition-all duration-300"
+              style={{
+                filter: 'brightness(1.5) contrast(1.5) drop-shadow(0 0 25px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 50px rgba(6, 182, 212, 0.3)) drop-shadow(0 0 75px rgba(6, 182, 212, 0.1))'
+              }}
             />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">ScrowX</h1>
-          <p className="mt-2 text-white/80 font-inter">Secure Escrow Services</p>
+          <p className="mt-2 text-white/80 font-inter">Buyer Portal</p>
         </div>
 
         {/* Auth Card */}

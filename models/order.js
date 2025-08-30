@@ -97,10 +97,27 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: {
         notEmpty: true,
-        isValidScopeBox(value) {
-          if (!value.title || !value.productType || !value.productLink || !value.description || 
-              !value.condition || !value.deadline || !value.price) {
-            throw new Error('Scope box must contain title, productType, productLink, description, condition, deadline, and price');
+        isValidXBox(value) {
+          // Basic required fields for all services
+          const basicRequiredFields = ['title', 'productType', 'productLink', 'description', 'deadline', 'price'];
+          
+          for (const field of basicRequiredFields) {
+            if (!value[field]) {
+              throw new Error(`Missing required XBox field: ${field}`);
+            }
+          }
+
+          // Service-specific validation
+          const serviceType = value.productType;
+          const servicesWithoutCondition = [
+            'Logo design', 'Poster/flyer/banner design', 'Social media post creation', 
+            'Video editing', 'Motion graphics', 'NFT art creation', 'Illustration / Comics',
+            '3D modeling / rendering', 'Website development', 'Gaming account sales'
+          ];
+          
+          // For services that require condition field
+          if (!servicesWithoutCondition.includes(serviceType) && !value.condition) {
+            throw new Error(`Missing required XBox field for ${serviceType}: condition`);
           }
         }
       }

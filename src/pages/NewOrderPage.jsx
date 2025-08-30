@@ -2,9 +2,112 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const platforms = ['Upwork', 'Fiverr', 'Freelancer', 'Other'];
-const countries = ['India', 'USA', 'UK', 'Canada', 'Other'];
-const currencies = ['USD', 'INR', 'EUR', 'GBP', 'Other'];
+const platforms = ['Upwork', 'Fiverr', 'Freelancer', 'Instagram', 'Telegram', 'WhatsApp', 'Twitter', 'Reddit', 'Other'];
+
+// Country to currency mapping
+const countryCurrencyMap = {
+  'India': 'INR',
+  'USA': 'USD',
+  'UK': 'GBP',
+  'Canada': 'CAD',
+  'Australia': 'AUD',
+  'Germany': 'EUR',
+  'France': 'EUR',
+  'Italy': 'EUR',
+  'Spain': 'EUR',
+  'Netherlands': 'EUR',
+  'Belgium': 'EUR',
+  'Austria': 'EUR',
+  'Switzerland': 'CHF',
+  'Sweden': 'SEK',
+  'Norway': 'NOK',
+  'Denmark': 'DKK',
+  'Finland': 'EUR',
+  'Poland': 'PLN',
+  'Czech Republic': 'CZK',
+  'Hungary': 'HUF',
+  'Romania': 'RON',
+  'Bulgaria': 'BGN',
+  'Croatia': 'EUR',
+  'Slovenia': 'EUR',
+  'Slovakia': 'EUR',
+  'Estonia': 'EUR',
+  'Latvia': 'EUR',
+  'Lithuania': 'EUR',
+  'Luxembourg': 'EUR',
+  'Malta': 'EUR',
+  'Cyprus': 'EUR',
+  'Greece': 'EUR',
+  'Portugal': 'EUR',
+  'Ireland': 'EUR',
+  'Japan': 'JPY',
+  'South Korea': 'KRW',
+  'China': 'CNY',
+  'Singapore': 'SGD',
+  'Hong Kong': 'HKD',
+  'Taiwan': 'TWD',
+  'Thailand': 'THB',
+  'Malaysia': 'MYR',
+  'Indonesia': 'IDR',
+  'Philippines': 'PHP',
+  'Vietnam': 'VND',
+  'Brazil': 'BRL',
+  'Mexico': 'MXN',
+  'Argentina': 'ARS',
+  'Chile': 'CLP',
+  'Colombia': 'COP',
+  'Peru': 'PEN',
+  'Venezuela': 'VES',
+  'Uruguay': 'UYU',
+  'Paraguay': 'PYG',
+  'Bolivia': 'BOB',
+  'Ecuador': 'USD',
+  'Guyana': 'GYD',
+  'Suriname': 'SRD',
+  'South Africa': 'ZAR',
+  'Nigeria': 'NGN',
+  'Kenya': 'KES',
+  'Ghana': 'GHS',
+  'Ethiopia': 'ETB',
+  'Uganda': 'UGX',
+  'Tanzania': 'TZS',
+  'Morocco': 'MAD',
+  'Egypt': 'EGP',
+  'Algeria': 'DZD',
+  'Tunisia': 'TND',
+  'Libya': 'LYD',
+  'Sudan': 'SDG',
+  'Somalia': 'SOS',
+  'Djibouti': 'DJF',
+  'Eritrea': 'ERN',
+  'Comoros': 'KMF',
+  'Mauritius': 'MUR',
+  'Seychelles': 'SCR',
+  'Madagascar': 'MGA',
+  'Malawi': 'MWK',
+  'Zambia': 'ZMW',
+  'Zimbabwe': 'ZWL',
+  'Botswana': 'BWP',
+  'Namibia': 'NAD',
+  'Lesotho': 'LSL',
+  'Eswatini': 'SZL',
+  'Mozambique': 'MZN',
+  'Angola': 'AOA',
+  'Congo': 'CDF',
+  'Gabon': 'XAF',
+  'Cameroon': 'XAF',
+  'Central African Republic': 'XAF',
+  'Chad': 'XAF',
+  'Equatorial Guinea': 'XAF',
+  'Sao Tome and Principe': 'STD',
+  'Democratic Republic of the Congo': 'CDF',
+  'Burundi': 'BIF',
+  'Rwanda': 'RWF',
+  'Other': 'USD'
+};
+
+const countries = Object.keys(countryCurrencyMap);
+const currencies = ['USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'KRW', 'CNY', 'SGD', 'HKD', 'TWD', 'THB', 'MYR', 'IDR', 'PHP', 'VND', 'BRL', 'MXN', 'ARS', 'CLP', 'COP', 'PEN', 'VES', 'UYU', 'PYG', 'BOB', 'ZAR', 'NGN', 'KES', 'GHS', 'ETB', 'UGX', 'TZS', 'MAD', 'EGP', 'DZD', 'TND', 'LYD', 'SDG', 'SOS', 'DJF', 'ERN', 'KMF', 'MUR', 'SCR', 'MGA', 'MWK', 'ZMW', 'ZWL', 'BWP', 'NAD', 'LSL', 'SZL', 'MZN', 'AOA', 'CDF', 'XAF', 'STD', 'BIF', 'RWF', 'Other'];
 const serviceTypes = [
   '🎨 Digital Creative Services',
   '💻 Freelance Development Services',
@@ -216,7 +319,7 @@ export default function NewOrderPage() {
   const [buyerData, setBuyerData] = useState(null);
   const [form, setForm] = useState({
     platform: '',
-    productLink: '',
+    sellerPlatformLink: '',
     serviceType: '',
     country: '',
     currency: '',
@@ -515,6 +618,10 @@ export default function NewOrderPage() {
     amount: ''
   });
   const [fundingLoading, setFundingLoading] = useState(false);
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
+  const [showServiceTypeDropdown, setShowServiceTypeDropdown] = useState(false);
 
   // Check authentication on component mount
   useEffect(() => {
@@ -535,6 +642,23 @@ export default function NewOrderPage() {
     }
   }, [navigate]);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setShowCountryDropdown(false);
+        setShowCurrencyDropdown(false);
+        setShowPlatformDropdown(false);
+        setShowServiceTypeDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleInput = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
@@ -545,6 +669,17 @@ export default function NewOrderPage() {
         ...prev,
         scopeBox: { ...prev.scopeBox, productType: '' }
       }));
+    }
+    
+    // Auto-select currency when country changes
+    if (name === 'country' && value) {
+      const defaultCurrency = countryCurrencyMap[value];
+      if (defaultCurrency) {
+        setForm(prev => ({
+          ...prev,
+          currency: defaultCurrency
+        }));
+      }
     }
   };
   const handleScopeInput = (e) => {
@@ -1358,7 +1493,7 @@ export default function NewOrderPage() {
     });
   };
 
-  const validateStep1 = () => form.platform && form.productLink && form.serviceType && form.country && form.currency;
+  const validateStep1 = () => form.platform && form.sellerPlatformLink && form.serviceType && form.country && form.currency;
   const validateStep2 = () => {
     const baseValidation = form.scopeBox.title && form.scopeBox.productType && form.scopeBox.productLink && form.scopeBox.description && form.scopeBox.deadline && form.scopeBox.price && form.serviceType;
     
@@ -1480,7 +1615,7 @@ export default function NewOrderPage() {
       // Prepare the data for the API
       const orderData = {
         platform: form.platform,
-        productLink: form.productLink,
+        productLink: form.sellerPlatformLink, // Map to the expected backend field name
         serviceType: form.serviceType,
         country: form.country,
         currency: form.currency,
@@ -1727,23 +1862,156 @@ export default function NewOrderPage() {
                   {/* Step 1: Order Details */}
           {step === 1 && (
             <div className="space-y-4">
-              <select name="platform" value={form.platform} onChange={handleInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                <option value="" className="text-white bg-slate-800">Select Platform</option>
-                {platforms.map(p => <option key={p} value={p} className="text-white bg-slate-800">{p}</option>)}
-              </select>
-              <input name="productLink" value={form.productLink} onChange={handleInput} placeholder="Seller's Platform Link" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
-              <select name="serviceType" value={form.serviceType} onChange={handleInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                <option value="" className="text-white bg-slate-800">Type of Service</option>
-                {serviceTypes.map(st => <option key={st} value={st} className="text-white bg-slate-800">{st}</option>)}
-              </select>
-              <select name="country" value={form.country} onChange={handleInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                <option value="" className="text-white bg-slate-800">Select Country</option>
-                {countries.map(c => <option key={c} value={c} className="text-white bg-slate-800">{c}</option>)}
-              </select>
-              <select name="currency" value={form.currency} onChange={handleInput} className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required>
-                <option value="" className="text-white bg-slate-800">Select Currency</option>
-                {currencies.map(c => <option key={c} value={c} className="text-white bg-slate-800">{c}</option>)}
-              </select>
+              {/* Custom Platform Dropdown */}
+              <div className="relative dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setShowPlatformDropdown(!showPlatformDropdown)}
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white text-left font-inter flex justify-between items-center"
+                >
+                  <span className={form.platform ? 'text-white' : 'text-white/50'}>
+                    {form.platform || 'Platform'}
+                  </span>
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${showPlatformDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {showPlatformDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-white/20 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                    {platforms.map(platform => (
+                      <button
+                        key={platform}
+                        type="button"
+                        onClick={() => {
+                          setForm(prev => ({ ...prev, platform }));
+                          setShowPlatformDropdown(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors duration-200 font-inter ${
+                          form.platform === platform ? 'bg-cyan-500/20 text-cyan-300' : 'text-white'
+                        }`}
+                      >
+                        {platform}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <input name="sellerPlatformLink" value={form.sellerPlatformLink} onChange={handleInput} placeholder="Enter seller's profile link, username, or phone number" className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter" required />
+              {/* Custom Type of Service Dropdown */}
+              <div className="relative dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setShowServiceTypeDropdown(!showServiceTypeDropdown)}
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white text-left font-inter flex justify-between items-center"
+                >
+                  <span className={form.serviceType ? 'text-white' : 'text-white/50'}>
+                    {form.serviceType || 'Type of Service'}
+                  </span>
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${showServiceTypeDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {showServiceTypeDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-white/20 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                    {serviceTypes.map(serviceType => (
+                      <button
+                        key={serviceType}
+                        type="button"
+                        onClick={() => {
+                          setForm(prev => ({ 
+                            ...prev, 
+                            serviceType,
+                            scopeBox: { ...prev.scopeBox, productType: '' }
+                          }));
+                          setShowServiceTypeDropdown(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors duration-200 font-inter ${
+                          form.serviceType === serviceType ? 'bg-cyan-500/20 text-cyan-300' : 'text-white'
+                        }`}
+                      >
+                        {serviceType}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Custom Country Dropdown */}
+              <div className="relative dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white text-left font-inter flex justify-between items-center"
+                >
+                  <span className={form.country ? 'text-white' : 'text-white/50'}>
+                    {form.country || 'Select Country'}
+                  </span>
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${showCountryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {showCountryDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-white/20 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                    {countries.map(country => (
+                      <button
+                        key={country}
+                        type="button"
+                        onClick={() => {
+                          const defaultCurrency = countryCurrencyMap[country];
+                          setForm(prev => ({ 
+                            ...prev, 
+                            country,
+                            currency: defaultCurrency || prev.currency
+                          }));
+                          setShowCountryDropdown(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors duration-200 font-inter ${
+                          form.country === country ? 'bg-cyan-500/20 text-cyan-300' : 'text-white'
+                        }`}
+                      >
+                        {country}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Custom Currency Dropdown */}
+              <div className="relative dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white text-left font-inter flex justify-between items-center"
+                >
+                  <span className={form.currency ? 'text-white' : 'text-white/50'}>
+                    {form.currency || 'Select Currency'}
+                  </span>
+                  <svg className={`w-5 h-5 transition-transform duration-200 ${showCurrencyDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {showCurrencyDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-white/20 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                    {currencies.map(currency => (
+                      <button
+                        key={currency}
+                        type="button"
+                        onClick={() => {
+                          setForm(prev => ({ ...prev, currency }));
+                          setShowCurrencyDropdown(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors duration-200 font-inter ${
+                          form.currency === currency ? 'bg-cyan-500/20 text-cyan-300' : 'text-white'
+                        }`}
+                      >
+                        {currency}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="flex justify-end pt-4">
                 <button 
                   className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white rounded-xl font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-lg font-inter" 
