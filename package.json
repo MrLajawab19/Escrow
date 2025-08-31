@@ -3,9 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "NODE_ENV=production node server.js",
+    "dev": "NODE_ENV=development node server.js",
+    "dev:frontend": "vite",
     "build": "echo 'Backend ready'",
+    "build:frontend": "vite build",
     "revert-orders": "node revert-orders.js",
     "revert-mock-orders": "node revert-mock-orders.js",
     "server": "node server.js"

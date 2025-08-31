@@ -9,21 +9,36 @@ const disputeRoutes = require('./routes/disputes');
 const supportChatRoutes = require('./routes/supportChat');
 const fs = require('fs');
 
-// Load environment variables manually if dotenv is not available
+// Load environment variables based on NODE_ENV
 function loadEnv() {
   try {
-    const envPath = path.join(__dirname, '.env');
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    let envPath;
+    
+    if (nodeEnv === 'production') {
+      envPath = path.join(__dirname, '.env.production');
+    } else {
+      envPath = path.join(__dirname, '.env.local');
+    }
+    
+    // Fallback to .env if specific env file doesn't exist
+    if (!fs.existsSync(envPath)) {
+      envPath = path.join(__dirname, '.env');
+    }
+    
     if (fs.existsSync(envPath)) {
+      console.log(`Loading environment from: ${path.basename(envPath)}`);
       const envContent = fs.readFileSync(envPath, 'utf8');
       envContent.split('\n').forEach(line => {
-        const [key, value] = line.split('=');
-        if (key && value) {
+        const [key, ...valueParts] = line.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=').replace(/^["']|["']$/g, ''); // Remove quotes
           process.env[key.trim()] = value.trim();
         }
       });
     }
   } catch (error) {
-    console.log('Note: Could not load .env file, using defaults');
+    console.log('Note: Could not load environment file, using defaults');
   }
 }
 
@@ -69,23 +84,26 @@ setInterval(() => {
 }, 60 * 60 * 1000); // every hour
 
 function updateEnvFile(port) {
-  const envPath = path.join(__dirname, '.env');
-  let envContent = '';
-  
-  if (fs.existsSync(envPath)) {
-    envContent = fs.readFileSync(envPath, 'utf8');
+  // Only update .env.local for development
+  if (process.env.NODE_ENV !== 'production') {
+    const envPath = path.join(__dirname, '.env.local');
+    let envContent = '';
+    
+    if (fs.existsSync(envPath)) {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    }
+    
+    const newApiUrl = `VITE_API_URL=http://localhost:${port}`;
+    
+    if (envContent.includes('VITE_API_URL=')) {
+      envContent = envContent.replace(/VITE_API_URL=.*/g, newApiUrl);
+    } else {
+      envContent += `\n${newApiUrl}\n`;
+    }
+    
+    fs.writeFileSync(envPath, envContent);
+    console.log(`Updated VITE_API_URL to http://localhost:${port}`);
   }
-  
-  const newApiUrl = `VITE_API_URL=http://localhost:${port}`;
-  
-  if (envContent.includes('VITE_API_URL=')) {
-    envContent = envContent.replace(/VITE_API_URL=.*/g, newApiUrl);
-  } else {
-    envContent += `\n${newApiUrl}\n`;
-  }
-  
-  fs.writeFileSync(envPath, envContent);
-  console.log(`Updated VITE_API_URL to http://localhost:${port}`);
 }
 
 function startServer(port, attemptsLeft = 3) {
