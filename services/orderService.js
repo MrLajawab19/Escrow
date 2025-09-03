@@ -3,15 +3,16 @@ const { v4: uuidv4 } = require('uuid');
 
 // Status transition rules
 const STATUS_TRANSITIONS = {
-  'PLACED': ['ESCROW_FUNDED', 'DISPUTED'],
-  'ESCROW_FUNDED': ['IN_PROGRESS', 'DISPUTED'],
+  'PLACED': ['ESCROW_FUNDED', 'DISPUTED', 'CANCELLED'],
+  'ESCROW_FUNDED': ['IN_PROGRESS', 'DISPUTED', 'CANCELLED'],
   'IN_PROGRESS': ['SUBMITTED', 'DISPUTED'],
-  'SUBMITTED': ['COMPLETED', 'DISPUTED'],
-  'APPROVED': ['RELEASED', 'REFUNDED'],
+  'SUBMITTED': ['APPROVED', 'DISPUTED'],
+  'APPROVED': ['COMPLETED', 'DISPUTED'],
   'COMPLETED': [],
-  'DISPUTED': ['IN_PROGRESS', 'RELEASED', 'REFUNDED'],
+  'DISPUTED': ['IN_PROGRESS', 'REFUNDED'],
   'RELEASED': [],
-  'REFUNDED': []
+  'REFUNDED': [],
+  'CANCELLED': []
 };
 
 // Validate status transition
@@ -167,9 +168,9 @@ async function releaseFunds(orderId, buyerId) {
     throw new Error('Unauthorized: Only the buyer can release funds for this order');
   }
   
-  // Only allow release if order is SUBMITTED
-  if (order.status !== 'SUBMITTED') {
-    throw new Error('Order must be in SUBMITTED status to release funds');
+  // Only allow release if order is APPROVED
+  if (order.status !== 'APPROVED') {
+    throw new Error('Order must be in APPROVED status to complete the order');
   }
   
   const previousStatus = order.status;

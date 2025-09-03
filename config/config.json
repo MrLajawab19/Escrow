@@ -1,7 +1,7 @@
 {
   "development": {
     "username": "postgres",
-    "password": "ayush19$",
+    "password": null,
     "database": "scrowx_dev",
     "host": "127.0.0.1",
     "dialect": "postgres",
@@ -9,7 +9,7 @@
   },
   "test": {
     "username": "postgres",
-    "password": "ayush19$",
+    "password": null,
     "database": "scrowx_test",
     "host": "127.0.0.1",
     "dialect": "postgres",

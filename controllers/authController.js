@@ -11,8 +11,8 @@ const sequelize = new Sequelize(config.development);
 const Buyer = require('../models/buyer')(sequelize, Sequelize.DataTypes);
 const Seller = require('../models/seller')(sequelize, Sequelize.DataTypes);
 
-// JWT Secret (in production, use environment variable)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// JWT Secret must be provided via environment
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Buyer Signup
 async function buyerSignup(req, res) {
@@ -112,6 +112,9 @@ async function buyerLogin(req, res) {
     }
 
     // Generate JWT token
+    if (!JWT_SECRET) {
+      return res.status(500).json({ success: false, message: 'Server misconfiguration: JWT_SECRET is not set' });
+    }
     const token = jwt.sign(
       { 
         userId: buyer.id, 
@@ -261,6 +264,9 @@ async function sellerLogin(req, res) {
     }
 
     // Generate JWT token
+    if (!JWT_SECRET) {
+      return res.status(500).json({ success: false, message: 'Server misconfiguration: JWT_SECRET is not set' });
+    }
     const token = jwt.sign(
       { 
         userId: seller.id, 
@@ -342,6 +348,9 @@ async function forgotPassword(req, res) {
     }
 
     // Generate reset token (in production, send email)
+    if (!JWT_SECRET) {
+      return res.status(500).json({ success: false, message: 'Server misconfiguration: JWT_SECRET is not set' });
+    }
     const resetToken = jwt.sign(
       { userId: user.id, email: user.email, role },
       JWT_SECRET,
@@ -378,6 +387,9 @@ async function resetPassword(req, res) {
     }
 
     // Verify token
+    if (!JWT_SECRET) {
+      return res.status(500).json({ success: false, message: 'Server misconfiguration: JWT_SECRET is not set' });
+    }
     const decoded = jwt.verify(token, JWT_SECRET);
     const { userId, role } = decoded;
 
@@ -425,6 +437,9 @@ async function verifyToken(req, res) {
     }
 
     // Verify token
+    if (!JWT_SECRET) {
+      return res.status(500).json({ success: false, message: 'Server misconfiguration: JWT_SECRET is not set' });
+    }
     const decoded = jwt.verify(token, JWT_SECRET);
     
     res.json({

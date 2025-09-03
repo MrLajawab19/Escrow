@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const orderController = require('../controllers/orderController');
+const { authenticateToken, authorizeRole, authenticateAdmin } = require('../middleware/auth');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -40,36 +41,38 @@ const upload = multer({
 });
 
 // Order lifecycle routes
-router.post('/', orderController.createOrder);
-router.post('/:id/fund-escrow', orderController.fundEscrow);
-router.patch('/:id/start', orderController.startWork);
-router.patch('/:id/submit', orderController.submitDelivery);
-router.patch('/:id/approve', orderController.approveDelivery);
-router.patch('/:id/dispute', upload.array('evidence', 5), orderController.raiseDispute);
+// Buyer-authenticated routes
+router.post('/', authenticateToken, authorizeRole(['buyer']), orderController.createOrder);
+router.post('/:id/fund-escrow', authenticateToken, authorizeRole(['buyer']), orderController.fundEscrow);
+router.patch('/:id/approve', authenticateToken, authorizeRole(['buyer']), orderController.approveDelivery);
+router.patch('/:id/release', authenticateToken, authorizeRole(['buyer']), orderController.releaseFunds);
+router.patch('/:id/accept-changes', authenticateToken, authorizeRole(['buyer']), orderController.acceptChanges);
+router.patch('/:id/reject-changes', authenticateToken, authorizeRole(['buyer']), orderController.rejectChanges);
+router.patch('/:id/cancel', authenticateToken, authorizeRole(['buyer']), orderController.cancelOrder);
+router.get('/buyer', authenticateToken, authorizeRole(['buyer']), orderController.getBuyerOrders);
 
-// Seller action routes
-router.patch('/:id/accept', orderController.acceptOrder);
-router.patch('/:id/reject', orderController.rejectOrder);
-router.patch('/:id/request-changes', orderController.requestChanges);
+// Seller-authenticated routes
+router.patch('/:id/start', authenticateToken, authorizeRole(['seller']), orderController.startWork);
+router.patch('/:id/submit', authenticateToken, authorizeRole(['seller']), orderController.submitDelivery);
+router.patch('/:id/accept', authenticateToken, authorizeRole(['seller']), orderController.acceptOrder);
+router.patch('/:id/reject', authenticateToken, authorizeRole(['seller']), orderController.rejectOrder);
+router.patch('/:id/request-changes', authenticateToken, authorizeRole(['seller']), orderController.requestChanges);
+router.get('/seller', authenticateToken, authorizeRole(['seller']), orderController.getSellerOrders);
 
-// Buyer action routes
-router.patch('/:id/accept-changes', orderController.acceptChanges);
-router.patch('/:id/reject-changes', orderController.rejectChanges);
+// Disputes (either role)
+router.patch('/:id/dispute', authenticateToken, upload.array('evidence', 5), orderController.raiseDispute);
+
+// Remove duplicate unprotected routes
 
 // Admin routes
-router.patch('/:id/release', orderController.releaseFunds);
-router.patch('/:id/refund', orderController.refundBuyer);
+router.patch('/:id/refund', authenticateAdmin, orderController.refundBuyer);
 
 // Query routes - SPECIFIC ROUTES FIRST
-router.get('/buyer', orderController.getBuyerOrders);
-router.get('/seller', orderController.getSellerOrders);
-router.get('/user/:userId', orderController.getOrdersByUser);
+router.get('/user/:userId', authenticateToken, orderController.getOrdersByUser);
 
 // PARAMETERIZED ROUTES LAST
-router.get('/:id', orderController.getOrder);
+router.get('/:id', authenticateToken, orderController.getOrder);
 
-// Buyer actions
-router.patch('/:id/cancel', orderController.cancelOrder);
-router.patch('/:id/release', orderController.releaseFunds);
+// Release funds is a buyer action, route kept singular and secured above
 
 module.exports = router; 

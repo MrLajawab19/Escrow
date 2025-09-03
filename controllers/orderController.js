@@ -2,7 +2,8 @@ const orderService = require('../services/orderService');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const { Sequelize } = require('sequelize');
-const config = require('../config/config.json');
+// Reuse centralized models to avoid multiple Sequelize instances
+const { Seller } = require('../models');
 
 // Service-specific field requirements (matching frontend field names)
 const SERVICE_FIELD_REQUIREMENTS = {
@@ -110,9 +111,7 @@ function getServiceSpecificKey(serviceType) {
   return keyMap[serviceType] || 'serviceSpecific';
 }
 
-// Initialize Sequelize
-const sequelize = new Sequelize(config.development);
-const Seller = require('../models/seller')(sequelize, Sequelize.DataTypes);
+// Remove per-file Sequelize initialization; using models from ../models
 
 // Helper function to verify buyer token
 function verifyBuyerToken(req) {
@@ -122,7 +121,11 @@ function verifyBuyerToken(req) {
   }
   
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('Server misconfiguration: JWT_SECRET is not set');
+    }
+    const decoded = jwt.verify(token, secret);
     console.log('Decoded token:', decoded);
     return decoded;
   } catch (error) {
@@ -380,14 +383,7 @@ async function sendScopeBoxToSeller(sellerContact, scopeData) {
 async function fundEscrow(req, res) {
   try {
     const { id } = req.params;
-    const { buyerId, paymentMethod, amount, cardDetails } = req.body;
-
-    if (!buyerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'buyerId is required'
-      });
-    }
+    const { paymentMethod, amount, cardDetails } = req.body;
 
     // Verify buyer authentication
     let buyerData;
@@ -475,7 +471,7 @@ async function fundEscrow(req, res) {
     }
 
     // Fund the escrow
-    const order = await orderService.fundEscrow(id, buyerId);
+    const order = await orderService.fundEscrow(id, buyerData.userId);
 
     // Send scope box to seller
     await sendScopeBoxToSeller(order.sellerContact, {
@@ -511,16 +507,9 @@ async function fundEscrow(req, res) {
 async function startWork(req, res) {
   try {
     const { id } = req.params;
-    const { sellerId } = req.body;
-
-    if (!sellerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'sellerId is required'
-      });
-    }
-
-    const order = await orderService.startWork(id, sellerId);
+    // Seller identity comes from token via route middleware
+    const sellerData = verifySellerToken(req);
+    const order = await orderService.startWork(id, sellerData.userId);
 
     res.json({
       success: true,
@@ -540,16 +529,9 @@ async function startWork(req, res) {
 async function submitDelivery(req, res) {
   try {
     const { id } = req.params;
-    const { sellerId, deliveryFiles } = req.body;
-
-    if (!sellerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'sellerId is required'
-      });
-    }
-
-    const order = await orderService.submitDelivery(id, sellerId, deliveryFiles || []);
+    const { deliveryFiles } = req.body;
+    const sellerData = verifySellerToken(req);
+    const order = await orderService.submitDelivery(id, sellerData.userId, deliveryFiles || []);
 
     res.json({
       success: true,
@@ -569,16 +551,8 @@ async function submitDelivery(req, res) {
 async function approveDelivery(req, res) {
   try {
     const { id } = req.params;
-    const { buyerId } = req.body;
-
-    if (!buyerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'buyerId is required'
-      });
-    }
-
-    const order = await orderService.approveDelivery(id, buyerId);
+    const buyerData = verifyBuyerToken(req);
+    const order = await orderService.approveDelivery(id, buyerData.userId);
 
     res.json({
       success: true,
@@ -598,12 +572,28 @@ async function approveDelivery(req, res) {
 async function raiseDispute(req, res) {
   try {
     const { id } = req.params;
-    const { userId, reason, description, requestedResolution } = req.body;
+    const { reason, description, requestedResolution } = req.body;
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    let userIdFromToken = null;
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+    try {
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new Error('Server misconfiguration: JWT_SECRET is not set');
+      }
+      const decoded = jwt.verify(token, secret);
+      userIdFromToken = decoded.userId;
+    } catch {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
 
-    if (!userId || !reason || !description || !requestedResolution) {
+    if (!reason || !description || !requestedResolution) {
       return res.status(400).json({
         success: false,
-        message: 'userId, reason, description, and requestedResolution are required'
+        message: 'reason, description, and requestedResolution are required'
       });
     }
 
@@ -623,7 +613,7 @@ async function raiseDispute(req, res) {
       evidenceFiles
     };
 
-    const order = await orderService.raiseDispute(id, userId, disputeData);
+    const order = await orderService.raiseDispute(id, userIdFromToken, disputeData);
 
     res.json({
       success: true,
@@ -731,7 +721,6 @@ async function refundBuyer(req, res) {
 async function getOrder(req, res) {
   try {
     const { id } = req.params;
-
     const order = await orderService.getOrderById(id);
 
     if (!order) {
@@ -739,6 +728,25 @@ async function getOrder(req, res) {
         success: false,
         message: 'Order not found'
       });
+    }
+
+    // Enforce that only buyer or seller of the order can view it if authenticated
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+      if (token) {
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+          return res.status(500).json({ success: false, message: 'Server misconfiguration: JWT_SECRET is not set' });
+        }
+        const decoded = jwt.verify(token, secret);
+        const isParticipant = decoded.userId === order.buyerId || decoded.userId === order.sellerId || decoded.role === 'admin';
+        if (!isParticipant) {
+          return res.status(403).json({ success: false, message: 'Forbidden: not a participant in this order' });
+        }
+      }
+    } catch (e) {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
     }
 
     res.json({
@@ -821,7 +829,7 @@ function verifySellerToken(req) {
 
   const token = authHeader.substring(7);
   const jwt = require('jsonwebtoken');
-  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  const JWT_SECRET = process.env.JWT_SECRET;
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -879,6 +887,25 @@ async function getOrdersByUser(req, res) {
   try {
     const { userId } = req.params;
     const { role = 'buyer' } = req.query;
+    // Enforce that requestor matches the userId unless admin
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ success: false, message: 'Server misconfiguration: JWT_SECRET is not set' });
+    }
+    let decoded;
+    try {
+      decoded = jwt.verify(token, secret);
+    } catch {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+    if (decoded.role !== 'admin' && decoded.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Forbidden: cannot access other users\' orders' });
+    }
 
     const orders = await orderService.getOrdersByUser(userId, role);
 

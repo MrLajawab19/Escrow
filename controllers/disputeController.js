@@ -1,13 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
-const { Sequelize } = require('sequelize');
-const config = require('../config/config.json');
-
-// Initialize database connection
-const sequelize = new Sequelize(config.development);
-
-// Import models
-const Dispute = require('../models/dispute')(sequelize, Sequelize.DataTypes);
-const Order = require('../models/order')(sequelize, Sequelize.DataTypes);
+// Reuse centralized models
+const { Dispute, Order } = require('../models');
 
 // Create dispute
 const createDispute = async (req, res) => {

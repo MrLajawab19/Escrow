@@ -1,16 +1,9 @@
 const jwt = require('jsonwebtoken');
-const { Sequelize } = require('sequelize');
-const config = require('../config/config.json');
+// Reuse centralized Sequelize models to avoid duplicate connections
+const { Buyer, Seller } = require('../models');
 
-// Initialize database connection
-const sequelize = new Sequelize(config.development);
-
-// Import models
-const Buyer = require('../models/buyer')(sequelize, Sequelize.DataTypes);
-const Seller = require('../models/seller')(sequelize, Sequelize.DataTypes);
-
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// JWT Secret - must be provided by environment
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Authentication middleware
 const authenticateToken = async (req, res, next) => {
@@ -25,6 +18,9 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    if (!JWT_SECRET) {
+      throw new Error('Server misconfiguration: JWT_SECRET is not set');
+    }
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
     
@@ -88,8 +84,8 @@ const authenticateAdmin = async (req, res, next) => {
       });
     }
 
-    // For testing purposes, accept mock admin token
-    if (token === 'admin-mock-token') {
+    // For testing purposes, accept mock admin token only outside production
+    if (process.env.NODE_ENV !== 'production' && token === 'admin-mock-token') {
       req.user = {
         userId: 'admin-mock-id',
         email: 'admin@scrowx.com',
@@ -100,6 +96,9 @@ const authenticateAdmin = async (req, res, next) => {
       return next();
     }
 
+    if (!JWT_SECRET) {
+      throw new Error('Server misconfiguration: JWT_SECRET is not set');
+    }
     // Verify real admin token
     const decoded = jwt.verify(token, JWT_SECRET);
     
