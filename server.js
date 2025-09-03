@@ -30,11 +30,15 @@ function loadEnv() {
       console.log(`Loading environment from: ${path.basename(envPath)}`);
       const envContent = fs.readFileSync(envPath, 'utf8');
       envContent.split('\n').forEach(line => {
-        const [key, ...valueParts] = line.split('=');
-        if (key && valueParts.length > 0) {
-          const value = valueParts.join('=').replace(/^["']|["']$/g, ''); // Remove quotes
-          process.env[key.trim()] = value.trim();
-        }
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return; // skip blanks and comments
+        const eqIndex = trimmed.indexOf('=');
+        if (eqIndex === -1) return;
+        const key = trimmed.slice(0, eqIndex).trim();
+        const rawValue = trimmed.slice(eqIndex + 1).trim();
+        if (!key) return;
+        const value = rawValue.replace(/^["']|["']$/g, ''); // Remove quotes
+        process.env[key] = value;
       });
     }
   } catch (error) {
