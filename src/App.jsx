@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import BuyerAuth from './pages/BuyerAuth';
 import SellerAuth from './pages/SellerAuth';
@@ -45,7 +45,7 @@ const HomePage = ({ onAuthClear }) => {
       localStorage.removeItem('sellerData');
       onAuthClear();
     }
-  }, [onAuthClear]);
+  }, []); // Remove onAuthClear from dependencies to prevent infinite loop
 
   return (
     <div className="min-h-screen bg-gradient-tech relative overflow-hidden">
@@ -160,7 +160,7 @@ function App() {
   const [sellerData, setSellerData] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const checkAuth = () => {
+  const checkAuth = useCallback(() => {
     // Check buyer auth
     const buyerToken = localStorage.getItem('buyerToken');
     const buyerData = localStorage.getItem('buyerData');
@@ -184,7 +184,7 @@ function App() {
       setIsSellerAuthenticated(false);
       setSellerData(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Check auth on mount
@@ -204,7 +204,7 @@ function App() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [checkAuth]);
 
   const handleBuyerLogout = () => {
     localStorage.removeItem('buyerToken');
@@ -224,13 +224,13 @@ function App() {
     window.location.href = '/';
   };
 
-  const clearAuthState = () => {
+  const clearAuthState = useCallback(() => {
     setIsBuyerAuthenticated(false);
     setIsSellerAuthenticated(false);
     setBuyerData(null);
     setSellerData(null);
     setIsMobileMenuOpen(false);
-  };
+  }, []);
 
   const handleHomeClick = () => {
     // Clear authentication when navigating to home
@@ -259,7 +259,7 @@ function App() {
     <Router>
       <div className="App">
         {/* Navigation */}
-        <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/20 sticky top-0 z-50 backdrop-blur-xl shadow-lg relative overflow-hidden">
+        <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/20 sticky top-0 z-50 backdrop-blur-xl shadow-lg overflow-hidden">
           {/* Enhanced Navigation Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
             {/* Subtle gradient background for navigation */}

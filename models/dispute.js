@@ -164,6 +164,18 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'sellerId',
       as: 'seller'
     });
+
+    // Dispute can be resolved by a Buyer (admin)
+    Dispute.belongsTo(models.Buyer, {
+      foreignKey: 'resolvedBy',
+      as: 'resolver'
+    });
+
+    // Dispute can be assigned to a Buyer (admin)
+    Dispute.belongsTo(models.Buyer, {
+      foreignKey: 'assignedTo',
+      as: 'assignee'
+    });
   };
 
   return Dispute;

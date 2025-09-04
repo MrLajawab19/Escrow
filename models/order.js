@@ -4,7 +4,23 @@ const { Model, DataTypes } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Order extends Model {
     static associate(models) {
-      // Define associations here
+      // Order belongs to Buyer
+      Order.belongsTo(models.Buyer, {
+        foreignKey: 'buyerId',
+        as: 'buyer'
+      });
+      
+      // Order belongs to Seller
+      Order.belongsTo(models.Seller, {
+        foreignKey: 'sellerId',
+        as: 'seller'
+      });
+      
+      // Order has one dispute (optional)
+      Order.hasOne(models.Dispute, {
+        foreignKey: 'orderId',
+        as: 'dispute'
+      });
     }
   }
   

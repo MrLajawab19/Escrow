@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@prisma/client": "^5.10.0",
+    "@prisma/client": "5.10.0",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
     "colorthief": "^2.6.0",
@@ -27,7 +27,7 @@
     "openai": "^5.16.0",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
-    "prisma": "^5.10.0",
+    "prisma": "5.10.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.0",

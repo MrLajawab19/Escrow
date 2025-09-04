@@ -4,7 +4,29 @@ const { Model, DataTypes } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Buyer extends Model {
     static associate(models) {
-      // Define associations here
+      // Buyer has many orders
+      Buyer.hasMany(models.Order, {
+        foreignKey: 'buyerId',
+        as: 'orders'
+      });
+      
+      // Buyer has many disputes
+      Buyer.hasMany(models.Dispute, {
+        foreignKey: 'buyerId',
+        as: 'disputes'
+      });
+      
+      // Buyer can resolve disputes
+      Buyer.hasMany(models.Dispute, {
+        foreignKey: 'resolvedBy',
+        as: 'resolvedDisputes'
+      });
+      
+      // Buyer can be assigned disputes
+      Buyer.hasMany(models.Dispute, {
+        foreignKey: 'assignedTo',
+        as: 'assignedDisputes'
+      });
     }
   }
   
