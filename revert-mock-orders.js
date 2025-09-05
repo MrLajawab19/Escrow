@@ -1,4 +1,6 @@
 const { Sequelize } = require('sequelize');
+const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
 const config = require('./config/config.json');
 
 // Initialize Sequelize with development config
@@ -13,90 +15,185 @@ const sequelize = new Sequelize(
   }
 );
 
-// Import models
-const Order = require('./models/order');
-const Buyer = require('./models/buyer');
-const Seller = require('./models/seller');
-
 async function revertMockOrders() {
   try {
     console.log('🔄 Connecting to database...');
     await sequelize.authenticate();
     console.log('✅ Database connected successfully');
 
-    // Get all existing orders
-    const existingOrders = await Order.findAll();
-    console.log(`📊 Found ${existingOrders.length} existing orders`);
+    // Load models
+    const Order = require('./models/order')(sequelize, Sequelize.DataTypes);
+    const Buyer = require('./models/buyer')(sequelize, Sequelize.DataTypes);
+    const Seller = require('./models/seller')(sequelize, Sequelize.DataTypes);
 
-    if (existingOrders.length === 0) {
-      console.log('❌ No orders found to revert');
-      return;
+    // Ensure tables exist
+    await sequelize.sync();
+
+    // Find or create test users (same as create-mock-orders.js)
+    let buyer = await Buyer.findOne({ where: { email: 'buyer@example.com' } });
+    let seller = await Seller.findOne({ where: { email: 'seller@example.com' } });
+
+    // Create test buyer if doesn't exist
+    if (!buyer) {
+      console.log('🔄 Creating test buyer...');
+      const hashedPassword = await bcrypt.hash('password', 10);
+      buyer = await Buyer.create({
+        id: uuidv4(),
+        email: 'buyer@example.com',
+        password: hashedPassword,
+        firstName: 'John',
+        lastName: 'Doe',
+        phone: '+1 (555) 123-4567',
+        country: 'US',
+        isVerified: true,
+        status: 'active'
+      });
+      console.log('✅ Test buyer created: buyer@example.com (password: password)');
+    } else {
+      console.log('✅ Test buyer found: buyer@example.com');
     }
 
-    // Get buyer and seller for reference
-    const buyer = await Buyer.findOne({ where: { email: 'buyer@example.com' } });
-    const seller = await Seller.findOne({ where: { email: 'seller@example.com' } });
+    // Create test seller if doesn't exist
+    if (!seller) {
+      console.log('🔄 Creating test seller...');
+      const hashedPassword = await bcrypt.hash('password', 10);
+      seller = await Seller.create({
+        id: uuidv4(),
+        email: 'seller@example.com',
+        password: hashedPassword,
+        firstName: 'Jane',
+        lastName: 'Smith',
+        phone: '+1 (555) 987-6543',
+        country: 'US',
+        businessName: 'Jane\'s Design Studio',
+        isVerified: true,
+        status: 'active',
+        skills: ['Logo Design', 'Web Design', 'Branding'],
+        rating: 4.8,
+        totalOrders: 25,
+        completedOrders: 23
+      });
+      console.log('✅ Test seller created: seller@example.com (password: password)');
+    } else {
+      console.log('✅ Test seller found: seller@example.com');
+    }
 
-    if (!buyer || !seller) {
-      console.log('❌ Test buyer or seller not found. Please run setup-auth-database.js first');
+    // Get test user orders only
+    const testOrders = await Order.findAll({
+      where: {
+        buyerId: buyer.id,
+        sellerId: seller.id
+      }
+    });
+
+    console.log(`📊 Found ${testOrders.length} test orders for revert`);
+
+    if (testOrders.length === 0) {
+      console.log('❌ No test orders found to revert. Run create-mock-orders.js first.');
       return;
     }
 
     console.log('\n🔄 Reverting orders to original test states...');
 
-    // Revert each order to its original state
-    for (let i = 0; i < existingOrders.length; i++) {
-      const order = existingOrders[i];
-      
-      // Define original states for testing different action buttons
-      let originalStatus;
-      let originalDescription;
-      
-      switch (i) {
-        case 0:
-          // Order 1: ESCROW_FUNDED - Test "Start Work" button
-          originalStatus = 'ESCROW_FUNDED';
-          originalDescription = 'Professional Logo Design - Ready for seller to start work';
-          break;
-        case 1:
-          // Order 2: PLACED - Test "Fund Escrow" button
-          originalStatus = 'PLACED';
-          originalDescription = 'Poster/Flyer Design - Waiting for buyer to fund escrow';
-          break;
-        case 2:
-          // Order 3: SUBMITTED - Test "Raise Dispute" button
-          originalStatus = 'SUBMITTED';
-          originalDescription = 'Social Media Post Creation - Ready for buyer review, can raise dispute';
-          break;
-        case 3:
-          // Order 4: IN_PROGRESS - Test "Submit Delivery" button
-          originalStatus = 'IN_PROGRESS';
-          originalDescription = 'Video Editing - Seller is working, can submit delivery when ready';
-          break;
-        default:
-          // Any additional orders get ESCROW_FUNDED status
-          originalStatus = 'ESCROW_FUNDED';
-          originalDescription = 'Additional Test Order - Ready for testing';
+    // Define the original test order states that match create-mock-orders.js
+    const originalOrderStates = [
+      {
+        status: 'PLACED',
+        scopeBox: {
+          title: 'Professional Logo Design',
+          productType: 'Design',
+          productLink: 'https://example.com/logo-design',
+          description: 'Create a modern, professional logo for tech startup. Need vector files and brand guidelines.',
+          condition: 'Deliver AI, EPS, PNG, and SVG files with brand guidelines PDF',
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          price: 250,
+          deliverables: ['Logo in vector format', 'Brand guidelines', 'Color variations']
+        },
+        deliveryFiles: []
+      },
+      {
+        status: 'ESCROW_FUNDED',
+        scopeBox: {
+          title: 'Website Landing Page',
+          productType: 'Web Development',
+          productLink: 'https://example.com/landing-page',
+          description: 'Responsive landing page for SaaS product with modern design and conversion optimization.',
+          condition: 'Mobile-responsive, cross-browser compatible, with contact form integration',
+          deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+          price: 500,
+          deliverables: ['HTML/CSS/JS files', 'Responsive design', 'Contact form', 'Documentation']
+        },
+        deliveryFiles: []
+      },
+      {
+        status: 'IN_PROGRESS',
+        scopeBox: {
+          title: 'Social Media Content Package',
+          productType: 'Content Creation',
+          productLink: 'https://example.com/social-media',
+          description: '10 Instagram posts with captions for fitness brand. High-quality graphics with brand consistency.',
+          condition: 'Instagram-optimized dimensions, brand colors, engaging captions included',
+          deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          price: 150,
+          deliverables: ['10 Instagram posts', 'Captions', 'Hashtag suggestions', 'Brand guidelines']
+        },
+        deliveryFiles: []
+      },
+      {
+        status: 'SUBMITTED',
+        scopeBox: {
+          title: 'Product Video Advertisement',
+          productType: 'Video Production',
+          productLink: 'https://example.com/video-ad',
+          description: '30-second promotional video for e-commerce product with professional voiceover and animations.',
+          condition: 'HD quality, with background music, professional voiceover, and call-to-action',
+          deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          price: 400,
+          deliverables: ['30-second video', 'Multiple formats', 'Source files', 'Thumbnail images']
+        },
+        deliveryFiles: ['product-video-final.mp4', 'video-thumbnails.zip', 'source-files.zip']
       }
+    ];
 
+    // Revert each order to its original state
+    for (let i = 0; i < testOrders.length && i < originalOrderStates.length; i++) {
+      const order = testOrders[i];
+      const originalState = originalOrderStates[i];
+      
       // Update order to original state
       await order.update({
-        status: originalStatus,
-        description: originalDescription,
+        status: originalState.status,
+        scopeBox: originalState.scopeBox,
+        deliveryFiles: originalState.deliveryFiles,
+        orderLogs: [], // Clear any accumulated logs
         updatedAt: new Date()
       });
 
-      console.log(`✅ Order ${order.id} reverted to ${originalStatus}`);
+      console.log(`✅ Order reverted: ${originalState.scopeBox.title} (${originalState.status})`);
     }
 
-    console.log('\n🎯 Mock orders have been reverted to their original test states:');
-    console.log('📋 Order 1: ESCROW_FUNDED - Test "Start Work" button');
-    console.log('📋 Order 2: PLACED - Test "Fund Escrow" button');
-    console.log('📋 Order 3: SUBMITTED - Test "Raise Dispute" button');
-    console.log('📋 Order 4: IN_PROGRESS - Test "Submit Delivery" button');
+    // Handle any extra orders beyond the 4 standard test orders
+    if (testOrders.length > 4) {
+      for (let i = 4; i < testOrders.length; i++) {
+        const order = testOrders[i];
+        await order.update({
+          status: 'PLACED',
+          deliveryFiles: [],
+          orderLogs: [],
+          updatedAt: new Date()
+        });
+        console.log(`✅ Extra order ${i + 1} reverted to PLACED status`);
+      }
+    }
+
+    console.log('\n🎯 Test orders have been reverted to original states:');
+    console.log('  1. PLACED - Test "Fund Escrow" button (Buyer)');
+    console.log('  2. ESCROW_FUNDED - Test "Accept Order" button (Seller)');
+    console.log('  3. IN_PROGRESS - Test "Submit Delivery" button (Seller)');
+    console.log('  4. SUBMITTED - Test "Release Funds" and "Raise Dispute" buttons (Buyer)');
     
-    console.log('\n🚀 You can now test all action buttons again!');
-    console.log('💡 Run this script anytime you want to reset the orders for testing');
+    console.log('\n🚀 All action buttons are ready for testing!');
+    console.log('💡 Run create-mock-orders.js to recreate fresh test data if needed.');
 
   } catch (error) {
     console.error('❌ Error reverting mock orders:', error);
