@@ -1,0 +1,38 @@
+# Frontend files (already deployed on Netlify)
+src/
+public/Logo.png
+index.html
+vite.config.js
+tailwind.config.js
+postcss.config.js
+
+# Development files
+.env
+.env.local
+node_modules/
+.git/
+.gitignore
+
+# Build artifacts
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
