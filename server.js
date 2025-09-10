@@ -35,7 +35,11 @@ let PORT = Number(process.env.PORT) || 3000;
 
 // Enable CORS for React frontend
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || "http://localhost:5173"],
+  origin: [
+    "http://localhost:5173",
+    "https://scrowx.netlify.app",
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true
 }));
 
