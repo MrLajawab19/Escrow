@@ -6,3 +6,7 @@
   NODE_VERSION = "20.19.4"
   VITE_API_URL= "https://escrow-production-3aaf.up.railway.app"
 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
