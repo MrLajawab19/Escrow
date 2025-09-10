@@ -5,7 +5,9 @@ const { Sequelize } = require('sequelize');
 const config = require('../config/config.json');
 
 // Initialize database connection
-const sequelize = new Sequelize(config.development);
+//const sequelize = new Sequelize(config.development);
+const env = process.env.NODE_ENV || 'development';
+const sequelize = new Sequelize(config[env]);
 
 // Import models
 const Buyer = require('../models/buyer')(sequelize, Sequelize.DataTypes);
