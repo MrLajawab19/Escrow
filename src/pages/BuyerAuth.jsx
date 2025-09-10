@@ -264,19 +264,19 @@ const BuyerAuth = () => {
                   name="country"
                   value={formData.country}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white"
+                  className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                 >
-                    <option value="">Select Country</option>
-                    <option value="US">United States</option>
-                    <option value="CA">Canada</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="IN">India</option>
-                    <option value="AU">Australia</option>
-                    <option value="DE">Germany</option>
-                    <option value="FR">France</option>
-                    <option value="JP">Japan</option>
-                    <option value="BR">Brazil</option>
-                    <option value="MX">Mexico</option>
+                    <option value="" className="text-gray-900 bg-white">Select Country</option>
+                    <option value="US" className="text-gray-900 bg-white">United States</option>
+                    <option value="CA" className="text-gray-900 bg-white">Canada</option>
+                    <option value="UK" className="text-gray-900 bg-white">United Kingdom</option>
+                    <option value="IN" className="text-gray-900 bg-white">India</option>
+                    <option value="AU" className="text-gray-900 bg-white">Australia</option>
+                    <option value="DE" className="text-gray-900 bg-white">Germany</option>
+                    <option value="FR" className="text-gray-900 bg-white">France</option>
+                    <option value="JP" className="text-gray-900 bg-white">Japan</option>
+                    <option value="BR" className="text-gray-900 bg-white">Brazil</option>
+                    <option value="MX" className="text-gray-900 bg-white">Mexico</option>
                   </select>
                 </div>
               </>

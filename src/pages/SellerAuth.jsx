@@ -278,17 +278,17 @@ const SellerAuth = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
                   >
-                                    <option value="" className="text-gray-800 bg-gray-900">Select Country</option>
-                <option value="US" className="text-gray-800 bg-gray-900">United States</option>
-                <option value="CA" className="text-gray-800 bg-gray-900">Canada</option>
-                <option value="UK" className="text-gray-800 bg-gray-900">United Kingdom</option>
-                <option value="IN" className="text-gray-800 bg-gray-900">India</option>
-                <option value="AU" className="text-gray-800 bg-gray-900">Australia</option>
-                <option value="DE" className="text-gray-800 bg-gray-900">Germany</option>
-                <option value="FR" className="text-gray-800 bg-gray-900">France</option>
-                <option value="JP" className="text-gray-800 bg-gray-900">Japan</option>
-                <option value="BR" className="text-gray-800 bg-gray-900">Brazil</option>
-                <option value="MX" className="text-gray-800 bg-gray-900">Mexico</option>
+                    <option value="" className="text-gray-900 bg-white">Select Country</option>
+                    <option value="US" className="text-gray-900 bg-white">United States</option>
+                    <option value="CA" className="text-gray-900 bg-white">Canada</option>
+                    <option value="UK" className="text-gray-900 bg-white">United Kingdom</option>
+                    <option value="IN" className="text-gray-900 bg-white">India</option>
+                    <option value="AU" className="text-gray-900 bg-white">Australia</option>
+                    <option value="DE" className="text-gray-900 bg-white">Germany</option>
+                    <option value="FR" className="text-gray-900 bg-white">France</option>
+                    <option value="JP" className="text-gray-900 bg-white">Japan</option>
+                    <option value="BR" className="text-gray-900 bg-white">Brazil</option>
+                    <option value="MX" className="text-gray-900 bg-white">Mexico</option>
                   </select>
                 </div>
               </>
@@ -379,13 +379,6 @@ const SellerAuth = () => {
             </div>
           )}
 
-          {/* Note about approval */}
-          {!isLogin && (
-            <div className="mt-4 p-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 rounded-lg text-sm font-inter">
-              <p className="font-medium">Note:</p>
-              <p>Seller accounts require approval before you can start accepting orders. We'll review your application within 24-48 hours.</p>
-            </div>
-          )}
         </div>
 
         {/* Footer */}

@@ -214,7 +214,7 @@ async function sellerSignup(req, res) {
       country: country || null,
       businessName: businessName || null,
       isVerified: false,
-      status: 'pending' // Sellers need approval
+      status: 'active' // Sellers can login immediately
     });
 
     // Remove password from response
@@ -223,7 +223,7 @@ async function sellerSignup(req, res) {
 
     res.status(201).json({
       success: true,
-      message: 'Seller account created successfully. Pending approval.',
+      message: 'Seller account created successfully.',
       user: sellerData
     });
 
@@ -267,11 +267,11 @@ async function sellerLogin(req, res) {
       });
     }
 
-    // Check if account is approved
-    if (seller.status !== 'active') {
+    // Check if account is active (removed approval requirement)
+    if (seller.status === 'inactive') {
       return res.status(401).json({
         success: false,
-        message: 'Account is pending approval or inactive'
+        message: 'Account is inactive'
       });
     }
 
