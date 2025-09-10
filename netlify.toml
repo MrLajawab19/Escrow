@@ -4,3 +4,5 @@
 
 [build.environment]
   NODE_VERSION = "20.19.4"
+  VITE_API_URL=https://escrow-production-3aaf.up.railway.app
+
