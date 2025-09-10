@@ -38,7 +38,7 @@ const DisputeTracker = ({ userId, userRole }) => {
         formData.append('evidence', file);
       });
 
-      await axios.post(`http://localhost:3000/api/disputes/${disputeId}/evidence`, formData, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/disputes/${disputeId}/evidence`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

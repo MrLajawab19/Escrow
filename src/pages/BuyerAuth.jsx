@@ -69,7 +69,7 @@ const BuyerAuth = () => {
         console.log('Attempting login with:', { email: formData.email });
         console.log('Making request to:', '/api/auth/buyer/login');
         
-        const response = await axios.post('/api/auth/buyer/login', {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/buyer/login`, {
           email: formData.email,
           password: formData.password
         }, {
@@ -95,7 +95,7 @@ const BuyerAuth = () => {
       } else {
         // Signup
         console.log('Attempting signup with:', { email: formData.email });
-        const response = await axios.post('/api/auth/buyer/signup', {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/buyer/signup`, {
           email: formData.email,
           password: formData.password,
           firstName: formData.firstName,

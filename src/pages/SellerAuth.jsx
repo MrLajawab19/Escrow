@@ -68,7 +68,7 @@ const SellerAuth = () => {
       if (isLogin) {
         // Login
         console.log('Attempting seller login with:', { email: formData.email });
-        const response = await axios.post('/api/auth/seller/login', {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/seller/login`, {
           email: formData.email,
           password: formData.password
         }, {
@@ -93,7 +93,7 @@ const SellerAuth = () => {
       } else {
         // Signup
         console.log('Attempting seller signup with:', { email: formData.email });
-        const response = await axios.post('/api/auth/seller/signup', {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/seller/signup`, {
           email: formData.email,
           password: formData.password,
           firstName: formData.firstName,
