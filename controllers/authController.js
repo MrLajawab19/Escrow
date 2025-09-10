@@ -5,9 +5,22 @@ const { Sequelize } = require('sequelize');
 const config = require('../config/config.json');
 
 // Initialize database connection
-//const sequelize = new Sequelize(config.development);
+let sequelize;
 const env = process.env.NODE_ENV || 'development';
-const sequelize = new Sequelize(config[env]);
+if (env === 'production') {
+  sequelize = new Sequelize(process.env.PROD_DATABASE_URL, {
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    },
+    logging: false
+  });
+} else {
+  sequelize = new Sequelize(config[env]);
+}
 
 // Import models
 const Buyer = require('../models/buyer')(sequelize, Sequelize.DataTypes);
