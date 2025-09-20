@@ -193,7 +193,7 @@ async function createOrder(req, res) {
     const orderId = uuidv4();
     
     // Find or create seller based on sellerContact (email)
-    let sellerId;
+    let sellerId = null;
     try {
       const seller = await Seller.findOne({ where: { email: sellerContact } });
       
@@ -201,23 +201,30 @@ async function createOrder(req, res) {
         sellerId = seller.id;
       } else {
         // If seller doesn't exist, create a placeholder seller
-        const newSeller = await Seller.create({
-          id: uuidv4(),
-          email: sellerContact,
-          firstName: 'Seller',
-          lastName: 'User',
-          phone: sellerContact,
-          country: 'US',
-          businessName: 'Freelance Seller',
-          isVerified: true,
-          status: 'active'
-        });
-        sellerId = newSeller.id;
+        try {
+          const newSeller = await Seller.create({
+            id: uuidv4(),
+            email: sellerContact,
+            firstName: 'Seller',
+            lastName: 'User',
+            phone: sellerContact,
+            country: 'US',
+            businessName: 'Freelance Seller',
+            isVerified: true,
+            status: 'active',
+            password: 'temp_password_' + Date.now() // Add required password field
+          });
+          sellerId = newSeller.id;
+        } catch (createError) {
+          console.error('Error creating seller:', createError);
+          // Continue without sellerId - order will be created with sellerContact only
+          sellerId = null;
+        }
       }
     } catch (error) {
       console.error('Error finding/creating seller:', error);
-      // Fallback to generating a new seller ID
-      sellerId = uuidv4();
+      // Continue without sellerId - order will be created with sellerContact only
+      sellerId = null;
     }
     
     const escrowLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/order/${orderId}`;

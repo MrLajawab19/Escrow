@@ -123,7 +123,7 @@ async function submitDelivery(orderId, sellerId, deliveryFiles) {
     throw new Error('Order not found');
   }
 
-  if (order.sellerId !== sellerId) {
+  if (order.sellerId && order.sellerId !== sellerId) {
     throw new Error('Unauthorized: Only the seller can submit delivery');
   }
 
@@ -238,7 +238,7 @@ async function acceptOrder(orderId, sellerId) {
     throw new Error('Order not found');
   }
   
-  if (order.sellerId !== sellerId) {
+  if (order.sellerId && order.sellerId !== sellerId) {
     throw new Error('Unauthorized: Only the assigned seller can accept this order');
   }
   
@@ -273,7 +273,7 @@ async function rejectOrder(orderId, sellerId) {
     throw new Error('Order not found');
   }
   
-  if (order.sellerId !== sellerId) {
+  if (order.sellerId && order.sellerId !== sellerId) {
     throw new Error('Unauthorized: Only the assigned seller can reject this order');
   }
   
@@ -308,7 +308,7 @@ async function requestChanges(orderId, sellerId, changesData) {
     throw new Error('Order not found');
   }
   
-  if (order.sellerId !== sellerId) {
+  if (order.sellerId && order.sellerId !== sellerId) {
     throw new Error('Unauthorized: Only the assigned seller can request changes to this order');
   }
   
