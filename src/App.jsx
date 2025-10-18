@@ -9,6 +9,7 @@ import OrderTrackingPage from './pages/OrderTrackingPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import CustomerCareChatBot from './components/CustomerCareChatBot';
+import LandingPage from './components/LandingPage';
 
 // Route Change Handler Component
 const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
@@ -458,7 +459,7 @@ function App() {
         {/* Routes */}
         <RouteChangeHandler onAuthClear={clearAuthState} onCheckAuth={checkAuth}>
           <Routes>
-            <Route path="/" element={<HomePage onAuthClear={clearAuthState} />} />
+            <Route path="/" element={<LandingPage onAuthClear={clearAuthState} />} />
             <Route path="/buyer/auth" element={<BuyerAuth />} />
             <Route path="/seller/auth" element={<SellerAuth />} />
             <Route path="/admin/login" element={<AdminLogin />} />

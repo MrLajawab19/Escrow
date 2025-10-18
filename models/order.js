@@ -40,9 +40,9 @@ module.exports = (sequelize, DataTypes) => {
     },
     sellerId: {
       type: DataTypes.UUID,
-      allowNull: true,
+      allowNull: false,
       validate: {
-        notEmpty: false
+        notEmpty: true
       }
     },
     buyerName: {
