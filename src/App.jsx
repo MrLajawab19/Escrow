@@ -17,11 +17,20 @@ const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
   
   useEffect(() => {
     // If navigating to homepage and user is authenticated, clear auth
-    if (location.pathname === '/' && (localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken'))) {
+    if (
+      location.pathname === '/' &&
+      (
+        localStorage.getItem('buyerToken') ||
+        localStorage.getItem('sellerToken') ||
+        localStorage.getItem('adminToken')
+      )
+    ) {
       localStorage.removeItem('buyerToken');
       localStorage.removeItem('buyerData');
       localStorage.removeItem('sellerToken');
       localStorage.removeItem('sellerData');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminData');
       // Update state to reflect logout
       onAuthClear();
     } else {
@@ -31,6 +40,351 @@ const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
   }, [location.pathname, onAuthClear, onCheckAuth]);
   
   return children;
+};
+
+const AppNav = ({
+  isBuyerAuthenticated,
+  isSellerAuthenticated,
+  isAdminAuthenticated,
+  buyerData,
+  sellerData,
+  adminData,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
+  handleHomeClick,
+  handleBuyerLogout,
+  handleSellerLogout,
+  handleAdminLogout,
+}) => {
+  const location = useLocation();
+  const pathname = location.pathname || '/';
+
+  const isBuyerArea = pathname.startsWith('/buyer');
+  const isSellerArea = pathname.startsWith('/seller');
+  const isAdminArea = pathname.startsWith('/admin');
+  const showHomeAction = isBuyerArea || isSellerArea || isAdminArea;
+
+  return (
+    <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/20 sticky top-0 z-50 backdrop-blur-xl shadow-lg overflow-hidden">
+      {/* Enhanced Navigation Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Subtle gradient background for navigation */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-800 to-teal-900/30"></div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="flex items-center justify-between h-18 sm:h-20 md:h-20 py-2">
+          <div className="flex items-center relative">
+            {/* Logo spotlight background - constrained to logo area */}
+            <div className="absolute inset-0 flex items-center justify-start">
+              <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-radial from-teal-400/25 via-cyan-400/15 to-transparent rounded-full blur-lg animate-logo-glow"></div>
+            </div>
+            <Link 
+              to="/" 
+              className="flex items-center space-x-3 transition-all duration-300 hover:opacity-80 relative z-10" 
+              onClick={handleHomeClick}
+            >
+              <img 
+                src="/Logo.png" 
+                alt="ScrowX" 
+                className="h-14 sm:h-16 md:h-18 w-auto filter brightness-150 contrast-150 drop-shadow-2xl hover:scale-105 transition-all duration-300 relative z-10"
+                style={{
+                  filter: 'brightness(1.5) contrast(1.5) drop-shadow(0 0 25px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 50px rgba(6, 182, 212, 0.3)) drop-shadow(0 0 75px rgba(6, 182, 212, 0.1))'
+                }}
+              />
+            </Link>
+          </div>
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-6">
+            {showHomeAction && (
+              <Link 
+                to="/" 
+                className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
+                onClick={handleHomeClick}
+              >
+                Home
+              </Link>
+            )}
+
+            {isBuyerAuthenticated ? (
+              <>
+                <Link 
+                  to="/buyer/dashboard" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
+                >
+                  Buyer Dashboard
+                </Link>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-white/80 font-inter">
+                    Welcome, {buyerData?.firstName || 'Buyer'}
+                  </span>
+                  <button
+                    onClick={handleBuyerLogout}
+                    className="px-4 py-2 text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
+            ) : isSellerAuthenticated ? (
+              <>
+                <Link 
+                  to="/seller/dashboard" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
+                >
+                  Seller Dashboard
+                </Link>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-white/80 font-inter">
+                    Welcome, {sellerData?.firstName || 'Seller'}
+                  </span>
+                  <button
+                    onClick={handleSellerLogout}
+                    className="px-4 py-2 text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
+            ) : isAdminAuthenticated ? (
+              <>
+                <Link 
+                  to="/admin/dashboard" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400 hover:shadow-glow"
+                >
+                  Admin Dashboard
+                </Link>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-white/80 font-inter">
+                    Welcome, {adminData?.name || 'Admin'}
+                  </span>
+                  <button
+                    onClick={handleAdminLogout}
+                    className="px-4 py-2 text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
+            ) : isBuyerArea ? (
+              <>
+                <Link 
+                  to="/buyer/auth" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
+                >
+                  Buyer Login
+                </Link>
+              </>
+            ) : isSellerArea ? (
+              <>
+                <Link 
+                  to="/seller/auth" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
+                >
+                  Seller Login
+                </Link>
+              </>
+            ) : isAdminArea ? (
+              <>
+                <Link 
+                  to="/admin/login" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400 hover:shadow-glow"
+                >
+                  Admin Login
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/buyer/auth" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
+                >
+                  Buyer Login
+                </Link>
+                <Link 
+                  to="/seller/auth" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
+                >
+                  Seller Login
+                </Link>
+                <Link 
+                  to="/admin/login" 
+                  className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400 hover:shadow-glow"
+                >
+                  Admin Login
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-xl transition-all duration-300 hover:bg-white/10 text-white"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-white/20 animate-fade-in relative z-10">
+            <div className="flex flex-col space-y-3">
+              {showHomeAction && (
+                <Link 
+                  to="/" 
+                  className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
+                  onClick={() => {
+                    handleHomeClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Home
+                </Link>
+              )}
+
+              {isBuyerAuthenticated ? (
+                <>
+                  <Link 
+                    to="/buyer/dashboard" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Buyer Dashboard
+                  </Link>
+                  <div className="px-4 py-2">
+                    <span className="text-sm text-white/80 font-inter">
+                      Welcome, {buyerData?.firstName || 'Buyer'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleBuyerLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-left text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : isSellerAuthenticated ? (
+                <>
+                  <Link 
+                    to="/seller/dashboard" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Seller Dashboard
+                  </Link>
+                  <div className="px-4 py-2">
+                    <span className="text-sm text-white/80 font-inter">
+                      Welcome, {sellerData?.firstName || 'Seller'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleSellerLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-left text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : isAdminAuthenticated ? (
+                <>
+                  <Link 
+                    to="/admin/dashboard" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                  <div className="px-4 py-2">
+                    <span className="text-sm text-white/80 font-inter">
+                      Welcome, {adminData?.name || 'Admin'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleAdminLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-left text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : isBuyerArea ? (
+                <>
+                  <Link 
+                    to="/buyer/auth" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Buyer Login
+                  </Link>
+                </>
+              ) : isSellerArea ? (
+                <>
+                  <Link 
+                    to="/seller/auth" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Seller Login
+                  </Link>
+                </>
+              ) : isAdminArea ? (
+                <>
+                  <Link 
+                    to="/admin/login" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Admin Login
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    to="/buyer/auth" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Buyer Login
+                  </Link>
+                  <Link 
+                    to="/seller/auth" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Seller Login
+                  </Link>
+                  <Link 
+                    to="/admin/login" 
+                    className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Admin Login
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
 };
 
 // Home Page Component with Auto-Logout
@@ -157,18 +511,20 @@ const HomePage = ({ onAuthClear }) => {
 function App() {
   const [isBuyerAuthenticated, setIsBuyerAuthenticated] = useState(false);
   const [isSellerAuthenticated, setIsSellerAuthenticated] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [buyerData, setBuyerData] = useState(null);
   const [sellerData, setSellerData] = useState(null);
+  const [adminData, setAdminData] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const checkAuth = useCallback(() => {
     // Check buyer auth
     const buyerToken = localStorage.getItem('buyerToken');
-    const buyerData = localStorage.getItem('buyerData');
+    const buyerDataStr = localStorage.getItem('buyerData');
     
-    if (buyerToken && buyerData) {
+    if (buyerToken && buyerDataStr) {
       setIsBuyerAuthenticated(true);
-      setBuyerData(JSON.parse(buyerData));
+      setBuyerData(JSON.parse(buyerDataStr));
     } else {
       setIsBuyerAuthenticated(false);
       setBuyerData(null);
@@ -176,14 +532,26 @@ function App() {
 
     // Check seller auth
     const sellerToken = localStorage.getItem('sellerToken');
-    const sellerData = localStorage.getItem('sellerData');
+    const sellerDataStr = localStorage.getItem('sellerData');
     
-    if (sellerToken && sellerData) {
+    if (sellerToken && sellerDataStr) {
       setIsSellerAuthenticated(true);
-      setSellerData(JSON.parse(sellerData));
+      setSellerData(JSON.parse(sellerDataStr));
     } else {
       setIsSellerAuthenticated(false);
       setSellerData(null);
+    }
+
+    // Check admin auth
+    const adminToken = localStorage.getItem('adminToken');
+    const adminDataStr = localStorage.getItem('adminData');
+
+    if (adminToken && adminDataStr) {
+      setIsAdminAuthenticated(true);
+      setAdminData(JSON.parse(adminDataStr));
+    } else {
+      setIsAdminAuthenticated(false);
+      setAdminData(null);
     }
   }, []);
 
@@ -194,7 +562,8 @@ function App() {
     // Listen for storage changes (when user logs in/out in another tab)
     const handleStorageChange = (e) => {
       if (e.key === 'buyerToken' || e.key === 'buyerData' || 
-          e.key === 'sellerToken' || e.key === 'sellerData') {
+          e.key === 'sellerToken' || e.key === 'sellerData' || 
+          e.key === 'adminToken' || e.key === 'adminData') {
         checkAuth();
       }
     };
@@ -225,11 +594,22 @@ function App() {
     window.location.href = '/';
   };
 
+  const handleAdminLogout = () => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminData');
+    setIsAdminAuthenticated(false);
+    setAdminData(null);
+    // Redirect to home page
+    window.location.href = '/';
+  };
+
   const clearAuthState = useCallback(() => {
     setIsBuyerAuthenticated(false);
     setIsSellerAuthenticated(false);
+    setIsAdminAuthenticated(false);
     setBuyerData(null);
     setSellerData(null);
+    setAdminData(null);
     setIsMobileMenuOpen(false);
   }, []);
 
@@ -239,6 +619,8 @@ function App() {
     localStorage.removeItem('buyerData');
     localStorage.removeItem('sellerToken');
     localStorage.removeItem('sellerData');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminData');
     clearAuthState();
   };
 
@@ -260,201 +642,20 @@ function App() {
     <Router>
       <div className="App">
         {/* Navigation */}
-        <nav className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/20 sticky top-0 z-50 backdrop-blur-xl shadow-lg overflow-hidden">
-          {/* Enhanced Navigation Background Elements */}
-          <div className="absolute inset-0 overflow-hidden">
-            {/* Subtle gradient background for navigation */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-800 to-teal-900/30"></div>
-          </div>
-          
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="flex items-center justify-between h-18 sm:h-20 md:h-20 py-2">
-              <div className="flex items-center relative">
-                {/* Logo spotlight background - constrained to logo area */}
-                <div className="absolute inset-0 flex items-center justify-start">
-                  <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-radial from-teal-400/25 via-cyan-400/15 to-transparent rounded-full blur-lg animate-logo-glow"></div>
-                </div>
-                <Link 
-                  to="/" 
-                  className="flex items-center space-x-3 transition-all duration-300 hover:opacity-80 relative z-10" 
-                  onClick={handleHomeClick}
-                >
-                  <img 
-                    src="/Logo.png" 
-                    alt="ScrowX" 
-                    className="h-14 sm:h-16 md:h-18 w-auto filter brightness-150 contrast-150 drop-shadow-2xl hover:scale-105 transition-all duration-300 relative z-10"
-                    style={{
-                      filter: 'brightness(1.5) contrast(1.5) drop-shadow(0 0 25px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 50px rgba(6, 182, 212, 0.3)) drop-shadow(0 0 75px rgba(6, 182, 212, 0.1))'
-                    }}
-                  />
-                </Link>
-              </div>
-              
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center space-x-6">
-                {isBuyerAuthenticated ? (
-                  <>
-                    <Link 
-                      to="/buyer/dashboard" 
-                      className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
-                    >
-                      Buyer Dashboard
-                    </Link>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm text-white/80 font-inter">
-                        Welcome, {buyerData?.firstName || 'Buyer'}
-                      </span>
-                      <button
-                        onClick={handleBuyerLogout}
-                        className="px-4 py-2 text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
-                      >
-                        Logout
-                      </button>
-                    </div>
-                  </>
-                ) : isSellerAuthenticated ? (
-                  <>
-                    <Link 
-                      to="/seller/dashboard" 
-                      className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
-                    >
-                      Seller Dashboard
-                    </Link>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm text-white/80 font-inter">
-                        Welcome, {sellerData?.firstName || 'Seller'}
-                      </span>
-                      <button
-                        onClick={handleSellerLogout}
-                        className="px-4 py-2 text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
-                      >
-                        Logout
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Link 
-                      to="/buyer/auth" 
-                      className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
-                    >
-                      Buyer Login
-                    </Link>
-                    <Link 
-                      to="/seller/auth" 
-                      className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white hover:shadow-glow"
-                    >
-                      Seller Login
-                    </Link>
-                    <Link 
-                      to="/admin/login" 
-                      className="px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400 hover:shadow-glow"
-                    >
-                      Admin Login
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              {/* Mobile menu button */}
-              <div className="md:hidden">
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="p-2 rounded-xl transition-all duration-300 hover:bg-white/10 text-white"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    {isMobileMenuOpen ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    )}
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Mobile Navigation */}
-            {isMobileMenuOpen && (
-              <div className="md:hidden py-4 border-t border-white/20 animate-fade-in relative z-10">
-                <div className="flex flex-col space-y-3">
-                  {isBuyerAuthenticated ? (
-                    <>
-                      <Link 
-                        to="/buyer/dashboard" 
-                        className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Buyer Dashboard
-                      </Link>
-                      <div className="px-4 py-2">
-                        <span className="text-sm text-white/80 font-inter">
-                          Welcome, {buyerData?.firstName || 'Buyer'}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          handleBuyerLogout();
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="px-4 py-3 text-left text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : isSellerAuthenticated ? (
-                    <>
-                      <Link 
-                        to="/seller/dashboard" 
-                        className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Seller Dashboard
-                      </Link>
-                      <div className="px-4 py-2">
-                        <span className="text-sm text-white/80 font-inter">
-                          Welcome, {sellerData?.firstName || 'Seller'}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          handleSellerLogout();
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="px-4 py-3 text-left text-sm rounded-xl transition-all duration-300 hover:bg-red-500/20 text-red-400 font-inter font-medium"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link 
-                        to="/buyer/auth" 
-                        className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Buyer Login
-                      </Link>
-                      <Link 
-                        to="/seller/auth" 
-                        className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-white"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Seller Login
-                      </Link>
-                      <Link 
-                        to="/admin/login" 
-                        className="px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10 font-inter font-medium text-orange-400"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Admin Login
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </nav>
+        <AppNav
+          isBuyerAuthenticated={isBuyerAuthenticated}
+          isSellerAuthenticated={isSellerAuthenticated}
+          isAdminAuthenticated={isAdminAuthenticated}
+          buyerData={buyerData}
+          sellerData={sellerData}
+          adminData={adminData}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          handleHomeClick={handleHomeClick}
+          handleBuyerLogout={handleBuyerLogout}
+          handleSellerLogout={handleSellerLogout}
+          handleAdminLogout={handleAdminLogout}
+        />
 
         {/* Routes */}
         <RouteChangeHandler onAuthClear={clearAuthState} onCheckAuth={checkAuth}>
