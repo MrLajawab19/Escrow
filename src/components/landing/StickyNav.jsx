@@ -99,9 +99,6 @@ const StickyNav = ({ activeNavItem, scrollToSection, navigate }) => {
                   filter: 'brightness(1.5) contrast(1.5) drop-shadow(0 0 20px rgba(6, 182, 212, 0.5))'
                 }}
               />
-              <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent hidden sm:block">
-                ScrowX
-              </span>
             </motion.div>
 
             {/* Desktop Navigation */}
