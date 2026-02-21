@@ -73,7 +73,7 @@ const CustomerCareChatBot = () => {
     // Send to backend API
     setIsLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/support-chat`, {
+      const response = await axios.post('/api/support-chat', {
         message: userMessage
       });
       

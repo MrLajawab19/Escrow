@@ -1,3 +1,4 @@
+require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
 const express = require('express');
 const path = require('path');
@@ -9,26 +10,6 @@ const authRoutes = require('./routes/auth');
 const disputeRoutes = require('./routes/disputes');
 const supportChatRoutes = require('./routes/supportChat');
 const fs = require('fs');
-
-// Load environment variables manually if dotenv is not available
-function loadEnv() {
-  try {
-    const envPath = path.join(__dirname, '.env');
-    if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      envContent.split('\n').forEach(line => {
-        const [key, value] = line.split('=');
-        if (key && value) {
-          process.env[key.trim()] = value.trim();
-        }
-      });
-    }
-  } catch (error) {
-    console.log('Note: Could not load .env file, using defaults');
-  }
-}
-
-loadEnv();
 
 const app = express();
 let PORT = Number(process.env.PORT) || 3000;

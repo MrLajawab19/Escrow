@@ -46,7 +46,7 @@ const BuyerDashboard = () => {
       if (err.response?.status === 401) {
         setError('Authentication required. Please login again.');
       } else {
-        setError('Failed to load orders');
+        setError(err.response?.data?.message || 'Failed to load orders');
       }
     } finally {
       setLoading(false);

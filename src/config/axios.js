@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Set base URL for API calls from env (fallback to 3001 where backend runs)
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// In dev: always use proxy (empty base = same origin, Vite proxies /api to backend)
+// In prod: use VITE_API_URL for the deployed API
+axios.defaults.baseURL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
 
 // Add request interceptor to include auth token
 axios.interceptors.request.use(
@@ -21,13 +22,13 @@ axios.interceptors.request.use(
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear invalid tokens
+    // Only redirect on 401 for authenticated requests (not login/signup)
+    const isAuthEndpoint = error.config?.url?.includes('/auth/') && (error.config?.url?.includes('/login') || error.config?.url?.includes('/signup'));
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('buyerToken');
       localStorage.removeItem('sellerToken');
       localStorage.removeItem('buyerData');
       localStorage.removeItem('sellerData');
-      // Redirect to home page
       window.location.href = '/';
     }
     return Promise.reject(error);

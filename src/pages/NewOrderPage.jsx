@@ -1703,7 +1703,7 @@ export default function NewOrderPage() {
         }
       };
 
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, orderData, {
+      const response = await axios.post('/api/orders', orderData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -1740,7 +1740,7 @@ export default function NewOrderPage() {
 
       // Fund the escrow
       const token = localStorage.getItem('buyerToken');
-      const fundResponse = await axios.post(`${import.meta.env.VITE_API_URL}/api/orders/${orderData.orderId}/fund-escrow`, {
+      const fundResponse = await axios.post(`/api/orders/${orderData.orderId}/fund-escrow`, {
         buyerId: buyerData.id,
         paymentMethod: 'credit_card',
         amount: fundingData.amount,

@@ -19,7 +19,7 @@ const DisputeTracker = ({ userId, userRole }) => {
         ...filters
       });
       
-      const response = await axios.get(`http://localhost:3000/api/disputes/user/${userId}/${userRole}?${params}`);
+      const response = await axios.get(`/api/disputes/user/${userId}/${userRole}?${params}`);
       setDisputes(response.data.data.disputes);
     } catch (error) {
       console.error('Error fetching user disputes:', error);
@@ -38,7 +38,7 @@ const DisputeTracker = ({ userId, userRole }) => {
         formData.append('evidence', file);
       });
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/disputes/${disputeId}/evidence`, formData, {
+      await axios.post(`/api/disputes/${disputeId}/evidence`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -225,7 +225,7 @@ const DisputeTracker = ({ userId, userRole }) => {
                         {dispute.evidenceUrls.map((url, index) => (
                           <a
                             key={index}
-                            href={`http://localhost:3000${url}`}
+                            href={url.startsWith('http') ? url : `${window.location.origin}${url}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-blue-600 hover:text-blue-800"
@@ -366,7 +366,7 @@ const DisputeDetailModal = ({ dispute, userRole, onClose, onAddEvidence }) => {
                   {dispute.evidenceUrls.map((url, index) => (
                     <a
                       key={index}
-                      href={`http://localhost:3000${url}`}
+                      href={url.startsWith('http') ? url : `${window.location.origin}${url}`}
                         target="_blank" 
                         rel="noopener noreferrer"
                       className="block text-sm text-blue-600 hover:text-blue-800"

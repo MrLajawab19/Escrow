@@ -30,7 +30,7 @@ const DisputeDashboard = () => {
         limit: pagination.limit
       });
       
-      const response = await axios.get(`http://localhost:3000/api/disputes?${params}`);
+      const response = await axios.get(`/api/disputes?${params}`);
       setDisputes(response.data.data.disputes);
       setPagination(prev => ({
         ...prev,
@@ -46,7 +46,7 @@ const DisputeDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/disputes/stats');
+      const response = await axios.get('/api/disputes/stats');
       setStats(response.data.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -55,7 +55,7 @@ const DisputeDashboard = () => {
 
   const updateDisputeStatus = async (disputeId, status, notes = '') => {
     try {
-      await axios.patch(`http://localhost:3000/api/disputes/${disputeId}/status`, {
+      await axios.patch(`/api/disputes/${disputeId}/status`, {
         status,
         notes
       });
@@ -68,7 +68,7 @@ const DisputeDashboard = () => {
 
   const resolveDispute = async (disputeId, resolution, resolutionAmount, resolutionNotes) => {
     try {
-      await axios.patch(`http://localhost:3000/api/disputes/${disputeId}/resolve`, {
+      await axios.patch(`/api/disputes/${disputeId}/resolve`, {
         resolution,
         resolutionAmount,
         resolutionNotes,
@@ -419,7 +419,7 @@ const DisputeDetailModal = ({ dispute, onClose, onUpdateStatus, onResolve }) => 
                   {dispute.evidenceUrls.map((url, index) => (
                     <a
                       key={index}
-                      href={`http://localhost:3000${url}`}
+                      href={url.startsWith('http') ? url : `${window.location.origin}${url}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block text-sm text-blue-600 hover:text-blue-800"

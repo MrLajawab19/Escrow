@@ -40,7 +40,7 @@ const AdminDashboard = () => {
 
   const handleResolveDispute = async (disputeId) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/disputes/${disputeId}/resolve`, {
+      const response = await axios.post(`/api/disputes/${disputeId}/resolve`, {
         action: resolutionAction,
         notes: resolutionNotes
       }, {

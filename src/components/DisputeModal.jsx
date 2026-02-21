@@ -203,7 +203,7 @@ const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) =
         evidenceFiles: formData.evidenceFiles.length
       });
 
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/disputes`, submitData, {
+      const response = await axios.post('/api/disputes', submitData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

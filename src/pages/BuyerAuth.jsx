@@ -69,7 +69,7 @@ const BuyerAuth = () => {
         console.log('Attempting login with:', { email: formData.email });
         console.log('Making request to:', '/api/auth/buyer/login');
         
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/buyer/login`, {
+        const response = await axios.post('/api/auth/buyer/login', {
           email: formData.email,
           password: formData.password
         }, {
@@ -95,7 +95,7 @@ const BuyerAuth = () => {
       } else {
         // Signup
         console.log('Attempting signup with:', { email: formData.email });
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/buyer/signup`, {
+        const response = await axios.post('/api/auth/buyer/signup', {
           email: formData.email,
           password: formData.password,
           firstName: formData.firstName,
@@ -126,11 +126,12 @@ const BuyerAuth = () => {
       }
     } catch (error) {
       console.error('Auth error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      console.error('Error message:', error.message);
-      console.error('Error config:', error.config);
-      setError(error.response?.data?.message || 'An error occurred. Please try again.');
+      const msg = error.response?.data?.message
+        || (error.code === 'ERR_NETWORK' ? 'Cannot reach server. Is the backend running? Run: npm run server' : null)
+        || (error.message?.includes('Network Error') ? 'Network error. Ensure backend is running (npm run server).' : null)
+        || error.message
+        || 'An error occurred. Please try again.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
