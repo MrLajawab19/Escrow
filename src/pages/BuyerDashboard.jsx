@@ -23,7 +23,7 @@ const BuyerDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const token = localStorage.getItem('buyerToken');
       if (!token) {
         setError('Authentication required');
@@ -54,8 +54,8 @@ const BuyerDashboard = () => {
   };
 
   const handleOrderUpdate = (updatedOrder) => {
-    setOrders(prevOrders => 
-      prevOrders.map(o => 
+    setOrders(prevOrders =>
+      prevOrders.map(o =>
         o.id === updatedOrder.id ? updatedOrder : o
       )
     );
@@ -72,8 +72,8 @@ const BuyerDashboard = () => {
   };
 
   const handleChangesReviewUpdate = (updatedOrder) => {
-    setOrders(prevOrders => 
-      prevOrders.map(o => 
+    setOrders(prevOrders =>
+      prevOrders.map(o =>
         o.id === updatedOrder.id ? updatedOrder : o
       )
     );
@@ -81,16 +81,10 @@ const BuyerDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center relative overflow-hidden">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
-        </div>
-        
-        <div className="text-center relative z-10">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white/80 font-inter text-lg">Loading your orders...</p>
+      <div className="min-h-screen bg-main flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-neutral-500 font-medium">Loading your orders...</p>
         </div>
       </div>
     );
@@ -98,19 +92,19 @@ const BuyerDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center relative overflow-hidden">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
-        </div>
-        
-        <div className="text-center relative z-10">
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 max-w-md">
-            <p className="text-red-400 mb-6 font-inter">{error}</p>
-            <button 
+      <div className="min-h-screen bg-main flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="bg-white border border-neutral-200 shadow-sm rounded-xl p-8 max-w-md w-full">
+            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-navy-900 mb-2">Error Loading Orders</h3>
+            <p className="text-neutral-600 mb-6 text-sm leading-relaxed">{error}</p>
+            <button
               onClick={fetchOrders}
-              className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-inter font-semibold px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+              className="btn btn-primary w-full"
             >
               Try Again
             </button>
@@ -121,40 +115,32 @@ const BuyerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 0 }}>
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse-glow"></div>
-      </div>
-
+    <div className="min-h-screen bg-main">
       {/* Header */}
-      <div className="bg-white/10 backdrop-blur-xl border-b border-white/20 sticky top-0 z-50">
+      <div className="bg-white border-b border-neutral-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-[72px]">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">Buyer Dashboard</h1>
+              <h1 className="text-xl font-bold text-navy-900 tracking-tight">Buyer Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-white/80 font-inter">Welcome, Buyer</span>
+              <span className="text-sm text-neutral-500 font-medium hidden sm:inline-block">Welcome back</span>
               <button
                 onClick={() => setShowMyDisputes(true)}
-                className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl hover:scale-105 transition-all duration-300 flex items-center shadow-lg font-inter font-medium"
+                className="btn btn-outline border-neutral-200 text-neutral-700 hover:bg-neutral-50"
               >
-                <span className="mr-2">🚨</span>
-                My Disputes
+                Disputes
               </button>
               <button
                 onClick={() => {
-                  console.log('New Order button clicked');
-                  console.log('Using window.location.href for navigation');
                   window.location.href = '/buyer/new-order';
                 }}
-                className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white rounded-xl hover:scale-105 transition-all duration-300 shadow-lg font-inter font-medium cursor-pointer relative z-50"
-                style={{ position: 'relative', zIndex: 50 }}
+                className="btn btn-primary shadow-sm hover:shadow"
               >
-                + New Order
+                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                New Order
               </button>
             </div>
           </div>
@@ -170,65 +156,73 @@ const BuyerDashboard = () => {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-6 hover:scale-105 transition-all duration-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-gradient-to-r from-cyan-400 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white text-xl">📋</span>
+                <div className="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-white/80 font-inter">Total Orders</p>
-                <p className="text-2xl font-bold text-white font-inter">{orders.length}</p>
+                <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Total Orders</p>
+                <p className="text-2xl font-bold text-navy-900 mt-1">{orders.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-6 hover:scale-105 transition-all duration-300">
+          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white text-xl">📤</span>
+                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-white/80 font-inter">Pending Review</p>
-                <p className="text-2xl font-bold text-white font-inter">
+                <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Pending Review</p>
+                <p className="text-2xl font-bold text-navy-900 mt-1">
                   {orders.filter(order => order.status === 'SUBMITTED').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-6 hover:scale-105 transition-all duration-300">
+          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-gradient-to-r from-red-400 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white text-xl">🚨</span>
+                <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-white/80 font-inter">Disputes</p>
-                <p className="text-2xl font-bold text-white font-inter">
+                <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Disputes</p>
+                <p className="text-2xl font-bold text-navy-900 mt-1">
                   {orders.filter(order => order.status === 'DISPUTED').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-6 hover:scale-105 transition-all duration-300">
+          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white text-xl">✅</span>
+                <div className="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-white/80 font-inter">Completed</p>
-                <p className="text-2xl font-bold text-white font-inter">
+                <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Completed</p>
+                <p className="text-2xl font-bold text-navy-900 mt-1">
                   {orders.filter(order => order.status === 'RELEASED').length}
                 </p>
               </div>
@@ -237,23 +231,25 @@ const BuyerDashboard = () => {
         </div>
 
         {/* Orders Section */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl">
-          <div className="px-6 py-4 border-b border-white/20">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white font-inter">Your Orders</h2>
-            </div>
+        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden mt-6">
+          <div className="px-6 py-5 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-navy-900">Your Orders</h2>
           </div>
-          <div className="p-6">
+          <div className="p-6 bg-neutral-50/30">
             {orders.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-white/40 text-6xl mb-4 animate-bounce-slow">📋</div>
-                <h3 className="text-lg font-semibold text-white mb-2 font-inter">No orders yet</h3>
-                <p className="text-white/80 mb-6 font-inter">Start by creating your first order</p>
+              <div className="text-center py-16 bg-white rounded-lg border border-neutral-100 border-dashed">
+                <div className="mx-auto w-16 h-16 bg-neutral-50 rounded-full flex items-center justify-center mb-5">
+                  <svg className="w-8 h-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-navy-900 mb-2">No orders yet</h3>
+                <p className="text-neutral-500 mb-8 max-w-sm mx-auto leading-relaxed">Start by creating your first order to begin transacting securely with sellers.</p>
                 <Link
                   to="/buyer/new-order"
-                  className="inline-block bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-inter font-semibold px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                  className="btn btn-primary"
                 >
-                  Create Order
+                  Create Your First Order
                 </Link>
               </div>
             ) : (

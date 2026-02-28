@@ -1,46 +1,22 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 const VideoTutorialSection = () => {
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 60 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
-  };
-
-  const scaleIn = {
-    hidden: { scale: 0.8, opacity: 0 },
-    visible: { scale: 1, opacity: 1, transition: { duration: 0.5 } }
-  };
-
   return (
-    <section id="tutorial" className="py-20 px-4 sm:px-6 lg:px-8">
+    <section id="tutorial" className="py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-neutral-100">
       <div className="max-w-5xl mx-auto">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={fadeInUp}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl sm:text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+        <div className="text-center mb-12 animate-fadeIn">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-navy-900">
             Watch Tutorial
           </h2>
-          <p className="text-white/70 text-lg max-w-2xl mx-auto">
-            Learn how to use ScrowX in just a few minutes
+          <p className="text-neutral-500 text-lg max-w-2xl mx-auto">
+            Learn how to use ScrowX in just a few minutes.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={scaleIn}
-          whileHover={{ scale: 1.02 }}
-          className="relative group"
-        >
+        <div className="relative group">
           {/* Video Container */}
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 p-2">
-            <div className="relative rounded-2xl overflow-hidden aspect-video bg-black">
+          <div className="relative rounded-2xl overflow-hidden shadow-elevation border border-neutral-200 bg-white p-2">
+            <div className="relative rounded-xl overflow-hidden aspect-video bg-navy-900">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/rA1r6EAZ5tw"
@@ -51,31 +27,22 @@ const VideoTutorialSection = () => {
               ></iframe>
             </div>
           </div>
-
-          {/* Decorative Elements */}
-          <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 to-teal-500/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
-        </motion.div>
+        </div>
 
         {/* Additional CTAs */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeInUp}
-          className="flex flex-wrap gap-4 justify-center mt-12"
-        >
-          <motion.a
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+        <div className="flex flex-wrap gap-4 justify-center mt-12 animate-fadeIn">
+          <a
             href="https://www.youtube.com/watch?v=rA1r6EAZ5tw"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 flex items-center space-x-2"
+            className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-sm transition-all duration-300 flex items-center space-x-2"
           >
-            <span>▶</span>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 0a10 10 0 100 20 10 10 0 000-20zm-2 14.5v-9l6 4.5-6 4.5z" />
+            </svg>
             <span>Watch on YouTube</span>
-          </motion.a>
-        </motion.div>
+          </a>
+        </div>
       </div>
     </section>
   );

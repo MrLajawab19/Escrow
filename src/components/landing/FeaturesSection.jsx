@@ -1,76 +1,53 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 const FeaturesSection = () => {
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2 }
-    }
-  };
-
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 60 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
-  };
-
   const features = [
     {
-      icon: '⚖️',
+      icon: (
+        <svg className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+        </svg>
+      ),
       title: 'Dispute Resolution',
-      description: 'Raise disputes and track resolution with evidence upload. Our AI-powered system ensures fair resolution for all parties.',
-      gradient: 'from-cyan-500/10 to-blue-500/10',
-      hoverGradient: 'group-hover:from-cyan-500/20 group-hover:to-blue-500/20'
+      description: 'Raise disputes and track resolution with evidence upload. Our fair resolution system protects all parties.'
     },
     {
-      icon: '🔒',
-      title: 'ScrowX',
-      description: 'Funds held securely with blockchain-level encryption until both parties are satisfied. No more payment disputes.',
-      gradient: 'from-teal-500/10 to-cyan-500/10',
-      hoverGradient: 'group-hover:from-teal-500/20 group-hover:to-cyan-500/20'
+      icon: (
+        <svg className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      ),
+      title: 'Secure Escrow',
+      description: 'Funds held securely in compliant escrow infrastructure until both parties are satisfied. Eliminate payment risk.'
     },
     {
-      icon: '📊',
+      icon: (
+        <svg className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
       title: 'Order Tracking',
-      description: 'Real-time order status updates and timeline tracking with advanced analytics. Stay informed throughout.',
-      gradient: 'from-emerald-500/10 to-teal-500/10',
-      hoverGradient: 'group-hover:from-emerald-500/20 group-hover:to-teal-500/20'
+      description: 'Real-time order status updates and milestone tracking. Stay informed throughout the entire transaction lifecycle.'
     }
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-main">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={staggerContainer}
-          className="grid md:grid-cols-3 gap-8"
-        >
+        <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <motion.div
+            <div
               key={index}
-              variants={fadeInUp}
-              whileHover={{ y: -10, scale: 1.02 }}
-              className={`group relative overflow-hidden bg-gradient-to-br ${feature.gradient} ${feature.hoverGradient} backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center transition-all duration-500 shadow-xl hover:shadow-2xl`}
+              className="bg-white rounded-2xl p-8 border border-neutral-200 shadow-sm hover:shadow-md transition-shadow duration-200"
             >
-              {/* Card glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              
-              <motion.div
-                whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.2 }}
-                transition={{ duration: 0.5 }}
-                className="text-6xl mb-6"
-              >
+              <div className="bg-primary-50 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
                 {feature.icon}
-              </motion.div>
-              <h3 className="text-2xl font-bold text-white mb-4">{feature.title}</h3>
-              <p className="text-white/80 text-base leading-relaxed">{feature.description}</p>
-            </motion.div>
+              </div>
+              <h3 className="text-xl font-bold text-navy-900 mb-3">{feature.title}</h3>
+              <p className="text-neutral-500 text-base leading-relaxed">{feature.description}</p>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

@@ -13,12 +13,10 @@ const OrderTrackingPage = () => {
   useEffect(() => {
     const token = localStorage.getItem('buyerToken');
     const data = localStorage.getItem('buyerData');
-    
     if (!token || !data) {
       navigate('/buyer/auth');
       return;
     }
-
     try {
       setBuyerData(JSON.parse(data));
       fetchOrder(token);
@@ -31,18 +29,14 @@ const OrderTrackingPage = () => {
   const fetchOrder = async (token) => {
     try {
       const response = await axios.get(`/api/orders/${orderId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-
       if (response.data.success) {
         setOrder(response.data.data);
       } else {
         setError('Failed to fetch order details');
       }
     } catch (error) {
-      console.error('Error fetching order:', error);
       if (error.response?.status === 401) {
         navigate('/buyer/auth');
         return;
@@ -55,16 +49,16 @@ const OrderTrackingPage = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      'PLACED': 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30',
-      'ESCROW_FUNDED': 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
-      'IN_PROGRESS': 'bg-orange-500/20 text-orange-300 border border-orange-500/30',
-      'SUBMITTED': 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
-      'APPROVED': 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-      'DISPUTED': 'bg-red-500/20 text-red-300 border border-red-500/30',
-      'RELEASED': 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-      'REFUNDED': 'bg-white/20 text-white/80 border border-white/30'
+      'PLACED': 'bg-blue-50 text-blue-700 border border-blue-200',
+      'ESCROW_FUNDED': 'bg-amber-50 text-amber-700 border border-amber-200',
+      'IN_PROGRESS': 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+      'SUBMITTED': 'bg-purple-50 text-purple-700 border border-purple-200',
+      'APPROVED': 'bg-green-50 text-green-700 border border-green-200',
+      'DISPUTED': 'bg-red-50 text-red-700 border border-red-200',
+      'RELEASED': 'bg-green-50 text-green-700 border border-green-200',
+      'REFUNDED': 'bg-neutral-100 text-neutral-600 border border-neutral-200'
     };
-    return colors[status] || 'bg-white/20 text-white/80 border border-white/30';
+    return colors[status] || 'bg-neutral-100 text-neutral-600 border border-neutral-200';
   };
 
   const getStatusIcon = (status) => {
@@ -97,11 +91,7 @@ const OrderTrackingPage = () => {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   };
 
@@ -112,10 +102,10 @@ const OrderTrackingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-          <p className="text-white/80">Loading order details...</p>
+          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-neutral-500 font-inter">Loading order details...</p>
         </div>
       </div>
     );
@@ -123,14 +113,16 @@ const OrderTrackingPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <h3 className="text-xl font-bold text-white mb-2">Error Loading Order</h3>
-          <p className="text-white/80 mb-4">{error}</p>
-          <button 
+      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">❌</span>
+          </div>
+          <h3 className="text-xl font-bold text-[#0A2540] font-inter mb-2">Error Loading Order</h3>
+          <p className="text-neutral-500 font-inter mb-6">{error}</p>
+          <button
             onClick={() => navigate('/buyer/dashboard')}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg"
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md font-inter"
           >
             Back to Dashboard
           </button>
@@ -141,14 +133,16 @@ const OrderTrackingPage = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-bold text-white mb-2">Order Not Found</h3>
-          <p className="text-white/80 mb-4">The order you're looking for doesn't exist or you don't have permission to view it.</p>
-          <button 
+      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">🔍</span>
+          </div>
+          <h3 className="text-xl font-bold text-[#0A2540] font-inter mb-2">Order Not Found</h3>
+          <p className="text-neutral-500 font-inter mb-6">The order you're looking for doesn't exist or you don't have permission to view it.</p>
+          <button
             onClick={() => navigate('/buyer/dashboard')}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg"
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md font-inter"
           >
             Back to Dashboard
           </button>
@@ -158,93 +152,120 @@ const OrderTrackingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-[#F6F9FC] py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <button 
+          <button
             onClick={() => navigate('/buyer/dashboard')}
-            className="flex items-center text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
+            className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors font-inter"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Dashboard
           </button>
-          <h1 className="text-2xl font-bold text-white">Order Tracking</h1>
+          <h1 className="text-2xl font-bold text-[#0A2540] font-inter">Order Tracking</h1>
           <div className="w-32"></div>
         </div>
 
         {/* Order Summary Card */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 mb-8">
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-8 mb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-white">Order #{order.id}</h2>
-              <p className="text-white/80">Created on {formatDate(order.createdAt)}</p>
+              <h2 className="text-xl font-bold text-[#0A2540] font-inter">Order #{order.id}</h2>
+              <p className="text-sm text-neutral-500 font-inter mt-1">Created on {formatDate(order.createdAt)}</p>
             </div>
-            <div className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
-              {getStatusIcon(order.status)} {order.status.replace('_', ' ')}
+            <div className={`px-4 py-1.5 rounded-full text-sm font-semibold font-inter ${getStatusColor(order.status)}`}>
+              {getStatusIcon(order.status)} {order.status.replace(/_/g, ' ')}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-semibold text-white mb-3">Order Details</h3>
-              <div className="space-y-2 text-sm text-white/90">
-                <div><span className="font-medium text-white">Platform:</span> {order.platform}</div>
-                <div><span className="font-medium text-white">Product Link:</span> 
-                  <a href={order.productLink} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline ml-1">
-                    View
+              <h3 className="font-semibold text-[#0A2540] font-inter mb-3">Order Details</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                  <span className="text-neutral-500 font-inter">Platform</span>
+                  <span className="font-medium text-[#0A2540] font-inter">{order.platform}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                  <span className="text-neutral-500 font-inter">Seller Link</span>
+                  <a href={order.productLink} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 font-inter font-medium">
+                    View Profile
                   </a>
                 </div>
-                <div><span className="font-medium text-white">Country:</span> {order.country}</div>
-                <div><span className="font-medium text-white">Currency:</span> {order.currency}</div>
-                <div><span className="font-medium text-white">Seller Contact:</span> {order.sellerContact}</div>
+                <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                  <span className="text-neutral-500 font-inter">Country</span>
+                  <span className="font-medium text-[#0A2540] font-inter">{order.country}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                  <span className="text-neutral-500 font-inter">Currency</span>
+                  <span className="font-medium text-[#0A2540] font-inter">{order.currency}</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-neutral-500 font-inter">Seller Contact</span>
+                  <span className="font-medium text-[#0A2540] font-inter">{order.sellerContact}</span>
+                </div>
               </div>
             </div>
 
             <div>
-              <h3 className="font-semibold text-white mb-3">Project Details</h3>
-              <div className="space-y-2 text-sm text-white/90">
-                <div><span className="font-medium text-white">Product Type:</span> {order.scopeBox.productType}</div>
-                <div><span className="font-medium text-white">Price:</span> {formatPrice(order.scopeBox.price, order.currency)}</div>
-                <div><span className="font-medium text-white">Deadline:</span> {formatDate(order.scopeBox.deadline)}</div>
-                <div><span className="font-medium text-white">Condition:</span> {order.scopeBox.condition}</div>
-                <div><span className="font-medium text-white">Attachments:</span> {order.scopeBox.attachments?.length || 0} files</div>
+              <h3 className="font-semibold text-[#0A2540] font-inter mb-3">Project Details</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                  <span className="text-neutral-500 font-inter">Product Type</span>
+                  <span className="font-medium text-[#0A2540] font-inter">{order.scopeBox.productType}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                  <span className="text-neutral-500 font-inter">Price</span>
+                  <span className="font-bold text-[#0A2540] font-inter">{formatPrice(order.scopeBox.price, order.currency)}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                  <span className="text-neutral-500 font-inter">Deadline</span>
+                  <span className="font-medium text-[#0A2540] font-inter">{formatDate(order.scopeBox.deadline)}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-neutral-100">
+                  <span className="text-neutral-500 font-inter">Condition</span>
+                  <span className="font-medium text-[#0A2540] font-inter">{order.scopeBox.condition}</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-neutral-500 font-inter">Attachments</span>
+                  <span className="font-medium text-[#0A2540] font-inter">{order.scopeBox.attachments?.length || 0} files</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h3 className="font-semibold text-white mb-2">Description</h3>
-            <p className="text-white/90 bg-white/10 backdrop-blur-sm border border-white/20 p-4 rounded-xl">
+          <div className="mt-6 pt-6 border-t border-neutral-100">
+            <h3 className="font-semibold text-[#0A2540] font-inter mb-2">Description</h3>
+            <p className="text-sm text-neutral-600 font-inter bg-neutral-50 border border-neutral-200 p-4 rounded-xl leading-relaxed">
               {order.scopeBox.description}
             </p>
           </div>
         </div>
 
         {/* Status Timeline */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 mb-8">
-          <h3 className="text-lg font-semibold text-white mb-6">Order Timeline</h3>
-          
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-8 mb-6">
+          <h3 className="text-lg font-semibold text-[#0A2540] font-inter mb-6">Order Timeline</h3>
           <div className="space-y-4">
             {order.orderLogs?.map((log, index) => (
               <div key={index} className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-cyan-500/20 border border-cyan-500/30 rounded-full flex items-center justify-center">
-                    <span className="text-cyan-300 text-sm font-semibold">{index + 1}</span>
+                  <div className="w-8 h-8 bg-indigo-50 border border-indigo-200 rounded-full flex items-center justify-center">
+                    <span className="text-indigo-600 text-sm font-semibold font-inter">{index + 1}</span>
                   </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-white">
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <div className="text-sm font-semibold text-[#0A2540] font-inter">
                     {log.event.replace(/_/g, ' ')}
                   </div>
-                  <div className="text-sm text-white/70">
+                  <div className="text-xs text-neutral-500 font-inter mt-0.5">
                     {formatDate(log.timestamp)}
                   </div>
                   {log.previousStatus && log.newStatus && (
-                    <div className="text-xs text-white/50 mt-1">
-                      Status changed from {log.previousStatus} to {log.newStatus}
+                    <div className="text-xs text-neutral-400 mt-1 font-inter">
+                      Status changed from <span className="font-medium">{log.previousStatus}</span> to <span className="font-medium">{log.newStatus}</span>
                     </div>
                   )}
                 </div>
@@ -254,45 +275,41 @@ const OrderTrackingPage = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8">
-          <h3 className="text-lg font-semibold text-white mb-4">Actions</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-8 mb-6">
+          <h3 className="text-lg font-semibold text-[#0A2540] font-inter mb-4">Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {order.status === 'SUBMITTED' && (
-              <button className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg">
+              <button className="w-full px-6 py-3 bg-[#16C784] hover:bg-green-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-sm font-inter text-sm">
                 ✅ Approve Delivery
               </button>
             )}
-            
             {['PLACED', 'ESCROW_FUNDED', 'IN_PROGRESS', 'SUBMITTED'].includes(order.status) && (
-              <button className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg">
+              <button className="w-full px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-sm font-inter text-sm">
                 ⚠️ Raise Dispute
               </button>
             )}
-            
-            <button className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg">
+            <button className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-sm font-inter text-sm">
               📧 Contact Seller
             </button>
-            
-            <button className="w-full px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg">
+            <button className="w-full px-6 py-3 bg-white hover:bg-neutral-50 text-[#0A2540] border border-neutral-200 rounded-xl font-semibold transition-all duration-200 shadow-sm font-inter text-sm">
               📋 Download Invoice
             </button>
           </div>
         </div>
 
-        {/* Status Description */}
-        <div className="mt-8 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8">
+        {/* Current Status */}
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-6">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-cyan-500/20 border border-cyan-500/30 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center">
                 <span className="text-2xl">{getStatusIcon(order.status)}</span>
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Current Status: {order.status.replace('_', ' ')}
+              <h3 className="text-base font-semibold text-[#0A2540] font-inter">
+                Current Status: <span className="text-indigo-600">{order.status.replace(/_/g, ' ')}</span>
               </h3>
-              <p className="text-white/80">
+              <p className="text-sm text-neutral-500 font-inter mt-1">
                 {getStatusDescription(order.status)}
               </p>
             </div>
@@ -303,4 +320,4 @@ const OrderTrackingPage = () => {
   );
 };
 
-export default OrderTrackingPage; 
+export default OrderTrackingPage;

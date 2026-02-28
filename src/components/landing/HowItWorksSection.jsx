@@ -1,116 +1,86 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 const HowItWorksSection = () => {
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2 }
-    }
-  };
-
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 60 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
-  };
-
   const steps = [
     {
       step: '01',
       title: 'Create Order',
       description: 'Buyer creates an order with detailed requirements',
-      icon: '📝',
-      color: 'from-cyan-500 to-blue-500'
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+      )
     },
     {
       step: '02',
       title: 'Fund Escrow',
       description: 'Payment is held securely in escrow',
-      icon: '🔒',
-      color: 'from-blue-500 to-teal-500'
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      )
     },
     {
       step: '03',
       title: 'Work & Deliver',
       description: 'Seller completes work and submits delivery',
-      icon: '⚡',
-      color: 'from-teal-500 to-emerald-500'
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      )
     },
     {
       step: '04',
       title: 'Release Funds',
       description: 'Buyer approves and funds are released',
-      icon: '✅',
-      color: 'from-emerald-500 to-green-500'
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )
     }
   ];
 
   return (
-    <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/5 backdrop-blur-sm">
+    <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-neutral-50">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={fadeInUp}
-        >
-          <h2 className="text-4xl sm:text-5xl font-black text-center mb-4 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl sm:text-5xl font-bold text-navy-900 mb-4">
             How It Works
           </h2>
-          <p className="text-center text-white/70 text-lg mb-16 max-w-2xl mx-auto">
-            Simple, secure, and transparent process for every transaction
+          <p className="text-neutral-500 text-lg max-w-2xl mx-auto">
+            A simple, secure, and transparent process for every transaction.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={staggerContainer}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative">
           {/* Connection Lines for Desktop */}
-          <div className="hidden lg:block absolute top-20 left-0 right-0 h-1">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
-          </div>
+          <div className="hidden lg:block absolute top-12 left-[10%] right-[10%] h-[2px] bg-neutral-200"></div>
 
           {steps.map((item, index) => (
-            <motion.div
+            <div
               key={index}
-              variants={fadeInUp}
-              whileHover={{ y: -10, scale: 1.05 }}
-              className="relative text-center group"
+              className="relative text-center"
             >
-              {/* Step Card */}
-              <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-3xl p-8 transition-all duration-500 shadow-xl hover:shadow-2xl hover:border-white/40">
-                {/* Step Icon */}
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 360 }}
-                  transition={{ duration: 0.6 }}
-                  className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mx-auto mb-6 shadow-lg relative z-10`}
-                >
-                  <span className="text-3xl">{item.icon}</span>
-                </motion.div>
-
-                {/* Step Badge */}
-                <div className={`inline-block px-4 py-1 rounded-full bg-gradient-to-r ${item.color} text-white text-sm font-bold mb-4`}>
-                  Step {item.step}
-                </div>
-
-                <h4 className="font-bold text-white text-xl mb-3">{item.title}</h4>
-                <p className="text-white/70 text-sm leading-relaxed">{item.description}</p>
+              {/* Step Icon */}
+              <div className="w-24 h-24 rounded-2xl bg-primary-500 flex items-center justify-center mx-auto mb-6 shadow-md relative z-10 transition-transform duration-300 hover:-translate-y-1">
+                {item.icon}
               </div>
 
-              {/* Arrow for Desktop */}
-              {index < 3 && (
-                <div className="hidden lg:block absolute top-10 -right-4 text-cyan-400/50 text-3xl z-0">
-                  →
+              {/* Step Info */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 mt-2">
+                <div className="text-primary-500 text-sm font-bold tracking-wider mb-2 uppercase">
+                  Step {item.step}
                 </div>
-              )}
-            </motion.div>
+                <h4 className="font-bold text-navy-900 text-xl mb-3">{item.title}</h4>
+                <p className="text-neutral-500 text-sm leading-relaxed">{item.description}</p>
+              </div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );
