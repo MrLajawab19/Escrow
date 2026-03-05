@@ -53,6 +53,12 @@ router.get('/scope/list', (req, res) => {
 });
 
 // Seller responds to scope (accept, request change, reject)
+/**
+ * Processes seller response to a project scope.
+ * - Accept: Creates a new pending Escrow for the buyer to fund
+ * - Request Change: Sends back to buyer for edits, keeping status alive
+ * - Reject: Terminated the scope request
+ */
 router.post('/scope/respond', (req, res) => {
   const { scopeId, action, message, newDeliveryDays } = req.body;
   const scope = scopes.find(s => s.id === scopeId);

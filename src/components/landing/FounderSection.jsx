@@ -37,7 +37,7 @@ const FounderSection = () => {
               {/* Social Links */}
               <div className="flex gap-4 justify-center md:justify-start">
                 <a
-                  href="https://www.linkedin.com/in/ayush-bardhani"
+                  href="https://www.linkedin.com/in/ayushbardhani-java-developer/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 hover:shadow-md transition-all duration-300"

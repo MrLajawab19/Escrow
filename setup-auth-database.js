@@ -1,24 +1,24 @@
 const { Sequelize } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
-const config = require('./config/config.json');
+const config = require('./backend/config/config.json');
 
 async function setupAuthDatabase() {
   try {
     // Connect to PostgreSQL
     const sequelize = new Sequelize(config.development);
-    
+
     // Test connection
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
-    
+
     // Import models
-    const Buyer = require('./models/buyer')(sequelize, Sequelize.DataTypes);
-    const Seller = require('./models/seller')(sequelize, Sequelize.DataTypes);
-    
+    const Buyer = require('./backend/models/buyer')(sequelize, Sequelize.DataTypes);
+    const Seller = require('./backend/models/seller')(sequelize, Sequelize.DataTypes);
+
     // Sync all models
     await sequelize.sync({ force: true });
     console.log('✅ Authentication tables created successfully.');
-    
+
     // Create a test buyer account
     const testBuyer = await Buyer.create({
       id: uuidv4(),
@@ -31,12 +31,12 @@ async function setupAuthDatabase() {
       isVerified: true,
       status: 'active'
     });
-    
+
     console.log('✅ Test buyer account created:');
     console.log('Email: buyer@example.com');
     console.log('Password: password');
     console.log('ID:', testBuyer.id);
-    
+
     // Create a test seller account
     const testSeller = await Seller.create({
       id: uuidv4(),
@@ -54,16 +54,16 @@ async function setupAuthDatabase() {
       totalOrders: 25,
       completedOrders: 23
     });
-    
+
     console.log('✅ Test seller account created:');
     console.log('Email: seller@example.com');
     console.log('Password: password');
     console.log('ID:', testSeller.id);
-    
+
     // Close connection
     await sequelize.close();
     console.log('✅ Authentication database setup completed.');
-    
+
   } catch (error) {
     console.error('❌ Authentication database setup failed:', error);
     process.exit(1);

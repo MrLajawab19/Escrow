@@ -18,61 +18,56 @@ const AdminLogin = () => {
 
     try {
       const response = await axios.post('/api/auth/admin/login', formData);
-      
+
       if (response.data.success) {
         localStorage.setItem('adminToken', response.data.token);
-        setSuccess('Admin login successful! Token saved.');
-        console.log('Admin token:', response.data.token);
+        setSuccess('Login successful. Redirecting...');
+        setTimeout(() => {
+          window.location.href = '/admin/dashboard';
+        }, 800);
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
+      setError(error.response?.data?.message || 'Invalid admin credentials');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
-      </div>
-      
-      <div className="max-w-md w-full relative z-10">
-        {/* Logo */}
+    <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        {/* Logo + Title */}
         <div className="text-center mb-8">
-          <div className="mb-4">
-            <img 
-              src="/Logo.png" 
-              alt="ScrowX Logo" 
-              className="mx-auto mb-4 h-24 w-auto filter brightness-125 contrast-125 drop-shadow-2xl hover:scale-105 transition-all duration-300"
-            />
-          </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent font-inter">Admin Panel</h1>
-          <p className="mt-1 text-emerald-300/80 font-inter font-medium">AI that automates trust in every deal</p>
-          <p className="mt-2 text-white/80 font-inter">ScrowX Administration</p>
+          <img
+            src="/Logo.png"
+            alt="ScrowX Logo"
+            className="mx-auto mb-5 h-14 w-auto"
+          />
+          <h1 className="text-2xl font-bold text-[#0A2540] font-inter tracking-tight">Admin Panel</h1>
+          <p className="mt-1.5 text-sm text-neutral-500 font-inter">ScrowX Administration — Restricted Access</p>
         </div>
 
-        {/* Auth Card */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 transition-all duration-300 hover:shadow-3xl">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-white font-inter">
-              Admin Login
-            </h2>
-            <p className="mt-2 text-white/80 font-inter">
-              Test admin dashboard functionality
-            </p>
+        {/* Card */}
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-8">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-[#0A2540] font-inter">Sign in as Admin</h2>
+            <p className="text-sm text-neutral-500 font-inter mt-1">Enter your administrator credentials to continue.</p>
           </div>
 
-          {/* Error/Success Messages */}
+          {/* Error / Success */}
           {error && (
-            <div className="mb-4 p-4 border border-red-500/20 rounded-xl bg-red-500/10 text-red-400 backdrop-blur-sm">
+            <div className="mb-4 p-3.5 border border-red-200 rounded-xl bg-red-50 text-red-700 text-sm font-inter flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
               {error}
             </div>
           )}
           {success && (
-            <div className="mb-4 p-4 border border-emerald-500/20 rounded-xl bg-emerald-500/10 text-emerald-400 backdrop-blur-sm">
+            <div className="mb-4 p-3.5 border border-emerald-200 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-inter flex items-center gap-2">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               {success}
             </div>
           )}
@@ -80,7 +75,7 @@ const AdminLogin = () => {
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white font-inter">
+              <label className="block text-sm font-medium text-[#0A2540] mb-1.5 font-inter">
                 Email Address
               </label>
               <input
@@ -88,14 +83,14 @@ const AdminLogin = () => {
                 name="email"
                 type="email"
                 required
-                className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
+                className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm shadow-sm transition-all"
                 placeholder="admin@scrowx.com"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white font-inter">
+              <label className="block text-sm font-medium text-[#0A2540] mb-1.5 font-inter">
                 Password
               </label>
               <input
@@ -103,25 +98,33 @@ const AdminLogin = () => {
                 name="password"
                 type="password"
                 required
-                className="w-full px-4 py-3 border-2 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 font-inter"
-                placeholder="Password"
+                className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm shadow-sm transition-all"
+                placeholder="Enter password"
                 value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl font-medium bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-lg font-inter"
+              className="w-full py-3 px-4 rounded-xl font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all duration-200 shadow-md font-inter text-sm disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
-              {loading ? 'Logging in...' : 'Sign in as Admin'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Signing in...
+                </span>
+              ) : 'Sign in as Admin'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-xs text-white/60 font-inter">
-              Default credentials: admin@scrowx.com / admin123
+          <div className="mt-5 pt-4 border-t border-neutral-100 text-center">
+            <p className="text-xs text-neutral-400 font-inter">
+              Default credentials: <span className="font-medium text-neutral-600">admin@scrowx.com</span> / <span className="font-medium text-neutral-600">admin123</span>
             </p>
           </div>
         </div>

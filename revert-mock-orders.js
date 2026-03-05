@@ -1,7 +1,7 @@
 const { Sequelize } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
-const config = require('./config/config.json');
+const config = require('./backend/config/config.json');
 
 // Initialize Sequelize with development config
 const sequelize = new Sequelize(
@@ -22,9 +22,9 @@ async function revertMockOrders() {
     console.log('✅ Database connected successfully');
 
     // Load models
-    const Order = require('./models/order')(sequelize, Sequelize.DataTypes);
-    const Buyer = require('./models/buyer')(sequelize, Sequelize.DataTypes);
-    const Seller = require('./models/seller')(sequelize, Sequelize.DataTypes);
+    const Order = require('./backend/models/order')(sequelize, Sequelize.DataTypes);
+    const Buyer = require('./backend/models/buyer')(sequelize, Sequelize.DataTypes);
+    const Seller = require('./backend/models/seller')(sequelize, Sequelize.DataTypes);
 
     // Ensure tables exist
     await sequelize.sync();
@@ -159,7 +159,7 @@ async function revertMockOrders() {
     for (let i = 0; i < testOrders.length && i < originalOrderStates.length; i++) {
       const order = testOrders[i];
       const originalState = originalOrderStates[i];
-      
+
       // Update order to original state
       await order.update({
         status: originalState.status,
@@ -191,7 +191,7 @@ async function revertMockOrders() {
     console.log('  2. ESCROW_FUNDED - Test "Accept Order" button (Seller)');
     console.log('  3. IN_PROGRESS - Test "Submit Delivery" button (Seller)');
     console.log('  4. SUBMITTED - Test "Release Funds" and "Raise Dispute" buttons (Buyer)');
-    
+
     console.log('\n🚀 All action buttons are ready for testing!');
     console.log('💡 Run create-mock-orders.js to recreate fresh test data if needed.');
 

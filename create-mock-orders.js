@@ -1,7 +1,7 @@
 const { Sequelize } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
-const config = require('./config/config.json');
+const config = require('./backend/config/config.json');
 
 async function createMockOrders() {
   // Connect using development config
@@ -22,9 +22,9 @@ async function createMockOrders() {
     console.log('✅ Database connected');
 
     // Load models
-    const Order = require('./models/order')(sequelize, Sequelize.DataTypes);
-    const Buyer = require('./models/buyer')(sequelize, Sequelize.DataTypes);
-    const Seller = require('./models/seller')(sequelize, Sequelize.DataTypes);
+    const Order = require('./backend/models/order')(sequelize, Sequelize.DataTypes);
+    const Buyer = require('./backend/models/buyer')(sequelize, Sequelize.DataTypes);
+    const Seller = require('./backend/models/seller')(sequelize, Sequelize.DataTypes);
 
     // Ensure tables exist
     await sequelize.sync();

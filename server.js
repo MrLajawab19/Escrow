@@ -4,11 +4,11 @@ const express = require('express');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
-const escrowRoutes = require('./routes/escrow');
-const orderRoutes = require('./routes/orders');
-const authRoutes = require('./routes/auth');
-const disputeRoutes = require('./routes/disputes');
-const supportChatRoutes = require('./routes/supportChat');
+const escrowRoutes = require('./backend/routes/escrow');
+const orderRoutes = require('./backend/routes/orders');
+const authRoutes = require('./backend/routes/auth');
+const disputeRoutes = require('./backend/routes/disputes');
+const supportChatRoutes = require('./backend/routes/supportChat');
 const fs = require('fs');
 
 const app = express();
@@ -40,7 +40,7 @@ app.use('/api/disputes', disputeRoutes);
 app.use('/api/support-chat', supportChatRoutes);
 
 // Cron-like job for auto-release
-const escrowModule = require('./routes/escrow');
+const escrowModule = require('./backend/routes/escrow');
 setInterval(() => {
   if (escrowModule.autoReleaseEscrows) {
     escrowModule.autoReleaseEscrows();
@@ -50,19 +50,19 @@ setInterval(() => {
 function updateEnvFile(port) {
   const envPath = path.join(__dirname, '.env');
   let envContent = '';
-  
+
   if (fs.existsSync(envPath)) {
     envContent = fs.readFileSync(envPath, 'utf8');
   }
-  
+
   const newApiUrl = `VITE_API_URL=http://localhost:${port}`;
-  
+
   if (envContent.includes('VITE_API_URL=')) {
     envContent = envContent.replace(/VITE_API_URL=.*/g, newApiUrl);
   } else {
     envContent += `\n${newApiUrl}\n`;
   }
-  
+
   fs.writeFileSync(envPath, envContent);
   console.log(`Updated VITE_API_URL to http://localhost:${port}`);
 }

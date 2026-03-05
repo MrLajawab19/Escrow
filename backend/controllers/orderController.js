@@ -31,7 +31,7 @@ const SERVICE_FIELD_REQUIREMENTS = {
 function validateXBoxFields(xBox) {
   // Basic required fields for all services
   const basicRequiredFields = ['title', 'productType', 'productLink', 'description', 'deadline', 'price'];
-  
+
   for (const field of basicRequiredFields) {
     if (!xBox[field]) {
       return {
@@ -44,19 +44,19 @@ function validateXBoxFields(xBox) {
   // Service-specific validation
   const serviceType = xBox.productType;
   const requiredFields = SERVICE_FIELD_REQUIREMENTS[serviceType];
-  
+
   if (requiredFields) {
     // Check service-specific fields
     const serviceSpecificKey = getServiceSpecificKey(serviceType);
     const serviceSpecificData = xBox[serviceSpecificKey];
-    
+
     if (!serviceSpecificData) {
       return {
         isValid: false,
         message: `Missing ${serviceType} specific data in XBox`
       };
     }
-    
+
     for (const field of requiredFields) {
       if (!serviceSpecificData[field]) {
         return {
@@ -68,11 +68,11 @@ function validateXBoxFields(xBox) {
   } else {
     // For services without specific requirements, check if condition is needed
     const servicesWithoutCondition = [
-      'Logo design', 'Poster/flyer/banner design', 'Social media post creation', 
+      'Logo design', 'Poster/flyer/banner design', 'Social media post creation',
       'Video editing', 'Motion graphics', 'NFT art creation', 'Illustration / Comics',
       '3D modeling / rendering', 'Website development', 'Gaming account sales'
     ];
-    
+
     if (!servicesWithoutCondition.includes(serviceType) && !xBox.condition) {
       return {
         isValid: false,
@@ -80,7 +80,7 @@ function validateXBoxFields(xBox) {
       };
     }
   }
-  
+
   return { isValid: true };
 }
 
@@ -106,7 +106,7 @@ function getServiceSpecificKey(serviceType) {
     'Script Writing': 'scriptWritingSpecific',
     'Landing Page Creation': 'landingPageSpecific'
   };
-  
+
   return keyMap[serviceType] || 'serviceSpecific';
 }
 
@@ -120,7 +120,7 @@ function verifyBuyerToken(req) {
   if (!token) {
     throw new Error('No authentication token provided');
   }
-  
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
     console.log('Decoded token:', decoded);
@@ -132,6 +132,13 @@ function verifyBuyerToken(req) {
 }
 
 // POST /api/orders - Create new order
+/**
+ * Creates a new order and generated an escrow link.
+ * 1. Validates buyer authentication token
+ * 2. Checks required fields and service-specific requirements
+ * 3. Handles seller mapping (find or create placeholder)
+ * 4. Generates unique order ID and links
+ */
 async function createOrder(req, res) {
   try {
     // Verify buyer authentication
@@ -145,13 +152,13 @@ async function createOrder(req, res) {
       });
     }
 
-    const { 
-      platform, 
-      productLink, 
-      country, 
-      currency, 
-      sellerContact, 
-      scopeBox: xBox 
+    const {
+      platform,
+      productLink,
+      country,
+      currency,
+      sellerContact,
+      scopeBox: xBox
     } = req.body;
 
     // Enhanced validation
@@ -191,12 +198,12 @@ async function createOrder(req, res) {
 
     // Generate unique order ID and escrow link
     const orderId = uuidv4();
-    
+
     // Find or create seller based on sellerContact (email)
     let sellerId;
     try {
       const seller = await Seller.findOne({ where: { email: sellerContact } });
-      
+
       if (seller) {
         sellerId = seller.id;
       } else {
@@ -219,7 +226,7 @@ async function createOrder(req, res) {
       // Fallback to generating a new seller ID
       sellerId = uuidv4();
     }
-    
+
     const escrowLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/order/${orderId}`;
     const orderTrackingLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/buyer/order/${orderId}`;
 
@@ -275,23 +282,23 @@ async function createOrder(req, res) {
     console.log(`   Escrow Link: ${escrowLink}`);
     console.log(`   Tracking Link: ${orderTrackingLink}`);
 
-        res.status(201).json({
-          success: true,
-          data: {
-            id: order.id,
-            orderId: orderId,
-            escrowLink,
-            orderTrackingLink,
-            status: order.status,
-            buyerName: buyerData.firstName + ' ' + buyerData.lastName,
-            platform,
-            productType: xBox.productType,
-            price: `${currency} ${price.toFixed(2)}`,
-            deadline: deadline.toLocaleDateString(),
-            createdAt: order.createdAt
-          },
-          message: 'Order created successfully! Escrow link has been sent to the seller.'
-        });
+    res.status(201).json({
+      success: true,
+      data: {
+        id: order.id,
+        orderId: orderId,
+        escrowLink,
+        orderTrackingLink,
+        status: order.status,
+        buyerName: buyerData.firstName + ' ' + buyerData.lastName,
+        platform,
+        productType: xBox.productType,
+        price: `${currency} ${price.toFixed(2)}`,
+        deadline: deadline.toLocaleDateString(),
+        createdAt: order.createdAt
+      },
+      message: 'Order created successfully! Escrow link has been sent to the seller.'
+    });
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({
@@ -313,13 +320,13 @@ async function sendSellerNotification(sellerContact, orderData) {
     console.log(`   Price: ${orderData.price}`);
     console.log(`   Deadline: ${orderData.deadline}`);
     console.log(`   Escrow Link: ${orderData.escrowLink}`);
-    
+
     // In a real implementation, you would:
     // 1. Send email using nodemailer or similar
     // 2. Send SMS using Twilio or similar
     // 3. Store notification in database
     // 4. Handle delivery failures
-    
+
     return true;
   } catch (error) {
     console.error('Failed to send seller notification:', error);
@@ -339,7 +346,7 @@ async function sendBuyerConfirmation(buyerEmail, orderData) {
     console.log(`   Price: ${orderData.price}`);
     console.log(`   Deadline: ${orderData.deadline}`);
     console.log(`   Tracking Link: ${orderData.orderTrackingLink}`);
-    
+
     return true;
   } catch (error) {
     console.error('Failed to send buyer confirmation:', error);
@@ -361,14 +368,14 @@ async function sendScopeBoxToSeller(sellerContact, scopeData) {
     console.log(`   Description: ${scopeData.description}`);
     console.log(`   Attachments: ${scopeData.attachments?.length || 0} files`);
     console.log(`   Escrow Link: ${scopeData.escrowLink}`);
-    
+
     // In a real implementation, you would:
     // 1. Send email with detailed scope box
     // 2. Include all project requirements
     // 3. Attach any uploaded files
     // 4. Provide escrow link for seller to accept
     // 5. Include payment terms and conditions
-    
+
     return true;
   } catch (error) {
     console.error('Failed to send scope box to seller:', error);
@@ -377,6 +384,12 @@ async function sendScopeBoxToSeller(sellerContact, scopeData) {
 }
 
 // POST /api/orders/:id/fund-escrow - Fund escrow
+/**
+ * Handles the payment process to fund an escrow.
+ * Validates credit card details (length, expiry, CVV)
+ * Simulates payment gateway processing (delay and random success rate)
+ * On success, updates order status and sends a scope box directly to the seller.
+ */
 async function fundEscrow(req, res) {
   try {
     const { id } = req.params;
@@ -446,8 +459,8 @@ async function fundEscrow(req, res) {
       const currentYear = currentDate.getFullYear();
       const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11
 
-      if (parseInt(cardDetails.expiryYear) < currentYear || 
-          (parseInt(cardDetails.expiryYear) === currentYear && parseInt(cardDetails.expiryMonth) < currentMonth)) {
+      if (parseInt(cardDetails.expiryYear) < currentYear ||
+        (parseInt(cardDetails.expiryYear) === currentYear && parseInt(cardDetails.expiryMonth) < currentMonth)) {
         return res.status(400).json({
           success: false,
           message: 'Card has expired. Please use a valid card.'
@@ -682,19 +695,19 @@ async function releaseFunds(req, res) {
 // Send confirmation to buyer about fund release
 async function sendBuyerReleaseConfirmation(buyerEmail, order) {
   const { id, scopeBox } = order;
-  
+
   console.log('📧 Sending release confirmation to buyer:', buyerEmail);
   console.log('   Subject: Funds Released - Order', id);
   console.log('   Message: Your funds have been released to the seller');
   console.log('   Order ID:', id);
   console.log('   Amount:', scopeBox?.price || 0);
   console.log('   Status: COMPLETED');
-  
+
   // In a real implementation, you would:
   // 1. Send email to buyer
   // 2. Update buyer's transaction history
   // 3. Send receipt/invoice
-  
+
   console.log('✅ Release confirmation sent to buyer');
 }
 
@@ -825,7 +838,7 @@ function verifySellerToken(req) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
     if (decoded.role !== 'seller') {
       throw new Error('Seller access required');
     }
@@ -846,7 +859,7 @@ function verifySellerToken(req) {
 async function cancelOrder(req, res) {
   try {
     const { id } = req.params;
-    
+
     // Verify buyer authentication
     let buyerData;
     try {
@@ -900,7 +913,7 @@ async function getOrdersByUser(req, res) {
 async function acceptOrder(req, res) {
   try {
     const { id } = req.params;
-    
+
     // Verify seller authentication
     let sellerData;
     try {
@@ -932,7 +945,7 @@ async function acceptOrder(req, res) {
 async function rejectOrder(req, res) {
   try {
     const { id } = req.params;
-    
+
     // Verify seller authentication
     let sellerData;
     try {
@@ -965,7 +978,7 @@ async function requestChanges(req, res) {
   try {
     const { id } = req.params;
     const { scopeBox, changesRequested } = req.body;
-    
+
     // Verify seller authentication
     let sellerData;
     try {
@@ -997,7 +1010,7 @@ async function requestChanges(req, res) {
 async function acceptChanges(req, res) {
   try {
     const { id } = req.params;
-    
+
     // Verify buyer authentication
     let buyerData;
     try {
@@ -1029,7 +1042,7 @@ async function acceptChanges(req, res) {
 async function rejectChanges(req, res) {
   try {
     const { id } = req.params;
-    
+
     // Verify buyer authentication
     let buyerData;
     try {

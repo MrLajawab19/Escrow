@@ -1,11 +1,11 @@
 const { Sequelize } = require('sequelize');
-const config = require('./config/config.json');
+const config = require('./backend/config/config.json');
 
 // Initialize Sequelize
 const sequelize = new Sequelize(config.development);
-const Order = require('./models/order')(sequelize, Sequelize.DataTypes);
-const Buyer = require('./models/buyer')(sequelize, Sequelize.DataTypes);
-const Seller = require('./models/seller')(sequelize, Sequelize.DataTypes);
+const Order = require('./backend/models/order')(sequelize, Sequelize.DataTypes);
+const Buyer = require('./backend/models/buyer')(sequelize, Sequelize.DataTypes);
+const Seller = require('./backend/models/seller')(sequelize, Sequelize.DataTypes);
 
 async function revertOrders() {
   try {
@@ -45,7 +45,7 @@ async function revertOrders() {
     for (let i = 0; i < orders.length && i < originalStatuses.length; i++) {
       const order = orders[i];
       const originalStatus = originalStatuses[i];
-      
+
       // Reset order to original status
       await Order.update(
         {
