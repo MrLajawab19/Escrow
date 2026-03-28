@@ -50,6 +50,37 @@ model Order {
   updatedAt    DateTime  @updatedAt
   orderLogs    Json[]
   dispute      Dispute?
+  chatRoom     OrderChatRoom?
+}
+
+// === Chat System ===
+
+/// One chat room per order. Expires 48h after delivery (SUBMITTED status).
+model OrderChatRoom {
+  id         String        @id @default(uuid())
+  orderId    String        @unique
+  order      Order         @relation(fields: [orderId], references: [id])
+  buyerId    String        // Sequelize buyer UUID
+  sellerId   String        // Sequelize seller UUID
+  isActive   Boolean       @default(true)
+  isArchived Boolean       @default(false)
+  expiresAt  DateTime?     // Set to now()+48h when order is SUBMITTED
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  messages   ChatMessage[]
+}
+
+/// Individual message inside an order chat room.
+model ChatMessage {
+  id          String        @id @default(uuid())
+  roomId      String
+  room        OrderChatRoom @relation(fields: [roomId], references: [id])
+  senderId    String        // Sequelize user UUID (buyer or seller)
+  senderRole  String        // "buyer" | "seller"
+  senderName  String        // Display name
+  content     String
+  isRead      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
 }
 
 model Dispute {
@@ -64,4 +95,39 @@ model Dispute {
   status              DisputeStatus  @default(OPEN)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-} 
+}
+
+// === Wallet System ===
+
+/// Wallet for each buyer or seller. Balance is derived from the ledger.
+model Wallet {
+  id             String              @id @default(uuid())
+  userId         String              @unique  // Sequelize user UUID
+  userRole       String              // "buyer" | "seller"
+  currency       String              @default("USD")
+  balance        Float               @default(0)
+  pendingBalance Float               @default(0)
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  transactions   WalletTransaction[]
+}
+
+/// Double-entry ledger transaction record.
+model WalletTransaction {
+  id          String   @id @default(uuid())
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  type        String   // "CREDIT" | "DEBIT"
+  category    String   // "ESCROW_LOCK" | "ESCROW_RELEASE" | "WITHDRAWAL" | "REFUND" | "TOP_UP" | "FEE"
+  amount      Float
+  currency    String   @default("USD")
+  status      String   @default("PENDING") // "PENDING" | "SUCCESS" | "FAILED"
+  description String
+  reference   String?  // external ref / order ID
+  fee         Float    @default(0)
+  netAmount   Float    @default(0)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

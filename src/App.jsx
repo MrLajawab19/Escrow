@@ -6,8 +6,10 @@ import BuyerDashboard from './pages/BuyerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
 import NewOrderPage from './pages/NewOrderPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
+import OrderDetails from './pages/OrderDetails';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
+import AdminDisputeDetails from './pages/AdminDisputeDetails';
 import LandingPage from './components/LandingPage';
 
 // Route Change Handler Component
@@ -549,10 +551,12 @@ function App() {
             <Route path="/seller/auth" element={<SellerAuth />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+            <Route path="/admin/dispute/:id" element={<ProtectedAdminRoute><AdminDisputeDetails /></ProtectedAdminRoute>} />
             <Route path="/buyer/dashboard" element={<ProtectedBuyerRoute><BuyerDashboard /></ProtectedBuyerRoute>} />
             <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewOrderPage /></ProtectedBuyerRoute>} />
-            <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderTrackingPage /></ProtectedBuyerRoute>} />
+            <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderDetails /></ProtectedBuyerRoute>} />
             <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
+            <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><OrderDetails /></ProtectedSellerRoute>} />
           </Routes>
         </RouteChangeHandler>
       </div>

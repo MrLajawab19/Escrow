@@ -21,6 +21,9 @@ const AdminLogin = () => {
 
       if (response.data.success) {
         localStorage.setItem('adminToken', response.data.token);
+        localStorage.setItem('adminData', JSON.stringify(
+          response.data.user || { email: formData.email, name: 'Admin', role: 'admin' }
+        ));
         setSuccess('Login successful. Redirecting...');
         setTimeout(() => {
           window.location.href = '/admin/dashboard';

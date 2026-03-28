@@ -1,378 +1,591 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const AdminDashboard = () => {
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+const adminHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+});
+
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const fmtTime = (d) => d ? new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+
+const STATUS_META = {
+  PLACED:            { color: 'bg-slate-100 text-slate-600',    dot: 'bg-slate-400' },
+  ESCROW_FUNDED:     { color: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
+  ACCEPTED:          { color: 'bg-cyan-100 text-cyan-700',       dot: 'bg-cyan-500' },
+  IN_PROGRESS:       { color: 'bg-indigo-100 text-indigo-700',  dot: 'bg-indigo-500' },
+  SUBMITTED:         { color: 'bg-violet-100 text-violet-700',  dot: 'bg-violet-500' },
+  APPROVED:          { color: 'bg-teal-100 text-teal-700',      dot: 'bg-teal-500' },
+  COMPLETED:         { color: 'bg-emerald-100 text-emerald-700',dot: 'bg-emerald-500' },
+  RELEASED:          { color: 'bg-green-100 text-green-700',    dot: 'bg-green-500' },
+  DISPUTED:          { color: 'bg-red-100 text-red-700',        dot: 'bg-red-500' },
+  REFUNDED:          { color: 'bg-orange-100 text-orange-700',  dot: 'bg-orange-500' },
+  CANCELLED:         { color: 'bg-gray-100 text-gray-500',      dot: 'bg-gray-400' },
+  CHANGES_REQUESTED: { color: 'bg-amber-100 text-amber-700',    dot: 'bg-amber-500' },
+  REJECTED:          { color: 'bg-rose-100 text-rose-700',      dot: 'bg-rose-500' },
+};
+
+function StatusBadge({ status }) {
+  const meta = STATUS_META[status] || { color: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' };
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${meta.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+      {status?.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+function RiskBadge({ score, flag }) {
+  if (flag !== 'AUTO_FLAGGED') return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">
+      Manual
+    </span>
+  );
+  const color = score >= 75 ? 'bg-red-100 text-red-700 border border-red-200'
+    : score >= 50 ? 'bg-amber-100 text-amber-700 border border-amber-200'
+    : 'bg-orange-100 text-orange-700 border border-orange-200';
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>
+      ⚑ AUTO-FLAGGED
+    </span>
+  );
+}
+
+// ─── Stat Card ───────────────────────────────────────────────────────────────
+function StatCard({ label, value, icon, accent, sub, highlight }) {
+  return (
+    <div className={`relative overflow-hidden bg-white rounded-2xl border ${highlight ? 'border-red-200 shadow-red-100' : 'border-slate-200'} shadow-sm hover:shadow-md transition-all duration-200 p-5`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+          <p className={`text-3xl font-black ${highlight ? 'text-red-600' : 'text-slate-800'} font-inter`}>{value ?? '—'}</p>
+          {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
+        </div>
+        <div className={`w-11 h-11 rounded-xl ${accent} flex items-center justify-center text-xl flex-shrink-0`}>
+          {icon}
+        </div>
+      </div>
+      {highlight && (
+        <div className="absolute top-0 right-0 w-1 h-full bg-red-400 rounded-r-2xl" />
+      )}
+    </div>
+  );
+}
+
+// ─── Mini bar chart ──────────────────────────────────────────────────────────
+function StatusBar({ label, count, total, color }) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3 group">
+      <div className="w-28 text-xs text-slate-500 font-medium truncate">{label.replace(/_/g, ' ')}</div>
+      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div
+          className={`h-full ${color} rounded-full transition-all duration-700`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="w-8 text-right text-xs font-bold text-slate-700">{count}</div>
+      <div className="w-10 text-right text-xs text-slate-400">{pct}%</div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
   const [disputes, setDisputes] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDispute, setSelectedDispute] = useState(null);
-  const [resolutionAction, setResolutionAction] = useState('');
-  const [resolutionNotes, setResolutionNotes] = useState('');
+  const [tab, setTab] = useState('overview'); // 'overview' | 'disputes' | 'orders'
+  const [statusFilter, setStatusFilter] = useState('');
+  const [flagFilter, setFlagFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [resolving, setResolving] = useState(null); // dispute id
+  const [resolveAction, setResolveAction] = useState(''); // REFUND | RELEASE
+  const [resolveNotes, setResolveNotes] = useState('');
+  const [resolveLoading, setResolveLoading] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    fetchDisputes();
-    fetchOrders();
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [statsRes, disputesRes, ordersRes] = await Promise.all([
+        axios.get(`${API}/api/admin/stats`, { headers: adminHeaders() }),
+        axios.get(`${API}/api/admin/disputes`, { headers: adminHeaders() }),
+        axios.get(`${API}/api/admin/orders`, { headers: adminHeaders() }),
+      ]);
+      setStats(statsRes.data.data);
+      setDisputes(disputesRes.data.data || []);
+      setOrders(ordersRes.data.data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchDisputes = async () => {
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const handleResolve = async () => {
+    if (!resolveAction || !resolving) return;
+    setResolveLoading(true);
     try {
-      const response = await axios.get('/api/disputes', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      setDisputes(response.data.disputes || []);
-    } catch (error) {
-      console.error('Error fetching disputes:', error);
+      await axios.post(`${API}/api/admin/disputes/${resolving}/resolve`,
+        { action: resolveAction, notes: resolveNotes },
+        { headers: adminHeaders() }
+      );
+      showToast(`Dispute ${resolveAction === 'REFUND' ? 'refunded to buyer' : 'released to seller'} ✓`);
+      setResolving(null);
+      setResolveAction('');
+      setResolveNotes('');
+      fetchAll();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Failed to resolve', 'error');
+    } finally {
+      setResolveLoading(false);
     }
   };
 
-  const fetchOrders = async () => {
-    try {
-      const response = await axios.get('/api/orders', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      setOrders(response.data.orders || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setLoading(false);
+  // Filtered disputes
+  const filteredDisputes = disputes.filter(d => {
+    if (statusFilter && d.status !== statusFilter) return false;
+    if (flagFilter && d.autoFlag !== flagFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return d.orderId?.toLowerCase().includes(q) ||
+        d.reason?.toLowerCase().includes(q) ||
+        d.id?.toLowerCase().includes(q);
     }
+    return true;
+  });
+
+  const autoFlagged = disputes.filter(d => d.autoFlag === 'AUTO_FLAGGED');
+  const openDisputes = disputes.filter(d => d.status === 'OPEN');
+
+  // Status bar colors
+  const BAR_COLORS = {
+    PLACED: 'bg-slate-400', ESCROW_FUNDED: 'bg-blue-500', ACCEPTED: 'bg-cyan-500',
+    IN_PROGRESS: 'bg-indigo-500', SUBMITTED: 'bg-violet-500', APPROVED: 'bg-teal-500',
+    COMPLETED: 'bg-emerald-500', RELEASED: 'bg-green-500', DISPUTED: 'bg-red-500',
+    REFUNDED: 'bg-orange-500', CANCELLED: 'bg-gray-400', CHANGES_REQUESTED: 'bg-amber-500',
+    REJECTED: 'bg-rose-500'
   };
 
-  const handleResolveDispute = async (disputeId) => {
-    try {
-      const response = await axios.post(`/api/disputes/${disputeId}/resolve`, {
-        action: resolutionAction,
-        notes: resolutionNotes
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-
-      if (response.data.success) {
-        fetchDisputes();
-        setSelectedDispute(null);
-        setResolutionAction('');
-        setResolutionNotes('');
-      }
-    } catch (error) {
-      console.error('Error resolving dispute:', error);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminData');
-    window.location.href = '/admin/login';
-  };
-
-  // Status badge color helper
-  const getStatusBadge = (status) => {
-    const map = {
-      open: 'bg-red-50 text-red-700 border border-red-200',
-      resolved: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-      pending: 'bg-amber-50 text-amber-700 border border-amber-200',
-      COMPLETED: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-      IN_PROGRESS: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
-      PLACED: 'bg-amber-50 text-amber-700 border border-amber-200',
-      SUBMITTED: 'bg-blue-50 text-blue-700 border border-blue-200',
-      DISPUTED: 'bg-red-50 text-red-700 border border-red-200',
-    };
-    return map[status] || 'bg-neutral-100 text-neutral-600 border border-neutral-200';
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-500 font-inter font-medium">Loading admin dashboard...</p>
-        </div>
+  if (loading) return (
+    <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-slate-500 font-semibold">Loading Admin Dashboard...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#F6F9FC]">
-      {/* Header */}
-      <div className="bg-white border-b border-neutral-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-[72px]">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-sm">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-[#0A2540] tracking-tight font-inter">Admin Dashboard</h1>
-                <p className="text-xs text-neutral-400 font-inter">ScrowX Administration Panel</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-[#F0F4F8] font-inter">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-20 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold transition-all ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* ── Sidebar + Content Layout ── */}
+      <div className="flex min-h-screen pt-[64px]">
+        {/* Sidebar */}
+        <aside className="w-56 bg-white border-r border-slate-200 flex-shrink-0 hidden md:flex flex-col p-4 gap-1 sticky top-[64px] h-[calc(100vh-64px)] overflow-y-auto">
+          <div className="px-3 py-2 mb-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Admin Panel</p>
+          </div>
+          {[
+            { id: 'overview', icon: '📊', label: 'Overview' },
+            { id: 'disputes', icon: '⚖️', label: 'Disputes', badge: openDisputes.length },
+            { id: 'orders', icon: '📦', label: 'Orders' },
+          ].map(item => (
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-colors font-inter"
+              key={item.id}
+              onClick={() => setTab(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === item.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+              {item.badge > 0 && (
+                <span className={`ml-auto text-xs px-1.5 py-0.5 rounded-full font-bold ${tab === item.id ? 'bg-white/20 text-white' : 'bg-red-100 text-red-600'}`}>
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          ))}
+          <div className="mt-auto pt-4 border-t border-slate-100">
+            <button
+              onClick={() => { localStorage.removeItem('adminToken'); localStorage.removeItem('adminData'); window.location.href = '/admin/login'; }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all"
+            >
+              <span>🚪</span> Logout
             </button>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Total Orders */}
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
+        {/* Main content */}
+        <main className="flex-1 p-6 lg:p-8 overflow-auto">
+
+          {/* ── OVERVIEW TAB ── */}
+          {tab === 'overview' && (
+            <div className="space-y-8">
+              <div>
+                <h1 className="text-2xl font-black text-slate-800">Platform Overview</h1>
+                <p className="text-slate-500 text-sm mt-1">Real-time analytics for the ScrowX marketplace</p>
               </div>
-              <div className="ml-4">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Total Orders</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{orders.length}</p>
+
+              {/* Stat Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <StatCard label="Total Orders" value={stats?.totalOrders} icon="📦" accent="bg-indigo-50" sub="All time" />
+                <StatCard label="Active Orders" value={stats?.activeOrders} icon="⚡" accent="bg-blue-50" sub="In progress" />
+                <StatCard label="Completed" value={stats?.completedOrders} icon="✅" accent="bg-emerald-50" sub="Resolved" />
+                <StatCard label="Total Disputes" value={stats?.totalDisputes} icon="⚖️" accent="bg-amber-50" sub="All disputes" />
+                <StatCard label="Open Disputes" value={stats?.openDisputes} icon="🚨" accent="bg-red-50" highlight={stats?.openDisputes > 0} sub="Needs attention" />
               </div>
-            </div>
-          </div>
 
-          {/* Active Disputes */}
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Active Disputes</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{disputes.filter(d => d.status === 'open').length}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Resolved Disputes */}
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Resolved</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{disputes.filter(d => d.status === 'resolved').length}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Total Disputes */}
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Total Disputes</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{disputes.length}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Disputes Section */}
-        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden mb-6">
-          <div className="px-6 py-5 border-b border-neutral-100 bg-neutral-50/50">
-            <h2 className="text-lg font-bold text-[#0A2540] font-inter">Dispute Management</h2>
-            <p className="text-sm text-neutral-500 font-inter mt-0.5">Review and resolve open disputes between buyers and sellers.</p>
-          </div>
-
-          <div className="p-6">
-            {disputes.length === 0 ? (
-              <div className="text-center py-12 border border-dashed border-neutral-200 rounded-lg">
-                <div className="mx-auto w-14 h-14 bg-neutral-50 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-7 h-7 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <p className="text-neutral-500 font-inter font-medium">No disputes found</p>
-                <p className="text-sm text-neutral-400 font-inter mt-1">All transactions are running smoothly.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {disputes.map((dispute) => (
-                  <div key={dispute.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-5 hover:border-indigo-200 hover:bg-indigo-50/20 transition-all duration-200">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold font-inter ${getStatusBadge(dispute.status)}`}>
-                          {dispute.status}
-                        </span>
-                        <span className="font-semibold text-[#0A2540] font-inter text-sm">Order #{dispute.orderId?.slice(0, 8)}...</span>
-                      </div>
-                      <span className="text-xs text-neutral-400 font-inter">
-                        {new Date(dispute.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    <div className="mb-3">
-                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-1">Reason</p>
-                      <p className="text-sm text-[#0A2540] font-inter">{dispute.reason}</p>
-                    </div>
-
-                    <div className="mb-4">
-                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-1">Description</p>
-                      <p className="text-sm text-neutral-600 font-inter leading-relaxed">{dispute.description}</p>
-                    </div>
-
-                    {dispute.evidenceFiles && dispute.evidenceFiles.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-2">Evidence Files</p>
-                        <div className="flex flex-wrap gap-2">
-                          {dispute.evidenceFiles.map((file, index) => (
-                            <a
-                              key={index}
-                              href={`/uploads/${file}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg text-xs hover:bg-indigo-100 transition-colors font-inter"
-                            >
-                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                              </svg>
-                              {file}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {dispute.status === 'open' && (
-                      <button
-                        onClick={() => setSelectedDispute(dispute)}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter"
-                      >
-                        Resolve Dispute
-                      </button>
-                    )}
+              {/* 2-col row: Status breakdown + Dispute summary */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Orders by status */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                  <h2 className="text-base font-bold text-slate-800 mb-1">Orders by Status</h2>
+                  <p className="text-xs text-slate-400 mb-5">Distribution across all pipeline stages</p>
+                  <div className="space-y-3">
+                    {stats?.ordersByStatus?.length > 0
+                      ? stats.ordersByStatus
+                          .sort((a, b) => b.count - a.count)
+                          .map(s => (
+                            <StatusBar
+                              key={s.status}
+                              label={s.status}
+                              count={parseInt(s.count)}
+                              total={stats.totalOrders}
+                              color={BAR_COLORS[s.status] || 'bg-slate-400'}
+                            />
+                          ))
+                      : <p className="text-slate-400 text-sm">No orders yet</p>
+                    }
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                </div>
 
-        {/* Recent Orders */}
-        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-neutral-100 bg-neutral-50/50">
-            <h2 className="text-lg font-bold text-[#0A2540] font-inter">Recent Orders</h2>
-            <p className="text-sm text-neutral-500 font-inter mt-0.5">Overview of the latest transactions on the platform.</p>
-          </div>
-
-          <div className="p-6">
-            {orders.length === 0 ? (
-              <div className="text-center py-12 border border-dashed border-neutral-200 rounded-lg">
-                <p className="text-neutral-500 font-inter">No orders found</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-100">
-                      <th className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider pb-3 font-inter">Order ID</th>
-                      <th className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider pb-3 font-inter">Service</th>
-                      <th className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider pb-3 font-inter">Amount</th>
-                      <th className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider pb-3 font-inter">Status</th>
-                      <th className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider pb-3 font-inter">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-50">
-                    {orders.slice(0, 10).map((order) => (
-                      <tr key={order.id} className="hover:bg-neutral-50 transition-colors">
-                        <td className="py-3 text-[#0A2540] font-inter font-medium">#{order.id?.slice(0, 8)}...</td>
-                        <td className="py-3 text-neutral-600 font-inter">{order.serviceType || order.scopeBox?.productType || '—'}</td>
-                        <td className="py-3 text-[#0A2540] font-inter font-semibold">${order.amount || order.scopeBox?.price || 0}</td>
-                        <td className="py-3">
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold font-inter ${getStatusBadge(order.status)}`}>
-                            {order.status?.replace(/_/g, ' ')}
-                          </span>
-                        </td>
-                        <td className="py-3 text-neutral-400 font-inter text-xs">
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
+                {/* Dispute summary */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                  <h2 className="text-base font-bold text-slate-800 mb-1">Dispute Health</h2>
+                  <p className="text-xs text-slate-400 mb-5">Current dispute resolution metrics</p>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'Open',         value: stats?.openDisputes,       color: 'bg-red-500' },
+                      { label: 'Under Review', value: stats?.underReviewDisputes,color: 'bg-amber-500' },
+                      { label: 'Resolved',     value: stats?.resolvedDisputes,   color: 'bg-emerald-500' },
+                    ].map(item => (
+                      <StatusBar
+                        key={item.label}
+                        label={item.label}
+                        count={item.value || 0}
+                        total={stats?.totalDisputes || 1}
+                        color={item.color}
+                      />
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                  <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 rounded-xl p-3 text-center">
+                      <p className="text-xl font-black text-slate-800">{stats?.totalBuyers ?? 0}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Buyers</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3 text-center">
+                      <p className="text-xl font-black text-slate-800">{stats?.totalSellers ?? 0}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Sellers</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* AUTO-FLAGGED disputes section */}
+              <div className="bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-red-100 bg-red-50/60">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">🚨</span>
+                    <div>
+                      <h2 className="text-base font-bold text-red-700">Auto-Flagged Disputes</h2>
+                      <p className="text-xs text-red-500">High-risk orders that require immediate attention</p>
+                    </div>
+                  </div>
+                  <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">{autoFlagged.length}</span>
+                </div>
+                {autoFlagged.length === 0 ? (
+                  <div className="p-10 text-center text-slate-400 text-sm">
+                    <div className="text-3xl mb-2">✅</div>
+                    No auto-flagged disputes
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {autoFlagged.slice(0, 8).map(d => (
+                      <div key={d.id} className="flex items-center gap-4 px-6 py-3 hover:bg-red-50/30 transition-colors">
+                        <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-slate-700 truncate">
+                            Order <span className="font-mono text-slate-500">#{d.orderId?.slice(0, 8)}</span>
+                          </p>
+                          <p className="text-xs text-slate-500">{d.reason} · {d.riskReason}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs text-slate-400">{fmtDate(d.createdAt)}</p>
+                          <span className={`text-xs font-bold ${d.riskScore >= 75 ? 'text-red-600' : 'text-amber-600'}`}>
+                            Risk {d.riskScore}%
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => navigate(`/admin/dispute/${d.id}`)}
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex-shrink-0"
+                        >
+                          View →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── DISPUTES TAB ── */}
+          {tab === 'disputes' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-black text-slate-800">Dispute Management</h1>
+                  <p className="text-slate-500 text-sm mt-1">{filteredDisputes.length} dispute{filteredDisputes.length !== 1 ? 's' : ''} found</p>
+                </div>
+                <button
+                  onClick={fetchAll}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  ↻ Refresh
+                </button>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3">
+                <input
+                  type="text"
+                  placeholder="Search by order ID or reason..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="OPEN">Open</option>
+                  <option value="UNDER_REVIEW">Under Review</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+                <select
+                  value={flagFilter}
+                  onChange={e => setFlagFilter(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  <option value="">All Flags</option>
+                  <option value="AUTO_FLAGGED">Auto-Flagged</option>
+                  <option value="MANUAL">Manual</option>
+                </select>
+              </div>
+
+              {/* Dispute table */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                {filteredDisputes.length === 0 ? (
+                  <div className="p-16 text-center text-slate-400">
+                    <div className="text-5xl mb-3">⚖️</div>
+                    <p className="font-semibold text-slate-600">No disputes found</p>
+                    <p className="text-sm mt-1">Try adjusting your filters</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Order</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Reason</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Flag</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Risk</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredDisputes.map(d => (
+                          <tr key={d.id} className={`hover:bg-slate-50/70 transition-colors ${d.autoFlag === 'AUTO_FLAGGED' ? 'bg-red-50/20' : ''}`}>
+                            <td className="px-5 py-4">
+                              <p className="font-mono text-xs text-slate-600">#{d.orderId?.slice(0, 8)}</p>
+                              <p className="text-xs text-slate-400 mt-0.5">${d.order?.scopeBox?.price || 0} {d.order?.currency || 'USD'}</p>
+                            </td>
+                            <td className="px-5 py-4">
+                              <p className="text-slate-700 font-medium">{d.reason}</p>
+                              <p className="text-xs text-slate-400 truncate max-w-[160px]">{d.description}</p>
+                            </td>
+                            <td className="px-5 py-4 font-bold text-slate-800">
+                              ${d.order?.scopeBox?.price || 0}
+                            </td>
+                            <td className="px-5 py-4">
+                              <StatusBadge status={d.status} />
+                            </td>
+                            <td className="px-5 py-4">
+                              <RiskBadge score={d.riskScore} flag={d.autoFlag} />
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${d.riskScore >= 75 ? 'bg-red-500' : d.riskScore >= 50 ? 'bg-amber-500' : 'bg-slate-400'}`}
+                                    style={{ width: `${d.riskScore}%` }}
+                                  />
+                                </div>
+                                <span className={`text-xs font-bold ${d.riskScore >= 75 ? 'text-red-600' : d.riskScore >= 50 ? 'text-amber-600' : 'text-slate-500'}`}>
+                                  {d.riskScore}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 text-xs text-slate-400">{fmtDate(d.createdAt)}</td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => navigate(`/admin/dispute/${d.id}`)}
+                                  className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition-colors"
+                                >
+                                  View
+                                </button>
+                                {d.status === 'OPEN' && (
+                                  <button
+                                    onClick={() => { setResolving(d.id); setResolveAction(''); setResolveNotes(''); }}
+                                    className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition-colors"
+                                  >
+                                    Resolve
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── ORDERS TAB ── */}
+          {tab === 'orders' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-black text-slate-800">All Orders</h1>
+                <p className="text-slate-500 text-sm mt-1">{orders.length} orders on the platform</p>
+              </div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                {orders.length === 0 ? (
+                  <div className="p-16 text-center text-slate-400">
+                    <div className="text-5xl mb-3">📦</div>
+                    <p className="font-semibold">No orders yet</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Order ID</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Buyer</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Service</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                          <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {orders.map(o => (
+                          <tr key={o.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="px-5 py-4 font-mono text-xs text-slate-600">#{o.id?.slice(0, 8)}</td>
+                            <td className="px-5 py-4 text-slate-700 font-medium text-xs">{o.buyerName || '—'}</td>
+                            <td className="px-5 py-4 text-slate-600 text-xs">{o.scopeBox?.productType || o.scopeBox?.title || '—'}</td>
+                            <td className="px-5 py-4 font-bold text-slate-800">${o.scopeBox?.price || 0}</td>
+                            <td className="px-5 py-4"><StatusBadge status={o.status} /></td>
+                            <td className="px-5 py-4 text-xs text-slate-400">{fmtDate(o.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </main>
       </div>
 
-      {/* Dispute Resolution Modal */}
-      {selectedDispute && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl p-6 max-w-md w-full">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-[#0A2540] font-inter">
-                Resolve Dispute
-              </h3>
+      {/* ── Resolution Modal ── */}
+      {resolving && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800">Resolve Dispute</h3>
+              <button onClick={() => setResolving(null)} className="text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500">Choose a resolution action for this dispute.</p>
+
+              {/* Action buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setResolveAction('REFUND')}
+                  className={`p-4 rounded-xl border-2 text-sm font-bold transition-all ${resolveAction === 'REFUND' ? 'border-red-500 bg-red-50 text-red-700' : 'border-slate-200 text-slate-600 hover:border-red-300'}`}
+                >
+                  <div className="text-2xl mb-1">↩️</div>
+                  Refund Buyer
+                </button>
+                <button
+                  onClick={() => setResolveAction('RELEASE')}
+                  className={`p-4 rounded-xl border-2 text-sm font-bold transition-all ${resolveAction === 'RELEASE' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600 hover:border-emerald-300'}`}
+                >
+                  <div className="text-2xl mb-1">✅</div>
+                  Release to Seller
+                </button>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">Resolution Notes (optional)</label>
+                <textarea
+                  value={resolveNotes}
+                  onChange={e => setResolveNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Add notes about your decision..."
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-6">
               <button
-                onClick={() => setSelectedDispute(null)}
-                className="text-neutral-400 hover:text-neutral-700 transition-colors"
+                onClick={handleResolve}
+                disabled={!resolveAction || resolveLoading}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${resolveAction === 'REFUND' ? 'bg-red-600 hover:bg-red-700 text-white' : resolveAction === 'RELEASE' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-200 text-slate-500'}`}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                {resolveLoading ? 'Processing...' : resolveAction === 'REFUND' ? 'Confirm Refund' : resolveAction === 'RELEASE' ? 'Confirm Release' : 'Select Action'}
               </button>
-            </div>
-
-            <p className="text-sm text-neutral-500 font-inter mb-5">
-              Order #{selectedDispute.orderId?.slice(0, 8)}... — <span className="text-red-600 font-medium">{selectedDispute.reason}</span>
-            </p>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-[#0A2540] mb-1.5 font-inter">Resolution Action</label>
-              <select
-                value={resolutionAction}
-                onChange={(e) => setResolutionAction(e.target.value)}
-                className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-[#0A2540] font-inter text-sm"
-              >
-                <option value="">Select action...</option>
-                <option value="refund_buyer">Refund Buyer</option>
-                <option value="release_to_seller">Release to Seller</option>
-                <option value="partial_refund">Partial Refund</option>
-                <option value="escalate">Escalate Further</option>
-              </select>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-[#0A2540] mb-1.5 font-inter">Resolution Notes</label>
-              <textarea
-                value={resolutionNotes}
-                onChange={(e) => setResolutionNotes(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm"
-                placeholder="Add notes about the resolution..."
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleResolveDispute(selectedDispute.id)}
-                disabled={!resolutionAction}
-                className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors shadow-sm font-inter text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Confirm Resolution
-              </button>
-              <button
-                onClick={() => setSelectedDispute(null)}
-                className="px-4 py-2.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-[#0A2540] rounded-xl font-semibold transition-colors font-inter text-sm"
-              >
+              <button onClick={() => setResolving(null)} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">
                 Cancel
               </button>
             </div>
@@ -381,6 +594,4 @@ const AdminDashboard = () => {
       )}
     </div>
   );
-};
-
-export default AdminDashboard;
+}

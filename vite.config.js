@@ -21,8 +21,16 @@ export default defineConfig(({ mode }) => {
           target: apiUrl,
           changeOrigin: true,
           secure: false
+        },
+        // Socket.IO WebSocket proxy — forwards upgrade requests to the backend
+        '/socket.io': {
+          target: apiUrl,
+          changeOrigin: true,
+          secure: false,
+          ws: true  // ← enable WebSocket proxying
         }
       }
     }
   }
-}) 
+})
+ 

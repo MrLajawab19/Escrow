@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import OrderCard from '../components/OrderCard';
 import MyDisputesPage from '../components/MyDisputesPage';
 import NotificationModal from '../components/NotificationModal';
+import OrderChat from '../components/order/OrderChat'; // ← Real-time order chat
 import axios from 'axios';
 
 const inputClass = "w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm shadow-sm";
@@ -19,6 +20,17 @@ const SellerDashboard = () => {
   const [modifiedScopeBox, setModifiedScopeBox] = useState(null);
   const [showMyDisputes, setShowMyDisputes] = useState(false);
   const [notification, setNotification] = useState({ isOpen: false, title: '', message: '', type: 'success' });
+
+  // Decode seller identity from JWT (for OrderChat currentUser prop)
+  const getSellerUser = () => {
+    try {
+      const token = localStorage.getItem('sellerToken');
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return { userId: payload.userId, role: 'seller', firstName: payload.firstName, lastName: payload.lastName };
+    } catch { return null; }
+  };
+  const sellerUser = getSellerUser();
 
   useEffect(() => {
     fetchOrders();
@@ -579,6 +591,15 @@ const SellerDashboard = () => {
         message={notification.message}
         type={notification.type}
       />
+
+      {/* ── Order Chat (floating bubble for selected order) ──────────────────── */}
+      {selectedOrder && sellerUser && (
+        <OrderChat
+          orderId={selectedOrder.id}
+          currentUser={sellerUser}
+          orderStatus={selectedOrder.status}
+        />
+      )}
     </div>
   );
 };

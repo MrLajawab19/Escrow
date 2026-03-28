@@ -1,9 +1,30 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DisputeModal from './DisputeModal';
+import OrderChat from './order/OrderChat';
 
 const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
+  const navigate = useNavigate();
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [showChat, setShowChat] = useState(false);
+
+  // Decode current user from JWT for chat identity
+  const getCurrentUser = () => {
+    try {
+      const token = userType === 'buyer'
+        ? localStorage.getItem('buyerToken')
+        : localStorage.getItem('sellerToken');
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return { userId: payload.userId, role: userType, firstName: payload.firstName, lastName: payload.lastName };
+    } catch { return null; }
+  };
+  const currentUser = getCurrentUser();
+
+  // Show chat for active orders only
+  const CHAT_STATUSES = ['ESCROW_FUNDED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
+  const isChatEligible = CHAT_STATUSES.includes(order.status);
 
   const showNotification = (message, type = 'info') => {
     setNotification({ show: true, message, type });
@@ -332,6 +353,35 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
 
         {/* View Details Button */}
         <button
+          onClick={() => navigate(`/${userType}/order/${order.id}`)}
+          className="btn btn-outline border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center gap-1.5"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          View Details
+        </button>
+
+        {/* Chat Button — shown for active orders */}
+        {isChatEligible && currentUser && (
+          <button
+            onClick={() => setShowChat(s => !s)}
+            className={`btn flex items-center gap-2 ${
+              showChat
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'btn-outline border-indigo-200 text-indigo-600 hover:bg-indigo-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            {showChat ? 'Close Chat' : 'Open Chat'}
+          </button>
+        )}
+
+        <button
           onClick={() => {
             const width = 800;
             const height = 900;
@@ -489,6 +539,18 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Order Chat Panel — inline below the card */}
+      {showChat && isChatEligible && currentUser && (
+        <div className="border-t border-indigo-100 bg-indigo-50/30">
+          <OrderChat
+            orderId={order.id}
+            currentUser={currentUser}
+            orderStatus={order.status}
+            inline={true}
+          />
         </div>
       )}
     </div>

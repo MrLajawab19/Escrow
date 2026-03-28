@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import OrderChat from '../components/order/OrderChat'; // ← Real-time order chat
 
 const OrderTrackingPage = () => {
   const { orderId } = useParams();
@@ -152,7 +153,8 @@ const OrderTrackingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F9FC] py-8 px-4">
+    <>
+      <div className="min-h-screen bg-[#F6F9FC] py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -317,7 +319,23 @@ const OrderTrackingPage = () => {
         </div>
       </div>
     </div>
+
+    {/* ── Order Chat (floating bubble, bottom-right) ────────────────────────── */}
+    {buyerData && order && (
+      <OrderChat
+        orderId={orderId}
+        currentUser={{
+          userId: buyerData.id,
+          role: 'buyer',
+          firstName: buyerData.firstName,
+          lastName: buyerData.lastName,
+        }}
+        orderStatus={order.status}
+      />
+    )}
+  </>
   );
 };
 
 export default OrderTrackingPage;
+
