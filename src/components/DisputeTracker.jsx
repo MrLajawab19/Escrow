@@ -75,13 +75,31 @@ const DisputeTracker = ({ userId, userRole }) => {
 
   const getResolutionText = (resolution) => {
     const resolutions = {
-      'REFUND_BUYER': 'Refund to Buyer',
-      'RELEASE_TO_SELLER': 'Release to Seller',
+      'REFUND_BUYER': 'Full Refund to Buyer',
+      'REFUND_BUYER_FULL': 'Full Refund to Buyer',
+      'RELEASE_TO_SELLER': 'Release Payment to Seller',
       'PARTIAL_REFUND': 'Partial Refund',
+      'PARTIAL_REFUND_75_25': 'Partial Refund (75% Buyer, 25% Seller)',
+      'PARTIAL_REFUND_50_50': 'Split Payment (50/50)',
       'CONTINUE_WORK': 'Continue Work',
-      'CANCEL_ORDER': 'Cancel Order'
+      'CONTINUE_WITH_EXTENSION': 'Continue Work with Extension',
+      'CANCEL_ORDER': 'Cancel Order',
+      'CANCEL_AND_REFUND': 'Cancel Order & Refund'
     };
     return resolutions[resolution] || resolution;
+  };
+
+  const getResolutionSide = (resolution) => {
+    if (resolution.includes('REFUND')) return 'buyer';
+    if (resolution.includes('RELEASE') || resolution.includes('CONTINUE')) return 'seller';
+    return 'neutral';
+  };
+
+  const getResolutionColor = (resolution) => {
+    const side = getResolutionSide(resolution);
+    return side === 'buyer' ? 'text-red-600' : 
+           side === 'seller' ? 'text-emerald-600' : 
+           'text-amber-600';
   };
 
   if (loading) {
@@ -193,8 +211,23 @@ const DisputeTracker = ({ userId, userRole }) => {
                       {dispute.resolution ? (
                         <div className="mt-1">
                           <p className="text-sm text-gray-600">
-                            <strong>Outcome:</strong> {getResolutionText(dispute.resolution)}
+                            <strong>Outcome:</strong> 
+                            <span className={`ml-2 font-bold ${getResolutionColor(dispute.resolution)}`}>
+                              {getResolutionText(dispute.resolution)}
+                            </span>
                           </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs text-gray-500">Favors:</span>
+                            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                              getResolutionSide(dispute.resolution) === 'buyer' ? 'bg-red-100 text-red-700' :
+                              getResolutionSide(dispute.resolution) === 'seller' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>
+                              {getResolutionSide(dispute.resolution) === 'buyer' ? '👤 Buyer' :
+                               getResolutionSide(dispute.resolution) === 'seller' ? '🛠️ Seller' :
+                               '⚖️ Neutral'}
+                            </span>
+                          </div>
                           {dispute.resolutionAmount && (
                             <p className="text-sm text-gray-600">
                               <strong>Amount:</strong> ${dispute.resolutionAmount}

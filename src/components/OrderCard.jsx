@@ -1,7 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DisputeModal from './DisputeModal';
 import OrderChat from './order/OrderChat';
+
+/** Buyer: first hour after seller accept shows "Accepted", then "In progress" (DB status is IN_PROGRESS). */
+const BUYER_ACCEPTED_GRACE_MS = 60 * 60 * 1000;
+
+function sellerAcceptedAtMs(order) {
+  if (order.sellerAcceptedAt) return new Date(order.sellerAcceptedAt).getTime();
+  const log = [...(order.orderLogs || [])].reverse().find((l) => l.event === 'ORDER_ACCEPTED');
+  return log?.timestamp ? new Date(log.timestamp).getTime() : 0;
+}
+
+function getBuyerFacingStatus(order) {
+  const st = order.status;
+  if (st !== 'IN_PROGRESS') {
+    return { label: st.replace(/_/g, ' '), styleKey: st };
+  }
+  const at = sellerAcceptedAtMs(order);
+  if (at && Date.now() - at < BUYER_ACCEPTED_GRACE_MS) {
+    return { label: 'Accepted', styleKey: 'ACCEPTED' };
+  }
+  return { label: 'In progress', styleKey: 'IN_PROGRESS' };
+}
 
 const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
   const navigate = useNavigate();
@@ -22,8 +43,27 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
   };
   const currentUser = getCurrentUser();
 
+  const [buyerStatusTick, setBuyerStatusTick] = useState(0);
+  useEffect(() => {
+    if (userType !== 'buyer' || order.status !== 'IN_PROGRESS') return;
+    const t0 = sellerAcceptedAtMs(order);
+    if (!t0 || Date.now() - t0 >= BUYER_ACCEPTED_GRACE_MS) return;
+    const iv = setInterval(() => setBuyerStatusTick((x) => x + 1), 30000);
+    return () => clearInterval(iv);
+  }, [userType, order.id, order.status, order.sellerAcceptedAt, order.orderLogs]);
+
+  const buyerDisplay = useMemo(() => {
+    if (userType !== 'buyer') {
+      return { label: order.status.replace(/_/g, ' '), styleKey: order.status };
+    }
+    return getBuyerFacingStatus(order);
+  }, [userType, order.status, order.sellerAcceptedAt, order.id, order.orderLogs, buyerStatusTick]);
+
+  const displayStatusKey = userType === 'buyer' ? buyerDisplay.styleKey : order.status;
+
   // Show chat for active orders only
-  const CHAT_STATUSES = ['ESCROW_FUNDED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
+  const CHAT_STATUSES = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
+  const SELLER_CAN_SUBMIT_DELIVERY = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS'];
   const isChatEligible = CHAT_STATUSES.includes(order.status);
 
   const showNotification = (message, type = 'info') => {
@@ -89,6 +129,7 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         );
+      case 'ACCEPTED':
       case 'CHANGES_REQUESTED':
       case 'IN_PROGRESS':
         return (
@@ -119,6 +160,7 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
       case 'COMPLETED': return 'bg-emerald-100';
       case 'REJECTED':
       case 'CANCELLED': return 'bg-red-100';
+      case 'ACCEPTED':
       case 'CHANGES_REQUESTED':
       case 'IN_PROGRESS': return 'bg-amber-100';
       case 'DISPUTED': return 'bg-red-100';
@@ -144,8 +186,8 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
       {/* Header */}
       <div className="px-6 py-5 border-b border-neutral-100 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getStatusIconBg(order.status)}`}>
-            {getStatusIcon(order.status)}
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getStatusIconBg(displayStatusKey)}`}>
+            {getStatusIcon(displayStatusKey)}
           </div>
           <div>
             <h3 className="text-lg font-bold text-navy-900 leading-tight">
@@ -156,8 +198,8 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
             </p>
           </div>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wide ${getStatusColor(order.status)}`}>
-          {order.status.replace(/_/g, ' ')}
+        <span className={`px-3 py-1 rounded-full text-xs font-bold border tracking-wide ${userType === 'buyer' ? 'normal-case' : 'uppercase'} ${getStatusColor(displayStatusKey)}`}>
+          {userType === 'buyer' ? buyerDisplay.label : order.status.replace(/_/g, ' ')}
         </span>
       </div>
 
@@ -305,12 +347,17 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
           </button>
         )}
 
-        {/* Order Delivered Button (for sellers when IN_PROGRESS) */}
-        {userType === 'seller' && order.status === 'IN_PROGRESS' && (
+        {/* Order Delivered — funded / accepted / in progress (accept flow uses ACCEPTED, not IN_PROGRESS) */}
+        {userType === 'seller' && SELLER_CAN_SUBMIT_DELIVERY.includes(order.status) && (
           <button
             onClick={async () => {
               try {
                 const token = localStorage.getItem('sellerToken');
+                const sellerId = currentUser?.userId;
+                if (!token || !sellerId) {
+                  showNotification('Please log in again as a seller.', 'error');
+                  return;
+                }
                 const response = await fetch(`/api/orders/${order.id}/submit`, {
                   method: 'PATCH',
                   headers: {
@@ -318,27 +365,24 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
                     'Content-Type': 'application/json'
                   },
                   body: JSON.stringify({
-                    sellerId: 'seller-id',
+                    sellerId,
                     deliveryFiles: ['final-delivery.zip', 'project-documentation.pdf', 'source-code.zip']
                   })
                 });
 
-                if (response.ok) {
-                  const result = await response.json();
-                  if (result.success) {
-                    if (onOrderUpdate) {
-                      onOrderUpdate({
-                        ...order,
-                        status: 'SUBMITTED',
-                        deliveryFiles: ['final-delivery.zip', 'project-documentation.pdf', 'source-code.zip']
-                      });
-                    }
-                    showNotification('Order delivered successfully! Buyer will be notified for approval.', 'success');
-                  } else {
-                    showNotification(result.message || 'Failed to deliver order', 'error');
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok && result.success) {
+                  if (onOrderUpdate) {
+                    onOrderUpdate({
+                      ...order,
+                      status: 'SUBMITTED',
+                      deliveryFiles: result.data?.deliveryFiles || order.deliveryFiles
+                    });
                   }
+                  showNotification('Order delivered successfully! Buyer will be notified for approval.', 'success');
                 } else {
-                  showNotification('Failed to deliver order', 'error');
+                  showNotification(result.message || 'Failed to deliver order', 'error');
                 }
               } catch (error) {
                 console.error('Error delivering order:', error);
@@ -348,6 +392,49 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
             className="btn btn-primary"
           >
             Mark as Delivered
+          </button>
+        )}
+
+        {/* Start Work Button - for ACCEPTED orders */}
+        {userType === 'seller' && order.status === 'ACCEPTED' && (
+          <button
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem('sellerToken');
+                const sellerId = currentUser?.userId;
+                if (!token || !sellerId) {
+                  showNotification('Please log in again as a seller.', 'error');
+                  return;
+                }
+                const response = await fetch(`/api/orders/${order.id}/start-work`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (response.ok && result.success) {
+                  if (onOrderUpdate) {
+                    onOrderUpdate({
+                      ...order,
+                      status: 'IN_PROGRESS'
+                    });
+                  }
+                  showNotification('Work started successfully!', 'success');
+                } else {
+                  showNotification(result.message || 'Failed to start work', 'error');
+                }
+              } catch (error) {
+                console.error('Error starting work:', error);
+                showNotification('Error starting work', 'error');
+              }
+            }}
+            className="btn bg-amber-500 hover:bg-amber-600 text-white"
+          >
+            Start Work
           </button>
         )}
 

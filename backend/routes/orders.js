@@ -50,6 +50,7 @@ router.patch('/:id/dispute', upload.array('evidence', 5), orderController.raiseD
 // Seller action routes
 router.patch('/:id/accept', orderController.acceptOrder);
 router.patch('/:id/reject', orderController.rejectOrder);
+router.patch('/:id/start-work', orderController.startWorkFromAccepted);
 router.patch('/:id/request-changes', orderController.requestChanges);
 
 // Buyer action routes

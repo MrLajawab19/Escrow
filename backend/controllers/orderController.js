@@ -1,8 +1,14 @@
 const orderService = require('../services/orderService');
+const { Order } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const { Sequelize } = require('sequelize');
 const config = require('../config/config.json');
+const {
+  CONTENT_WRITING_FIELDS,
+  normalizeProductType,
+  hasCompleteContentWritingPayload
+} = require('../utils/scopeBoxHelpers');
 
 // Service-specific field requirements (matching frontend field names)
 const SERVICE_FIELD_REQUIREMENTS = {
@@ -22,15 +28,36 @@ const SERVICE_FIELD_REQUIREMENTS = {
   'Influencer shoutouts': ['platforms', 'campaignDuration', 'targetAudience', 'expectedReach'],
   'Gaming account sales': ['gameName', 'platform', 'accountLevel', 'accountRegion', 'newEmail'],
   'Physical Item Escrow (No COD)': ['itemName', 'itemCondition', 'shippingMethod', 'trackingRequired'],
-  'Content Writing': ['wordCount', 'tone', 'topic', 'targetAudience'],
+  'Content Writing': CONTENT_WRITING_FIELDS,
+  'Blog writing': CONTENT_WRITING_FIELDS,
+  'SEO writing': CONTENT_WRITING_FIELDS,
+  'Ghostwriting': CONTENT_WRITING_FIELDS,
+  'Copywriting for ads': CONTENT_WRITING_FIELDS,
+  'Social media captions': CONTENT_WRITING_FIELDS,
+  'Email marketing content': CONTENT_WRITING_FIELDS,
+  'Reddit/Quora answers': CONTENT_WRITING_FIELDS,
   'Script Writing': ['scriptType', 'targetAudience', 'toneStyle', 'wordCount', 'keyMessage'],
   'Landing Page Creation': ['pagePurpose', 'technologyStack', 'numberOfSections', 'responsiveDesign']
 };
 
+// Scope "product link" optional for content copywriting (buyer-facing reference URL not used)
+function scopeSkipsXBoxProductLink(xBox) {
+  const pt = normalizeProductType(xBox?.productType);
+  if (pt && SERVICE_FIELD_REQUIREMENTS[pt] === CONTENT_WRITING_FIELDS) return true;
+  return hasCompleteContentWritingPayload(xBox);
+}
+
 // Function to validate XBox fields based on service type
 function validateXBoxFields(xBox) {
-  // Basic required fields for all services
-  const basicRequiredFields = ['title', 'productType', 'productLink', 'description', 'deadline', 'price'];
+  const normalizedType = normalizeProductType(xBox.productType);
+  if (normalizedType !== xBox.productType) {
+    xBox.productType = normalizedType;
+  }
+
+  const basicRequiredFields = ['title', 'productType', 'description', 'deadline', 'price'];
+  if (!scopeSkipsXBoxProductLink(xBox)) {
+    basicRequiredFields.push('productLink');
+  }
 
   for (const field of basicRequiredFields) {
     if (!xBox[field]) {
@@ -44,6 +71,12 @@ function validateXBoxFields(xBox) {
   // Service-specific validation
   const serviceType = xBox.productType;
   const requiredFields = SERVICE_FIELD_REQUIREMENTS[serviceType];
+
+  // Content-writing orders: accept full contentWritingSpecific even if productType string
+  // does not match SERVICE_FIELD_REQUIREMENTS keys (encoding / invisible chars).
+  if (!requiredFields && hasCompleteContentWritingPayload(xBox)) {
+    return { isValid: true };
+  }
 
   if (requiredFields) {
     // Check service-specific fields
@@ -66,14 +99,21 @@ function validateXBoxFields(xBox) {
       }
     }
   } else {
-    // For services without specific requirements, check if condition is needed
+    // For services without a SERVICE_FIELD_REQUIREMENTS entry, require generic condition
+    // (New/Used/…) unless the product is a structured-scope type (aligned with order model)
     const servicesWithoutCondition = [
       'Logo design', 'Poster/flyer/banner design', 'Social media post creation',
       'Video editing', 'Motion graphics', 'NFT art creation', 'Illustration / Comics',
-      '3D modeling / rendering', 'Website development', 'Gaming account sales'
+      '3D modeling / rendering', 'Website development', 'Gaming account sales',
+      'Content Writing', 'Blog writing', 'SEO writing', 'Ghostwriting', 'Copywriting for ads',
+      'Social media captions', 'Email marketing content', 'Reddit/Quora answers'
     ];
 
-    if (!servicesWithoutCondition.includes(serviceType) && !xBox.condition) {
+    if (
+      !servicesWithoutCondition.includes(serviceType) &&
+      !xBox.condition &&
+      !hasCompleteContentWritingPayload(xBox)
+    ) {
       return {
         isValid: false,
         message: `Missing required XBox field for ${serviceType}: condition`
@@ -103,6 +143,13 @@ function getServiceSpecificKey(serviceType) {
     'Influencer shoutouts': 'influencerShoutoutSpecific',
     'Gaming account sales': 'gamingAccountSaleSpecific',
     'Content Writing': 'contentWritingSpecific',
+    'Blog writing': 'contentWritingSpecific',
+    'SEO writing': 'contentWritingSpecific',
+    'Ghostwriting': 'contentWritingSpecific',
+    'Copywriting for ads': 'contentWritingSpecific',
+    'Social media captions': 'contentWritingSpecific',
+    'Email marketing content': 'contentWritingSpecific',
+    'Reddit/Quora answers': 'contentWritingSpecific',
     'Script Writing': 'scriptWritingSpecific',
     'Landing Page Creation': 'landingPageSpecific'
   };
@@ -524,16 +571,18 @@ async function fundEscrow(req, res) {
 async function startWork(req, res) {
   try {
     const { id } = req.params;
-    const { sellerId } = req.body;
 
-    if (!sellerId) {
-      return res.status(400).json({
+    let sellerData;
+    try {
+      sellerData = verifySellerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
         success: false,
-        message: 'sellerId is required'
+        message: 'Authentication required. Please login as a seller.'
       });
     }
 
-    const order = await orderService.startWork(id, sellerId);
+    const order = await orderService.startWork(id, sellerData.userId);
 
     res.json({
       success: true,
@@ -550,19 +599,65 @@ async function startWork(req, res) {
 }
 
 // PATCH /api/orders/:id/submit - Submit delivery
+// Implemented here (not via orderService.updateOrderStatus) so "Mark as delivered" always works from
+// ESCROW_FUNDED / ACCEPTED / IN_PROGRESS without transition-table failures.
 async function submitDelivery(req, res) {
   try {
     const { id } = req.params;
-    const { sellerId, deliveryFiles } = req.body;
+    const { deliveryFiles, sellerId: bodySellerId } = req.body;
+
+    let sellerId;
+    try {
+      sellerId = verifySellerToken(req).userId;
+    } catch {
+      sellerId = bodySellerId;
+    }
 
     if (!sellerId) {
       return res.status(400).json({
         success: false,
-        message: 'sellerId is required'
+        message: 'sellerId is required (log in as seller or include seller id)'
       });
     }
 
-    const order = await orderService.submitDelivery(id, sellerId, deliveryFiles || []);
+    const order = await Order.findByPk(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    if (order.sellerId !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized: Only the seller can submit delivery'
+      });
+    }
+
+    const status = String(order.status ?? '').trim().toUpperCase();
+    const allowed = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot submit delivery from status "${order.status}".`
+      });
+    }
+
+    const files = deliveryFiles || [];
+    const mergedFiles = [...(order.deliveryFiles || []), ...files];
+    const logEntry = {
+      event: 'DELIVERY_SUBMITTED',
+      byUserId: sellerId,
+      timestamp: new Date().toISOString(),
+      previousStatus: order.status,
+      newStatus: 'SUBMITTED',
+      deliveryFiles: files
+    };
+
+    await order.update({
+      deliveryFiles: mergedFiles,
+      status: 'SUBMITTED',
+      orderLogs: [...(order.orderLogs || []), logEntry]
+    });
+
+    await order.reload();
 
     res.json({
       success: true,
@@ -941,6 +1036,38 @@ async function acceptOrder(req, res) {
   }
 }
 
+// PATCH /api/orders/:id/start-work - Start work from accepted status (seller only)
+async function startWorkFromAccepted(req, res) {
+  try {
+    const { id } = req.params;
+
+    // Verify seller authentication
+    let sellerData;
+    try {
+      sellerData = verifySellerToken(req);
+    } catch (authError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login as a seller.'
+      });
+    }
+
+    const order = await orderService.startWorkFromAccepted(id, sellerData.userId);
+
+    res.json({
+      success: true,
+      data: order,
+      message: 'Work started successfully'
+    });
+  } catch (error) {
+    console.error('Error starting work:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to start work'
+    });
+  }
+}
+
 // PATCH /api/orders/:id/reject - Reject order (seller only)
 async function rejectOrder(req, res) {
   try {
@@ -1086,7 +1213,8 @@ module.exports = {
   getOrdersByUser,
   acceptOrder,
   rejectOrder,
+  startWorkFromAccepted,
   requestChanges,
   acceptChanges,
   rejectChanges
-}; 
+};

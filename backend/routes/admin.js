@@ -1,18 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { Sequelize, Op } = require('sequelize');
-const config = require('../config/config.json');
+const { Op } = require('sequelize');
 
-// Initialize database connection
-const sequelize = new Sequelize(config.development);
-const Order = require('../models/order')(sequelize, Sequelize.DataTypes);
-const Dispute = require('../models/dispute')(sequelize, Sequelize.DataTypes);
-const Buyer = require('../models/buyer')(sequelize, Sequelize.DataTypes);
-const Seller = require('../models/seller')(sequelize, Sequelize.DataTypes);
+// Use shared models/index.js — ensures same Sequelize instance across the app
+const db = require('../models');
+const { Order, Dispute, Buyer, Seller, sequelize: Sequelize_instance } = db;
 
 const { authenticateToken } = require('../middleware/auth');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const jwt = require('jsonwebtoken');
+const { Sequelize } = require('sequelize');
 
 // Admin auth middleware (inline, no DB lookup needed for admin)
 function adminAuth(req, res, next) {

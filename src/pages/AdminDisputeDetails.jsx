@@ -1,472 +1,723 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import EnhancedDisputeResolution from '../components/EnhancedDisputeResolution';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const adminHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('adminToken')}` });
+const API = import.meta.env.VITE_API_URL || '';
 
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-const fmtShort = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const STATUS_META = {
-  PLACED:            { color: 'bg-slate-100 text-slate-600',    dot: 'bg-slate-400' },
-  ESCROW_FUNDED:     { color: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
-  IN_PROGRESS:       { color: 'bg-indigo-100 text-indigo-700',  dot: 'bg-indigo-500' },
-  SUBMITTED:         { color: 'bg-violet-100 text-violet-700',  dot: 'bg-violet-500' },
-  COMPLETED:         { color: 'bg-emerald-100 text-emerald-700',dot: 'bg-emerald-500' },
-  DISPUTED:          { color: 'bg-red-100 text-red-700',        dot: 'bg-red-500' },
-  REFUNDED:          { color: 'bg-orange-100 text-orange-700',  dot: 'bg-orange-500' },
-  CANCELLED:         { color: 'bg-gray-100 text-gray-500',      dot: 'bg-gray-400' },
+const SEV_COLORS = {
+  CRITICAL: 'bg-red-100 text-red-700 border-red-200',
+  HIGH:     'bg-orange-100 text-orange-700 border-orange-200',
+  MEDIUM:   'bg-yellow-100 text-yellow-700 border-yellow-200',
+  LOW:      'bg-blue-100 text-blue-700 border-blue-200',
+};
+const SEV_ICONS = { CRITICAL: '🚨', HIGH: '⚠️', MEDIUM: '⚡', LOW: 'ℹ️' };
+
+const REC_CFG = {
+  REFUND_BUYER:       { color: 'text-red-600',     bg: 'bg-red-50',     border: 'border-red-200',     icon: '💸', label: 'Refund Buyer' },
+  RELEASE_TO_SELLER:  { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: '✅', label: 'Release to Seller' },
+  PARTIAL_REFUND:     { color: 'text-amber-600',   bg: 'bg-amber-50',   border: 'border-amber-200',   icon: '⚖️', label: 'Partial Refund' },
+  ESCALATE_TO_HUMAN:  { color: 'text-indigo-600',  bg: 'bg-indigo-50',  border: 'border-indigo-200',  icon: '👤', label: 'Escalate to Human' },
+  ESCALATE:           { color: 'text-indigo-600',  bg: 'bg-indigo-50',  border: 'border-indigo-200',  icon: '👤', label: 'Needs Human Review' },
 };
 
-function StatusBadge({ status }) {
-  const meta = STATUS_META[status] || { color: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' };
+function fmt(d) {
+  return d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+}
+function fmtTime(d) {
+  return d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+}
+
+function RiskGauge({ score }) {
+  const color = score >= 70 ? '#ef4444' : score >= 40 ? '#f97316' : '#22c55e';
+  const pct = Math.min(score, 100);
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${meta.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-      {status?.replace(/_/g, ' ')}
-    </span>
+    <div className="flex flex-col items-center">
+      <div className="relative w-28 h-28">
+        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+          <circle cx="50" cy="50" r="38" fill="none" stroke="#f3f4f6" strokeWidth="12" />
+          <circle cx="50" cy="50" r="38" fill="none" stroke={color} strokeWidth="12"
+            strokeDasharray={`${2.39 * pct} ${239 - 2.39 * pct}`}
+            strokeLinecap="round"
+            style={{ transition: 'stroke-dasharray 1.2s ease' }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-black font-inter" style={{ color }}>{score}</span>
+          <span className="text-[10px] text-neutral-400 font-inter">/100</span>
+        </div>
+      </div>
+      <span className="text-xs font-bold font-inter mt-1" style={{ color }}>
+        {score >= 70 ? 'High Risk' : score >= 40 ? 'Medium Risk' : 'Low Risk'}
+      </span>
+    </div>
   );
 }
 
-// Timeline event icon/color mapping
-function timelineIcon(event) {
-  const e = (event || '').toUpperCase();
-  if (e.includes('CREATED') || e.includes('PLACED'))             return { icon: '🆕', color: 'bg-blue-100 border-blue-300', text: 'text-blue-700' };
-  if (e.includes('ESCROW') || e.includes('FUNDED'))              return { icon: '🔒', color: 'bg-indigo-100 border-indigo-300', text: 'text-indigo-700' };
-  if (e.includes('ACCEPTED'))                                     return { icon: '✅', color: 'bg-teal-100 border-teal-300', text: 'text-teal-700' };
-  if (e.includes('STARTED') || e.includes('IN_PROGRESS'))        return { icon: '⚙️', color: 'bg-violet-100 border-violet-300', text: 'text-violet-700' };
-  if (e.includes('SUBMITTED') || e.includes('DELIVERY'))         return { icon: '📦', color: 'bg-purple-100 border-purple-300', text: 'text-purple-700' };
-  if (e.includes('APPROVED'))                                     return { icon: '👍', color: 'bg-emerald-100 border-emerald-300', text: 'text-emerald-700' };
-  if (e.includes('DISPUTE'))                                      return { icon: '⚠️', color: 'bg-red-100 border-red-300', text: 'text-red-700' };
-  if (e.includes('RESOLVED'))                                     return { icon: '⚖️', color: 'bg-green-100 border-green-300', text: 'text-green-700' };
-  if (e.includes('EVIDENCE'))                                     return { icon: '📎', color: 'bg-amber-100 border-amber-300', text: 'text-amber-700' };
-  if (e.includes('STATUS'))                                       return { icon: '🔄', color: 'bg-slate-100 border-slate-300', text: 'text-slate-600' };
-  if (e.includes('REFUND') || e.includes('CANCEL'))              return { icon: '↩️', color: 'bg-orange-100 border-orange-300', text: 'text-orange-700' };
-  if (e.includes('COMPLETED') || e.includes('RELEASED'))         return { icon: '🎉', color: 'bg-emerald-100 border-emerald-300', text: 'text-emerald-700' };
-  return { icon: '📌', color: 'bg-slate-100 border-slate-300', text: 'text-slate-600' };
+function ConfBar({ value, color = 'bg-indigo-500', label }) {
+  const pct = Math.round(value * 100);
+  return (
+    <div>
+      {label && <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-1">{label}</p>}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 bg-neutral-100 rounded-full h-2.5 overflow-hidden">
+          <div className={`${color} h-full rounded-full transition-all duration-1000`} style={{ width: `${pct}%` }} />
+        </div>
+        <span className="text-sm font-bold font-inter text-neutral-700 w-9 text-right">{pct}%</span>
+      </div>
+    </div>
+  );
 }
+
+function TimelineEntry({ entry, isLast }) {
+  const eventColors = {
+    DISPUTE_CREATED:  'bg-red-500',
+    RULE_ENGINE_RAN:  'bg-orange-500',
+    AI_ANALYSIS_COMPLETE: 'bg-violet-500',
+    AI_REANALYZED:    'bg-violet-400',
+    EVIDENCE_SUBMITTED: 'bg-indigo-500',
+    EVIDENCE_ADDED:   'bg-indigo-400',
+    SMART_ESCALATED:  'bg-blue-500',
+    STATUS_UPDATED:   'bg-neutral-400',
+    DISPUTE_RESOLVED: 'bg-emerald-500',
+    default:          'bg-neutral-300',
+  };
+  const dotColor = eventColors[entry.event] || eventColors.default;
+
+  return (
+    <div className="flex gap-4">
+      <div className="flex flex-col items-center">
+        <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1 ${dotColor}`} />
+        {!isLast && <div className="w-0.5 bg-neutral-150 flex-1 mt-1" style={{ background: '#e5e7eb' }} />}
+      </div>
+      <div className="pb-4 flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold text-neutral-800 font-inter leading-snug">{entry.description}</p>
+          <span className="text-[10px] text-neutral-400 font-inter flex-shrink-0 mt-0.5">{fmtTime(entry.timestamp)}</span>
+        </div>
+        {entry.notes && (
+          <p className="text-xs text-neutral-500 font-inter mt-0.5 italic leading-relaxed">{entry.notes}</p>
+        )}
+        <p className="text-[10px] text-neutral-300 font-inter mt-1 uppercase tracking-wide">{entry.by}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Admin Dispute Details ────────────────────────────────────────────────
 
 export default function AdminDisputeDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const token = localStorage.getItem('adminToken');
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [resolveAction, setResolveAction] = useState(''); // REFUND | RELEASE
-  const [resolveNotes, setResolveNotes] = useState('');
-  const [resolveLoading, setResolveLoading] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState(null);
 
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
-  };
+  // Resolution form
+  const [resolution, setResolution] = useState('');
+  const [resolutionNotes, setResolutionNotes] = useState('');
+  const [resolving, setResolving] = useState(false);
+  const [resolved, setResolved] = useState(false);
+
+  // AI refresh
+  const [refreshingAI, setRefreshingAI] = useState(false);
+
+  // Enhanced resolution modal
+  const [showEnhancedResolution, setShowEnhancedResolution] = useState(false);
 
   const fetchDetail = useCallback(async () => {
-    setLoading(true);
     try {
-      const res = await axios.get(`${API}/api/admin/disputes/${id}`, { headers: adminHeaders() });
-      setData(res.data.data);
+      setLoading(true);
+      const res = await axios.get(`${API}/api/disputes/${id}/full`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setData(res.data.data);
+        if (res.data.data.dispute.status === 'RESOLVED') setResolved(true);
+      }
     } catch (e) {
-      console.error(e);
+      setError(e.response?.data?.message || 'Failed to load dispute');
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, token]);
 
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
-  const handleResolve = async () => {
-    setResolveLoading(true);
+  // Poll for AI if not ready
+  useEffect(() => {
+    if (!data?.dispute?.aiAnalysis && !loading) {
+      const interval = setInterval(fetchDetail, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [data?.dispute?.aiAnalysis, loading, fetchDetail]);
+
+  const handleRefreshAI = async () => {
+    setRefreshingAI(true);
     try {
-      await axios.post(`${API}/api/admin/disputes/${id}/resolve`,
-        { action: resolveAction, notes: resolveNotes },
-        { headers: adminHeaders() }
-      );
-      showToast(resolveAction === 'REFUND' ? '↩️ Buyer refunded successfully' : '✅ Payment released to seller');
-      setShowConfirm(false);
-      setResolveAction('');
-      setResolveNotes('');
-      fetchDetail();
+      await axios.post(`${API}/api/disputes/${id}/ai-analysis`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchDetail();
     } catch (e) {
-      showToast(e?.response?.data?.message || 'Failed to resolve dispute', 'error');
+      alert('Failed to refresh AI analysis');
     } finally {
-      setResolveLoading(false);
+      setRefreshingAI(false);
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  const handleResolve = async () => {
+    if (!resolution) return alert('Please select a resolution');
+    setResolving(true);
+    try {
+      // admin.js expects action: "REFUND" | "RELEASE"
+      const action = resolution === 'REFUND_BUYER' ? 'REFUND' : 'RELEASE';
+      await axios.post(
+        `${API}/api/admin/disputes/${id}/resolve`,
+        { action, notes: resolutionNotes },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setResolved(true);
+      await fetchDetail();
+    } catch (e) {
+      alert(e.response?.data?.message || 'Failed to resolve dispute');
+    } finally {
+      setResolving(false);
+    }
+  };
 
-  if (!data) return (
-    <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-5xl mb-4">⚠️</div>
-        <p className="text-slate-600 font-semibold">Dispute not found</p>
-        <button onClick={() => navigate('/admin/dashboard')} className="mt-4 text-indigo-600 font-medium text-sm">
-          ← Back to Dashboard
-        </button>
+  const handleEnhancedResolve = async (disputeId, resolutionData) => {
+    try {
+      // Map enhanced resolution to backend format
+      const actionMap = {
+        'REFUND_BUYER_FULL': 'REFUND',
+        'RELEASE_TO_SELLER': 'RELEASE',
+        'PARTIAL_REFUND_75_25': 'REFUND',
+        'PARTIAL_REFUND_50_50': 'REFUND',
+        'CONTINUE_WITH_EXTENSION': 'RELEASE',
+        'CANCEL_AND_REFUND': 'REFUND'
+      };
+
+      const action = actionMap[resolutionData.resolution] || 'REFUND';
+      
+      await axios.post(
+        `${API}/api/admin/disputes/${disputeId}/resolve`,
+        { 
+          action, 
+          notes: resolutionData.resolutionNotes,
+          enhancedAnalysis: resolutionData.evidenceAnalysis,
+          scopeCompliance: resolutionData.scopeCompliance
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setResolved(true);
+      setShowEnhancedResolution(false);
+      await fetchDetail();
+    } catch (e) {
+      alert(e.response?.data?.message || 'Failed to resolve dispute');
+      throw e;
+    }
+  };
+
+  // ─── Loading / Error ──────────────────────────────────────────────────────────
+
+  if (loading && !data) {
+    return (
+      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <svg className="animate-spin w-8 h-8 text-indigo-400" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.3" />
+            <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+          <p className="text-sm text-neutral-400 font-inter">Loading dispute intelligence…</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const { dispute, order, buyer, seller, autoFlag, riskScore, riskReason, timeline } = data;
-  const isResolved = dispute.status === 'RESOLVED';
-  const price = parseFloat(order?.scopeBox?.price || 0);
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 font-inter mb-4">{error}</p>
+          <button onClick={() => navigate('/admin/dashboard')}
+            className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-inter font-semibold">
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { dispute, order, buyer, seller, financial, ruleFlags: rf, aiAnalysis: ai, evidenceResponses, chatMessages } = data || {};
+  const recCfg = REC_CFG[ai?.recommendation || rf?.autoRecommendation] || REC_CFG.ESCALATE;
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] font-inter pt-[64px]">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-20 right-4 z-50 px-5 py-3 rounded-xl shadow-2xl text-sm font-semibold ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}>
-          {toast.msg}
-        </div>
-      )}
+    <div className="min-h-screen bg-[#F6F9FC] py-8 px-4">
+      <div className="max-w-6xl mx-auto space-y-5">
 
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-
-        {/* Breadcrumb + header */}
-        <div>
-          <button onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-1 text-indigo-600 text-sm font-medium hover:underline mb-4">
-            ← Back to Dashboard
+        {/* ── TOP BAR ──────────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <button onClick={() => navigate('/admin/dashboard')}
+            className="flex items-center gap-2 text-sm text-neutral-500 hover:text-[#0A2540] font-inter font-medium transition-colors group">
+            <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Admin Dashboard
           </button>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-black text-slate-800">Dispute Details</h1>
-                {autoFlag === 'AUTO_FLAGGED' && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 animate-pulse">
-                    ⚑ AUTO-FLAGGED
-                  </span>
-                )}
-                <StatusBadge status={dispute.status} />
-              </div>
-              <p className="text-slate-400 text-sm mt-1 font-mono">#{dispute.id}</p>
-            </div>
-            {/* Risk Score */}
-            <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${riskScore >= 75 ? 'bg-red-50 border-red-200' : riskScore >= 50 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Risk Score</p>
-                <p className={`text-3xl font-black ${riskScore >= 75 ? 'text-red-600' : riskScore >= 50 ? 'text-amber-600' : 'text-slate-600'}`}>{riskScore}</p>
-              </div>
-              <div className="text-right">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${riskScore >= 75 ? 'bg-red-100' : riskScore >= 50 ? 'bg-amber-100' : 'bg-slate-100'}`}>
-                  {riskScore >= 75 ? '🔴' : riskScore >= 50 ? '🟡' : '🟢'}
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-bold px-3 py-1.5 rounded-full border uppercase tracking-wider font-inter ${
+              dispute?.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+              dispute?.status === 'MEDIATION' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+              'bg-red-50 text-red-700 border-red-200'
+            }`}>{dispute?.status}</span>
           </div>
-          {riskReason && (
-            <div className={`mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium ${autoFlag === 'AUTO_FLAGGED' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-slate-100 text-slate-600'}`}>
-              <span>{autoFlag === 'AUTO_FLAGGED' ? '⚠️' : 'ℹ️'}</span> {riskReason}
-            </div>
-          )}
         </div>
 
-        {/* Main 2-col grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
-
-          {/* Left: Order + Parties info */}
-          <div className="lg:col-span-1 space-y-4">
-
-            {/* Order Details */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <h3 className="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
-                <span>📦</span> Order Details
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Title</p>
-                  <p className="font-semibold text-slate-800">{order?.scopeBox?.title || '—'}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-xs text-slate-400 mb-0.5">Amount</p>
-                    <p className="text-lg font-black text-slate-800">${price.toFixed(2)}</p>
-                    <p className="text-xs text-slate-400">{order?.currency || 'USD'}</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-xs text-slate-400 mb-0.5">Order Status</p>
-                    <StatusBadge status={order?.status} />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Service Type</p>
-                  <p className="text-slate-700">{order?.scopeBox?.productType || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Platform</p>
-                  <p className="text-slate-700">{order?.scopeBox?.platform || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Deadline</p>
-                  <p className="text-slate-700">{fmtShort(order?.scopeBox?.deadline)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Order Created</p>
-                  <p className="text-slate-700">{fmtShort(order?.createdAt)}</p>
-                </div>
-                {order?.id && (
-                  <p className="text-xs font-mono text-slate-400 bg-slate-50 rounded-lg px-3 py-2 break-all">
-                    #{order.id}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Buyer */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <h3 className="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
-                <span>👤</span> Buyer
-              </h3>
+        {/* ── HEADER ───────────────────────────────────────────────────────── */}
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm flex-shrink-0">
-                  {(buyer?.firstName || order?.buyerName || 'B')?.charAt(0).toUpperCase()}
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-xl">⚖️</span>
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-800 text-sm">
-                    {buyer ? `${buyer.firstName} ${buyer.lastName}` : order?.buyerName || '—'}
-                  </p>
-                  <p className="text-xs text-slate-400">{buyer?.email || order?.buyerEmail || '—'}</p>
+                  <h1 className="text-xl font-black font-inter">Dispute Intelligence Report</h1>
+                  <p className="text-xs text-white/50 font-inter font-mono mt-0.5">{dispute?.id}</p>
                 </div>
               </div>
-              <p className="text-xs font-mono text-slate-400 bg-slate-50 rounded-lg px-3 py-2 break-all">
-                #{dispute.buyerId}
-              </p>
-            </div>
-
-            {/* Seller */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <h3 className="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
-                <span>🏪</span> Seller
-              </h3>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm flex-shrink-0">
-                  {(seller?.firstName || 'S')?.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-800 text-sm">
-                    {seller ? `${seller.firstName} ${seller.lastName}` : '—'}
-                  </p>
-                  <p className="text-xs text-slate-400">{seller?.email || order?.sellerContact || '—'}</p>
-                  {seller?.businessName && <p className="text-xs text-slate-500 mt-0.5">{seller.businessName}</p>}
-                </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                {[
+                  { label: 'Escrow Amount', value: `$${financial?.escrowAmount?.toFixed(2) || '0.00'}`, icon: '💰' },
+                  { label: 'Platform Fee (5%)', value: `$${financial?.platformFee?.toFixed(2) || '0.00'}`, icon: '🏛️' },
+                  { label: 'Raised By', value: dispute?.raisedBy?.charAt(0).toUpperCase() + dispute?.raisedBy?.slice(1), icon: '👤' },
+                  { label: 'Filed', value: fmt(dispute?.createdAt), icon: '📅' },
+                ].map((item, i) => (
+                  <div key={i} className="bg-white/5 rounded-xl p-3 border border-white/10">
+                    <p className="text-[10px] text-white/40 font-inter uppercase tracking-wider mb-0.5">{item.icon} {item.label}</p>
+                    <p className="text-sm font-bold text-white font-inter">{item.value}</p>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs font-mono text-slate-400 bg-slate-50 rounded-lg px-3 py-2 break-all">
-                #{dispute.sellerId}
-              </p>
             </div>
+            {rf?.riskScore !== undefined && <RiskGauge score={rf.riskScore} />}
           </div>
+        </div>
 
-          {/* Right: Dispute info + Timeline + Decision */}
+        {/* ── MAIN GRID ────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+          {/* ── LEFT COL ───────────────────────────────────────────────────── */}
           <div className="lg:col-span-2 space-y-5">
 
-            {/* Dispute Info */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-              <h3 className="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
-                <span>⚖️</span> Dispute Information
-              </h3>
-              <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs text-slate-400 mb-1">Reason</p>
-                  <p className="font-semibold text-slate-800">{dispute.reason}</p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs text-slate-400 mb-1">Raised By</p>
-                  <p className="font-semibold text-slate-800 capitalize">{dispute.raisedBy}</p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs text-slate-400 mb-1">Priority</p>
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${
-                    dispute.priority === 'HIGH' || dispute.priority === 'URGENT'
-                      ? 'bg-red-100 text-red-700'
-                      : dispute.priority === 'MEDIUM'
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {dispute.priority}
+            {/* Order snapshot */}
+            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+              <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Order Snapshot</h2>
+              <div className="space-y-3">
+                {[
+                  { label: 'Service', value: order?.scopeBox?.productType || 'Content Writing' },
+                  { label: 'Blog Topic', value: order?.scopeBox?.contentWritingSpecific?.topic || order?.scopeBox?.topic || '—' },
+                  { label: 'Min. Word Count', value: rf?.minWordCount ? `${rf.minWordCount.toLocaleString()} words` : '—' },
+                  { label: 'Words Delivered', value: rf?.analyzedWordCount > 0 ? `${rf.analyzedWordCount.toLocaleString()} words` : 'Unknown (non-txt file)' },
+                  { label: 'Deadline', value: fmt(order?.scopeBox?.deadline) },
+                  { label: 'Delivery Files', value: `${order?.deliveryFiles?.length || 0} file(s)` },
+                  { label: 'Buyer', value: buyer ? `${buyer.firstName} ${buyer.lastName} (${buyer.email})` : order?.buyerName || '—' },
+                  { label: 'Seller', value: seller ? `${seller.firstName} ${seller.lastName}` : order?.sellerContact || '—' },
+                ].map((row, i) => (
+                  <div key={i} className="flex items-start gap-3 py-2 border-b border-neutral-50 last:border-0">
+                    <p className="text-xs font-semibold text-neutral-400 font-inter w-32 flex-shrink-0">{row.label}</p>
+                    <p className="text-sm text-neutral-800 font-inter font-medium">{row.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dispute details */}
+            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+              <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Dispute Details</h2>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-neutral-400 font-inter mb-1">Reason</p>
+                  <span className="inline-block px-3 py-1.5 bg-red-50 text-red-700 text-sm font-semibold rounded-lg border border-red-100 font-inter">
+                    {dispute?.reason}
                   </span>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-xs text-slate-400 mb-1">Filed On</p>
-                  <p className="font-semibold text-slate-800">{fmtShort(dispute.createdAt)}</p>
-                </div>
-              </div>
-              <div className="bg-red-50 rounded-xl p-4 border border-red-100">
-                <p className="text-xs text-slate-400 mb-1">Description</p>
-                <p className="text-slate-700 text-sm leading-relaxed">{dispute.description}</p>
-              </div>
-              {dispute.requestedResolution && (
-                <div className="mt-3 bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                  <p className="text-xs text-slate-400 mb-1">Buyer's Requested Resolution</p>
-                  <p className="text-slate-700 text-sm">{dispute.requestedResolution}</p>
-                </div>
-              )}
-              {isResolved && (
-                <div className="mt-3 bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                  <p className="text-xs font-bold text-emerald-600 mb-2">✅ RESOLVED</p>
-                  <p className="text-sm text-slate-700"><strong>Resolution:</strong> {dispute.resolution?.replace(/_/g, ' ')}</p>
-                  {dispute.resolutionNotes && <p className="text-sm text-slate-600 mt-1">{dispute.resolutionNotes}</p>}
-                  <p className="text-xs text-slate-400 mt-2">Resolved on {fmtShort(dispute.resolvedAt)}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Timeline */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-              <h3 className="font-bold text-slate-700 text-sm mb-5 flex items-center gap-2">
-                <span>📅</span> Event Timeline
-              </h3>
-              {timeline?.length > 0 ? (
-                <div className="relative">
-                  {/* Vertical line */}
-                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-slate-100" />
-                  <div className="space-y-4">
-                    {timeline.map((event, idx) => {
-                      const meta = timelineIcon(event.event);
-                      return (
-                        <div key={idx} className="flex gap-4 relative">
-                          {/* Icon bubble */}
-                          <div className={`relative z-10 w-10 h-10 rounded-full ${meta.color} border-2 flex items-center justify-center flex-shrink-0 text-sm`}>
-                            {meta.icon}
-                          </div>
-                          {/* Content */}
-                          <div className="flex-1 pb-2">
-                            <div className="flex items-center justify-between flex-wrap gap-1 mb-0.5">
-                              <p className={`text-xs font-bold uppercase tracking-wide ${meta.text}`}>
-                                {event.event?.replace(/_/g, ' ')}
-                              </p>
-                              <p className="text-xs text-slate-400">{fmtDate(event.timestamp)}</p>
-                            </div>
-                            {event.description && event.description !== event.event?.replace(/_/g, ' ') && (
-                              <p className="text-sm text-slate-600">{event.description}</p>
-                            )}
-                            {event.notes && (
-                              <p className="text-xs text-slate-400 mt-1 italic">"{event.notes}"</p>
-                            )}
-                            {event.by && (
-                              <p className="text-xs text-slate-400 mt-1 capitalize">by {event.by}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                <div>
+                  <p className="text-xs font-semibold text-neutral-400 font-inter mb-1">Buyer's Complaint</p>
+                  <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-100">
+                    <p className="text-sm text-neutral-700 font-inter leading-relaxed">{dispute?.description}</p>
                   </div>
                 </div>
+                {dispute?.requestedResolution && (
+                  <div>
+                    <p className="text-xs font-semibold text-neutral-400 font-inter mb-1">Requested Resolution</p>
+                    <p className="text-sm text-neutral-700 font-inter">{dispute.requestedResolution}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Rule Engine Flags */}
+            {rf?.flags?.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-orange-100 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-[#0A2540] font-inter">Rule Engine Flags</h2>
+                    <p className="text-xs text-neutral-400 font-inter">{rf.flags.length} automated flag{rf.flags.length !== 1 ? 's' : ''} triggered</p>
+                  </div>
+                  <div className="ml-auto flex gap-4 text-xs font-inter font-semibold">
+                    <span className="text-orange-600">Seller fault: <strong>{rf.sellerFaultPoints}pts</strong></span>
+                    <span className="text-blue-600">Buyer fault: <strong>{rf.buyerFaultPoints}pts</strong></span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {rf.flags.map((flag, i) => (
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${SEV_COLORS[flag.severity] || 'bg-neutral-50 border-neutral-200 text-neutral-700'}`}>
+                      <span>{SEV_ICONS[flag.severity] || 'ℹ️'}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold font-inter">{flag.label}</p>
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border font-inter">{flag.severity}</span>
+                          <span className="text-[10px] text-neutral-400 font-inter ml-auto">+{flag.riskPoints}pts · fault: {flag.fault}</span>
+                        </div>
+                        <p className="text-xs font-inter leading-relaxed mt-0.5 opacity-80">{flag.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* AI Analysis Panel */}
+            <div className={`bg-white rounded-2xl shadow-sm border ${ai ? 'border-violet-100' : 'border-dashed border-violet-200'} p-6`}>
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-[#0A2540] font-inter">Grok AI Analysis</h2>
+                    <p className="text-xs text-neutral-400 font-inter">
+                      {ai
+                        ? `Source: ${
+                            ai.source === 'rule_engine_fallback'
+                              ? 'Rule Engine Fallback'
+                              : ai.source === 'grok'
+                                ? 'xAI Grok'
+                                : ai.source === 'gemini'
+                                  ? 'Google Gemini (legacy)'
+                                  : 'AI'
+                          }`
+                        : 'Analysis in progress...'}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={handleRefreshAI} disabled={refreshingAI}
+                  className="text-xs text-violet-600 font-semibold font-inter hover:text-violet-800 disabled:opacity-50 flex items-center gap-1">
+                  <svg className={`w-3 h-3 ${refreshingAI ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {refreshingAI ? 'Refreshing…' : 'Re-analyze'}
+                </button>
+              </div>
+
+              {!ai ? (
+                <div className="flex items-center gap-3 py-4">
+                  <svg className="animate-spin w-5 h-5 text-violet-400 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.3" />
+                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  <p className="text-sm text-neutral-500 font-inter">AI is analyzing all evidence, chat logs, and order data…</p>
+                </div>
               ) : (
-                <p className="text-slate-400 text-sm text-center py-8">No timeline events yet</p>
+                <div className="space-y-4">
+                  {/* Recommendation */}
+                  <div className={`flex items-center gap-4 p-4 rounded-xl border ${recCfg.bg} ${recCfg.border}`}>
+                    <span className="text-3xl">{recCfg.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-[10px] text-neutral-500 font-inter font-bold uppercase tracking-wider">AI Recommends</p>
+                      <p className={`text-xl font-black font-inter ${recCfg.color}`}>{recCfg.label}</p>
+                      <p className="text-xs text-neutral-500 font-inter italic mt-0.5">{ai.summary}</p>
+                    </div>
+                  </div>
+
+                  {/* Confidence */}
+                  <ConfBar value={ai.confidence} color="bg-violet-500" label="Confidence Level" />
+
+                  {/* Reasoning */}
+                  <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-100">
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-inter mb-2">AI Reasoning</p>
+                    <p className="text-sm text-neutral-700 font-inter leading-relaxed">{ai.reasoning}</p>
+                  </div>
+
+                  {/* Key Findings */}
+                  {ai.keyFindings?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-inter mb-2">Key Findings</p>
+                      <ul className="space-y-1.5">
+                        {ai.keyFindings.map((f, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm font-inter text-neutral-700">
+                            <span className="text-violet-400 mt-0.5 flex-shrink-0">›</span>{f}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Fault probability bars */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-orange-50 rounded-xl p-3 border border-orange-100 space-y-2">
+                      <ConfBar value={ai.sellerFaultProbability || 0} color="bg-orange-500" label="Seller Fault Probability" />
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 space-y-2">
+                      <ConfBar value={ai.buyerFaultProbability || 0} color="bg-blue-500" label="Buyer Fault Probability" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-100">
+                      <p className="text-[10px] text-neutral-400 font-inter font-semibold uppercase tracking-wider mb-1">Fraud Probability</p>
+                      <p className={`text-lg font-black font-inter ${ai.fraudProbability > 0.5 ? 'text-red-600' : ai.fraudProbability > 0.25 ? 'text-orange-500' : 'text-emerald-600'}`}>
+                        {Math.round((ai.fraudProbability || 0) * 100)}%
+                      </p>
+                    </div>
+                    <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-100">
+                      <p className="text-[10px] text-neutral-400 font-inter font-semibold uppercase tracking-wider mb-1">Behavioral Score</p>
+                      <p className={`text-lg font-black font-inter ${ai.behavioralScore >= 70 ? 'text-emerald-600' : ai.behavioralScore >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
+                        {ai.behavioralScore}/100
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* ── DECISION PANEL ── */}
-            {!isResolved ? (
-              <div className="bg-white rounded-2xl border-2 border-indigo-200 shadow-sm p-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">⚖️</span>
-                  <h3 className="font-black text-slate-800 text-base">Admin Decision Panel</h3>
-                </div>
-                <p className="text-slate-500 text-sm mb-6">Review all evidence and choose a resolution action.</p>
-
-                <div className="grid sm:grid-cols-2 gap-4 mb-5">
-                  {/* Refund Buyer */}
-                  <button
-                    onClick={() => { setResolveAction('REFUND'); setShowConfirm(true); }}
-                    className="group flex flex-col items-center gap-2 p-5 rounded-2xl border-2 border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-400 transition-all duration-200 hover:shadow-md hover:shadow-red-100"
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-red-100 group-hover:bg-red-200 flex items-center justify-center text-3xl transition-colors">
-                      ↩️
+            {/* Evidence Responses */}
+            {(evidenceResponses?.seller?.text || evidenceResponses?.buyer?.text) && (
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+                <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Submitted Evidence</h2>
+                <div className="space-y-3">
+                  {evidenceResponses.seller?.text && (
+                    <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
+                      <p className="text-xs font-bold text-orange-600 font-inter mb-2 flex items-center gap-2">
+                        🔷 Seller's Counter-Evidence
+                        <span className="font-normal text-orange-400">{fmtTime(evidenceResponses.seller.submittedAt)}</span>
+                      </p>
+                      <p className="text-sm text-neutral-700 font-inter leading-relaxed">{evidenceResponses.seller.text}</p>
                     </div>
-                    <div className="text-center">
-                      <p className="font-black text-red-700 text-sm">Refund Buyer</p>
-                      <p className="text-xs text-red-400 mt-0.5">Return ${price.toFixed(2)} to buyer</p>
+                  )}
+                  {evidenceResponses.buyer?.text && (
+                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                      <p className="text-xs font-bold text-blue-600 font-inter mb-2 flex items-center gap-2">
+                        🔶 Buyer's Statement
+                        <span className="font-normal text-blue-400">{fmtTime(evidenceResponses.buyer.submittedAt)}</span>
+                      </p>
+                      <p className="text-sm text-neutral-700 font-inter leading-relaxed">{evidenceResponses.buyer.text}</p>
                     </div>
-                  </button>
-
-                  {/* Release to Seller */}
-                  <button
-                    onClick={() => { setResolveAction('RELEASE'); setShowConfirm(true); }}
-                    className="group flex flex-col items-center gap-2 p-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400 transition-all duration-200 hover:shadow-md hover:shadow-emerald-100"
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center text-3xl transition-colors">
-                      ✅
-                    </div>
-                    <div className="text-center">
-                      <p className="font-black text-emerald-700 text-sm">Release to Seller</p>
-                      <p className="text-xs text-emerald-400 mt-0.5">Send ${price.toFixed(2)} to seller</p>
-                    </div>
-                  </button>
-                </div>
-
-                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-700">
-                  <strong>⚠️ Note:</strong> This action is irreversible. Please review the complete timeline and both parties' information before proceeding.
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-6 text-center">
-                <div className="text-4xl mb-3">✅</div>
-                <h3 className="font-black text-emerald-700 text-lg">Dispute Resolved</h3>
-                <p className="text-emerald-600 text-sm mt-1">{dispute.resolution?.replace(/_/g, ' ')}</p>
-                {dispute.resolvedAt && <p className="text-xs text-emerald-400 mt-2">Resolved on {fmtShort(dispute.resolvedAt)}</p>}
+            )}
+
+            {/* Chat Log Preview */}
+            {chatMessages?.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+                <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">
+                  Recent Chat Log ({chatMessages.length} messages)
+                </h2>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {chatMessages.slice(-10).map((msg, i) => (
+                    <div key={i} className={`flex gap-2 ${msg.senderRole === 'buyer' ? 'flex-row-reverse' : ''}`}>
+                      <div className={`max-w-xs px-3 py-2 rounded-xl text-sm font-inter ${
+                        msg.senderRole === 'buyer'
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-neutral-100 text-neutral-800'
+                      }`}>
+                        <p>{msg.content}</p>
+                        <p className={`text-[10px] mt-1 ${msg.senderRole === 'buyer' ? 'text-indigo-200' : 'text-neutral-400'}`}>
+                          {msg.senderName} · {fmtTime(msg.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Timeline */}
+            {dispute?.timeline?.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+                <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Dispute Timeline</h2>
+                <div>
+                  {dispute.timeline.map((entry, i) => (
+                    <TimelineEntry key={i} entry={entry} isLast={i === dispute.timeline.length - 1} />
+                  ))}
+                </div>
               </div>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Confirmation Modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-lg font-black text-slate-800">Confirm Resolution</h3>
-              <button onClick={() => setShowConfirm(false)} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className={`text-center py-4 rounded-2xl ${resolveAction === 'REFUND' ? 'bg-red-50' : 'bg-emerald-50'}`}>
-                <div className="text-4xl mb-2">{resolveAction === 'REFUND' ? '↩️' : '✅'}</div>
-                <p className={`font-black text-lg ${resolveAction === 'REFUND' ? 'text-red-700' : 'text-emerald-700'}`}>
-                  {resolveAction === 'REFUND' ? 'Refund Buyer' : 'Release to Seller'}
-                </p>
-                <p className="text-sm text-slate-500 mt-1">
-                  {resolveAction === 'REFUND'
-                    ? `$${price.toFixed(2)} will be returned to the buyer`
-                    : `$${price.toFixed(2)} will be released to the seller`}
-                </p>
+          {/* ── RIGHT COL ──────────────────────────────────────────────────── */}
+          <div className="space-y-5">
+
+            {/* Financial Analysis */}
+            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 sticky top-20">
+              <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">💰 Financial Analysis</h2>
+
+              <div className="space-y-2 mb-4">
+                {[
+                  { label: 'Escrow Held', value: `$${financial?.escrowAmount?.toFixed(2) || '0'}`, color: 'text-[#0A2540]', bold: true },
+                  { label: 'Platform Fee (5%)', value: `-$${financial?.platformFee?.toFixed(2) || '0'}`, color: 'text-neutral-500' },
+                  { label: 'Net to Seller', value: `$${financial?.netToSeller?.toFixed(2) || '0'}`, color: 'text-emerald-600' },
+                ].map((row, i) => (
+                  <div key={i} className={`flex justify-between items-center py-2 ${i === 0 ? 'border-b border-neutral-100' : ''}`}>
+                    <p className="text-xs text-neutral-500 font-inter">{row.label}</p>
+                    <p className={`text-sm font-inter font-bold ${row.color}`}>{row.value}</p>
+                  </div>
+                ))}
               </div>
-              <div>
-                <label className="text-xs font-bold text-slate-600 mb-1 block">Resolution Notes (optional)</label>
-                <textarea
-                  value={resolveNotes}
-                  onChange={e => setResolveNotes(e.target.value)}
-                  rows={3}
-                  placeholder="Add notes about your decision..."
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
-                />
+
+              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-inter mb-3">Resolution Scenarios</p>
+
+              <div className="space-y-2">
+                {/* Refund scenario */}
+                <div className="flex items-start gap-3 p-3 bg-red-50 rounded-xl border border-red-100">
+                  <span className="text-base">💸</span>
+                  <div className="flex-1 text-xs font-inter">
+                    <p className="font-bold text-red-700 mb-1">Full Refund to Buyer</p>
+                    <p className="text-neutral-500">Buyer gets: <strong className="text-red-600">${financial?.refundScenario?.buyerReceives?.toFixed(2) || '0'}</strong></p>
+                    <p className="text-neutral-500">Seller gets: <strong>$0</strong></p>
+                    <p className="text-neutral-500">Platform: <strong>$0</strong></p>
+                  </div>
+                </div>
+
+                {/* Release scenario */}
+                <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <span className="text-base">✅</span>
+                  <div className="flex-1 text-xs font-inter">
+                    <p className="font-bold text-emerald-700 mb-1">Release to Seller</p>
+                    <p className="text-neutral-500">Buyer gets: <strong>$0</strong></p>
+                    <p className="text-neutral-500">Seller gets: <strong className="text-emerald-600">${financial?.releaseScenario?.sellerReceives?.toFixed(2) || '0'}</strong></p>
+                    <p className="text-neutral-500">Platform: <strong>${financial?.releaseScenario?.platformReceives?.toFixed(2) || '0'}</strong></p>
+                  </div>
+                </div>
+
+                {/* Partial scenarios */}
+                {financial?.partialScenarios?.slice(0, 2).map((s, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                    <span className="text-base">⚖️</span>
+                    <div className="flex-1 text-xs font-inter">
+                      <p className="font-bold text-amber-700 mb-1">{s.label}</p>
+                      <p className="text-neutral-500">Buyer: <strong className="text-amber-600">${s.buyerReceives?.toFixed(2)}</strong> · Seller: <strong>${s.sellerReceives?.toFixed(2)}</strong></p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-            <div className="flex gap-3 p-6 pt-0">
-              <button
-                onClick={handleResolve}
-                disabled={resolveLoading}
-                className={`flex-1 py-3 rounded-xl font-black text-sm transition-all disabled:opacity-50 ${resolveAction === 'REFUND' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
-              >
-                {resolveLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Processing...
-                  </span>
-                ) : resolveAction === 'REFUND' ? '↩️ Confirm Refund' : '✅ Confirm Release'}
-              </button>
-              <button onClick={() => setShowConfirm(false)} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">
-                Cancel
-              </button>
+
+              {/* Admin Decision */}
+              {!resolved && (
+                <div className="mt-6 space-y-3">
+                  <p className="text-xs font-bold text-neutral-700 font-inter uppercase tracking-wider">Make Final Decision</p>
+
+                  {/* Enhanced Resolution Button */}
+                  <button
+                    onClick={() => setShowEnhancedResolution(true)}
+                    className="w-full py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700
+                      text-white font-inter font-black rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <span className="text-lg">🧠</span>
+                    Enhanced Resolution with AI Analysis
+                  </button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-neutral-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-2 bg-white text-neutral-400 font-inter">or use simple resolution</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      { val: 'REFUND_BUYER', label: '💸 Refund Buyer', cls: 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100' },
+                      { val: 'RELEASE_TO_SELLER', label: '✅ Release to Seller', cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' },
+                    ].map(opt => (
+                      <button
+                        key={opt.val}
+                        onClick={() => setResolution(prev => prev === opt.val ? '' : opt.val)}
+                        className={`w-full py-2.5 rounded-xl border text-sm font-bold font-inter transition-all flex items-center justify-between px-3
+                          ${resolution === opt.val ? opt.cls + ' ring-2 ring-offset-1 ring-current' : 'border-neutral-200 hover:bg-neutral-50 text-neutral-600'}`}
+                      >
+                        <span>{opt.label}</span>
+                        {resolution === opt.val && <span>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={resolutionNotes}
+                    onChange={e => setResolutionNotes(e.target.value)}
+                    placeholder="Admin notes (optional)…"
+                    rows={3}
+                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
+                  />
+
+                  <button
+                    onClick={handleResolve}
+                    disabled={!resolution || resolving}
+                    className="w-full py-3 bg-[#0A2540] hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed
+                      text-white font-inter font-black rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    {resolving ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                          <path d="M4 12a8 8 0 018-8" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                        </svg>
+                        Processing…
+                      </>
+                    ) : '🏁 Confirm Final Decision'}
+                  </button>
+                </div>
+              )}
+
+              {resolved && (
+                <div className="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-center">
+                  <p className="text-sm font-bold text-emerald-700 font-inter">✅ Dispute Resolved</p>
+                  <p className="text-xs text-emerald-600 font-inter mt-1">
+                    {dispute?.resolution?.replace(/_/g, ' ')}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Enhanced Resolution Modal */}
+      {showEnhancedResolution && data && (
+        <EnhancedDisputeResolution
+          dispute={data.dispute}
+          order={data.order}
+          buyer={data.buyer}
+          seller={data.seller}
+          onClose={() => setShowEnhancedResolution(false)}
+          onResolve={handleEnhancedResolve}
+        />
       )}
     </div>
   );

@@ -4,7 +4,10 @@ const { v4: uuidv4 } = require('uuid');
 // Status transition rules
 const STATUS_TRANSITIONS = {
   'PLACED': ['ESCROW_FUNDED', 'DISPUTED'],
-  'ESCROW_FUNDED': ['IN_PROGRESS', 'DISPUTED'],
+  // SUBMITTED: seller can deliver once escrow is funded (even before formal "accept" in edge cases)
+  'ESCROW_FUNDED': ['IN_PROGRESS', 'DISPUTED', 'SUBMITTED'],
+  // ACCEPTED: set by acceptOrder(); sellers need to submit delivery from here (not only IN_PROGRESS)
+  'ACCEPTED': ['SUBMITTED', 'DISPUTED', 'IN_PROGRESS'],
   'IN_PROGRESS': ['SUBMITTED', 'DISPUTED'],
   'SUBMITTED': ['COMPLETED', 'DISPUTED'],
   'APPROVED': ['RELEASED', 'REFUNDED'],
@@ -14,10 +17,22 @@ const STATUS_TRANSITIONS = {
   'REFUNDED': []
 };
 
+// Guarantee seller can finish delivery after accept (defensive — avoids stale deployments missing edges)
+STATUS_TRANSITIONS.ACCEPTED = [
+  ...new Set([
+    ...(STATUS_TRANSITIONS.ACCEPTED || []),
+    'SUBMITTED',
+    'DISPUTED',
+    'IN_PROGRESS'
+  ])
+];
+
 // Validate status transition
 function isValidStatusTransition(currentStatus, newStatus) {
-  const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || [];
-  return allowedTransitions.includes(newStatus);
+  const cur = String(currentStatus ?? '').trim();
+  const next = String(newStatus ?? '').trim();
+  const allowedTransitions = STATUS_TRANSITIONS[cur] || [];
+  return allowedTransitions.includes(next);
 }
 
 // Update order status with logging
@@ -115,10 +130,11 @@ async function startWork(orderId, sellerId) {
   });
 }
 
-// Submit delivery
+// Submit delivery — updates status without going through STATUS_TRANSITIONS so ACCEPTED/ESCROW_FUNDED/IN_PROGRESS
+// always work (avoids mismatches between Sequelize enum values and transition map keys).
 async function submitDelivery(orderId, sellerId, deliveryFiles) {
   const order = await Order.findByPk(orderId);
-  
+
   if (!order) {
     throw new Error('Order not found');
   }
@@ -127,14 +143,32 @@ async function submitDelivery(orderId, sellerId, deliveryFiles) {
     throw new Error('Unauthorized: Only the seller can submit delivery');
   }
 
+  const status = String(order.status ?? '').trim();
+  const allowedBeforeSubmit = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS'];
+  if (!allowedBeforeSubmit.includes(status)) {
+    throw new Error(
+      `Cannot submit delivery from status "${status}". Allowed: ${allowedBeforeSubmit.join(', ')}`
+    );
+  }
+
+  const mergedFiles = [...(order.deliveryFiles || []), ...(deliveryFiles || [])];
+
+  const logEntry = {
+    event: 'DELIVERY_SUBMITTED',
+    byUserId: sellerId,
+    timestamp: new Date().toISOString(),
+    previousStatus: status,
+    newStatus: 'SUBMITTED',
+    deliveryFiles: deliveryFiles || []
+  };
+
   await order.update({
-    deliveryFiles: [...order.deliveryFiles, ...deliveryFiles]
+    deliveryFiles: mergedFiles,
+    status: 'SUBMITTED',
+    orderLogs: [...(order.orderLogs || []), logEntry]
   });
 
-  return await updateOrderStatus(orderId, 'SUBMITTED', sellerId, {
-    event: 'DELIVERY_SUBMITTED',
-    deliveryFiles
-  });
+  return order;
 }
 
 // Approve delivery
@@ -230,39 +264,53 @@ async function refundBuyer(orderId, adminId) {
   });
 }
 
-// Accept order (seller only)
+// Accept order (seller only) — moves to ACCEPTED and records time for buyer "Accepted" → "In progress" (1h) UI
 async function acceptOrder(orderId, sellerId) {
   const order = await Order.findByPk(orderId);
-  
+
   if (!order) {
     throw new Error('Order not found');
   }
-  
+
   if (order.sellerId !== sellerId) {
     throw new Error('Unauthorized: Only the assigned seller can accept this order');
   }
-  
-  // Only allow acceptance if order is ESCROW_FUNDED
+
   if (order.status !== 'ESCROW_FUNDED') {
     throw new Error('Order must be in ESCROW_FUNDED status to be accepted');
   }
-  
-  const previousStatus = order.status;
-  order.status = 'ACCEPTED';
-  
-  // Add acceptance log
-  const logEntry = {
+
+  const acceptedAt = new Date();
+
+  const updated = await updateOrderStatus(orderId, 'ACCEPTED', sellerId, {
     event: 'ORDER_ACCEPTED',
-    byUserId: sellerId,
-    timestamp: new Date().toISOString(),
-    previousStatus,
-    newStatus: 'ACCEPTED',
-    reason: 'Accepted by seller'
-  };
-  
-  order.orderLogs = [...(order.orderLogs || []), logEntry];
-  
-  return await order.save();
+    reason: 'Accepted by seller — work in progress'
+  });
+
+  await updated.update({ sellerAcceptedAt: acceptedAt });
+  return updated.reload();
+}
+
+// Start work from accepted status (seller only) - moves from ACCEPTED to IN_PROGRESS
+async function startWorkFromAccepted(orderId, sellerId) {
+  const order = await Order.findByPk(orderId);
+
+  if (!order) {
+    throw new Error('Order not found');
+  }
+
+  if (order.sellerId !== sellerId) {
+    throw new Error('Unauthorized: Only the assigned seller can start work on this order');
+  }
+
+  if (order.status !== 'ACCEPTED') {
+    throw new Error('Order must be in ACCEPTED status to start work');
+  }
+
+  return await updateOrderStatus(orderId, 'IN_PROGRESS', sellerId, {
+    event: 'WORK_STARTED',
+    reason: 'Work started by seller'
+  });
 }
 
 // Reject order (seller only)
@@ -510,5 +558,6 @@ module.exports = {
   rejectOrder,
   requestChanges,
   acceptChanges,
-  rejectChanges
-}; 
+  rejectChanges,
+  startWorkFromAccepted
+};

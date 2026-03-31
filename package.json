@@ -10,10 +10,10 @@
     "revert-orders": "node revert-orders.js",
     "revert-mock-orders": "node revert-mock-orders.js",
     "server": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test-grok": "node test-grok.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "5.10.0",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",

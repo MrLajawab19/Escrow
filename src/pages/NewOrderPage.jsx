@@ -243,6 +243,29 @@ const posterDesignStyles = ['Minimalist', 'Corporate', 'Vintage', 'Bold', 'Artis
 const socialFormats = ['Image', 'Carousel', 'Reel/Short Video', 'Story'];
 const socialAspectRatios = ['1:1', '4:5', '16:9', '9:16', 'Custom'];
 const socialResolutions = ['1080×1080', '1920×1080', '1080×1920', 'Custom'];
+// Content & copywriting (shared Scope Box — matches backend contentWritingSpecific)
+const CONTENT_COPYWRITING_PRODUCT_TYPES = [
+  'Blog writing',
+  'SEO writing',
+  'Ghostwriting',
+  'Copywriting for ads',
+  'Social media captions',
+  'Email marketing content',
+  'Reddit/Quora answers',
+];
+const contentWritingTones = [
+  'Professional',
+  'Conversational',
+  'Formal',
+  'Friendly',
+  'Witty',
+  'Educational',
+  'Persuasive',
+  'Storytelling',
+  'Technical',
+  'SEO-focused',
+  'Other',
+];
 // Video Editing constants
 const videoSoftwares = ['Adobe Premiere Pro', 'Final Cut Pro', 'DaVinci Resolve', 'Sony Vegas', 'Blender', 'After Effects', 'Other'];
 const videoResolutions = ['720p', '1080p', '4K'];
@@ -356,6 +379,13 @@ export default function NewOrderPage() {
         postCount: '',
         finalCaption: '',
         hashtags: ''
+      },
+      contentWritingSpecific: {
+        wordCount: '',
+        tone: '',
+        topic: '',
+        targetAudience: '',
+        referenceImageFile: null
       },
       videoEditingSpecific: {
         duration: '',
@@ -683,7 +713,17 @@ export default function NewOrderPage() {
     }
   };
   const handleScopeInput = (e) => {
-    setForm({ ...form, scopeBox: { ...form.scopeBox, [e.target.name]: e.target.value } });
+    const { name, value } = e.target;
+    if (name === 'productType' && CONTENT_COPYWRITING_PRODUCT_TYPES.includes(value)) {
+      setFilePreviews([]);
+    }
+    setForm((prev) => {
+      const nextScope = { ...prev.scopeBox, [name]: value };
+      if (name === 'productType' && CONTENT_COPYWRITING_PRODUCT_TYPES.includes(value)) {
+        nextScope.attachments = [];
+      }
+      return { ...prev, scopeBox: nextScope };
+    });
   };
 
   // Get available product types based on selected service type
@@ -706,6 +746,18 @@ export default function NewOrderPage() {
   const isSocialPostSelected = () => {
     return form.serviceType === '🎨 Digital Creative Services' && form.scopeBox.productType === 'Social media post creation';
   };
+
+  // Blog / SEO / copywriting orders — shared contentWritingSpecific block
+  const isContentCopywritingSelected = () => {
+    return (
+      form.serviceType === '📝 Content and Copywriting Services' &&
+      CONTENT_COPYWRITING_PRODUCT_TYPES.includes(form.scopeBox.productType)
+    );
+  };
+
+  const isBlogWritingSelected = () =>
+    form.serviceType === '📝 Content and Copywriting Services' &&
+    form.scopeBox.productType === 'Blog writing';
 
   // Check if video editing selected
   const isVideoEditingSelected = () => {
@@ -1495,7 +1547,15 @@ export default function NewOrderPage() {
 
   const validateStep1 = () => form.platform && form.sellerPlatformLink && form.serviceType && form.country && form.currency;
   const validateStep2 = () => {
-    const baseValidation = form.scopeBox.title && form.scopeBox.productType && form.scopeBox.productLink && form.scopeBox.description && form.scopeBox.deadline && form.scopeBox.price && form.serviceType;
+    const step2Core =
+      form.scopeBox.title &&
+      form.scopeBox.productType &&
+      form.scopeBox.description &&
+      form.scopeBox.deadline &&
+      form.scopeBox.price &&
+      form.serviceType;
+    const productLinkOk = isContentCopywritingSelected() || !!form.scopeBox.productLink?.trim();
+    const baseValidation = step2Core && productLinkOk;
 
     // For logo design, validate logo-specific fields and skip condition
     if (isLogoDesignSelected()) {
@@ -1516,6 +1576,18 @@ export default function NewOrderPage() {
     if (isSocialPostSelected()) {
       const s = form.scopeBox.socialPostSpecific;
       return baseValidation && s.postFormat && s.aspectRatio && s.resolution && s.postCount && s.finalCaption && s.hashtags;
+    }
+
+    // For blog & copywriting, validate contentWritingSpecific and skip condition
+    if (isContentCopywritingSelected()) {
+      const c = form.scopeBox.contentWritingSpecific;
+      return (
+        baseValidation &&
+        c.wordCount &&
+        c.tone &&
+        c.topic &&
+        c.targetAudience
+      );
     }
 
     // For video editing, validate video-specific fields and skip condition
@@ -1623,15 +1695,31 @@ export default function NewOrderPage() {
         scopeBox: {
           title: form.scopeBox.title,
           productType: form.scopeBox.productType,
-          productLink: form.scopeBox.productLink,
+          productLink: isContentCopywritingSelected()
+            ? (form.sellerPlatformLink || 'https://scrowx.local/content-order')
+            : form.scopeBox.productLink,
           description: form.scopeBox.description,
           attachments: filePreviews.map(f => f.name), // Just send file names for now
-          condition: form.scopeBox.condition,
+          condition: isContentCopywritingSelected()
+            ? (String(form.scopeBox.condition || '').trim() || 'N/A — content order')
+            : form.scopeBox.condition,
           deadline: form.scopeBox.deadline,
           price: form.scopeBox.price,
           logoSpecific: isLogoDesignSelected() ? form.scopeBox.logoSpecific : null,
           posterSpecific: isPosterDesignSelected() ? form.scopeBox.posterSpecific : null,
           socialPostSpecific: isSocialPostSelected() ? form.scopeBox.socialPostSpecific : null,
+          contentWritingSpecific: isContentCopywritingSelected()
+            ? (() => {
+                const cw = form.scopeBox.contentWritingSpecific;
+                return {
+                  wordCount: cw.wordCount,
+                  tone: cw.tone,
+                  topic: cw.topic,
+                  targetAudience: cw.targetAudience,
+                  referenceImageFile: cw.referenceImageFile?.name || null,
+                };
+              })()
+            : null,
           videoEditingSpecific: isVideoEditingSelected() ? form.scopeBox.videoEditingSpecific : null,
           motionGraphicsSpecific: isMotionGraphicsSelected() ? {
             ...form.scopeBox.motionGraphicsSpecific,
@@ -2032,7 +2120,16 @@ export default function NewOrderPage() {
                 </option>
                 {getAvailableProductTypes().map(pt => <option key={pt} value={pt} className="text-navy-900">{pt}</option>)}
               </select>
-              <input name="productLink" value={form.scopeBox.productLink} onChange={handleScopeInput} placeholder="Product Link" className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm" required />
+              {!isContentCopywritingSelected() && (
+                <input
+                  name="productLink"
+                  value={form.scopeBox.productLink}
+                  onChange={handleScopeInput}
+                  placeholder="Product Link"
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm"
+                  required
+                />
+              )}
               <textarea name="description" value={form.scopeBox.description} onChange={handleScopeInput} placeholder="Description / Requirements" className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm min-h-[80px] resize-none" required />
 
               {/* Logo Specific Module */}
@@ -2144,6 +2241,171 @@ export default function NewOrderPage() {
                       className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm min-h-[80px] resize-none"
                       required
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Blog & content copywriting — same visual pattern as Social Media Post Details */}
+              {isContentCopywritingSelected() && (
+                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+                  <div className="flex items-center mb-4">
+                    <span className="text-2xl mr-2">✍️</span>
+                    <h3 className="text-lg font-semibold text-navy-900 font-inter">
+                      {form.scopeBox.productType === 'Blog writing'
+                        ? 'Blog Writing Details'
+                        : `${form.scopeBox.productType} — Content Brief`}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                      type="number"
+                      min={1}
+                      name="wordCount"
+                      value={form.scopeBox.contentWritingSpecific.wordCount}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          scopeBox: {
+                            ...prev.scopeBox,
+                            contentWritingSpecific: {
+                              ...prev.scopeBox.contentWritingSpecific,
+                              wordCount: e.target.value,
+                            },
+                          },
+                        }))
+                      }
+                      placeholder="Target word count (minimum)"
+                      className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm"
+                      required
+                    />
+                    <select
+                      name="tone"
+                      value={form.scopeBox.contentWritingSpecific.tone}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          scopeBox: {
+                            ...prev.scopeBox,
+                            contentWritingSpecific: {
+                              ...prev.scopeBox.contentWritingSpecific,
+                              tone: e.target.value,
+                            },
+                          },
+                        }))
+                      }
+                      className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm"
+                      required
+                    >
+                      <option value="" className="text-neutral-400">
+                        Tone / Voice
+                      </option>
+                      {contentWritingTones.map((t) => (
+                        <option key={t} value={t} className="text-navy-900">
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    <textarea
+                      name="topic"
+                      value={form.scopeBox.contentWritingSpecific.topic}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          scopeBox: {
+                            ...prev.scopeBox,
+                            contentWritingSpecific: {
+                              ...prev.scopeBox.contentWritingSpecific,
+                              topic: e.target.value,
+                            },
+                          },
+                        }))
+                      }
+                      placeholder="Topic / title / main keyword focus"
+                      className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm min-h-[80px] resize-none sm:col-span-2"
+                      required
+                    />
+                    <textarea
+                      name="targetAudience"
+                      value={form.scopeBox.contentWritingSpecific.targetAudience}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          scopeBox: {
+                            ...prev.scopeBox,
+                            contentWritingSpecific: {
+                              ...prev.scopeBox.contentWritingSpecific,
+                              targetAudience: e.target.value,
+                            },
+                          },
+                        }))
+                      }
+                      placeholder="Target audience (who should this speak to?)"
+                      className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm min-h-[80px] resize-none sm:col-span-2"
+                      required
+                    />
+                    {isBlogWritingSelected() && (
+                      <div className="sm:col-span-2 p-4 bg-white border border-indigo-100 rounded-xl space-y-3">
+                        <label className="block text-sm font-semibold text-navy-900 font-inter">
+                          🖼️ Reference image (optional)
+                        </label>
+                        <p className="text-xs text-neutral-500 font-inter">
+                          Upload a mood board, cover idea, or visual reference for the blog (PNG, JPG, WEBP).
+                        </p>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          id="blog-reference-image"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            setForm((prev) => ({
+                              ...prev,
+                              scopeBox: {
+                                ...prev.scopeBox,
+                                contentWritingSpecific: {
+                                  ...prev.scopeBox.contentWritingSpecific,
+                                  referenceImageFile: file,
+                                },
+                              },
+                            }));
+                            e.target.value = '';
+                          }}
+                        />
+                        <div className="flex flex-wrap items-center gap-3">
+                          <label
+                            htmlFor="blog-reference-image"
+                            className="inline-block px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl cursor-pointer font-inter transition-colors"
+                          >
+                            Choose image
+                          </label>
+                          {form.scopeBox.contentWritingSpecific.referenceImageFile && (
+                            <span className="text-sm text-navy-900 font-inter truncate max-w-[200px]">
+                              {form.scopeBox.contentWritingSpecific.referenceImageFile.name}
+                            </span>
+                          )}
+                          {form.scopeBox.contentWritingSpecific.referenceImageFile && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  scopeBox: {
+                                    ...prev.scopeBox,
+                                    contentWritingSpecific: {
+                                      ...prev.scopeBox.contentWritingSpecific,
+                                      referenceImageFile: null,
+                                    },
+                                  },
+                                }))
+                              }
+                              className="text-sm text-red-600 hover:text-red-700 font-medium font-inter"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -4531,6 +4793,7 @@ export default function NewOrderPage() {
 
 
 
+              {!isContentCopywritingSelected() && (
               <div
                 className="border-2 border-dashed border-neutral-300 rounded-xl p-8 text-center cursor-pointer bg-white transition-all duration-300 hover:border-indigo-500 hover:bg-indigo-50 flex flex-col items-center justify-center space-y-4 shadow-sm"
                 onDrop={handleDrop}
@@ -4662,7 +4925,8 @@ export default function NewOrderPage() {
                   </div>
                 )}
               </div>
-              {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected() || isYouTubePromotionSelected() || isInfluencerShoutoutSelected() || isGamingAccountSaleSelected() || isEcommercePhysicalItemSelected()) && (
+              )}
+              {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected() || isYouTubePromotionSelected() || isInfluencerShoutoutSelected() || isGamingAccountSaleSelected() || isEcommercePhysicalItemSelected() || isContentCopywritingSelected()) && (
                 <select name="condition" value={form.scopeBox.condition} onChange={handleScopeInput} className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter shadow-sm" required>
                   <option value="" className="text-neutral-400">Condition of Product</option>
                   {conditions.map(c => <option key={c} value={c} className="text-navy-900">{c}</option>)}
@@ -4839,14 +5103,14 @@ export default function NewOrderPage() {
                       <div className="font-medium">{form.scopeBox.productType}</div>
                     </div>
 
-                    {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected() || isGamingAccountSaleSelected() || isEcommercePhysicalItemSelected()) && (
+                    {!(isLogoDesignSelected() || isPosterDesignSelected() || isSocialPostSelected() || isVideoEditingSelected() || isMotionGraphicsSelected() || isNftArtSelected() || isIllustrationSelected() || is3dModelingSelected() || isWebsiteDevelopmentSelected() || isGamingAccountSaleSelected() || isEcommercePhysicalItemSelected() || isContentCopywritingSelected()) && (
                       <div>
                         <span className="text-neutral-500 font-inter text-xs uppercase tracking-wider block mb-1">Condition</span>
                         <div className="font-medium">{form.scopeBox.condition}</div>
                       </div>
                     )}
 
-                    {form.scopeBox.productLink && (
+                    {!isContentCopywritingSelected() && form.scopeBox.productLink && (
                       <div className="md:col-span-2">
                         <span className="text-neutral-500 font-inter text-xs uppercase tracking-wider block mb-1">Reference Link</span>
                         <div className="font-medium break-all text-indigo-600 truncate">{form.scopeBox.productLink}</div>
@@ -4858,22 +5122,24 @@ export default function NewOrderPage() {
                       <div className="font-medium text-sm text-neutral-700 bg-white p-3 rounded border border-neutral-200 whitespace-pre-wrap">{form.scopeBox.description}</div>
                     </div>
 
-                    <div className="md:col-span-2 mt-2">
-                      <span className="text-neutral-500 font-inter text-xs uppercase tracking-wider block mb-2">Attached Files ({filePreviews.length})</span>
-                      {filePreviews.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {filePreviews.map((f, idx) => (
-                            <div key={idx} className="flex items-center text-xs bg-white border border-neutral-200 py-1.5 px-3 rounded-full shadow-sm text-navy-900">
-                              <span className="mr-1.5 text-indigo-500">📎</span>
-                              <span className="truncate max-w-[150px] font-medium">{f.name}</span>
-                              <span className="text-neutral-400 ml-1.5">({formatFileSize(f.size)})</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-neutral-400 italic text-sm">No files attached</div>
-                      )}
-                    </div>
+                    {!isContentCopywritingSelected() && (
+                      <div className="md:col-span-2 mt-2">
+                        <span className="text-neutral-500 font-inter text-xs uppercase tracking-wider block mb-2">Attached Files ({filePreviews.length})</span>
+                        {filePreviews.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {filePreviews.map((f, idx) => (
+                              <div key={idx} className="flex items-center text-xs bg-white border border-neutral-200 py-1.5 px-3 rounded-full shadow-sm text-navy-900">
+                                <span className="mr-1.5 text-indigo-500">📎</span>
+                                <span className="truncate max-w-[150px] font-medium">{f.name}</span>
+                                <span className="text-neutral-400 ml-1.5">({formatFileSize(f.size)})</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-neutral-400 italic text-sm">No files attached</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   {/* Logo Specific Details */}
                   {isLogoDesignSelected() && (
@@ -4906,6 +5172,18 @@ export default function NewOrderPage() {
                       <div><b>Post Count:</b> {form.scopeBox.socialPostSpecific.postCount}</div>
                       <div><b>Caption:</b> {form.scopeBox.socialPostSpecific.finalCaption}</div>
                       <div><b>Hashtags:</b> {form.scopeBox.socialPostSpecific.hashtags}</div>
+                    </div>
+                  )}
+                  {isContentCopywritingSelected() && (
+                    <div className="mt-3 p-3 bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 backdrop-blur-sm border border-cyan-500/20 rounded-lg">
+                      <div className="text-cyan-400 font-semibold mb-2">✍️ Content brief ({form.scopeBox.productType}):</div>
+                      <div><b>Word count:</b> {form.scopeBox.contentWritingSpecific.wordCount}</div>
+                      <div><b>Tone:</b> {form.scopeBox.contentWritingSpecific.tone}</div>
+                      <div><b>Topic / focus:</b> {form.scopeBox.contentWritingSpecific.topic}</div>
+                      <div><b>Target audience:</b> {form.scopeBox.contentWritingSpecific.targetAudience}</div>
+                      {isBlogWritingSelected() && form.scopeBox.contentWritingSpecific.referenceImageFile && (
+                        <div><b>Reference image:</b> {form.scopeBox.contentWritingSpecific.referenceImageFile.name}</div>
+                      )}
                     </div>
                   )}
                   {isVideoEditingSelected() && (

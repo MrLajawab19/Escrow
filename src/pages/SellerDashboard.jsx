@@ -73,7 +73,13 @@ const SellerDashboard = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.data.success) {
-        const updatedOrder = { ...order, status: 'ACCEPTED' };
+        const data = response.data.data || {};
+        const updatedOrder = {
+          ...order,
+          ...data,
+          status: data.status || 'ACCEPTED',
+          sellerAcceptedAt: data.sellerAcceptedAt ?? new Date().toISOString()
+        };
         setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
         setScopeBoxOrder(null);
         setShowRequests(false);
@@ -359,7 +365,7 @@ const SellerDashboard = () => {
                     selectedOrder.status === 'CHANGES_REQUESTED' ? 'text-amber-700 bg-amber-50' :
                       'text-neutral-600 bg-neutral-100'
                 }`}>
-                {selectedOrder.status === 'IN_PROGRESS' ? '✅ Order accepted — work can begin!' :
+                {selectedOrder.status === 'IN_PROGRESS' ? '✅ Order in progress — use Mark as Delivered on the order card when work is ready.' :
                   selectedOrder.status === 'REJECTED' ? '❌ Order rejected' :
                     selectedOrder.status === 'CHANGES_REQUESTED' ? '✎ Changes requested — awaiting buyer' :
                       'Order updated'}
@@ -468,7 +474,7 @@ const SellerDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">In Progress</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{orders.filter(o => o.status === 'IN_PROGRESS').length}</p>
+                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{orders.filter(o => ['IN_PROGRESS', 'ACCEPTED'].includes(o.status)).length}</p>
               </div>
             </div>
           </div>

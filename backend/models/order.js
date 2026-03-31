@@ -1,5 +1,6 @@
 'use strict';
 const { Model, DataTypes } = require('sequelize');
+const { normalizeProductType, hasCompleteContentWritingPayload } = require('../utils/scopeBoxHelpers');
 
 module.exports = (sequelize, DataTypes) => {
   class Order extends Model {
@@ -114,9 +115,22 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         notEmpty: true,
         isValidXBox(value) {
-          // Basic required fields for all services
-          const basicRequiredFields = ['title', 'productType', 'productLink', 'description', 'deadline', 'price'];
-          
+          if (value.productType) {
+            const normalized = normalizeProductType(value.productType);
+            if (normalized !== value.productType) {
+              value.productType = normalized;
+            }
+          }
+          const scopeOptionalProductLink = new Set([
+            'Blog writing', 'SEO writing', 'Ghostwriting', 'Copywriting for ads',
+            'Social media captions', 'Email marketing content', 'Reddit/Quora answers',
+            'Content Writing'
+          ]);
+          const basicRequiredFields = ['title', 'productType', 'description', 'deadline', 'price'];
+          if (!scopeOptionalProductLink.has(value.productType)) {
+            basicRequiredFields.push('productLink');
+          }
+
           for (const field of basicRequiredFields) {
             if (!value[field]) {
               throw new Error(`Missing required XBox field: ${field}`);
@@ -126,13 +140,19 @@ module.exports = (sequelize, DataTypes) => {
           // Service-specific validation
           const serviceType = value.productType;
           const servicesWithoutCondition = [
-            'Logo design', 'Poster/flyer/banner design', 'Social media post creation', 
+            'Logo design', 'Poster/flyer/banner design', 'Social media post creation',
             'Video editing', 'Motion graphics', 'NFT art creation', 'Illustration / Comics',
-            '3D modeling / rendering', 'Website development', 'Gaming account sales'
+            '3D modeling / rendering', 'Website development', 'Gaming account sales',
+            'Content Writing', 'Blog writing', 'SEO writing', 'Ghostwriting', 'Copywriting for ads',
+            'Social media captions', 'Email marketing content', 'Reddit/Quora answers'
           ];
           
-          // For services that require condition field
-          if (!servicesWithoutCondition.includes(serviceType) && !value.condition) {
+          // For services that require condition field (skip for full content-writing payloads)
+          if (
+            !servicesWithoutCondition.includes(serviceType) &&
+            !value.condition &&
+            !hasCompleteContentWritingPayload(value)
+          ) {
             throw new Error(`Missing required XBox field for ${serviceType}: condition`);
           }
         }
@@ -165,6 +185,11 @@ module.exports = (sequelize, DataTypes) => {
     disputeId: {
       type: DataTypes.UUID,
       allowNull: true
+    },
+    sellerAcceptedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'When seller accepted; buyer UI shows Accepted for 1h then In progress while status is IN_PROGRESS'
     },
     orderLogs: {
       type: DataTypes.JSONB,

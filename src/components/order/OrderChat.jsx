@@ -57,7 +57,7 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
 
   // ── Determine if chat should be shown ────────────────────────────────────
   const CHAT_ELIGIBLE_STATUSES = [
-    'ESCROW_FUNDED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'
+    'ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'
   ];
   const isEligible = CHAT_ELIGIBLE_STATUSES.includes(orderStatus);
 

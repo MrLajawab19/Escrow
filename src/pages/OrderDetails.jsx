@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import OrderTimeline from '../components/order/OrderTimeline';
 import MilestoneList from '../components/order/MilestoneList';
 import DeliveryActions from '../components/order/DeliveryActions';
 import OrderChat from '../components/order/OrderChat';
+import DisputeResolutionFlow from '../components/DisputeResolutionFlow';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,15 @@ function timeRemaining(deadline) {
   const hours = Math.floor((diff % 86400000) / 3600000);
   if (days > 0) return { label: `${days}d ${hours}h remaining`, urgent: days <= 2 };
   return { label: `${hours}h remaining`, urgent: true };
+}
+
+const BUYER_ACCEPTED_GRACE_MS = 60 * 60 * 1000;
+
+function sellerAcceptedAtMs(order) {
+  if (!order) return 0;
+  if (order.sellerAcceptedAt) return new Date(order.sellerAcceptedAt).getTime();
+  const log = [...(order.orderLogs || [])].reverse().find((l) => l.event === 'ORDER_ACCEPTED');
+  return log?.timestamp ? new Date(log.timestamp).getTime() : 0;
 }
 
 // ─── Skeleton loader ──────────────────────────────────────────────────────────
@@ -96,12 +106,29 @@ const OrderDetails = () => {
 
   useEffect(() => { fetchOrder(); }, [fetchOrder]);
 
+  const [buyerStatusTick, setBuyerStatusTick] = useState(0);
+  useEffect(() => {
+    if (userType !== 'buyer' || order?.status !== 'IN_PROGRESS') return;
+    const t0 = sellerAcceptedAtMs(order);
+    if (!t0 || Date.now() - t0 >= BUYER_ACCEPTED_GRACE_MS) return;
+    const iv = setInterval(() => setBuyerStatusTick((x) => x + 1), 30000);
+    return () => clearInterval(iv);
+  }, [userType, order?.id, order?.status, order?.sellerAcceptedAt, order?.orderLogs]);
+
   const handleOrderUpdate = (updated) => setOrder(prev => ({ ...prev, ...updated }));
 
-  const CHAT_ELIGIBLE = ['ESCROW_FUNDED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
+  const CHAT_ELIGIBLE = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
   const showChat = CHAT_ELIGIBLE.includes(order?.status);
 
-  const statusCfg = STATUS_CONFIG[order?.status] || STATUS_CONFIG.PLACED;
+  const buyerBadgeKey = useMemo(() => {
+    if (!order) return 'PLACED';
+    if (userType !== 'buyer' || order.status !== 'IN_PROGRESS') return order.status;
+    const at = sellerAcceptedAtMs(order);
+    if (at && Date.now() - at < BUYER_ACCEPTED_GRACE_MS) return 'ACCEPTED';
+    return 'IN_PROGRESS';
+  }, [order, userType, buyerStatusTick]);
+
+  const statusCfg = STATUS_CONFIG[buyerBadgeKey] || STATUS_CONFIG[order?.status] || STATUS_CONFIG.PLACED;
   const timeLeft = timeRemaining(order?.scopeBox?.deadline);
   const dashboardPath = userType === 'buyer' ? '/buyer/dashboard' : '/seller/dashboard';
 
@@ -274,6 +301,26 @@ const OrderDetails = () => {
               userType={userType}
               onUpdate={handleOrderUpdate}
             />
+
+            {/* ── DISPUTE RESOLUTION FLOW (shown when order is DISPUTED) ─────── */}
+            {order.status === 'DISPUTED' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-1">
+                <div className="px-5 pt-4 pb-2 flex items-center gap-2 border-b border-red-50">
+                  <span className="text-lg">⚖️</span>
+                  <h2 className="text-base font-bold text-[#0A2540] font-inter">Dispute Resolution</h2>
+                  <span className="ml-auto text-[10px] font-bold px-2 py-1 bg-red-50 text-red-600 rounded-full border border-red-100 uppercase tracking-wider font-inter">Active</span>
+                </div>
+                <div className="p-5">
+                  <DisputeResolutionFlow
+                    orderId={orderId}
+                    order={order}
+                    userType={userType}
+                    token={token}
+                    onOrderUpdate={handleOrderUpdate}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* ── ORDER LOGS ──────────────────────────────────────────────── */}
             {order.orderLogs?.length > 0 && (

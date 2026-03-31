@@ -37,13 +37,14 @@ module.exports = (sequelize, DataTypes) => {
     },
     reason: {
       type: DataTypes.ENUM(
-        'Quality Issue',
-        'Delivery Delay',
-        'Payment Issue',
-        'Communication Problem',
-        'Scope Creep',
-        'Technical Issue',
-        'Other'
+        'QUALITY_ISSUE',
+        'DEADLINE_MISSED',
+        'FAKE_DELIVERY',
+        'INCOMPLETE_WORK',
+        'COMMUNICATION_ISSUE',
+        'SCOPE_CREEP',
+        'PAYMENT_ISSUE',
+        'OTHER'
       ),
       allowNull: false
     },
@@ -114,6 +115,33 @@ module.exports = (sequelize, DataTypes) => {
     },
     timeline: {
       type: DataTypes.JSONB,
+      allowNull: true
+    },
+    ruleFlags: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {}
+    },
+    aiAnalysis: {
+      type: DataTypes.JSONB,
+      allowNull: true
+    },
+    evidenceResponses: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {}
+    },
+    analyzedWordCount: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0
+    },
+    autoFlaggedAt: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    escalatedAt: {
+      type: DataTypes.DATE,
       allowNull: true
     },
     lastActivity: {

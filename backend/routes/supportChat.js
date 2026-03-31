@@ -1,6 +1,6 @@
 const express = require("express");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 const OpenAI = require("openai");
+const { grokChatCompletion } = require("../services/grokClient");
 
 const router = express.Router();
 
@@ -17,15 +17,14 @@ router.post("/", async (req, res) => {
     let reply = "";
     const systemInstruction = "You are EscrowX Support. Only answer questions related to EscrowX platform, disputes, escrow payments, order management, buyer/seller issues, account problems, or customer support. If asked anything else, politely decline and redirect to EscrowX-related topics. Keep responses helpful, professional, and concise.";
 
-    if (process.env.GEMINI_API_KEY) {
-      // Use Google Gemini AI
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
-      const prompt = `${systemInstruction}\n\nUser question: ${message}`;
-      const result = await model.generateContent(prompt);
-      reply = result.response.text();
-      
+    if (process.env.GROK_API_KEY) {
+      reply = await grokChatCompletion(
+        [
+          { role: "system", content: systemInstruction },
+          { role: "user", content: message },
+        ],
+        { max_tokens: 300, temperature: 0.7 }
+      );
     } else if (process.env.OPENAI_API_KEY) {
       // Use OpenAI GPT
       const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -41,7 +40,7 @@ router.post("/", async (req, res) => {
       reply = completion.choices[0].message.content;
       
     } else {
-      reply = "⚠️ No AI API key configured. Please add GEMINI_API_KEY or OPENAI_API_KEY to your environment variables.";
+      reply = "⚠️ No AI API key configured. Please add GROK_API_KEY or OPENAI_API_KEY to your environment variables.";
     }
 
     // Clean up the reply and ensure it's not too long
