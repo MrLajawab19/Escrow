@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import OrderCard from '../components/OrderCard';
 import MyDisputesPage from '../components/MyDisputesPage';
 import ChangesReviewModal from '../components/ChangesReviewModal';
+import WalletDashboard from '../components/WalletDashboard';
+import WalletHeader from '../components/WalletHeader';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -13,9 +15,21 @@ const BuyerDashboard = () => {
   const [showNewOrder, setShowNewOrder] = useState(false);
   const [showMyDisputes, setShowMyDisputes] = useState(false);
   const [showChangesReview, setShowChangesReview] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
+    // Extract user ID from JWT token
+    const token = localStorage.getItem('buyerToken');
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        setUserId(decoded.id);
+      } catch (err) {
+        console.error('Failed to decode token:', err);
+      }
+    }
     fetchOrders();
   }, []);
 
@@ -125,6 +139,7 @@ const BuyerDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-neutral-500 font-medium hidden sm:inline-block">Welcome back</span>
+              {userId && <WalletHeader userId={userId} onNavigateToWallet={() => setShowWallet(true)} />}
               <button
                 onClick={() => setShowMyDisputes(true)}
                 className="btn btn-outline border-neutral-200 text-neutral-700 hover:bg-neutral-50"
@@ -153,6 +168,28 @@ const BuyerDashboard = () => {
           userType="buyer"
           onClose={() => setShowMyDisputes(false)}
         />
+      )}
+
+      {/* Wallet Modal */}
+      {showWallet && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start overflow-y-auto">
+          <div className="w-full bg-white shadow-lg">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-between items-center p-6 border-b border-neutral-200">
+                <h2 className="text-2xl font-bold text-navy-900">Wallet</h2>
+                <button
+                  onClick={() => setShowWallet(false)}
+                  className="text-neutral-500 hover:text-neutral-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-6">
+                {userId && <WalletDashboard userId={userId} />}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Main Content */}

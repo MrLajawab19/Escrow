@@ -13,6 +13,7 @@ const disputeRoutes = require('./backend/routes/disputes');
 const supportChatRoutes = require('./backend/routes/supportChat');
 const chatRoutes = require('./backend/routes/chat');            // ← NEW: order chat REST
 const adminRoutes = require('./backend/routes/admin');          // ← NEW: admin API
+const walletRoutes = require('./backend/routes/wallet');        // ← NEW: wallet routes
 const { registerChatSocket } = require('./backend/socket/chatSocket'); // ← NEW: socket handler
 const { startChatExpiryCron } = require('./backend/jobs/chatExpiry'); // ← NEW: expiry cron
 const fs = require('fs');
@@ -66,6 +67,7 @@ app.use('/api/disputes', disputeRoutes);
 app.use('/api/support-chat', supportChatRoutes);
 app.use('/api/chat', chatRoutes);                               // ← NEW: order chat REST
 app.use('/api/admin', adminRoutes);                            // ← NEW: admin API
+app.use('/api/wallet', walletRoutes);                          // ← NEW: wallet routes
 
 // ── Existing auto-release cron (unchanged) ────────────────────────────────────
 const escrowModule = require('./backend/routes/escrow');

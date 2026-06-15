@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { Sequelize } = require('sequelize');
 const config = require('../config/config.json');
+const walletUtils = require('../utils/walletUtils');
 
 // Initialize database connection
 let sequelize;
@@ -67,6 +68,9 @@ async function buyerSignup(req, res) {
       isVerified: false,
       status: 'active'
     });
+
+    // Initialize wallet for the new buyer
+    await walletUtils.initializeWalletForUser(buyer.id, 'buyer', 'USD');
 
     // Remove password from response
     const buyerData = buyer.toJSON();
@@ -216,6 +220,9 @@ async function sellerSignup(req, res) {
       isVerified: false,
       status: 'active' // Sellers can login immediately
     });
+
+    // Initialize wallet for the new seller
+    await walletUtils.initializeWalletForUser(seller.id, 'seller', 'USD');
 
     // Remove password from response
     const sellerData = seller.toJSON();

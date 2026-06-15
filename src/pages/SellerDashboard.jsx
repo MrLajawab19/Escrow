@@ -3,6 +3,8 @@ import OrderCard from '../components/OrderCard';
 import MyDisputesPage from '../components/MyDisputesPage';
 import NotificationModal from '../components/NotificationModal';
 import OrderChat from '../components/order/OrderChat'; // ← Real-time order chat
+import WalletDashboard from '../components/WalletDashboard';
+import WalletHeader from '../components/WalletHeader';
 import axios from 'axios';
 
 const inputClass = "w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm shadow-sm";
@@ -19,7 +21,9 @@ const SellerDashboard = () => {
   const [requestChangesOrder, setRequestChangesOrder] = useState(null);
   const [modifiedScopeBox, setModifiedScopeBox] = useState(null);
   const [showMyDisputes, setShowMyDisputes] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
   const [notification, setNotification] = useState({ isOpen: false, title: '', message: '', type: 'success' });
+  const [userId, setUserId] = useState(null);
 
   // Decode seller identity from JWT (for OrderChat currentUser prop)
   const getSellerUser = () => {
@@ -27,7 +31,8 @@ const SellerDashboard = () => {
       const token = localStorage.getItem('sellerToken');
       if (!token) return null;
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return { userId: payload.userId, role: 'seller', firstName: payload.firstName, lastName: payload.lastName };
+      setUserId(payload.id);
+      return { userId: payload.id, role: 'seller', firstName: payload.firstName, lastName: payload.lastName };
     } catch { return null; }
   };
   const sellerUser = getSellerUser();
@@ -195,6 +200,7 @@ const SellerDashboard = () => {
             <h1 className="text-xl font-bold text-[#0A2540] tracking-tight font-inter">Seller Dashboard</h1>
             <div className="flex items-center space-x-3">
               <span className="text-sm text-neutral-500 font-medium font-inter hidden sm:inline-block">Welcome, Seller</span>
+              {userId && <WalletHeader userId={userId} onNavigateToWallet={() => setShowWallet(true)} />}
               <button
                 onClick={() => setShowMyDisputes(true)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-colors font-inter"
@@ -215,6 +221,28 @@ const SellerDashboard = () => {
       {/* My Disputes Modal */}
       {showMyDisputes && (
         <MyDisputesPage userType="seller" onClose={() => setShowMyDisputes(false)} />
+      )}
+
+      {/* Wallet Modal */}
+      {showWallet && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start overflow-y-auto">
+          <div className="w-full bg-white shadow-lg">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-between items-center p-6 border-b border-neutral-200">
+                <h2 className="text-2xl font-bold text-[#0A2540]">Wallet</h2>
+                <button
+                  onClick={() => setShowWallet(false)}
+                  className="text-neutral-500 hover:text-neutral-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-6">
+                {userId && <WalletDashboard userId={userId} />}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Requests Modal */}
