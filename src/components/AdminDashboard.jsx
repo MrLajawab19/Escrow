@@ -99,8 +99,9 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [disputes, setDisputes] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('overview'); // 'overview' | 'disputes' | 'orders'
+  const [tab, setTab] = useState('overview'); // 'overview' | 'disputes' | 'orders' | 'settlements'
   const [statusFilter, setStatusFilter] = useState('');
   const [flagFilter, setFlagFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -108,6 +109,7 @@ export default function AdminDashboard() {
   const [resolveAction, setResolveAction] = useState(''); // REFUND | RELEASE
   const [resolveNotes, setResolveNotes] = useState('');
   const [resolveLoading, setResolveLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -118,14 +120,16 @@ export default function AdminDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, disputesRes, ordersRes] = await Promise.all([
+      const [statsRes, disputesRes, ordersRes, withdrawalsRes] = await Promise.all([
         axios.get(`${API}/api/admin/stats`, { headers: adminHeaders() }),
         axios.get(`${API}/api/admin/disputes`, { headers: adminHeaders() }),
         axios.get(`${API}/api/admin/orders`, { headers: adminHeaders() }),
+        axios.get(`${API}/api/wallet/admin/withdrawals`, { headers: adminHeaders() }),
       ]);
       setStats(statsRes.data.data);
       setDisputes(disputesRes.data.data || []);
       setOrders(ordersRes.data.data || []);
+      setWithdrawals(withdrawalsRes.data.data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -152,6 +156,35 @@ export default function AdminDashboard() {
       showToast(e?.response?.data?.message || 'Failed to resolve', 'error');
     } finally {
       setResolveLoading(false);
+    }
+  };
+
+  const handleCompleteWithdrawal = async (txId) => {
+    setActionLoading(true);
+    try {
+      await axios.patch(`${API}/api/wallet/withdraw/${txId}/complete`, {}, { headers: adminHeaders() });
+      showToast('Withdrawal completed successfully');
+      fetchAll();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Failed to complete withdrawal', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleFailWithdrawal = async (txId) => {
+    const reason = prompt('Enter reason for rejection:');
+    if (!reason) return;
+    
+    setActionLoading(true);
+    try {
+      await axios.patch(`${API}/api/wallet/transaction/${txId}/fail`, { reason }, { headers: adminHeaders() });
+      showToast('Withdrawal rejected successfully');
+      fetchAll();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Failed to reject withdrawal', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -209,6 +242,7 @@ export default function AdminDashboard() {
             { id: 'overview', icon: '📊', label: 'Overview' },
             { id: 'disputes', icon: '⚖️', label: 'Disputes', badge: openDisputes.length },
             { id: 'orders', icon: '📦', label: 'Orders' },
+            { id: 'settlements', icon: '💰', label: 'Settlements', badge: withdrawals.length }
           ].map(item => (
             <button
               key={item.id}
@@ -525,6 +559,70 @@ export default function AdminDashboard() {
                             <td className="px-5 py-4 font-bold text-slate-800">${o.scopeBox?.price || 0}</td>
                             <td className="px-5 py-4"><StatusBadge status={o.status} /></td>
                             <td className="px-5 py-4 text-xs text-slate-400">{fmtDate(o.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {/* ── SETTLEMENTS TAB ── */}
+          {tab === 'settlements' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-black text-slate-800">Pending Settlements</h1>
+                <p className="text-slate-500 text-sm mt-1">Review and process seller withdrawal requests</p>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                {withdrawals.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400">
+                    <div className="text-4xl mb-3">💸</div>
+                    <p className="font-medium">No pending withdrawal requests</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Seller / Wallet</th>
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Bank Details</th>
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {withdrawals.map(w => (
+                          <tr key={w.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="px-5 py-4 text-xs text-slate-400">{fmtDate(w.createdAt)}<br/>{fmtTime(w.createdAt)}</td>
+                            <td className="px-5 py-4 text-slate-700 font-medium text-xs">
+                              {w.wallet?.userId?.slice(0, 8)}... <span className="text-[10px] text-slate-400">({w.wallet?.userRole})</span>
+                            </td>
+                            <td className="px-5 py-4 font-bold text-slate-800">${w.amount || 0}</td>
+                            <td className="px-5 py-4 text-xs text-slate-600 max-w-xs truncate">
+                              {w.metadata?.bankDetails ? JSON.stringify(w.metadata.bankDetails) : 'N/A'}
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button 
+                                  onClick={() => handleCompleteWithdrawal(w.id)}
+                                  disabled={actionLoading}
+                                  className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 font-bold text-xs rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  Complete
+                                </button>
+                                <button 
+                                  onClick={() => handleFailWithdrawal(w.id)}
+                                  disabled={actionLoading}
+                                  className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 font-bold text-xs rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

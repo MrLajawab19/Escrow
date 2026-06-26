@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const { Order } = require('../models');
 /**
  * Wallet Service - Handles all wallet operations
  * Implements double-entry ledger pattern for transactions
@@ -40,9 +40,9 @@ class WalletService {
   /**
    * Get wallet with balance calculation
    */
-  async getWalletWithBalance(userId) {
+  async getWalletWithBalance(userId, userRole = 'unknown') {
     try {
-      const wallet = await prisma.wallet.findUnique({
+      let wallet = await prisma.wallet.findUnique({
         where: { userId },
         include: {
           transactions: {
@@ -53,7 +53,17 @@ class WalletService {
       });
 
       if (!wallet) {
-        throw new Error('Wallet not found');
+        wallet = await prisma.wallet.create({
+          data: {
+            userId,
+            userRole,
+            currency: 'USD',
+            balance: 0,
+          },
+          include: {
+            transactions: true,
+          }
+        });
       }
 
       // Calculate balance from transactions
@@ -403,35 +413,94 @@ class WalletService {
   /**
    * Get wallet summary
    */
-  async getWalletSummary(userId) {
+  async getWalletSummary(userId, userRole = 'unknown') {
     try {
-      const wallet = await prisma.wallet.findUnique({
+      let wallet = await prisma.wallet.findUnique({
         where: { userId },
         include: {
           transactions: {
-            where: { status: 'SUCCESS' },
+            orderBy: { createdAt: 'desc' },
           },
         },
       });
 
       if (!wallet) {
-        throw new Error('Wallet not found');
+        wallet = await prisma.wallet.create({
+          data: {
+            userId,
+            userRole,
+            currency: 'USD',
+            balance: 0,
+          },
+          include: {
+            transactions: true,
+          }
+        });
       }
 
       const balance = this.calculateBalanceFromTransactions(wallet.transactions);
       const pendingBalance = this.calculatePendingBalance(wallet.transactions);
 
-      const creditTransactions = wallet.transactions.filter(t => t.type === 'CREDIT');
-      const debitTransactions = wallet.transactions.filter(t => t.type === 'DEBIT');
+      const successfulTransactions = wallet.transactions.filter(t => t.status === 'SUCCESS');
+      const creditTransactions = successfulTransactions.filter(t => t.type === 'CREDIT');
+      const debitTransactions = successfulTransactions.filter(t => t.type === 'DEBIT');
 
       const totalCredit = creditTransactions.reduce((sum, t) => sum + t.amount, 0);
       const totalDebit = debitTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-      const monthlyStats = this.calculateMonthlyStats(wallet.transactions);
+      const monthlyStats = this.calculateMonthlyStats(successfulTransactions);
+
+      // Calculate role-specific states using Sequelize Order model
+      let lockedEscrowBalance = 0;
+      let pendingRefundBalance = 0;
+      let pendingEarnings = 0;
+      let underDisputeAmount = 0;
+      let withdrawnAmount = 0;
+
+      if (wallet.userRole === 'buyer') {
+        const activeBuyerOrders = await Order.findAll({
+          where: {
+            buyerId: userId,
+            status: ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'DISPUTED', 'CHANGES_REQUESTED']
+          }
+        });
+        activeBuyerOrders.forEach(order => {
+          if (order.status === 'DISPUTED') {
+            pendingRefundBalance += parseFloat(order.scopeBox?.price || 0);
+          } else {
+            lockedEscrowBalance += parseFloat(order.scopeBox?.price || 0);
+          }
+        });
+      } else if (wallet.userRole === 'seller') {
+        const activeSellerOrders = await Order.findAll({
+          where: {
+            sellerId: userId,
+            status: ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'DISPUTED', 'CHANGES_REQUESTED']
+          }
+        });
+        activeSellerOrders.forEach(order => {
+          if (order.status === 'DISPUTED') {
+            underDisputeAmount += parseFloat(order.scopeBox?.price || 0);
+          } else {
+            pendingEarnings += parseFloat(order.scopeBox?.price || 0);
+          }
+        });
+        
+        // Withdrawn amount is sum of successful withdrawals
+        withdrawnAmount = debitTransactions
+          .filter(t => t.category === 'WITHDRAWAL')
+          .reduce((sum, t) => sum + t.amount, 0);
+      }
 
       return {
         balance,
         pendingBalance,
+        lockedEscrowBalance,
+        pendingRefundBalance,
+        pendingEarnings,
+        underDisputeAmount,
+        withdrawnAmount,
+        userRole: wallet.userRole,
         currency: wallet.currency,
         totalCredit,
         totalDebit,
@@ -449,6 +518,7 @@ class WalletService {
    */
   calculateBalanceFromTransactions(transactions) {
     return transactions.reduce((balance, transaction) => {
+      if (transaction.status !== 'SUCCESS') return balance;
       if (transaction.type === 'CREDIT') {
         return balance + transaction.netAmount;
       } else if (transaction.type === 'DEBIT') {

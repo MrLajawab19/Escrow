@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DisputeModal from './DisputeModal';
 import OrderChat from './order/OrderChat';
+import { useCurrency } from '../context/CurrencyContext';
 
 /** Buyer: first hour after seller accept shows "Accepted", then "In progress" (DB status is IN_PROGRESS). */
 const BUYER_ACCEPTED_GRACE_MS = 60 * 60 * 1000;
@@ -26,6 +27,7 @@ function getBuyerFacingStatus(order) {
 
 const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
   const navigate = useNavigate();
+  const { formatCurrency, formatCurrencyRaw, currencySymbol } = useCurrency();
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [showChat, setShowChat] = useState(false);
@@ -214,7 +216,7 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
           </div>
           <div>
             <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider mb-1">Amount</p>
-            <p className="text-2xl font-bold text-navy-900">${order.scopeBox?.price?.toLocaleString() || '0'}</p>
+            <p className="text-2xl font-bold text-navy-900">{formatCurrency(order.scopeBox?.price || 0)}</p>
           </div>
           <div>
             <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider mb-1">Deadline</p>
@@ -528,7 +530,7 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
                     <div class="grid" style="margin-top: 32px;">
                       <div>
                         <span class="label">Total Amount</span>
-                        <p class="value price">$${order.scopeBox?.price?.toLocaleString() || '0'}</p>
+                        <p class="value price">${currencySymbol}${formatCurrencyRaw(order.scopeBox?.price || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                       </div>
                       <div>
                         <span class="label">Date Created</span>

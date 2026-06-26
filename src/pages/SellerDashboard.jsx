@@ -6,6 +6,7 @@ import OrderChat from '../components/order/OrderChat'; // ← Real-time order ch
 import WalletDashboard from '../components/WalletDashboard';
 import WalletHeader from '../components/WalletHeader';
 import axios from 'axios';
+import { useCurrency } from '../context/CurrencyContext';
 
 const inputClass = "w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm shadow-sm";
 const labelClass = "block text-sm font-medium mb-1.5 text-[#0A2540] font-inter";
@@ -21,9 +22,11 @@ const SellerDashboard = () => {
   const [requestChangesOrder, setRequestChangesOrder] = useState(null);
   const [modifiedScopeBox, setModifiedScopeBox] = useState(null);
   const [showMyDisputes, setShowMyDisputes] = useState(false);
-  const [showWallet, setShowWallet] = useState(false);
+  const [activeTab, setActiveTab] = useState('orders');
   const [notification, setNotification] = useState({ isOpen: false, title: '', message: '', type: 'success' });
   const [userId, setUserId] = useState(null);
+
+  const { formatCurrency, currency } = useCurrency();
 
   // Decode seller identity from JWT (for OrderChat currentUser prop)
   const getSellerUser = () => {
@@ -31,13 +34,22 @@ const SellerDashboard = () => {
       const token = localStorage.getItem('sellerToken');
       if (!token) return null;
       const payload = JSON.parse(atob(token.split('.')[1]));
-      setUserId(payload.id);
-      return { userId: payload.id, role: 'seller', firstName: payload.firstName, lastName: payload.lastName };
+      const id = payload.userId || payload.id;
+      return { userId: id, role: 'seller', firstName: payload.firstName, lastName: payload.lastName };
     } catch { return null; }
   };
   const sellerUser = getSellerUser();
 
   useEffect(() => {
+    const token = localStorage.getItem('sellerToken');
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        setUserId(decoded.userId || decoded.id);
+      } catch (err) {
+        console.error('Failed to decode token:', err);
+      }
+    }
     fetchOrders();
   }, []);
 
@@ -200,7 +212,7 @@ const SellerDashboard = () => {
             <h1 className="text-xl font-bold text-[#0A2540] tracking-tight font-inter">Seller Dashboard</h1>
             <div className="flex items-center space-x-3">
               <span className="text-sm text-neutral-500 font-medium font-inter hidden sm:inline-block">Welcome, Seller</span>
-              {userId && <WalletHeader userId={userId} onNavigateToWallet={() => setShowWallet(true)} />}
+              {userId && <WalletHeader userId={userId} onNavigateToWallet={() => setActiveTab('wallet')} />}
               <button
                 onClick={() => setShowMyDisputes(true)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-colors font-inter"
@@ -221,28 +233,6 @@ const SellerDashboard = () => {
       {/* My Disputes Modal */}
       {showMyDisputes && (
         <MyDisputesPage userType="seller" onClose={() => setShowMyDisputes(false)} />
-      )}
-
-      {/* Wallet Modal */}
-      {showWallet && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start overflow-y-auto">
-          <div className="w-full bg-white shadow-lg">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex justify-between items-center p-6 border-b border-neutral-200">
-                <h2 className="text-2xl font-bold text-[#0A2540]">Wallet</h2>
-                <button
-                  onClick={() => setShowWallet(false)}
-                  className="text-neutral-500 hover:text-neutral-700 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="p-6">
-                {userId && <WalletDashboard userId={userId} />}
-              </div>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Requests Modal */}
@@ -267,7 +257,7 @@ const SellerDashboard = () => {
                         <div className="text-sm text-neutral-500 font-inter mb-2">From: {order.buyerName || 'Unknown Buyer'}</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
                           <div><span className="text-neutral-400 font-inter">Deadline: </span><span className="font-medium text-[#0A2540] font-inter">{order.scopeBox?.deadline ? new Date(order.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
-                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-[#0A2540] font-inter">${order.scopeBox?.price || 0}</span></div>
+                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-[#0A2540] font-inter">{formatCurrency(order.scopeBox?.price || 0)}</span></div>
                           <div><span className="text-neutral-400 font-inter">Platform: </span><span className="font-medium text-[#0A2540] font-inter">{order.platform || 'N/A'}</span></div>
                         </div>
                         {order.scopeBox?.description && (
@@ -316,7 +306,7 @@ const SellerDashboard = () => {
               </div>
               <div className="flex justify-between py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter">Price</span>
-                <span className="font-bold text-[#0A2540] font-inter">${scopeBoxOrder.scopeBox?.price || 0}</span>
+                <span className="font-bold text-[#0A2540] font-inter">{formatCurrency(scopeBoxOrder.scopeBox?.price || 0)}</span>
               </div>
               {scopeBoxOrder.scopeBox?.attachments?.length > 0 && (
                 <div className="py-2">
@@ -364,7 +354,7 @@ const SellerDashboard = () => {
                             'bg-neutral-100 text-neutral-600 border border-neutral-200'
                       }`}>{selectedOrder.status.replace(/_/g, ' ')}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-[#0A2540] font-inter">${selectedOrder.scopeBox?.price}</span></div>
+                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-[#0A2540] font-inter">{formatCurrency(selectedOrder.scopeBox?.price || 0)}</span></div>
                   <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Deadline</span><span className="font-medium text-[#0A2540] font-inter">{selectedOrder.scopeBox?.deadline ? new Date(selectedOrder.scopeBox.deadline).toLocaleDateString() : 'No deadline'}</span></div>
                   <div className="flex justify-between py-1.5"><span className="text-neutral-500 font-inter">Updated</span><span className="font-medium text-[#0A2540] font-inter">{new Date(selectedOrder.updatedAt).toLocaleString()}</span></div>
                 </div>
@@ -418,7 +408,7 @@ const SellerDashboard = () => {
                   <div><span className="font-medium text-neutral-500 font-inter">Title: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.title}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Description: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.description}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Product Type: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.productType}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Price: </span><span className="text-[#0A2540] font-inter font-bold">${requestChangesOrder.scopeBox?.price}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Price: </span><span className="text-[#0A2540] font-inter font-bold">{formatCurrency(requestChangesOrder.scopeBox?.price || 0)}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Deadline: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.deadline ? new Date(requestChangesOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
                   <div>
                     <span className="font-medium text-neutral-500 font-inter">Deliverables:</span>
@@ -447,7 +437,7 @@ const SellerDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={labelClass}>Price ($)</label>
+                      <label className={labelClass}>Price ({currency})</label>
                       <input type="number" value={modifiedScopeBox?.price || ''} onChange={e => handleScopeBoxChange('price', parseFloat(e.target.value))} className={inputClass} />
                     </div>
                     <div>
@@ -477,7 +467,40 @@ const SellerDashboard = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
+        
+        {/* Navigation Tabs */}
+        <div className="flex space-x-6 border-b border-neutral-200 mb-8 font-inter">
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`pb-3 text-sm font-semibold transition-colors relative ${
+              activeTab === 'orders' ? 'text-indigo-600' : 'text-neutral-500 hover:text-neutral-800'
+            }`}
+          >
+            My Orders
+            {activeTab === 'orders' && (
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('wallet')}
+            className={`pb-3 text-sm font-semibold transition-colors relative ${
+              activeTab === 'wallet' ? 'text-indigo-600' : 'text-neutral-500 hover:text-neutral-800'
+            }`}
+          >
+            Wallet & Ledger
+            {activeTab === 'wallet' && (
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
+            )}
+          </button>
+        </div>
+
+        {activeTab === 'wallet' ? (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {userId && <WalletDashboard userId={userId} />}
+          </div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center">
@@ -531,7 +554,7 @@ const SellerDashboard = () => {
               <div className="ml-4">
                 <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Earnings</p>
                 <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">
-                  ${orders.reduce((sum, o) => sum + (o.scopeBox?.price || 0), 0)}
+                  {formatCurrency(orders.reduce((sum, o) => sum + (o.scopeBox?.price || 0), 0))}
                 </p>
               </div>
             </div>
@@ -614,7 +637,9 @@ const SellerDashboard = () => {
               </button>
             </div>
           </div>
-        </div>
+          </div>
+          </div>
+        )}
       </div>
 
       {/* Notification Modal */}

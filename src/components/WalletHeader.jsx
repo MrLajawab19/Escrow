@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useCurrency } from '../context/CurrencyContext';
 
 const WalletHeader = ({ userId, onNavigateToWallet }) => {
+  const { formatCurrency } = useCurrency();
   const [balance, setBalance] = useState(0);
   const [currency, setCurrency] = useState('USD');
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const WalletHeader = ({ userId, onNavigateToWallet }) => {
           <p className="text-sm font-bold text-red-600">Error</p>
         ) : (
           <p className="text-lg font-bold text-blue-600">
-            {currency} {balance.toFixed(2)}
+            {formatCurrency(balance)}
           </p>
         )}
       </div>

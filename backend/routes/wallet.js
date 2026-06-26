@@ -41,4 +41,7 @@ router.post('/refund', walletController.refundBuyer);
 // Fail transaction (Admin only)
 router.patch('/transaction/:transactionId/fail', authenticateToken, walletController.failTransaction);
 
+// Get pending withdrawals (Admin only)
+router.get('/admin/withdrawals', authenticateToken, walletController.getPendingWithdrawals);
+
 module.exports = router;

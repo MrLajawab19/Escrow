@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useCurrency } from '../context/CurrencyContext';
 
 const TransactionHistory = ({ userId, refreshTrigger }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const { formatCurrency } = useCurrency();
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [filters, setFilters] = useState({
     category: '',
@@ -189,14 +192,14 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">
-                    {transaction.currency} {transaction.amount?.toFixed(2)}
+                    {formatCurrency(transaction.amount || 0)}
                   </td>
                   <td className="px-6 py-4 text-sm text-right text-gray-600">
-                    {transaction.fee > 0 ? `${transaction.currency} ${transaction.fee?.toFixed(2)}` : '-'}
+                    {transaction.fee > 0 ? formatCurrency(transaction.fee) : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-right font-semibold">
                     <span className={transaction.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}>
-                      {transaction.type === 'CREDIT' ? '+' : '-'}{transaction.currency} {transaction.netAmount?.toFixed(2)}
+                      {transaction.type === 'CREDIT' ? '+' : '-'}{formatCurrency(transaction.netAmount || 0)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">

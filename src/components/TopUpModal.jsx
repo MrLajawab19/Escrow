@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useCurrency } from '../context/CurrencyContext';
 
 const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
+  const { formatCurrency, currencySymbol } = useCurrency();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="text-center py-8">
             <div className="text-5xl mb-4">✓</div>
             <h3 className="text-xl font-bold text-green-600 mb-2">Success!</h3>
-            <p className="text-gray-600">Your top-up of ${amount} has been processed.</p>
+            <p className="text-gray-600">Your top-up of {currencySymbol}{amount} has been processed.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -95,7 +97,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
                         : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
                   >
-                    ${preset}
+                    {currencySymbol}{preset}
                   </button>
                 ))}
               </div>
@@ -107,7 +109,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
                 Enter Amount
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-gray-600 font-semibold">$</span>
+                <span className="absolute left-4 top-3 text-gray-600 font-semibold">{currencySymbol}</span>
                 <input
                   id="amount"
                   type="number"
@@ -119,7 +121,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
                   className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Minimum: $1 | Maximum: $10,000</p>
+              <p className="text-xs text-gray-500 mt-1">Minimum: {currencySymbol}1 | Maximum: {currencySymbol}10,000</p>
             </div>
 
             {/* Payment Method */}
@@ -144,18 +146,18 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-700">Amount:</span>
-                  <span className="font-semibold text-gray-900">${parseFloat(amount).toFixed(2)}</span>
+                  <span className="font-semibold text-gray-900">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-700">Processing Fee (1%):</span>
                   <span className="font-semibold text-gray-900">
-                    ${(parseFloat(amount) * 0.01).toFixed(2)}
+                    {currencySymbol}{(parseFloat(amount) * 0.01).toFixed(2)}
                   </span>
                 </div>
                 <div className="border-t border-blue-300 pt-2 flex justify-between">
                   <span className="text-gray-700 font-semibold">You'll get:</span>
                   <span className="font-bold text-blue-600">
-                    ${(parseFloat(amount) * 0.99).toFixed(2)}
+                    {currencySymbol}{(parseFloat(amount) * 0.99).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -194,7 +196,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
                     Processing...
                   </>
                 ) : (
-                  <>+ Add ${amount || '0.00'}</>
+                  <>+ Add {currencySymbol}{amount || '0.00'}</>
                 )}
               </button>
             </div>

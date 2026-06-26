@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrency } from '../context/CurrencyContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -338,6 +339,7 @@ const courierProviders = ['BlueDart', 'Delhivery', 'DTDC', 'Shiprocket', 'Other'
 
 export default function NewOrderPage() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const [step, setStep] = useState(1);
   const [buyerData, setBuyerData] = useState(null);
   const [form, setForm] = useState({
@@ -1528,10 +1530,9 @@ export default function NewOrderPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatPrice = (price, currency) => {
+  const formatPrice = (price) => {
     if (!price) return 'Not set';
-    const currencySymbol = currency || 'USD';
-    return `${currencySymbol} ${parseFloat(price).toFixed(2)}`;
+    return formatCurrency(price);
   };
 
   const formatDeadline = (deadline) => {

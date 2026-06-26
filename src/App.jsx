@@ -11,6 +11,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import AdminDisputeDetails from './pages/AdminDisputeDetails';
 import LandingPage from './components/LandingPage';
+import { CurrencyProvider } from './context/CurrencyContext';
 
 // Route Change Handler Component
 const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
@@ -525,8 +526,9 @@ function App() {
   }, [isMobileMenuOpen]);
 
   return (
-    <Router>
-      <div className="App">
+    <CurrencyProvider>
+      <Router>
+        <div className="App">
         {/* Navigation */}
         <AppNav
           isBuyerAuthenticated={isBuyerAuthenticated}
@@ -560,7 +562,8 @@ function App() {
           </Routes>
         </RouteChangeHandler>
       </div>
-    </Router>
+      </Router>
+    </CurrencyProvider>
   );
 }
 

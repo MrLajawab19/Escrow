@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { useCurrency } from '../context/CurrencyContext';
 import OrderTimeline from '../components/order/OrderTimeline';
 import MilestoneList from '../components/order/MilestoneList';
 import DeliveryActions from '../components/order/DeliveryActions';
@@ -69,12 +70,14 @@ const PageSkeleton = () => (
 const OrderDetails = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { formatCurrency } = useCurrency();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Detect user type
-  const userType = localStorage.getItem('buyerToken') ? 'buyer' : 'seller';
+  const userType = location.pathname.includes('/seller/') ? 'seller' : 'buyer';
   const token = localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken');
 
   // Decode current user for chat
@@ -195,7 +198,7 @@ const OrderDetails = () => {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-3xl font-black text-[#0A2540] font-inter">
-                    ${order.scopeBox?.price?.toLocaleString() || '0'}
+                    {formatCurrency(order.scopeBox?.price || 0)}
                   </p>
                   <p className="text-xs text-neutral-400 font-inter mt-0.5">Escrow Amount</p>
                 </div>

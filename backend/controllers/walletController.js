@@ -34,7 +34,7 @@ exports.getOrCreateWallet = async (req, res) => {
 // Get wallet with balance
 exports.getWallet = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
 
     if (!userId) {
       return res.status(401).json({
@@ -43,7 +43,8 @@ exports.getWallet = async (req, res) => {
       });
     }
 
-    const wallet = await walletService.getWalletWithBalance(userId);
+    const userRole = req.user?.role;
+    const wallet = await walletService.getWalletWithBalance(userId, userRole);
 
     res.json({
       success: true,
@@ -60,7 +61,7 @@ exports.getWallet = async (req, res) => {
 // Get wallet summary
 exports.getWalletSummary = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
 
     if (!userId) {
       return res.status(401).json({
@@ -69,7 +70,8 @@ exports.getWalletSummary = async (req, res) => {
       });
     }
 
-    const summary = await walletService.getWalletSummary(userId);
+    const userRole = req.user?.role;
+    const summary = await walletService.getWalletSummary(userId, userRole);
 
     res.json({
       success: true,
@@ -86,7 +88,7 @@ exports.getWalletSummary = async (req, res) => {
 // Get transaction history
 exports.getTransactionHistory = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     const { limit = 50, offset = 0, category, type, status, startDate, endDate } = req.query;
 
     if (!userId) {
@@ -125,7 +127,7 @@ exports.getTransactionHistory = async (req, res) => {
 // Top up wallet
 exports.topUpWallet = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     const { amount, paymentMethod = 'card', reference } = req.body;
 
     if (!userId) {
@@ -163,7 +165,7 @@ exports.topUpWallet = async (req, res) => {
 // Request withdrawal
 exports.requestWithdrawal = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     const { amount, bankDetails } = req.body;
 
     if (!userId) {
@@ -343,6 +345,42 @@ exports.failTransaction = async (req, res) => {
       success: true,
       message: 'Transaction marked as failed',
       data: transaction,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Get pending withdrawals (Admin only)
+exports.getPendingWithdrawals = async (req, res) => {
+  try {
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required',
+      });
+    }
+
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const pendingWithdrawals = await prisma.walletTransaction.findMany({
+      where: {
+        category: 'WITHDRAWAL',
+        status: 'PENDING'
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        wallet: true
+      }
+    });
+
+    res.json({
+      success: true,
+      data: pendingWithdrawals,
     });
   } catch (error) {
     res.status(500).json({

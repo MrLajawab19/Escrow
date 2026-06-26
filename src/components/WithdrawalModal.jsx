@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useCurrency } from '../context/CurrencyContext';
 
-const WithdrawalModal = ({ isOpen, onClose, onSuccess, maxAmount }) => {
+const WithdrawalModal = ({ isOpen, onClose, maxAmount = 0, onSuccess }) => {
+  const { formatCurrency, currencySymbol } = useCurrency();
   const [amount, setAmount] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -16,7 +18,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, maxAmount }) => {
   const handleAmountSubmit = (e) => {
     e.preventDefault();
     if (!amount || amount <= 0 || amount > maxAmount) {
-      setError(`Please enter a valid amount (Max: $${maxAmount.toFixed(2)})`);
+      setError(`Please enter a valid amount (Max: ${currencySymbol}${maxAmount.toFixed(2)})`);
       return;
     }
     setError(null);
@@ -127,7 +129,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, maxAmount }) => {
             <h3 className="text-xl font-bold text-green-600 mb-2">Success!</h3>
             <p className="text-gray-600 mb-2">Your withdrawal request has been submitted.</p>
             <p className="text-sm text-gray-500">
-              You'll receive ${netAmount} to your account in 2-5 business days.
+              You'll receive {currencySymbol}{netAmount} to your account in 2-5 business days.
             </p>
           </div>
         ) : (
@@ -145,7 +147,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, maxAmount }) => {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Available Balance
                   </label>
-                  <p className="text-2xl font-bold text-blue-600">${maxAmount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-blue-600">{currencySymbol}{maxAmount.toFixed(2)}</p>
                 </div>
 
                 <div>
@@ -153,7 +155,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, maxAmount }) => {
                     Withdrawal Amount
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-3 text-gray-600 font-semibold">$</span>
+                    <span className="absolute left-4 top-3 text-gray-600 font-semibold">{currencySymbol}</span>
                     <input
                       id="amount"
                       type="number"
@@ -165,7 +167,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, maxAmount }) => {
                       className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Minimum: $10 | Maximum: ${maxAmount.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Minimum: {currencySymbol}10 | Maximum: {currencySymbol}{maxAmount.toFixed(2)}</p>
                 </div>
 
                 {/* Fee Preview */}
@@ -173,15 +175,15 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, maxAmount }) => {
                   <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-gray-700">Withdrawal Amount:</span>
-                      <span className="font-semibold text-gray-900">${parseFloat(amount).toFixed(2)}</span>
+                      <span className="font-semibold text-gray-900">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-gray-700">Withdrawal Fee (2%):</span>
-                      <span className="font-semibold text-gray-900">-${estimatedFee}</span>
+                      <span className="font-semibold text-gray-900">-{currencySymbol}{estimatedFee}</span>
                     </div>
                     <div className="border-t border-yellow-300 pt-2 flex justify-between">
                       <span className="text-gray-700 font-semibold">You'll receive:</span>
-                      <span className="font-bold text-yellow-600">${netAmount}</span>
+                      <span className="font-bold text-yellow-600">{currencySymbol}{netAmount}</span>
                     </div>
                   </div>
                 )}
@@ -271,15 +273,15 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, maxAmount }) => {
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-700">Amount:</span>
-                    <span className="font-semibold">${parseFloat(amount).toFixed(2)}</span>
+                    <span className="font-semibold">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-700">Fee (2%):</span>
-                    <span className="font-semibold">-${estimatedFee}</span>
+                    <span className="font-semibold">-{currencySymbol}{estimatedFee}</span>
                   </div>
                   <div className="border-t border-blue-300 pt-3 flex justify-between">
                     <span className="text-gray-700 font-semibold">You'll receive:</span>
-                    <span className="font-bold text-blue-600">${netAmount}</span>
+                    <span className="font-bold text-blue-600">{currencySymbol}{netAmount}</span>
                   </div>
                 </div>
 
