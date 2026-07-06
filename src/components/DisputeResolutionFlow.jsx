@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -177,7 +178,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
       setSubmitted(true);
       await fetchDetail();
     } catch (e) {
-      alert(e.response?.data?.message || 'Failed to submit evidence');
+      toast.error(e.response?.data?.message || 'Failed to submit evidence');
     } finally {
       setSubmitting(false);
     }
@@ -195,7 +196,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
       setShowEscalateModal(false);
       await fetchDetail();
     } catch (e) {
-      alert(e.response?.data?.message || 'Failed to escalate');
+      toast.error(e.response?.data?.message || 'Failed to escalate');
     } finally {
       setEscalating(false);
     }
@@ -206,7 +207,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
       await axios.post(`/api/disputes/${detail.dispute.id}/ai-analysis`, {}, { headers });
       await fetchDetail();
     } catch (e) {
-      alert('Failed to refresh AI analysis');
+      toast.error('Failed to refresh AI analysis');
     }
   };
 

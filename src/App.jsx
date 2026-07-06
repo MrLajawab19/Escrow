@@ -12,6 +12,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminDisputeDetails from './pages/AdminDisputeDetails';
 import LandingPage from './components/LandingPage';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { Toaster } from 'react-hot-toast';
 
 // Route Change Handler Component
 const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
@@ -527,6 +528,7 @@ function App() {
 
   return (
     <CurrencyProvider>
+      <Toaster position="top-right" />
       <Router>
         <div className="App">
         {/* Navigation */}

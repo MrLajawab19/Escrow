@@ -115,96 +115,8 @@ function validateXBoxFields(xBox) {
 // ── POST /api/orders — Create new order ────────────────────────────────────────
 // NOTE: Authentication handled by middleware — req.user is guaranteed to be set.
 
-async function createOrder(req, res) {
-  try {
-    // req.user is set by authenticateToken middleware
-    const buyerData = req.user;
-    if (buyerData.role !== 'buyer') {
-      return res.status(403).json({ success: false, message: 'Only buyers can create orders' });
-    }
+// ── POST /api/orders — Create new order (REMOVED: Handled by Deeds API) ──────
 
-    const { platform, productLink, country, currency, sellerContact, scopeBox: xBox } = req.body;
-
-    if (!platform || !country || !currency || !sellerContact || !xBox) {
-      return res.status(400).json({ success: false, message: 'Missing required fields: platform, country, currency, sellerContact, scopeBox' });
-    }
-
-    const validationResult = validateXBoxFields(xBox);
-    if (!validationResult.isValid) return res.status(400).json({ success: false, message: validationResult.message });
-
-    const price = parseFloat(xBox.price);
-    if (isNaN(price) || price <= 0) return res.status(400).json({ success: false, message: 'Invalid price. Must be a positive number.' });
-
-    const deadline = new Date(xBox.deadline);
-    if (isNaN(deadline.getTime()) || deadline <= new Date()) return res.status(400).json({ success: false, message: 'Invalid deadline. Must be a future date.' });
-
-    const orderId = uuidv4();
-
-    // Find or create seller by email
-    let sellerId = null;
-    try {
-      let seller = await prisma.seller.findUnique({ where: { email: sellerContact } });
-      if (seller) {
-        sellerId = seller.id;
-      } else {
-        const newSeller = await prisma.seller.create({
-          data: {
-            email: sellerContact,
-            firstName: 'Pending',
-            lastName: 'Seller',
-            password: 'placeholder-' + uuidv4(),
-            isVerified: false,
-            status: 'active',
-          },
-        });
-        sellerId = newSeller.id;
-      }
-    } catch (err) {
-      console.error('Seller lookup error:', err.message);
-    }
-
-    const escrowLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/order/${orderId}`;
-    const orderTrackingLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/buyer/order/${orderId}`;
-
-    const order = await orderService.createOrder({
-      orderId,
-      buyerId: buyerData.id,
-      sellerId,
-      buyerName: `${buyerData.firstName || ''} ${buyerData.lastName || ''}`.trim() || buyerData.email,
-      buyerEmail: buyerData.email,
-      platform,
-      productLink: productLink || null,
-      country,
-      currency,
-      sellerContact,
-      escrowLink,
-      orderTrackingLink,
-      scopeBox: { ...xBox, price, deadline: deadline.toISOString() },
-    });
-
-    console.log(`✅ Order created: ${orderId} | Buyer: ${buyerData.email} | ${xBox.productType} | ₹${price}`);
-
-    return res.status(201).json({
-      success: true,
-      data: {
-        id: order.id,
-        orderId,
-        escrowLink,
-        orderTrackingLink,
-        status: order.status,
-        platform,
-        productType: xBox.productType,
-        price: `${currency} ${price.toFixed(2)}`,
-        deadline: deadline.toLocaleDateString(),
-        createdAt: order.createdAt,
-      },
-      message: 'Order created successfully! Escrow link sent to seller.',
-    });
-  } catch (error) {
-    console.error('createOrder error:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Failed to create order' });
-  }
-}
 
 // ── POST /api/orders/:id/fund-escrow ──────────────────────────────────────────
 
@@ -494,7 +406,7 @@ async function rejectChanges(req, res) {
 }
 
 module.exports = {
-  createOrder, fundEscrow, startWork, submitDelivery, approveDelivery,
+  fundEscrow, startWork, submitDelivery, approveDelivery,
   raiseDispute, releaseFunds, refundBuyer, getOrder, getBuyerOrders,
   getSellerOrders, cancelOrder, getOrdersByUser, acceptOrder, rejectOrder,
   startWorkFromAccepted, requestChanges, acceptChanges, rejectChanges,

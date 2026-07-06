@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useCurrency } from '../context/CurrencyContext';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const platforms = ['Upwork', 'Fiverr', 'Freelancer', 'Instagram', 'Telegram', 'WhatsApp', 'Twitter', 'Reddit', 'Other'];
 
@@ -640,7 +641,6 @@ export default function NewOrderPage() {
   const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [error, setError] = useState('');
   const [showFundingModal, setShowFundingModal] = useState(false);
   const [fundingData, setFundingData] = useState({
     cardNumber: '',
@@ -1804,7 +1804,7 @@ export default function NewOrderPage() {
         setFundingData(prev => ({ ...prev, amount: response.data.data.price }));
         setShowFundingModal(true);
       } else {
-        setError(response.data.message || 'Failed to create order');
+        toast.error(response.data.message || 'Failed to create order');
       }
     } catch (error) {
       console.error('Error creating order:', error);
@@ -1812,7 +1812,7 @@ export default function NewOrderPage() {
         navigate('/buyer/auth');
         return;
       }
-      setError(error.response?.data?.message || 'Failed to create order. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to create order. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1854,14 +1854,14 @@ export default function NewOrderPage() {
           navigate(`/buyer/order/${orderData.orderId}`);
         }, 3000);
       } else {
-        setError('Failed to fund escrow. Please try again.');
+        toast.error('Failed to fund escrow. Please try again.');
       }
     } catch (error) {
       console.error('Error funding escrow:', error);
       if (error.response?.data?.message) {
-        setError(error.response.data.message);
+        toast.error(error.response.data.message);
       } else {
-        setError('Payment failed. Please check your card details and try again.');
+        toast.error('Payment failed. Please check your card details and try again.');
       }
     } finally {
       setFundingLoading(false);
@@ -5351,7 +5351,6 @@ export default function NewOrderPage() {
                   </button>
                 </div>
               </div>
-              {error && <div className="text-red-600 text-sm mt-4 font-inter bg-red-50 border border-red-200 rounded-lg p-4 font-medium shadow-sm flex items-center"><span className="mr-2">⚠️</span> {error}</div>}
             </div>
           )}
 

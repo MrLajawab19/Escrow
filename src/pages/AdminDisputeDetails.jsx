@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import EnhancedDisputeResolution from '../components/EnhancedDisputeResolution';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -162,14 +163,14 @@ export default function AdminDisputeDetails() {
       });
       await fetchDetail();
     } catch (e) {
-      alert('Failed to refresh AI analysis');
+      toast.error('Failed to refresh AI analysis');
     } finally {
       setRefreshingAI(false);
     }
   };
 
   const handleResolve = async () => {
-    if (!resolution) return alert('Please select a resolution');
+    if (!resolution) return toast.error('Please select a resolution');
     setResolving(true);
     try {
       // admin.js expects action: "REFUND" | "RELEASE"
@@ -181,7 +182,7 @@ export default function AdminDisputeDetails() {
       setResolved(true);
       await fetchDetail();
     } catch (e) {
-      alert(e.response?.data?.message || 'Failed to resolve dispute');
+      toast.error(e.response?.data?.message || 'Failed to resolve dispute');
     } finally {
       setResolving(false);
     }
@@ -216,7 +217,7 @@ export default function AdminDisputeDetails() {
       setShowEnhancedResolution(false);
       await fetchDetail();
     } catch (e) {
-      alert(e.response?.data?.message || 'Failed to resolve dispute');
+      toast.error(e.response?.data?.message || 'Failed to resolve dispute');
       throw e;
     }
   };

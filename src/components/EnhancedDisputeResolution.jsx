@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const EnhancedDisputeResolution = ({ 
   dispute, 
@@ -260,7 +261,7 @@ const EnhancedDisputeResolution = ({
 
   const handleResolve = async () => {
     if (!selectedResolution) {
-      alert('Please select a resolution option');
+      toast.error('Please select a resolution option');
       return;
     }
 
@@ -275,7 +276,7 @@ const EnhancedDisputeResolution = ({
       onClose();
     } catch (error) {
       console.error('Error resolving dispute:', error);
-      alert('Failed to resolve dispute. Please try again.');
+      toast.error('Failed to resolve dispute. Please try again.');
     } finally {
       setLoading(false);
     }

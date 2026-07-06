@@ -30,8 +30,8 @@ const upload = multer({
 
 // ── All order routes require authentication ───────────────────────────────────
 
-// Create order (buyer)
-router.post('/', authenticateToken, orderController.createOrder);
+// Orders are now exclusively created through Deeds (Deed -> Order bridge)
+// router.post('/', authenticateToken, orderController.createOrder);
 
 // Fund escrow (buyer)
 router.post('/:id/fund-escrow', authenticateToken, orderController.fundEscrow);

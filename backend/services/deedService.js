@@ -1,4 +1,4 @@
-﻿const { PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require("@prisma/client");
 const crypto = require("crypto");
 const { v4: uuidv4 } = require("uuid");
 const prisma = new PrismaClient();
@@ -52,7 +52,7 @@ class DeedService {
         isMilestone: data.isMilestone || false,
         inviteToken,
         inviteExpiresAt,
-        status: "PENDING_SELLER",
+        status: "DRAFT",
       },
     });
 
@@ -88,28 +88,121 @@ class DeedService {
     return deed;
   }
 
-  // ── SELLER JOIN via invite link ──────────────────────────────────────────
+  // ── FUND DEED ─────────────────────────────────────────────────────────────
+
+  async fundDeed(deedId, buyerId) {
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed || deed.buyerId !== buyerId) throw new Error("DEED_NOT_FOUND");
+    if (deed.status !== "DRAFT") throw new Error("DEED_NOT_IN_DRAFT_STATE");
+
+    const wallet = await prisma.wallet.findUnique({ where: { userId: buyerId } });
+    if (!wallet || wallet.balance < deed.amount) throw new Error("INSUFFICIENT_BALANCE");
+
+    // Deduct from balance, add to lockedBalance
+    await prisma.$transaction([
+      prisma.wallet.update({
+        where: { userId: buyerId },
+        data: {
+          balance: { decrement: deed.amount },
+          lockedBalance: { increment: deed.amount },
+        },
+      }),
+      prisma.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: "DEBIT",
+          category: "ESCROW_LOCK",
+          amount: deed.amount,
+          currency: deed.currency,
+          status: "SUCCESS",
+          description: `Funds locked for deed: ${deed.title}`,
+          reference: deedId,
+          netAmount: deed.amount,
+        },
+      }),
+      prisma.deed.update({
+        where: { id: deedId },
+        data: { status: "PENDING_SELLER" },
+      })
+    ]);
+
+    await ledgerService.appendEvent(deedId, "FUNDS_LOCKED", "buyer", buyerId, {
+      amount: deed.amount,
+      currency: deed.currency,
+    });
+
+    return await prisma.deed.findUnique({ where: { id: deedId } });
+  }
+
+  // ── SELLER JOIN (ACCEPT DEED) ─────────────────────────────────────────────
 
   async sellerJoin(inviteToken, sellerId) {
-    const deed = await prisma.deed.findUnique({ where: { inviteToken } });
+    const deed = await prisma.deed.findUnique({ where: { inviteToken }, include: { buyer: true, chatRoom: true } });
     if (!deed) throw new Error("DEED_NOT_FOUND");
     if (deed.status !== "PENDING_SELLER") throw new Error("DEED_NOT_AWAITING_SELLER");
     if (deed.inviteExpiresAt && deed.inviteExpiresAt < new Date()) throw new Error("INVITE_EXPIRED");
 
-    const updated = await prisma.deed.update({
-      where: { id: deed.id },
-      data: { sellerId, status: "PENDING_SIGNATURES" },
+    const seller = await prisma.seller.findUnique({ where: { id: sellerId } });
+    if (!seller) throw new Error("SELLER_NOT_FOUND");
+    
+    // We get the buyer object by querying or we used include: { buyer: true }
+    const buyerName = deed.buyer ? `${deed.buyer.firstName} ${deed.buyer.lastName}` : "Buyer";
+    const buyerEmail = deed.buyer ? deed.buyer.email : "buyer@example.com";
+
+    // 1. Update Deed to ACTIVE
+    // 2. Create Order
+    // 3. Create OrderChatRoom
+    // 4. Update Wallet (Funds are already locked, but we keep them in lockedBalance until RELEASE or REFUND)
+    const [updatedDeed, order] = await prisma.$transaction([
+      prisma.deed.update({
+        where: { id: deed.id },
+        data: { sellerId, status: "ACTIVE", contentHash: hashDeedContent(deed) },
+      }),
+      prisma.order.create({
+        data: {
+          buyerId: deed.buyerId,
+          sellerId: sellerId,
+          buyerName: buyerName,
+          buyerEmail: buyerEmail,
+          platform: "ScrowX",
+          country: "Global",
+          currency: deed.currency,
+          sellerContact: seller.email,
+          scopeBox: {
+            title: deed.title,
+            description: deed.description,
+            price: deed.amount,
+            deadline: deed.deadline,
+            acceptanceCriteria: deed.acceptanceCriteria,
+            productType: deed.transactionType
+          },
+          status: "ESCROW_FUNDED",
+          orderLogs: JSON.stringify([{ action: "CREATED", timestamp: new Date(), by: "system" }])
+        }
+      })
+    ]);
+
+    // Create OrderChatRoom
+    await prisma.orderChatRoom.create({
+      data: {
+        orderId: order.id,
+        buyerId: deed.buyerId,
+        sellerId: sellerId
+      }
     });
 
-    // Update chat room with real sellerId
-    await prisma.deedChatRoom.update({
-      where: { deedId: deed.id },
-      data: { sellerId },
-    });
+    // Update Deed chat room with real sellerId
+    if (deed.chatRoom) {
+      await prisma.deedChatRoom.update({
+        where: { deedId: deed.id },
+        data: { sellerId },
+      });
+    }
 
-    await ledgerService.appendEvent(deed.id, "SELLER_JOINED", "seller", sellerId, { sellerId });
+    await ledgerService.appendEvent(deed.id, "SELLER_JOINED", "seller", sellerId, { sellerId, orderId: order.id });
+    await ledgerService.appendEvent(deed.id, "DEED_LOCKED", "system", "system", { contentHash: updatedDeed.contentHash });
 
-    return updated;
+    return { deed: updatedDeed, order };
   }
 
   // ── SIGNING ───────────────────────────────────────────────────────────────
@@ -156,51 +249,6 @@ class DeedService {
     return updated;
   }
 
-  // ── ESCROW LOCK ───────────────────────────────────────────────────────────
-
-  async lockEscrow(deedId, buyerId) {
-    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
-    if (!deed || deed.buyerId !== buyerId) throw new Error("DEED_NOT_FOUND");
-    if (deed.status !== "ACTIVE") throw new Error("DEED_NOT_ACTIVE");
-
-    const wallet = await prisma.wallet.findUnique({ where: { userId: buyerId } });
-    if (!wallet || wallet.balance < deed.amount) throw new Error("INSUFFICIENT_BALANCE");
-
-    // Deduct from balance, add to lockedBalance
-    await prisma.wallet.update({
-      where: { userId: buyerId },
-      data: {
-        balance: { decrement: deed.amount },
-        lockedBalance: { increment: deed.amount },
-      },
-    });
-
-    await prisma.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        type: "DEBIT",
-        category: "ESCROW_LOCK",
-        amount: deed.amount,
-        currency: deed.currency,
-        status: "SUCCESS",
-        description: `Escrow locked for deed: ${deed.title}`,
-        reference: deedId,
-        netAmount: deed.amount,
-      },
-    });
-
-    const updated = await prisma.deed.update({
-      where: { id: deedId },
-      data: { status: "ESCROW_LOCKED" },
-    });
-
-    await ledgerService.appendEvent(deedId, "ESCROW_LOCKED", "buyer", buyerId, {
-      amount: deed.amount,
-      currency: deed.currency,
-    });
-
-    return updated;
-  }
 
   // ── SELLER CLAIMS DELIVERY ────────────────────────────────────────────────
 
