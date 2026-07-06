@@ -60,3 +60,15 @@ exports.getSellerDeeds = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+exports.getDeedByInvite = async (req, res) => {
+  try {
+    const deedService = require('../services/deedService');
+    const deed = await deedService.getDeedByInviteToken(req.params.token);
+    if (!deed) return res.status(404).json({ success: false, message: 'Deed not found or invite expired' });
+    res.json({ success: true, data: deed });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+

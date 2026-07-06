@@ -5,6 +5,7 @@ import SellerAuth from './pages/SellerAuth';
 import BuyerDashboard from './pages/BuyerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
 import NewDeedPage from './pages/NewDeedPage';
+import DeedInvitePage from './pages/DeedInvitePage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import OrderDetails from './pages/OrderDetails';
 import AdminLogin from './pages/AdminLogin';
@@ -564,6 +565,7 @@ function App() {
             <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderDetails /></ProtectedBuyerRoute>} />
             <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
             <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><OrderDetails /></ProtectedSellerRoute>} />
+            <Route path="/deed/invite/:token" element={<DeedInvitePage />} />
           </Routes>
         </RouteChangeHandler>
       </div>
