@@ -8,3 +8,7 @@ router.post('/verify-otp', authenticateToken, kycController.verifyOTP);
 router.get('/status', authenticateToken, kycController.getStatus);
 
 module.exports = router;
+
+const upload = require('../middleware/upload');
+router.post('/submit-id', authenticateToken, upload.array('documents', 2), kycController.submitID);
+

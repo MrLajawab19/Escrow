@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const deedController = require('../controllers/deedController');
 const { authenticateToken } = require('../middleware/auth');
+const { requireKYC } = require('../middleware/kycGate');
 
-router.post('/', authenticateToken, deedController.createDeed);
+router.post('/', authenticateToken, requireKYC, deedController.createDeed);
 router.post('/:id/fund', authenticateToken, deedController.fundDeed);
 router.post('/:id/accept-seller', authenticateToken, deedController.acceptDeed);
 router.get('/buyer', authenticateToken, deedController.getBuyerDeeds);

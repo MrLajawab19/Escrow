@@ -251,4 +251,48 @@ router.get('/users', adminAuth, async (req, res) => {
   }
 });
 
+// +?+? GET /api/admin/kyc (Queue)
+router.get('/kyc', adminAuth, async (req, res) => {
+  try {
+    const pendingKyc = await prisma.kYC.findMany({
+      where: { reviewStatus: 'PENDING', idDocUrls: { isEmpty: false } },
+      orderBy: { submittedAt: 'asc' }
+    });
+    return res.json({ success: true, data: pendingKyc });
+  } catch (err) {
+    console.error('Admin KYC error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch KYC queue' });
+  }
+});
+
+// +?+? POST /api/admin/kyc/:id/approve
+router.post('/kyc/:id/approve', adminAuth, async (req, res) => {
+  try {
+    const kyc = await prisma.kYC.update({
+      where: { id: req.params.id },
+      data: { reviewStatus: 'APPROVED', kycComplete: true, completedAt: new Date() }
+    });
+    return res.json({ success: true, message: 'KYC Approved', data: kyc });
+  } catch (err) {
+    console.error('Admin KYC approve error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to approve KYC' });
+  }
+});
+
+// +?+? POST /api/admin/kyc/:id/reject
+router.post('/kyc/:id/reject', adminAuth, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const kyc = await prisma.kYC.update({
+      where: { id: req.params.id },
+      data: { reviewStatus: 'REJECTED', kycComplete: false, rejectionReason: reason || 'Invalid documents' }
+    });
+    return res.json({ success: true, message: 'KYC Rejected', data: kyc });
+  } catch (err) {
+    console.error('Admin KYC reject error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to reject KYC' });
+  }
+});
+
 module.exports = router;
+

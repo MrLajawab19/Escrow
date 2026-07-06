@@ -121,7 +121,26 @@ class KYCService {
     }
 
     return { success: true, message: "Phone verified successfully" };
+  async submitID(userId, data) {
+    const kyc = await prisma.kYC.findUnique({ where: { userId } });
+    if (!kyc) throw new Error('KYC record not found');
+    if (!kyc.phoneVerified) throw new Error('Please verify your phone number first');
+
+    await prisma.kYC.update({
+      where: { userId },
+      data: {
+        idDocType: data.idDocType,
+        fullLegalName: data.fullLegalName,
+        dateOfBirth: data.dateOfBirth,
+        idDocUrls: data.idDocUrls,
+        submittedAt: new Date(),
+        reviewStatus: 'PENDING'
+      }
+    });
+
+    return { success: true, message: 'ID documents submitted successfully. Waiting for admin approval.' };
   }
 }
 
 module.exports = new KYCService();
+

@@ -291,12 +291,20 @@ model KYC {
   userId        String    @unique
   userRole      String
   phone         String
-  phoneVerified Boolean   @default(false)
-  fullLegalName String
-  dateOfBirth   String
-  completedAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  phoneVerified   Boolean   @default(false)
+  fullLegalName   String
+  dateOfBirth     String
+  
+  idDocType       String?
+  idDocUrls       String[]  @default([])
+  submittedAt     DateTime?
+  reviewStatus    String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason String?
+  kycComplete     Boolean   @default(false)
+  
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model OTPRecord {

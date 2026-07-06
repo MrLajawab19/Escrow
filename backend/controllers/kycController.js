@@ -36,3 +36,26 @@ exports.getStatus = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+exports.submitID = async (req, res) => {
+  try {
+    const { idDocType, fullLegalName, dateOfBirth } = req.body;
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No documents uploaded' });
+    }
+
+    const idDocUrls = req.files.map(file => \/uploads/kyc/\/\\);
+
+    const result = await kycService.submitID(req.user.id, {
+      idDocType,
+      fullLegalName,
+      dateOfBirth,
+      idDocUrls
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
