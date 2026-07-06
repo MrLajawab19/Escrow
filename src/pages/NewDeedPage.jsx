@@ -338,7 +338,7 @@ const gamingPlatforms = ['PC', 'PlayStation', 'Xbox', 'Nintendo Switch', 'Mobile
 const ecommerceProductTypes = ['Clothing', 'Sneakers', 'Accessories', 'Other'];
 const courierProviders = ['BlueDart', 'Delhivery', 'DTDC', 'Shiprocket', 'Other'];
 
-export default function NewOrderPage() {
+export default function NewDeedPage() {
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
   const [step, setStep] = useState(1);
@@ -1686,13 +1686,17 @@ export default function NewOrderPage() {
       }
 
       // Prepare the data for the API
-      const orderData = {
-        platform: form.platform,
-        productLink: form.sellerPlatformLink, // Map to the expected backend field name
-        serviceType: form.serviceType,
-        country: form.country,
+      const deedData = {
+        title: form.scopeBox.title,
+        transactionType: 'SERVICE', // We can derive this if needed, for now default SERVICE
+        description: form.scopeBox.description || form.scopeBox.title,
+        acceptanceCriteria: form.scopeBox.condition || 'Meet the requirements stated in the scope box',
+        amount: parseFloat(form.scopeBox.price),
         currency: form.currency,
-        sellerContact: form.sellerContact,
+        paymentMethod: 'ESCROW',
+        deadline: form.scopeBox.deadline,
+        revisionLimit: 0,
+        isMilestone: false,
         scopeBox: {
           title: form.scopeBox.title,
           productType: form.scopeBox.productType,
@@ -1702,7 +1706,7 @@ export default function NewOrderPage() {
           description: form.scopeBox.description,
           attachments: filePreviews.map(f => f.name), // Just send file names for now
           condition: isContentCopywritingSelected()
-            ? (String(form.scopeBox.condition || '').trim() || 'N/A — content order')
+            ? (String(form.scopeBox.condition || '').trim() || 'N/A')
             : form.scopeBox.condition,
           deadline: form.scopeBox.deadline,
           price: form.scopeBox.price,
@@ -1792,7 +1796,7 @@ export default function NewOrderPage() {
         }
       };
 
-      const response = await axios.post('/api/orders', orderData, {
+      const response = await axios.post('/api/deeds', deedData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -1800,19 +1804,19 @@ export default function NewOrderPage() {
       });
 
       if (response.data.success) {
-        setOrderData(response.data.data);
-        setFundingData(prev => ({ ...prev, amount: response.data.data.price }));
+        setOrderData(response.data.data); // Store deed info
+        setFundingData(prev => ({ ...prev, amount: response.data.data.amount }));
         setShowFundingModal(true);
       } else {
-        toast.error(response.data.message || 'Failed to create order');
+        toast.error(response.data.message || 'Failed to create deed');
       }
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error('Error creating deed:', error);
       if (error.response?.status === 401) {
         navigate('/buyer/auth');
         return;
       }
-      toast.error(error.response?.data?.message || 'Failed to create order. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to create deed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1824,25 +1828,12 @@ export default function NewOrderPage() {
     setError('');
 
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Fund the escrow
       const token = localStorage.getItem('buyerToken');
-      const fundResponse = await axios.post(`/api/orders/${orderData.orderId}/fund-escrow`, {
-        buyerId: buyerData.id,
-        paymentMethod: 'credit_card',
-        amount: fundingData.amount,
-        cardDetails: {
-          cardNumber: '4111111111111111', // Demo card number
-          expiryMonth: '12',
-          expiryYear: '2026',
-          cvv: '123'
-        }
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      // Simulate real payment delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const fundResponse = await axios.post(`/api/deeds/${orderData.id}/fund`, {}, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (fundResponse.data.success) {
@@ -5488,38 +5479,43 @@ export default function NewOrderPage() {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-navy-900 font-inter mb-2">Payment Successful!</h3>
+                <h3 className="text-2xl font-bold text-navy-900 font-inter mb-2">Deed Created & Funded!</h3>
                 <p className="text-neutral-500 font-inter text-sm mb-6">
-                  Your order has been created, funded, and the seller has been notified.
+                  Funds are locked securely in your wallet. Send this invite link to your seller so they can accept and start the order.
                 </p>
 
                 <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 mb-6 text-left shadow-inner">
                   <div className="flex justify-between items-center mb-3 pb-3 border-b border-neutral-200">
-                    <span className="text-neutral-500 text-sm font-inter">Amount Paid</span>
-                    <span className="font-bold text-navy-900 font-inter">{orderData.price}</span>
+                    <span className="text-neutral-500 text-sm font-inter">Amount Locked</span>
+                    <span className="font-bold text-navy-900 font-inter">{orderData.currency} {orderData.amount}</span>
                   </div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-neutral-500 text-sm font-inter">Order ID</span>
-                    <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-neutral-200 text-navy-900">{orderData.orderId}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-neutral-500 text-sm font-inter">Status</span>
-                    <span className="text-green-600 font-medium text-xs px-2 py-0.5 bg-green-50 rounded-full border border-green-100 flex items-center">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span> Funded
-                    </span>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <span className="text-neutral-700 font-semibold text-sm font-inter">Invite Link</span>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={`${window.location.origin}/deed/invite/${orderData.inviteToken}`}
+                        className="flex-1 px-3 py-2 text-xs bg-white border border-neutral-300 rounded focus:outline-none"
+                      />
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/deed/invite/${orderData.inviteToken}`);
+                          toast.success('Link copied!');
+                        }}
+                        className="px-3 py-2 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded hover:bg-indigo-200 transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-center space-x-2 text-sm text-neutral-500 mb-8 bg-indigo-50 text-indigo-700 py-2 px-4 rounded-lg border border-indigo-100 font-inter">
-                  <span>Redirecting to tracking...</span>
-                  <svg className="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
-
-                <button className="w-full text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors font-inter hidden">
-                  View Order Tracking
+                <button 
+                  onClick={() => navigate('/buyer/dashboard')}
+                  className="w-full text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 py-3 rounded-xl transition-colors font-inter"
+                >
+                  Go to Dashboard
                 </button>
               </div>
             </div>

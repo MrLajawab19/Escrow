@@ -4,7 +4,7 @@ import BuyerAuth from './pages/BuyerAuth';
 import SellerAuth from './pages/SellerAuth';
 import BuyerDashboard from './pages/BuyerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
-import NewOrderPage from './pages/NewOrderPage';
+import NewDeedPage from './pages/NewDeedPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import OrderDetails from './pages/OrderDetails';
 import AdminLogin from './pages/AdminLogin';
@@ -557,7 +557,10 @@ function App() {
             <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
             <Route path="/admin/dispute/:id" element={<ProtectedAdminRoute><AdminDisputeDetails /></ProtectedAdminRoute>} />
             <Route path="/buyer/dashboard" element={<ProtectedBuyerRoute><BuyerDashboard /></ProtectedBuyerRoute>} />
-            <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewOrderPage /></ProtectedBuyerRoute>} />
+            {/* Unified Deed Flow */}
+            {/* Unified Deed Flow */}
+            <Route path="/buyer/new-deed" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
+            <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
             <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderDetails /></ProtectedBuyerRoute>} />
             <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
             <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><OrderDetails /></ProtectedSellerRoute>} />

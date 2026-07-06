@@ -148,6 +148,8 @@ model Deed {
   revisionLimit       Int             @default(0)
   deliverableFormats  String[]        @default([])
   isMilestone         Boolean         @default(false)
+  scopeBox            Json?
+
 
   contentHash         String?
   buyerSignedAt       DateTime?

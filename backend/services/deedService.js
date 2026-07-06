@@ -50,6 +50,7 @@ class DeedService {
         revisionLimit: parseInt(data.revisionLimit) || 0,
         deliverableFormats: data.deliverableFormats || [],
         isMilestone: data.isMilestone || false,
+        scopeBox: data.scopeBox || null,
         inviteToken,
         inviteExpiresAt,
         status: "DRAFT",
@@ -168,7 +169,7 @@ class DeedService {
           country: "Global",
           currency: deed.currency,
           sellerContact: seller.email,
-          scopeBox: {
+          scopeBox: deed.scopeBox || {
             title: deed.title,
             description: deed.description,
             price: deed.amount,
