@@ -7,7 +7,7 @@ const walletService = require('../services/walletService');
 // Get or create wallet
 exports.getOrCreateWallet = async (req, res) => {
   try {
-    const { userId } = req.user || req.body;
+    const userId = req.user?.id || req.body?.userId;
     const { userRole, currency } = req.body;
 
     if (!userId || !userRole) {
@@ -34,7 +34,7 @@ exports.getOrCreateWallet = async (req, res) => {
 // Get wallet with balance
 exports.getWallet = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({
@@ -61,7 +61,7 @@ exports.getWallet = async (req, res) => {
 // Get wallet summary
 exports.getWalletSummary = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({
@@ -88,7 +88,7 @@ exports.getWalletSummary = async (req, res) => {
 // Get transaction history
 exports.getTransactionHistory = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     const { limit = 50, offset = 0, category, type, status, startDate, endDate } = req.query;
 
     if (!userId) {
@@ -127,7 +127,7 @@ exports.getTransactionHistory = async (req, res) => {
 // Top up wallet
 exports.topUpWallet = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     const { amount, paymentMethod = 'card', reference } = req.body;
 
     if (!userId) {
@@ -165,7 +165,7 @@ exports.topUpWallet = async (req, res) => {
 // Request withdrawal
 exports.requestWithdrawal = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     const { amount, bankDetails } = req.body;
 
     if (!userId) {

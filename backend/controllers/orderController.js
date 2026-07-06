@@ -1,16 +1,23 @@
+const { PrismaClient } = require('@prisma/client');
 const orderService = require('../services/orderService');
-const { Order } = require('../models');
 const { v4: uuidv4 } = require('uuid');
-const jwt = require('jsonwebtoken');
-const { Sequelize } = require('sequelize');
-const config = require('../config/config.json');
-const {
-  CONTENT_WRITING_FIELDS,
-  normalizeProductType,
-  hasCompleteContentWritingPayload
-} = require('../utils/scopeBoxHelpers');
 
-// Service-specific field requirements (matching frontend field names)
+const prisma = new PrismaClient();
+
+// ── Scope box helpers ──────────────────────────────────────────────────────────
+
+const CONTENT_WRITING_FIELDS = ['topic', 'tone', 'wordCount', 'targetAudience', 'keywords'];
+
+function normalizeProductType(pt) {
+  return (pt || '').trim();
+}
+
+function hasCompleteContentWritingPayload(xBox) {
+  const cw = xBox?.contentWritingSpecific;
+  if (!cw) return false;
+  return CONTENT_WRITING_FIELDS.some(f => cw[f]);
+}
+
 const SERVICE_FIELD_REQUIREMENTS = {
   'Logo design': ['businessName', 'keywordIndustry', 'logoStyle', 'colorPreferred'],
   'Poster/flyer/banner design': ['width', 'height', 'resolution', 'orientation', 'designStyle', 'brandColors', 'fonts', 'textContent'],
@@ -37,94 +44,15 @@ const SERVICE_FIELD_REQUIREMENTS = {
   'Email marketing content': CONTENT_WRITING_FIELDS,
   'Reddit/Quora answers': CONTENT_WRITING_FIELDS,
   'Script Writing': ['scriptType', 'targetAudience', 'toneStyle', 'wordCount', 'keyMessage'],
-  'Landing Page Creation': ['pagePurpose', 'technologyStack', 'numberOfSections', 'responsiveDesign']
+  'Landing Page Creation': ['pagePurpose', 'technologyStack', 'numberOfSections', 'responsiveDesign'],
 };
 
-// Scope "product link" optional for content copywriting (buyer-facing reference URL not used)
 function scopeSkipsXBoxProductLink(xBox) {
   const pt = normalizeProductType(xBox?.productType);
   if (pt && SERVICE_FIELD_REQUIREMENTS[pt] === CONTENT_WRITING_FIELDS) return true;
   return hasCompleteContentWritingPayload(xBox);
 }
 
-// Function to validate XBox fields based on service type
-function validateXBoxFields(xBox) {
-  const normalizedType = normalizeProductType(xBox.productType);
-  if (normalizedType !== xBox.productType) {
-    xBox.productType = normalizedType;
-  }
-
-  const basicRequiredFields = ['title', 'productType', 'description', 'deadline', 'price'];
-  if (!scopeSkipsXBoxProductLink(xBox)) {
-    basicRequiredFields.push('productLink');
-  }
-
-  for (const field of basicRequiredFields) {
-    if (!xBox[field]) {
-      return {
-        isValid: false,
-        message: `Missing required XBox field: ${field}`
-      };
-    }
-  }
-
-  // Service-specific validation
-  const serviceType = xBox.productType;
-  const requiredFields = SERVICE_FIELD_REQUIREMENTS[serviceType];
-
-  // Content-writing orders: accept full contentWritingSpecific even if productType string
-  // does not match SERVICE_FIELD_REQUIREMENTS keys (encoding / invisible chars).
-  if (!requiredFields && hasCompleteContentWritingPayload(xBox)) {
-    return { isValid: true };
-  }
-
-  if (requiredFields) {
-    // Check service-specific fields
-    const serviceSpecificKey = getServiceSpecificKey(serviceType);
-    const serviceSpecificData = xBox[serviceSpecificKey];
-
-    if (!serviceSpecificData) {
-      return {
-        isValid: false,
-        message: `Missing ${serviceType} specific data in XBox`
-      };
-    }
-
-    for (const field of requiredFields) {
-      if (!serviceSpecificData[field]) {
-        return {
-          isValid: false,
-          message: `Missing required ${serviceType} field: ${field}`
-        };
-      }
-    }
-  } else {
-    // For services without a SERVICE_FIELD_REQUIREMENTS entry, require generic condition
-    // (New/Used/…) unless the product is a structured-scope type (aligned with order model)
-    const servicesWithoutCondition = [
-      'Logo design', 'Poster/flyer/banner design', 'Social media post creation',
-      'Video editing', 'Motion graphics', 'NFT art creation', 'Illustration / Comics',
-      '3D modeling / rendering', 'Website development', 'Gaming account sales',
-      'Content Writing', 'Blog writing', 'SEO writing', 'Ghostwriting', 'Copywriting for ads',
-      'Social media captions', 'Email marketing content', 'Reddit/Quora answers'
-    ];
-
-    if (
-      !servicesWithoutCondition.includes(serviceType) &&
-      !xBox.condition &&
-      !hasCompleteContentWritingPayload(xBox)
-    ) {
-      return {
-        isValid: false,
-        message: `Missing required XBox field for ${serviceType}: condition`
-      };
-    }
-  }
-
-  return { isValid: true };
-}
-
-// Helper function to get service-specific data key
 function getServiceSpecificKey(serviceType) {
   const keyMap = {
     'Logo design': 'logoSpecific',
@@ -151,1070 +79,423 @@ function getServiceSpecificKey(serviceType) {
     'Email marketing content': 'contentWritingSpecific',
     'Reddit/Quora answers': 'contentWritingSpecific',
     'Script Writing': 'scriptWritingSpecific',
-    'Landing Page Creation': 'landingPageSpecific'
+    'Landing Page Creation': 'landingPageSpecific',
   };
-
   return keyMap[serviceType] || 'serviceSpecific';
 }
 
-// Initialize Sequelize
-const sequelize = new Sequelize(config.development);
-const Seller = require('../models/seller')(sequelize, Sequelize.DataTypes);
+function validateXBoxFields(xBox) {
+  const normalizedType = normalizeProductType(xBox.productType);
+  if (normalizedType !== xBox.productType) xBox.productType = normalizedType;
 
-// Helper function to verify buyer token
-function verifyBuyerToken(req) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    throw new Error('No authentication token provided');
+  const basicRequiredFields = ['title', 'productType', 'description', 'deadline', 'price'];
+  if (!scopeSkipsXBoxProductLink(xBox)) basicRequiredFields.push('productLink');
+
+  for (const field of basicRequiredFields) {
+    if (!xBox[field]) return { isValid: false, message: `Missing required XBox field: ${field}` };
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
-    console.log('Decoded token:', decoded);
-    return decoded;
-  } catch (error) {
-    console.error('Token verification error:', error);
-    throw new Error('Invalid authentication token');
+  const serviceType = xBox.productType;
+  const requiredFields = SERVICE_FIELD_REQUIREMENTS[serviceType];
+
+  if (!requiredFields && hasCompleteContentWritingPayload(xBox)) return { isValid: true };
+
+  if (requiredFields) {
+    const serviceSpecificKey = getServiceSpecificKey(serviceType);
+    const serviceSpecificData = xBox[serviceSpecificKey];
+    if (!serviceSpecificData) return { isValid: false, message: `Missing ${serviceType} specific data in XBox` };
+    for (const field of requiredFields) {
+      if (!serviceSpecificData[field]) return { isValid: false, message: `Missing required ${serviceType} field: ${field}` };
+    }
   }
+
+  return { isValid: true };
 }
 
-// POST /api/orders - Create new order
-/**
- * Creates a new order and generated an escrow link.
- * 1. Validates buyer authentication token
- * 2. Checks required fields and service-specific requirements
- * 3. Handles seller mapping (find or create placeholder)
- * 4. Generates unique order ID and links
- */
+// ── POST /api/orders — Create new order ────────────────────────────────────────
+// NOTE: Authentication handled by middleware — req.user is guaranteed to be set.
+
 async function createOrder(req, res) {
   try {
-    // Verify buyer authentication
-    let buyerData;
-    try {
-      buyerData = verifyBuyerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a buyer.'
-      });
+    // req.user is set by authenticateToken middleware
+    const buyerData = req.user;
+    if (buyerData.role !== 'buyer') {
+      return res.status(403).json({ success: false, message: 'Only buyers can create orders' });
     }
 
-    const {
-      platform,
-      productLink,
-      country,
-      currency,
-      sellerContact,
-      scopeBox: xBox
-    } = req.body;
+    const { platform, productLink, country, currency, sellerContact, scopeBox: xBox } = req.body;
 
-    // Enhanced validation
-    if (!platform || !productLink || !country || !currency || !sellerContact || !xBox) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: platform, productLink, country, currency, sellerContact, xBox'
-      });
+    if (!platform || !country || !currency || !sellerContact || !xBox) {
+      return res.status(400).json({ success: false, message: 'Missing required fields: platform, country, currency, sellerContact, scopeBox' });
     }
 
-    // Validate XBox fields with conditional validation based on service type
     const validationResult = validateXBoxFields(xBox);
-    if (!validationResult.isValid) {
-      return res.status(400).json({
-        success: false,
-        message: validationResult.message
-      });
-    }
+    if (!validationResult.isValid) return res.status(400).json({ success: false, message: validationResult.message });
 
-    // Validate price
     const price = parseFloat(xBox.price);
-    if (isNaN(price) || price <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid price. Must be a positive number.'
-      });
-    }
+    if (isNaN(price) || price <= 0) return res.status(400).json({ success: false, message: 'Invalid price. Must be a positive number.' });
 
-    // Validate deadline
     const deadline = new Date(xBox.deadline);
-    if (isNaN(deadline.getTime()) || deadline <= new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid deadline. Must be a future date.'
-      });
-    }
+    if (isNaN(deadline.getTime()) || deadline <= new Date()) return res.status(400).json({ success: false, message: 'Invalid deadline. Must be a future date.' });
 
-    // Generate unique order ID and escrow link
     const orderId = uuidv4();
 
-    // Find or create seller based on sellerContact (email)
-    let sellerId;
+    // Find or create seller by email
+    let sellerId = null;
     try {
-      const seller = await Seller.findOne({ where: { email: sellerContact } });
-
+      let seller = await prisma.seller.findUnique({ where: { email: sellerContact } });
       if (seller) {
         sellerId = seller.id;
       } else {
-        // If seller doesn't exist, create a placeholder seller
-        const newSeller = await Seller.create({
-          id: uuidv4(),
-          email: sellerContact,
-          firstName: 'Seller',
-          lastName: 'User',
-          phone: sellerContact,
-          country: 'US',
-          businessName: 'Freelance Seller',
-          isVerified: true,
-          status: 'active'
+        const newSeller = await prisma.seller.create({
+          data: {
+            email: sellerContact,
+            firstName: 'Pending',
+            lastName: 'Seller',
+            password: 'placeholder-' + uuidv4(),
+            isVerified: false,
+            status: 'active',
+          },
         });
         sellerId = newSeller.id;
       }
-    } catch (error) {
-      console.error('Error finding/creating seller:', error);
-      // Fallback to generating a new seller ID
-      sellerId = uuidv4();
+    } catch (err) {
+      console.error('Seller lookup error:', err.message);
     }
 
     const escrowLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/seller/order/${orderId}`;
     const orderTrackingLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/buyer/order/${orderId}`;
 
-    // Create order with buyer authentication
     const order = await orderService.createOrder({
       orderId,
-      buyerId: buyerData.userId,
+      buyerId: buyerData.id,
       sellerId,
-      buyerName: buyerData.firstName + ' ' + buyerData.lastName,
+      buyerName: `${buyerData.firstName || ''} ${buyerData.lastName || ''}`.trim() || buyerData.email,
       buyerEmail: buyerData.email,
       platform,
-      productLink,
+      productLink: productLink || null,
       country,
       currency,
       sellerContact,
       escrowLink,
       orderTrackingLink,
-      scopeBox: {
-        ...xBox,
-        price: price,
-        deadline: deadline.toISOString()
-      }
+      scopeBox: { ...xBox, price, deadline: deadline.toISOString() },
     });
 
-    // Send notification to seller (simulated)
-    await sendSellerNotification(sellerContact, {
-      orderId,
-      escrowLink,
-      buyerName: buyerData.firstName + ' ' + buyerData.lastName,
-      platform,
-      productType: xBox.productType,
-      price: `${currency} ${price.toFixed(2)}`,
-      deadline: deadline.toLocaleDateString()
-    });
+    console.log(`✅ Order created: ${orderId} | Buyer: ${buyerData.email} | ${xBox.productType} | ₹${price}`);
 
-    // Send confirmation to buyer (simulated)
-    await sendBuyerConfirmation(buyerData.email, {
-      orderId,
-      orderTrackingLink,
-      platform,
-      productType: xBox.productType,
-      price: `${currency} ${price.toFixed(2)}`,
-      deadline: deadline.toLocaleDateString()
-    });
-
-    console.log(`✅ Order created successfully:`);
-    console.log(`   Order ID: ${orderId}`);
-    console.log(`   Buyer: ${buyerData.firstName} ${buyerData.lastName} (${buyerData.email})`);
-    console.log(`   Platform: ${platform}`);
-    console.log(`   Service: ${xBox.productType}`);
-    console.log(`   Price: ${currency} ${price.toFixed(2)}`);
-    console.log(`   Seller Contact: ${sellerContact}`);
-    console.log(`   Escrow Link: ${escrowLink}`);
-    console.log(`   Tracking Link: ${orderTrackingLink}`);
-
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: {
         id: order.id,
-        orderId: orderId,
+        orderId,
         escrowLink,
         orderTrackingLink,
         status: order.status,
-        buyerName: buyerData.firstName + ' ' + buyerData.lastName,
         platform,
         productType: xBox.productType,
         price: `${currency} ${price.toFixed(2)}`,
         deadline: deadline.toLocaleDateString(),
-        createdAt: order.createdAt
+        createdAt: order.createdAt,
       },
-      message: 'Order created successfully! Escrow link has been sent to the seller.'
+      message: 'Order created successfully! Escrow link sent to seller.',
     });
   } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to create order'
-    });
+    console.error('createOrder error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to create order' });
   }
 }
 
-// Helper function to send seller notification
-async function sendSellerNotification(sellerContact, orderData) {
-  try {
-    // Simulate email/SMS sending
-    console.log(`📧 Sending notification to seller: ${sellerContact}`);
-    console.log(`   Subject: New Escrow Order - ${orderData.orderId}`);
-    console.log(`   Message: You have received a new escrow order from ${orderData.buyerName}`);
-    console.log(`   Platform: ${orderData.platform}`);
-    console.log(`   Product: ${orderData.productType}`);
-    console.log(`   Price: ${orderData.price}`);
-    console.log(`   Deadline: ${orderData.deadline}`);
-    console.log(`   Escrow Link: ${orderData.escrowLink}`);
+// ── POST /api/orders/:id/fund-escrow ──────────────────────────────────────────
 
-    // In a real implementation, you would:
-    // 1. Send email using nodemailer or similar
-    // 2. Send SMS using Twilio or similar
-    // 3. Store notification in database
-    // 4. Handle delivery failures
-
-    return true;
-  } catch (error) {
-    console.error('Failed to send seller notification:', error);
-    return false;
-  }
-}
-
-// Helper function to send buyer confirmation
-async function sendBuyerConfirmation(buyerEmail, orderData) {
-  try {
-    console.log(`📧 Sending confirmation to buyer: ${buyerEmail}`);
-    console.log(`   Subject: Order Created Successfully - ${orderData.orderId}`);
-    console.log(`   Message: Your escrow order has been created successfully`);
-    console.log(`   Order ID: ${orderData.orderId}`);
-    console.log(`   Platform: ${orderData.platform}`);
-    console.log(`   Product: ${orderData.productType}`);
-    console.log(`   Price: ${orderData.price}`);
-    console.log(`   Deadline: ${orderData.deadline}`);
-    console.log(`   Tracking Link: ${orderData.orderTrackingLink}`);
-
-    return true;
-  } catch (error) {
-    console.error('Failed to send buyer confirmation:', error);
-    return false;
-  }
-}
-
-// Helper function to send scope box to seller
-async function sendScopeBoxToSeller(sellerContact, scopeData) {
-  try {
-    console.log(`📧 Sending scope box to seller: ${sellerContact}`);
-    console.log(`   Subject: New Project Scope - Order ${scopeData.orderId}`);
-    console.log(`   Message: You have received a new project scope from ${scopeData.buyerName}`);
-    console.log(`   Order ID: ${scopeData.orderId}`);
-    console.log(`   Platform: ${scopeData.platform}`);
-    console.log(`   Product Type: ${scopeData.productType}`);
-    console.log(`   Price: ${scopeData.price}`);
-    console.log(`   Deadline: ${scopeData.deadline}`);
-    console.log(`   Description: ${scopeData.description}`);
-    console.log(`   Attachments: ${scopeData.attachments?.length || 0} files`);
-    console.log(`   Escrow Link: ${scopeData.escrowLink}`);
-
-    // In a real implementation, you would:
-    // 1. Send email with detailed scope box
-    // 2. Include all project requirements
-    // 3. Attach any uploaded files
-    // 4. Provide escrow link for seller to accept
-    // 5. Include payment terms and conditions
-
-    return true;
-  } catch (error) {
-    console.error('Failed to send scope box to seller:', error);
-    return false;
-  }
-}
-
-// POST /api/orders/:id/fund-escrow - Fund escrow
-/**
- * Handles the payment process to fund an escrow.
- * Validates credit card details (length, expiry, CVV)
- * Simulates payment gateway processing (delay and random success rate)
- * On success, updates order status and sends a scope box directly to the seller.
- */
 async function fundEscrow(req, res) {
   try {
     const { id } = req.params;
-    const { buyerId, paymentMethod, amount, cardDetails } = req.body;
+    const buyerData = req.user;
+    if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can fund escrow' });
 
-    if (!buyerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'buyerId is required'
-      });
-    }
+    const { paymentMethod, amount, cardDetails } = req.body;
+    if (!paymentMethod) return res.status(400).json({ success: false, message: 'Payment method is required' });
 
-    // Verify buyer authentication
-    let buyerData;
-    try {
-      buyerData = verifyBuyerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a buyer.'
-      });
-    }
-
-    // Validate payment method
-    if (!paymentMethod) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment method is required'
-      });
-    }
-
-    // Validate card details for credit card payments
-    if (paymentMethod === 'credit_card') {
-      if (!cardDetails) {
-        return res.status(400).json({
-          success: false,
-          message: 'Card details are required for credit card payments'
-        });
-      }
-
-      // Validate card number (basic validation)
-      if (!cardDetails.cardNumber || cardDetails.cardNumber.length < 13) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid card number. Please check your card details and try again.'
-        });
-      }
-
-      // Validate expiry date
-      if (!cardDetails.expiryMonth || !cardDetails.expiryYear) {
-        return res.status(400).json({
-          success: false,
-          message: 'Card expiry date is required. Please check your card details and try again.'
-        });
-      }
-
-      // Validate CVV
-      if (!cardDetails.cvv || cardDetails.cvv.length < 3) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid CVV. Please check your card details and try again.'
-        });
-      }
-
-      // Check if card is expired
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11
-
-      if (parseInt(cardDetails.expiryYear) < currentYear ||
-        (parseInt(cardDetails.expiryYear) === currentYear && parseInt(cardDetails.expiryMonth) < currentMonth)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Card has expired. Please use a valid card.'
-        });
-      }
-    }
-
-    // Simulate payment processing with validation
-    console.log(`💳 Processing payment for order ${id}:`);
-    console.log(`   Amount: ${amount}`);
-    console.log(`   Payment Method: ${paymentMethod}`);
-    console.log(`   Buyer: ${buyerData.firstName} ${buyerData.lastName}`);
-
-    // Simulate payment processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Simulate payment success (in real implementation, this would call a payment gateway)
-    const paymentSuccess = Math.random() > 0.1; // 90% success rate for demo
-
-    if (!paymentSuccess) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment failed. Please check your card details and try again.'
-      });
-    }
-
-    // Fund the escrow
-    const order = await orderService.fundEscrow(id, buyerId);
-
-    // Send scope box to seller
-    await sendScopeBoxToSeller(order.sellerContact, {
-      orderId: order.id,
-      buyerName: order.buyerName,
-      platform: order.platform,
-      productType: order.scopeBox.productType,
-      price: `${order.currency} ${order.scopeBox.price}`,
-      deadline: new Date(order.scopeBox.deadline).toLocaleDateString(),
-      description: order.scopeBox.description,
-      attachments: order.scopeBox.attachments,
-      escrowLink: order.escrowLink
-    });
-
-    console.log(`✅ Escrow funded successfully for order ${id}`);
-    console.log(`📧 Scope box sent to seller: ${order.sellerContact}`);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Payment processed successfully and escrow funded'
-    });
+    // TODO Phase 5: Replace with real Razorpay — for now simulate payment
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const order = await orderService.fundEscrow(id, buyerData.id);
+    return res.json({ success: true, data: order, message: 'Escrow funded successfully' });
   } catch (error) {
-    console.error('Error funding escrow:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to fund escrow'
-    });
+    console.error('fundEscrow error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fund escrow' });
   }
 }
 
-// PATCH /api/orders/:id/start - Start work
+// ── PATCH /api/orders/:id/start ────────────────────────────────────────────────
+
 async function startWork(req, res) {
   try {
     const { id } = req.params;
-
-    let sellerData;
-    try {
-      sellerData = verifySellerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a seller.'
-      });
-    }
-
-    const order = await orderService.startWork(id, sellerData.userId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Work started successfully'
-    });
+    const sellerData = req.user;
+    if (sellerData.role !== 'seller') return res.status(403).json({ success: false, message: 'Only sellers can start work' });
+    const order = await orderService.startWork(id, sellerData.id);
+    return res.json({ success: true, data: order, message: 'Work started' });
   } catch (error) {
-    console.error('Error starting work:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to start work'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/submit - Submit delivery
-// Implemented here (not via orderService.updateOrderStatus) so "Mark as delivered" always works from
-// ESCROW_FUNDED / ACCEPTED / IN_PROGRESS without transition-table failures.
+// ── PATCH /api/orders/:id/submit ──────────────────────────────────────────────
+
 async function submitDelivery(req, res) {
   try {
     const { id } = req.params;
-    const { deliveryFiles, sellerId: bodySellerId } = req.body;
+    const sellerData = req.user;
+    if (sellerData.role !== 'seller') return res.status(403).json({ success: false, message: 'Only sellers can submit delivery' });
 
-    let sellerId;
-    try {
-      sellerId = verifySellerToken(req).userId;
-    } catch {
-      sellerId = bodySellerId;
-    }
-
-    if (!sellerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'sellerId is required (log in as seller or include seller id)'
-      });
-    }
-
-    const order = await Order.findByPk(id);
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
-    }
-    if (order.sellerId !== sellerId) {
-      return res.status(403).json({
-        success: false,
-        message: 'Unauthorized: Only the seller can submit delivery'
-      });
-    }
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (order.sellerId !== sellerData.id) return res.status(403).json({ success: false, message: 'Unauthorized' });
 
     const status = String(order.status ?? '').trim().toUpperCase();
     const allowed = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS'];
     if (!allowed.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: `Cannot submit delivery from status "${order.status}".`
-      });
+      return res.status(400).json({ success: false, message: `Cannot submit from status "${order.status}"` });
     }
 
-    const files = deliveryFiles || [];
-    const mergedFiles = [...(order.deliveryFiles || []), ...files];
-    const logEntry = {
-      event: 'DELIVERY_SUBMITTED',
-      byUserId: sellerId,
-      timestamp: new Date().toISOString(),
-      previousStatus: order.status,
-      newStatus: 'SUBMITTED',
-      deliveryFiles: files
-    };
+    const files = req.files ? req.files.map(f => ({ filename: f.filename, path: f.path, size: f.size, mimetype: f.mimetype })) : (req.body.deliveryFiles || []);
+    const mergedFiles = [...(order.deliveryFiles || []), ...(Array.isArray(files) ? files : [])];
+    const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
 
-    await order.update({
-      deliveryFiles: mergedFiles,
-      status: 'SUBMITTED',
-      orderLogs: [...(order.orderLogs || []), logEntry]
+    const updated = await prisma.order.update({
+      where: { id },
+      data: {
+        deliveryFiles: mergedFiles,
+        status: 'SUBMITTED',
+        orderLogs: [...currentLogs, {
+          event: 'DELIVERY_SUBMITTED',
+          byUserId: sellerData.id,
+          timestamp: new Date().toISOString(),
+          previousStatus: order.status,
+          newStatus: 'SUBMITTED',
+        }],
+      },
     });
 
-    await order.reload();
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Delivery submitted successfully'
-    });
+    return res.json({ success: true, data: updated, message: 'Delivery submitted' });
   } catch (error) {
-    console.error('Error submitting delivery:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to submit delivery'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/approve - Approve delivery
+// ── PATCH /api/orders/:id/approve ─────────────────────────────────────────────
+
 async function approveDelivery(req, res) {
   try {
     const { id } = req.params;
-    const { buyerId } = req.body;
-
-    if (!buyerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'buyerId is required'
-      });
-    }
-
-    const order = await orderService.approveDelivery(id, buyerId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Delivery approved successfully'
-    });
+    const buyerData = req.user;
+    if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can approve delivery' });
+    const order = await orderService.approveDelivery(id, buyerData.id);
+    return res.json({ success: true, data: order, message: 'Delivery approved' });
   } catch (error) {
-    console.error('Error approving delivery:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to approve delivery'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/dispute - Raise dispute
+// ── PATCH /api/orders/:id/dispute ─────────────────────────────────────────────
+
 async function raiseDispute(req, res) {
   try {
     const { id } = req.params;
-    const { userId, reason, description, requestedResolution } = req.body;
+    const userData = req.user;
+    const { reason, description, requestedResolution } = req.body;
 
-    if (!userId || !reason || !description || !requestedResolution) {
-      return res.status(400).json({
-        success: false,
-        message: 'userId, reason, description, and requestedResolution are required'
-      });
+    if (!reason || !description || !requestedResolution) {
+      return res.status(400).json({ success: false, message: 'reason, description, and requestedResolution are required' });
     }
 
-    // Handle uploaded files
-    const evidenceFiles = req.files ? req.files.map(file => ({
-      filename: file.filename,
-      originalname: file.originalname,
-      path: file.path,
-      size: file.size,
-      mimetype: file.mimetype
-    })) : [];
-
-    const disputeData = {
-      reason,
-      description,
-      requestedResolution,
-      evidenceFiles
-    };
-
-    const order = await orderService.raiseDispute(id, userId, disputeData);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Dispute raised successfully'
-    });
+    const evidenceFiles = req.files ? req.files.map(f => ({ filename: f.filename, path: f.path })) : [];
+    const order = await orderService.raiseDispute(id, userData.id, { reason, description, requestedResolution, evidenceFiles });
+    return res.json({ success: true, data: order, message: 'Dispute raised' });
   } catch (error) {
-    console.error('Error raising dispute:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to raise dispute'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/release - Release funds to seller (buyer only)
+// ── PATCH /api/orders/:id/release ─────────────────────────────────────────────
+
 async function releaseFunds(req, res) {
   try {
     const { id } = req.params;
-
-    // Verify buyer authentication
-    let buyerData;
-    try {
-      buyerData = verifyBuyerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a buyer.'
-      });
-    }
-
-    const order = await orderService.releaseFunds(id, buyerData.userId);
-
-    // Send confirmation to buyer
-    try {
-      await sendBuyerReleaseConfirmation(buyerData.email, order);
-    } catch (notificationError) {
-      console.error('Error sending buyer confirmation:', notificationError);
-      // Don't fail the entire operation if notification fails
-    }
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Funds released successfully to seller. Order completed.'
-    });
+    const buyerData = req.user;
+    if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can release funds' });
+    const order = await orderService.releaseFunds(id, buyerData.id);
+    return res.json({ success: true, data: order, message: 'Funds released. Order completed.' });
   } catch (error) {
-    console.error('Error releasing funds:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to release funds'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// Send confirmation to buyer about fund release
-async function sendBuyerReleaseConfirmation(buyerEmail, order) {
-  const { id, scopeBox } = order;
+// ── PATCH /api/orders/:id/refund ──────────────────────────────────────────────
 
-  console.log('📧 Sending release confirmation to buyer:', buyerEmail);
-  console.log('   Subject: Funds Released - Order', id);
-  console.log('   Message: Your funds have been released to the seller');
-  console.log('   Order ID:', id);
-  console.log('   Amount:', scopeBox?.price || 0);
-  console.log('   Status: COMPLETED');
-
-  // In a real implementation, you would:
-  // 1. Send email to buyer
-  // 2. Update buyer's transaction history
-  // 3. Send receipt/invoice
-
-  console.log('✅ Release confirmation sent to buyer');
-}
-
-// PATCH /api/orders/:id/refund - Refund buyer (admin)
 async function refundBuyer(req, res) {
   try {
     const { id } = req.params;
-    const { adminId } = req.body;
-
-    if (!adminId) {
-      return res.status(400).json({
-        success: false,
-        message: 'adminId is required'
-      });
-    }
-
-    const order = await orderService.refundBuyer(id, adminId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Buyer refunded successfully'
-    });
+    const userData = req.user;
+    if (userData.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin access required' });
+    const order = await orderService.refundBuyer(id, userData.id);
+    return res.json({ success: true, data: order, message: 'Buyer refunded' });
   } catch (error) {
-    console.error('Error refunding buyer:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to refund buyer'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// GET /api/orders/:id - Get order by ID
+// ── GET /api/orders/:id ───────────────────────────────────────────────────────
+
 async function getOrder(req, res) {
   try {
-    const { id } = req.params;
-
-    const order = await orderService.getOrderById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: order
-    });
+    const order = await orderService.getOrderById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    return res.json({ success: true, data: order });
   } catch (error) {
-    console.error('Error getting order:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to get order'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// GET /api/orders/buyer - Get all orders for authenticated buyer
+// ── GET /api/orders/buyer ─────────────────────────────────────────────────────
+
 async function getBuyerOrders(req, res) {
   try {
-    // Verify buyer authentication
-    let buyerData;
-    try {
-      buyerData = verifyBuyerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a buyer.'
-      });
-    }
-
-    const orders = await orderService.getBuyerOrders(buyerData.userId);
-
-    res.json({
-      success: true,
-      data: orders
-    });
+    const buyerData = req.user;
+    const orders = await orderService.getBuyerOrders(buyerData.id);
+    return res.json({ success: true, data: orders });
   } catch (error) {
-    console.error('Error fetching buyer orders:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to fetch orders'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// GET /api/orders/seller - Get all orders for authenticated seller
+// ── GET /api/orders/seller ────────────────────────────────────────────────────
+
 async function getSellerOrders(req, res) {
   try {
-    // Verify seller authentication
-    let sellerData;
-    try {
-      sellerData = verifySellerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a seller.'
-      });
-    }
-
-    const orders = await orderService.getSellerOrders(sellerData.userId);
-
-    res.json({
-      success: true,
-      data: orders
-    });
+    const sellerData = req.user;
+    const orders = await orderService.getSellerOrders(sellerData.id);
+    return res.json({ success: true, data: orders });
   } catch (error) {
-    console.error('Error fetching seller orders:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to fetch orders'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// Helper function to verify seller token
-function verifySellerToken(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new Error('Access token required');
-  }
+// ── PATCH /api/orders/:id/cancel ──────────────────────────────────────────────
 
-  const token = authHeader.substring(7);
-  const jwt = require('jsonwebtoken');
-  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    if (decoded.role !== 'seller') {
-      throw new Error('Seller access required');
-    }
-
-    return {
-      userId: decoded.userId,
-      email: decoded.email,
-      firstName: decoded.firstName,
-      lastName: decoded.lastName,
-      role: decoded.role
-    };
-  } catch (error) {
-    throw new Error('Invalid token');
-  }
-}
-
-// PATCH /api/orders/:id/cancel - Cancel order (buyer only)
 async function cancelOrder(req, res) {
   try {
     const { id } = req.params;
-
-    // Verify buyer authentication
-    let buyerData;
-    try {
-      buyerData = verifyBuyerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a buyer.'
-      });
-    }
-
-    const order = await orderService.cancelOrder(id, buyerData.userId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Order cancelled successfully'
-    });
+    const buyerData = req.user;
+    if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can cancel orders' });
+    const order = await orderService.cancelOrder(id, buyerData.id);
+    return res.json({ success: true, data: order, message: 'Order cancelled' });
   } catch (error) {
-    console.error('Error cancelling order:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to cancel order'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// GET /api/orders/user/:userId - Get orders by user
+// ── GET /api/orders/user/:userId ──────────────────────────────────────────────
+
 async function getOrdersByUser(req, res) {
   try {
     const { userId } = req.params;
     const { role = 'buyer' } = req.query;
-
     const orders = await orderService.getOrdersByUser(userId, role);
-
-    res.json({
-      success: true,
-      data: orders,
-      count: orders.length
-    });
+    return res.json({ success: true, data: orders, count: orders.length });
   } catch (error) {
-    console.error('Error getting user orders:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to get user orders'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/accept - Accept order (seller only)
+// ── PATCH /api/orders/:id/accept ──────────────────────────────────────────────
+
 async function acceptOrder(req, res) {
   try {
     const { id } = req.params;
-
-    // Verify seller authentication
-    let sellerData;
-    try {
-      sellerData = verifySellerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a seller.'
-      });
-    }
-
-    const order = await orderService.acceptOrder(id, sellerData.userId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Order accepted successfully'
-    });
+    const sellerData = req.user;
+    if (sellerData.role !== 'seller') return res.status(403).json({ success: false, message: 'Only sellers can accept orders' });
+    const order = await orderService.acceptOrder(id, sellerData.id);
+    return res.json({ success: true, data: order, message: 'Order accepted' });
   } catch (error) {
-    console.error('Error accepting order:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to accept order'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/start-work - Start work from accepted status (seller only)
+// ── PATCH /api/orders/:id/start-work ──────────────────────────────────────────
+
 async function startWorkFromAccepted(req, res) {
   try {
     const { id } = req.params;
-
-    // Verify seller authentication
-    let sellerData;
-    try {
-      sellerData = verifySellerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a seller.'
-      });
-    }
-
-    const order = await orderService.startWorkFromAccepted(id, sellerData.userId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Work started successfully'
-    });
+    const sellerData = req.user;
+    if (sellerData.role !== 'seller') return res.status(403).json({ success: false, message: 'Only sellers can start work' });
+    const order = await orderService.startWorkFromAccepted(id, sellerData.id);
+    return res.json({ success: true, data: order, message: 'Work started' });
   } catch (error) {
-    console.error('Error starting work:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to start work'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/reject - Reject order (seller only)
+// ── PATCH /api/orders/:id/reject ──────────────────────────────────────────────
+
 async function rejectOrder(req, res) {
   try {
     const { id } = req.params;
-
-    // Verify seller authentication
-    let sellerData;
-    try {
-      sellerData = verifySellerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a seller.'
-      });
-    }
-
-    const order = await orderService.rejectOrder(id, sellerData.userId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Order rejected successfully'
-    });
+    const sellerData = req.user;
+    if (sellerData.role !== 'seller') return res.status(403).json({ success: false, message: 'Only sellers can reject orders' });
+    const order = await orderService.rejectOrder(id, sellerData.id);
+    return res.json({ success: true, data: order, message: 'Order rejected' });
   } catch (error) {
-    console.error('Error rejecting order:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to reject order'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/request-changes - Request changes to order (seller only)
+// ── PATCH /api/orders/:id/request-changes ────────────────────────────────────
+
 async function requestChanges(req, res) {
   try {
     const { id } = req.params;
-    const { scopeBox, changesRequested } = req.body;
-
-    // Verify seller authentication
-    let sellerData;
-    try {
-      sellerData = verifySellerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a seller.'
-      });
-    }
-
-    const order = await orderService.requestChanges(id, sellerData.userId, { scopeBox, changesRequested });
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Changes requested successfully'
-    });
+    const sellerData = req.user;
+    if (sellerData.role !== 'seller') return res.status(403).json({ success: false, message: 'Only sellers can request changes' });
+    const order = await orderService.requestChanges(id, sellerData.id, req.body);
+    return res.json({ success: true, data: order, message: 'Changes requested' });
   } catch (error) {
-    console.error('Error requesting changes:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to request changes'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/accept-changes - Accept changes (buyer only)
+// ── PATCH /api/orders/:id/accept-changes ─────────────────────────────────────
+
 async function acceptChanges(req, res) {
   try {
     const { id } = req.params;
-
-    // Verify buyer authentication
-    let buyerData;
-    try {
-      buyerData = verifyBuyerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a buyer.'
-      });
-    }
-
-    const order = await orderService.acceptChanges(id, buyerData.userId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Changes accepted successfully. Order status updated to IN_PROGRESS.'
-    });
+    const buyerData = req.user;
+    if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can accept changes' });
+    const order = await orderService.acceptChanges(id, buyerData.id);
+    return res.json({ success: true, data: order, message: 'Changes accepted. Order is now IN_PROGRESS.' });
   } catch (error) {
-    console.error('Error accepting changes:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to accept changes'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
-// PATCH /api/orders/:id/reject-changes - Reject changes (buyer only)
+// ── PATCH /api/orders/:id/reject-changes ─────────────────────────────────────
+
 async function rejectChanges(req, res) {
   try {
     const { id } = req.params;
-
-    // Verify buyer authentication
-    let buyerData;
-    try {
-      buyerData = verifyBuyerToken(req);
-    } catch (authError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please login as a buyer.'
-      });
-    }
-
-    const order = await orderService.rejectChanges(id, buyerData.userId);
-
-    res.json({
-      success: true,
-      data: order,
-      message: 'Changes rejected successfully. Order status updated to REJECTED.'
-    });
+    const buyerData = req.user;
+    if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can reject changes' });
+    const order = await orderService.rejectChanges(id, buyerData.id);
+    return res.json({ success: true, data: order, message: 'Changes rejected.' });
   } catch (error) {
-    console.error('Error rejecting changes:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to reject changes'
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
 
 module.exports = {
-  createOrder,
-  fundEscrow,
-  startWork,
-  submitDelivery,
-  approveDelivery,
-  raiseDispute,
-  releaseFunds,
-  refundBuyer,
-  getOrder,
-  getBuyerOrders,
-  getSellerOrders,
-  cancelOrder,
-  getOrdersByUser,
-  acceptOrder,
-  rejectOrder,
-  startWorkFromAccepted,
-  requestChanges,
-  acceptChanges,
-  rejectChanges
+  createOrder, fundEscrow, startWork, submitDelivery, approveDelivery,
+  raiseDispute, releaseFunds, refundBuyer, getOrder, getBuyerOrders,
+  getSellerOrders, cancelOrder, getOrdersByUser, acceptOrder, rejectOrder,
+  startWorkFromAccepted, requestChanges, acceptChanges, rejectChanges,
 };

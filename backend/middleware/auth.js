@@ -1,156 +1,124 @@
 const jwt = require('jsonwebtoken');
-const { Sequelize } = require('sequelize');
-const config = require('../config/config.json');
+const { PrismaClient } = require('@prisma/client');
 
-// Initialize database connection
-const sequelize = new Sequelize(config.development);
-
-// Import models
-const Buyer = require('../models/buyer')(sequelize, Sequelize.DataTypes);
-const Seller = require('../models/seller')(sequelize, Sequelize.DataTypes);
-
-// JWT Secret
+const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-// Authentication middleware
+// ── Authentication middleware ──────────────────────────────────────────────────
+
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access token required'
-      });
+      return res.status(401).json({ success: false, message: 'Access token required' });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
-    
-    // Optional: More selective logging (uncomment if needed)
-    // console.log(`Auth: ${decoded.role} ${decoded.email} - ${req.method} ${req.path}`);
 
-    // Check if user exists (only for buyer/seller, not admin)
+    // Verify user still exists in DB (buyer/seller only — admin skips DB check)
     if (decoded.role !== 'admin') {
       let user = null;
       if (decoded.role === 'buyer') {
-        user = await Buyer.findByPk(decoded.userId);
+        user = await prisma.buyer.findUnique({ where: { id: decoded.id } });
       } else if (decoded.role === 'seller') {
-        user = await Seller.findByPk(decoded.userId);
+        user = await prisma.seller.findUnique({ where: { id: decoded.id } });
       }
 
       if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'User not found'
-        });
+        return res.status(401).json({ success: false, message: 'User not found' });
       }
 
       req.user = {
         userId: user.id,
+        id: user.id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: decoded.role
+        role: decoded.role,
       };
     } else {
-      // For admin users, use the decoded token directly
       req.user = {
-        userId: decoded.userId,
+        userId: decoded.id,
+        id: decoded.id,
         email: decoded.email,
-        firstName: decoded.firstName,
-        lastName: decoded.lastName,
-        role: decoded.role
+        firstName: decoded.firstName || '',
+        lastName: decoded.lastName || '',
+        role: 'admin',
       };
     }
 
     next();
   } catch (error) {
     console.error('Token verification error:', error);
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid token'
-    });
+    return res.status(401).json({ success: false, message: 'Invalid token' });
   }
 };
 
-// Admin authentication middleware
+// ── Admin-specific authentication middleware ───────────────────────────────────
+
 const authenticateAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Admin token required'
-      });
+      return res.status(401).json({ success: false, message: 'Admin token required' });
     }
 
-    // For testing purposes, accept mock admin token
+    // Accept mock admin token for testing
     if (token === 'admin-mock-token') {
       req.user = {
         userId: 'admin-mock-id',
+        id: 'admin-mock-id',
         email: 'admin@scrowx.com',
         firstName: 'Admin',
         lastName: 'User',
-        role: 'admin'
+        role: 'admin',
       };
       return next();
     }
 
-    // Verify real admin token
     const decoded = jwt.verify(token, JWT_SECRET);
-    
     if (decoded.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Admin access required'
-      });
+      return res.status(403).json({ success: false, message: 'Admin access required' });
+    }
+
+    // Verify admin exists in DB
+    const admin = await prisma.admin.findUnique({ where: { id: decoded.id } }).catch(() => null);
+    if (!admin) {
+      return res.status(401).json({ success: false, message: 'Admin not found' });
     }
 
     req.user = {
-      userId: decoded.userId,
-      email: decoded.email,
-      firstName: decoded.firstName,
-      lastName: decoded.lastName,
-      role: 'admin'
+      userId: admin.id,
+      id: admin.id,
+      email: admin.email,
+      firstName: admin.name,
+      lastName: '',
+      role: 'admin',
     };
 
     next();
   } catch (error) {
     console.error('Admin authentication error:', error);
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid admin token'
-    });
+    return res.status(401).json({ success: false, message: 'Invalid admin token' });
   }
 };
 
-// Role-based authorization
+// ── Role-based authorization ───────────────────────────────────────────────────
+
 const authorizeRole = (roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
+      return res.status(401).json({ success: false, message: 'Authentication required' });
     }
-
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Insufficient permissions'
-      });
+      return res.status(403).json({ success: false, message: 'Insufficient permissions' });
     }
-
     next();
   };
 };
 
-module.exports = {
-  authenticateToken,
-  authenticateAdmin,
-  authorizeRole
-}; 
+module.exports = { authenticateToken, authenticateAdmin, authorizeRole };

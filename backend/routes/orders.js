@@ -3,74 +3,64 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const orderController = require('../controllers/orderController');
+const { authenticateToken } = require('../middleware/auth');
 
-// Configure multer for file uploads
+// ── File upload config ────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
   },
-  fileFilter: function (req, file, cb) {
-    const allowedTypes = [
-      'image/jpeg', 
-      'image/png', 
-      'image/gif', 
-      'application/pdf', 
-      'text/plain',
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf', 'text/plain',
       'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip', 'application/x-zip-compressed',
     ];
-    
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type'), false);
-    }
-  }
+    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error('Invalid file type'), false);
+  },
 });
 
-// Order lifecycle routes
-router.post('/', orderController.createOrder);
-router.post('/:id/fund-escrow', orderController.fundEscrow);
-router.patch('/:id/start', orderController.startWork);
-router.patch('/:id/submit', orderController.submitDelivery);
-router.patch('/:id/approve', orderController.approveDelivery);
-router.patch('/:id/dispute', upload.array('evidence', 5), orderController.raiseDispute);
+// ── All order routes require authentication ───────────────────────────────────
 
-// Seller action routes
-router.patch('/:id/accept', orderController.acceptOrder);
-router.patch('/:id/reject', orderController.rejectOrder);
-router.patch('/:id/start-work', orderController.startWorkFromAccepted);
-router.patch('/:id/request-changes', orderController.requestChanges);
+// Create order (buyer)
+router.post('/', authenticateToken, orderController.createOrder);
 
-// Buyer action routes
-router.patch('/:id/accept-changes', orderController.acceptChanges);
-router.patch('/:id/reject-changes', orderController.rejectChanges);
+// Fund escrow (buyer)
+router.post('/:id/fund-escrow', authenticateToken, orderController.fundEscrow);
 
-// Admin routes
-router.patch('/:id/release', orderController.releaseFunds);
-router.patch('/:id/refund', orderController.refundBuyer);
-
-// Query routes - SPECIFIC ROUTES FIRST
-router.get('/buyer', orderController.getBuyerOrders);
-router.get('/seller', orderController.getSellerOrders);
-router.get('/user/:userId', orderController.getOrdersByUser);
-
-// PARAMETERIZED ROUTES LAST
-router.get('/:id', orderController.getOrder);
+// Seller actions
+router.patch('/:id/accept', authenticateToken, orderController.acceptOrder);
+router.patch('/:id/reject', authenticateToken, orderController.rejectOrder);
+router.patch('/:id/start', authenticateToken, orderController.startWork);
+router.patch('/:id/start-work', authenticateToken, orderController.startWorkFromAccepted);
+router.patch('/:id/submit', authenticateToken, upload.array('deliveryFiles', 10), orderController.submitDelivery);
+router.patch('/:id/request-changes', authenticateToken, orderController.requestChanges);
 
 // Buyer actions
-router.patch('/:id/cancel', orderController.cancelOrder);
-router.patch('/:id/release', orderController.releaseFunds);
+router.patch('/:id/approve', authenticateToken, orderController.approveDelivery);
+router.patch('/:id/accept-changes', authenticateToken, orderController.acceptChanges);
+router.patch('/:id/reject-changes', authenticateToken, orderController.rejectChanges);
+router.patch('/:id/release', authenticateToken, orderController.releaseFunds);
+router.patch('/:id/cancel', authenticateToken, orderController.cancelOrder);
 
-module.exports = router; 
+// Dispute (buyer or seller)
+router.patch('/:id/dispute', authenticateToken, upload.array('evidence', 5), orderController.raiseDispute);
+
+// Admin actions
+router.patch('/:id/refund', authenticateToken, orderController.refundBuyer);
+
+// ── Query routes (specific before parameterized) ───────────────────────────────
+router.get('/buyer', authenticateToken, orderController.getBuyerOrders);
+router.get('/seller', authenticateToken, orderController.getSellerOrders);
+router.get('/user/:userId', authenticateToken, orderController.getOrdersByUser);
+router.get('/:id', authenticateToken, orderController.getOrder);
+
+module.exports = router;

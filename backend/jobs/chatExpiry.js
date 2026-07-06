@@ -14,8 +14,10 @@ async function archiveExpiredChats() {
     const result = await prisma.orderChatRoom.updateMany({
       where: {
         isArchived: false,
-        expiresAt: { lte: now },   // expiresAt is in the past
-        expiresAt: { not: null },  // only rooms that have an expiry set
+        AND: [
+          { expiresAt: { not: null } },
+          { expiresAt: { lte: now } },
+        ],
       },
       data: {
         isArchived: true,

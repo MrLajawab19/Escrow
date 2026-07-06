@@ -1,31 +1,20 @@
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
-const { Sequelize } = require('sequelize');
-const config = require('../../backend/config/config.json');
 const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-// Sequelize — used to verify order ownership (buyerId/sellerId live here)
-const sequelize = new Sequelize(
-  config.development.database,
-  config.development.username,
-  config.development.password,
-  { host: config.development.host, dialect: config.development.dialect, logging: false }
-);
-const SequelizeOrder = require('../../backend/models/order')(sequelize, Sequelize.DataTypes);
-
 async function isAuthorized(orderId, userId, role) {
   if (role === 'admin') return true;
   try {
-    const order = await SequelizeOrder.findOne({ where: { id: orderId } });
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) return false;
     return (
       (role === 'buyer' && order.buyerId === userId) ||
       (role === 'seller' && order.sellerId === userId)
     );
   } catch {
-    return true; // JWT already validated — allow on Sequelize error
+    return true; // JWT already validated — allow on DB error
   }
 }
 
@@ -54,12 +43,11 @@ function registerChatSocket(io) {
       }
 
       const decoded = jwt.verify(token, JWT_SECRET);
-      // Attach decoded user to socket for later use in event handlers
       socket.user = {
-        userId: decoded.userId,
+        userId: decoded.id || decoded.userId,
         email: decoded.email,
-        firstName: decoded.firstName,
-        lastName: decoded.lastName,
+        firstName: decoded.firstName || '',
+        lastName: decoded.lastName || '',
         role: decoded.role,
       };
       next();
@@ -153,8 +141,8 @@ function registerChatSocket(io) {
           return socket.emit('chat_error', { message: 'Chat is expired or not found' });
         }
 
-        // Persist message in PostgreSQL
-        const message = await prisma.chatMessage.create({
+        // Persist message in Prisma
+        const message = await prisma.orderChatMessage.create({
           data: {
             roomId: room.id,
             senderId: userId,
@@ -205,10 +193,10 @@ function registerChatSocket(io) {
         const room = await prisma.orderChatRoom.findUnique({ where: { orderId } });
         if (!room) return;
 
-        await prisma.chatMessage.updateMany({
+        await prisma.orderChatMessage.updateMany({
           where: {
             roomId: room.id,
-            senderId: { not: userId }, // Only mark messages from the OTHER user
+            senderId: { not: userId },
             isRead: false,
           },
           data: { isRead: true },

@@ -1,17 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { Op } = require('sequelize');
-
-// Use shared models/index.js — ensures same Sequelize instance across the app
-const db = require('../models');
-const { Order, Dispute, Buyer, Seller, sequelize: Sequelize_instance } = db;
-
-const { authenticateToken } = require('../middleware/auth');
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
-const { Sequelize } = require('sequelize');
 
-// Admin auth middleware (inline, no DB lookup needed for admin)
+const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+// ── Admin auth middleware ───────────────────────────────────────────────────────
+
 function adminAuth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ success: false, message: 'No token' });
@@ -25,110 +21,97 @@ function adminAuth(req, res, next) {
   }
 }
 
-// Auto-flag logic: flag a dispute if order value > 300 or buyer raised after SUBMITTED
+// ── Auto-flag logic ────────────────────────────────────────────────────────────
+
 function computeFlag(dispute, order) {
   if (!order) return { flag: 'MANUAL', riskScore: 30, riskReason: 'Standard dispute' };
-  const price = parseFloat(order.scopeBox?.price || 0);
+  const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
+  const price = parseFloat(scopeBox.price || 0);
   const isAfterDelivery = order.status === 'SUBMITTED' || order.status === 'APPROVED';
   const isHighValue = price > 300;
 
-  if (isAfterDelivery && isHighValue) {
-    return { flag: 'AUTO_FLAGGED', riskScore: 90, riskReason: 'High-value dispute after delivery' };
-  } else if (isAfterDelivery) {
-    return { flag: 'AUTO_FLAGGED', riskScore: 65, riskReason: 'Dispute raised after delivery submitted' };
-  } else if (isHighValue) {
-    return { flag: 'AUTO_FLAGGED', riskScore: 55, riskReason: `High-value order ($${price})` };
-  }
+  if (isAfterDelivery && isHighValue) return { flag: 'AUTO_FLAGGED', riskScore: 90, riskReason: 'High-value dispute after delivery' };
+  if (isAfterDelivery) return { flag: 'AUTO_FLAGGED', riskScore: 65, riskReason: 'Dispute raised after delivery submitted' };
+  if (isHighValue) return { flag: 'AUTO_FLAGGED', riskScore: 55, riskReason: `High-value order (₹${price})` };
   return { flag: 'MANUAL', riskScore: 25, riskReason: 'Standard dispute' };
 }
 
-// GET /api/admin/stats
+// ── GET /api/admin/stats ───────────────────────────────────────────────────────
+
 router.get('/stats', adminAuth, async (req, res) => {
   try {
-    const totalOrders = await Order.count();
     const activeStatuses = ['PLACED', 'ESCROW_FUNDED', 'IN_PROGRESS', 'SUBMITTED', 'CHANGES_REQUESTED', 'ACCEPTED', 'DISPUTED'];
-    const activeOrders = await Order.count({ where: { status: { [Op.in]: activeStatuses } } });
-    const completedOrders = await Order.count({ where: { status: { [Op.in]: ['COMPLETED', 'RELEASED', 'REFUNDED', 'CANCELLED'] } } });
-    const totalDisputes = await Dispute.count();
-    const openDisputes = await Dispute.count({ where: { status: 'OPEN' } });
-    const underReviewDisputes = await Dispute.count({ where: { status: 'UNDER_REVIEW' } });
-    const resolvedDisputes = await Dispute.count({ where: { status: 'RESOLVED' } });
-    const totalBuyers = await Buyer.count();
-    const totalSellers = await Seller.count();
+    const completedStatuses = ['COMPLETED', 'RELEASED', 'REFUNDED', 'CANCELLED'];
 
-    // Orders by status breakdown
-    const statusCounts = await Order.findAll({
-      attributes: ['status', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
-      group: ['status'],
-      raw: true
+    const [
+      totalOrders, activeOrders, completedOrders,
+      totalDisputes, openDisputes, underReviewDisputes, resolvedDisputes,
+      totalBuyers, totalSellers, recentDisputes,
+    ] = await Promise.all([
+      prisma.order.count(),
+      prisma.order.count({ where: { status: { in: activeStatuses } } }),
+      prisma.order.count({ where: { status: { in: completedStatuses } } }),
+      prisma.orderDispute.count(),
+      prisma.orderDispute.count({ where: { status: 'OPEN' } }),
+      prisma.orderDispute.count({ where: { status: 'UNDER_REVIEW' } }),
+      prisma.orderDispute.count({ where: { status: 'RESOLVED' } }),
+      prisma.buyer.count(),
+      prisma.seller.count(),
+      prisma.orderDispute.count({
+        where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      }),
+    ]);
+
+    // Status breakdown
+    const statusGroups = await prisma.order.groupBy({
+      by: ['status'],
+      _count: { id: true },
     });
+    const ordersByStatus = statusGroups.map(g => ({ status: g.status, count: g._count.id }));
 
-    // Recent disputes (last 7 days)
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const recentDisputes = await Dispute.count({ where: { createdAt: { [Op.gte]: sevenDaysAgo } } });
-
-    res.json({
+    return res.json({
       success: true,
       data: {
-        totalOrders,
-        activeOrders,
-        completedOrders,
-        totalDisputes,
-        openDisputes,
-        underReviewDisputes,
-        resolvedDisputes,
-        totalBuyers,
-        totalSellers,
-        recentDisputes,
-        ordersByStatus: statusCounts
-      }
+        totalOrders, activeOrders, completedOrders,
+        totalDisputes, openDisputes, underReviewDisputes, resolvedDisputes,
+        totalBuyers, totalSellers, recentDisputes, ordersByStatus,
+      },
     });
   } catch (err) {
     console.error('Admin stats error:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch stats' });
+    return res.status(500).json({ success: false, message: 'Failed to fetch stats' });
   }
 });
 
-// GET /api/admin/disputes
+// ── GET /api/admin/disputes ────────────────────────────────────────────────────
+
 router.get('/disputes', adminAuth, async (req, res) => {
   try {
     const { status, flag, search } = req.query;
     const where = {};
     if (status) where.status = status;
 
-    const disputes = await Dispute.findAll({
+    const disputes = await prisma.orderDispute.findMany({
       where,
-      order: [['createdAt', 'DESC']],
-      limit: 100
+      orderBy: { createdAt: 'desc' },
+      take: 100,
     });
 
-    // Enrich with order data + auto-flag
     const enriched = await Promise.all(disputes.map(async (d) => {
-      const order = await Order.findByPk(d.orderId);
+      const order = await prisma.order.findUnique({ where: { id: d.orderId } }).catch(() => null);
       const { flag: autoFlag, riskScore, riskReason } = computeFlag(d, order);
       return {
-        ...d.toJSON(),
+        ...d,
         order: order ? {
-          id: order.id,
-          status: order.status,
-          scopeBox: order.scopeBox,
-          buyerName: order.buyerName,
-          currency: order.currency,
-          sellerContact: order.sellerContact,
-          createdAt: order.createdAt
+          id: order.id, status: order.status, scopeBox: order.scopeBox,
+          buyerName: order.buyerName, currency: order.currency,
+          sellerContact: order.sellerContact, createdAt: order.createdAt,
         } : null,
-        autoFlag,
-        riskScore,
-        riskReason
+        autoFlag, riskScore, riskReason,
       };
     }));
 
-    // Apply flag filter after enrichment
-    const filtered = flag
-      ? enriched.filter(d => d.autoFlag === flag)
-      : enriched;
-
-    // Apply search filter
+    const filtered = flag ? enriched.filter(d => d.autoFlag === flag) : enriched;
     const searched = search
       ? filtered.filter(d =>
           d.orderId?.toLowerCase().includes(search.toLowerCase()) ||
@@ -137,116 +120,134 @@ router.get('/disputes', adminAuth, async (req, res) => {
         )
       : filtered;
 
-    res.json({ success: true, data: searched });
+    return res.json({ success: true, data: searched });
   } catch (err) {
     console.error('Admin disputes error:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch disputes' });
+    return res.status(500).json({ success: false, message: 'Failed to fetch disputes' });
   }
 });
 
-// GET /api/admin/disputes/:id  
+// ── GET /api/admin/disputes/:id ────────────────────────────────────────────────
+
 router.get('/disputes/:id', adminAuth, async (req, res) => {
   try {
-    const dispute = await Dispute.findByPk(req.params.id);
+    const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
-    const order = await Order.findByPk(dispute.orderId);
-    const buyer = await Buyer.findByPk(dispute.buyerId).catch(() => null);
-    const seller = await Seller.findByPk(dispute.sellerId).catch(() => null);
+    const [order, buyer, seller] = await Promise.all([
+      prisma.order.findUnique({ where: { id: dispute.orderId } }).catch(() => null),
+      prisma.buyer.findUnique({ where: { id: dispute.buyerId } }).catch(() => null),
+      dispute.sellerId ? prisma.seller.findUnique({ where: { id: dispute.sellerId } }).catch(() => null) : null,
+    ]);
 
     const { flag: autoFlag, riskScore, riskReason } = computeFlag(dispute, order);
 
-    // Build timeline from order logs + dispute events
-    const orderTimeline = (order?.orderLogs || []).map(log => ({
+    const orderTimeline = (Array.isArray(order?.orderLogs) ? order.orderLogs : []).map(log => ({
       event: log.event,
       timestamp: log.timestamp,
       by: log.byUserId,
-      description: log.event.replace(/_/g, ' ')
+      description: (log.event || '').replace(/_/g, ' '),
     }));
-    const disputeTimeline = dispute.timeline || [];
+    const disputeTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
     const combinedTimeline = [...orderTimeline, ...disputeTimeline]
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-    res.json({
+    return res.json({
       success: true,
       data: {
-        dispute: dispute.toJSON(),
+        dispute,
         order: order ? {
-          id: order.id,
-          status: order.status,
-          scopeBox: order.scopeBox,
-          buyerName: order.buyerName,
-          buyerEmail: order.buyerEmail,
-          currency: order.currency,
-          sellerContact: order.sellerContact,
-          deliveryFiles: order.deliveryFiles,
-          createdAt: order.createdAt,
-          updatedAt: order.updatedAt
+          id: order.id, status: order.status, scopeBox: order.scopeBox,
+          buyerName: order.buyerName, buyerEmail: order.buyerEmail,
+          currency: order.currency, sellerContact: order.sellerContact,
+          deliveryFiles: order.deliveryFiles, createdAt: order.createdAt, updatedAt: order.updatedAt,
         } : null,
         buyer: buyer ? { id: buyer.id, firstName: buyer.firstName, lastName: buyer.lastName, email: buyer.email } : null,
         seller: seller ? { id: seller.id, firstName: seller.firstName, lastName: seller.lastName, email: seller.email, businessName: seller.businessName } : null,
-        autoFlag,
-        riskScore,
-        riskReason,
-        timeline: combinedTimeline
-      }
+        autoFlag, riskScore, riskReason,
+        timeline: combinedTimeline,
+      },
     });
   } catch (err) {
     console.error('Admin dispute detail error:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch dispute detail' });
+    return res.status(500).json({ success: false, message: 'Failed to fetch dispute detail' });
   }
 });
 
-// POST /api/admin/disputes/:id/resolve
+// ── POST /api/admin/disputes/:id/resolve ──────────────────────────────────────
+
 router.post('/disputes/:id/resolve', adminAuth, async (req, res) => {
   try {
-    const { action, notes } = req.body; // action: "REFUND" | "RELEASE"
+    const { action, notes } = req.body;
     if (!action) return res.status(400).json({ success: false, message: 'action is required (REFUND or RELEASE)' });
 
-    const dispute = await Dispute.findByPk(req.params.id);
+    const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     if (dispute.status === 'RESOLVED') return res.status(400).json({ success: false, message: 'Dispute already resolved' });
 
     const resolution = action === 'REFUND' ? 'REFUND_BUYER' : 'RELEASE_TO_SELLER';
     const orderStatus = action === 'REFUND' ? 'REFUNDED' : 'COMPLETED';
 
+    const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
     const resolutionEntry = {
       event: 'DISPUTE_RESOLVED',
       by: 'admin',
       timestamp: new Date().toISOString(),
       description: `Admin resolved: ${action === 'REFUND' ? 'Refunded buyer' : 'Released payment to seller'}`,
-      notes: notes || ''
+      notes: notes || '',
     };
 
-    await dispute.update({
-      status: 'RESOLVED',
-      resolution,
-      resolutionNotes: notes || '',
-      resolvedAt: new Date(),
-      timeline: [...(dispute.timeline || []), resolutionEntry],
-      lastActivity: new Date()
+    const updatedDispute = await prisma.orderDispute.update({
+      where: { id: req.params.id },
+      data: {
+        status: 'RESOLVED',
+        resolution,
+        resolvedBy: req.admin?.id || 'admin',
+        resolvedAt: new Date(),
+        timeline: [...currentTimeline, resolutionEntry],
+        lastActivity: new Date(),
+      },
     });
 
-    await Order.update({ status: orderStatus }, { where: { id: dispute.orderId } });
+    await prisma.order.update({
+      where: { id: dispute.orderId },
+      data: { status: orderStatus },
+    });
 
-    res.json({ success: true, message: `Dispute resolved: ${action}`, data: dispute });
+    return res.json({ success: true, message: `Dispute resolved: ${action}`, data: updatedDispute });
   } catch (err) {
     console.error('Admin resolve error:', err);
-    res.status(500).json({ success: false, message: 'Failed to resolve dispute' });
+    return res.status(500).json({ success: false, message: 'Failed to resolve dispute' });
   }
 });
 
-// GET /api/admin/orders
+// ── GET /api/admin/orders ─────────────────────────────────────────────────────
+
 router.get('/orders', adminAuth, async (req, res) => {
   try {
-    const orders = await Order.findAll({
-      order: [['createdAt', 'DESC']],
-      limit: 50
+    const orders = await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 50,
     });
-    res.json({ success: true, data: orders });
+    return res.json({ success: true, data: orders });
   } catch (err) {
     console.error('Admin orders error:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch orders' });
+    return res.status(500).json({ success: false, message: 'Failed to fetch orders' });
+  }
+});
+
+// ── GET /api/admin/users ──────────────────────────────────────────────────────
+
+router.get('/users', adminAuth, async (req, res) => {
+  try {
+    const [buyers, sellers] = await Promise.all([
+      prisma.buyer.findMany({ select: { id: true, email: true, firstName: true, lastName: true, status: true, createdAt: true } }),
+      prisma.seller.findMany({ select: { id: true, email: true, firstName: true, lastName: true, businessName: true, status: true, createdAt: true } }),
+    ]);
+    return res.json({ success: true, data: { buyers, sellers } });
+  } catch (err) {
+    console.error('Admin users error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch users' });
   }
 });
 

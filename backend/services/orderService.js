@@ -1,47 +1,37 @@
-const { Order } = require('../models');
+const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 } = require('uuid');
+
+const prisma = new PrismaClient();
 
 // Status transition rules
 const STATUS_TRANSITIONS = {
-  'PLACED': ['ESCROW_FUNDED', 'DISPUTED'],
-  // SUBMITTED: seller can deliver once escrow is funded (even before formal "accept" in edge cases)
-  'ESCROW_FUNDED': ['IN_PROGRESS', 'DISPUTED', 'SUBMITTED'],
-  // ACCEPTED: set by acceptOrder(); sellers need to submit delivery from here (not only IN_PROGRESS)
-  'ACCEPTED': ['SUBMITTED', 'DISPUTED', 'IN_PROGRESS'],
-  'IN_PROGRESS': ['SUBMITTED', 'DISPUTED'],
-  'SUBMITTED': ['COMPLETED', 'DISPUTED'],
-  'APPROVED': ['RELEASED', 'REFUNDED'],
-  'COMPLETED': [],
-  'DISPUTED': ['IN_PROGRESS', 'RELEASED', 'REFUNDED'],
-  'RELEASED': [],
-  'REFUNDED': []
+  PLACED: ['ESCROW_FUNDED', 'DISPUTED', 'CANCELLED'],
+  ESCROW_FUNDED: ['ACCEPTED', 'IN_PROGRESS', 'DISPUTED', 'SUBMITTED', 'CANCELLED'],
+  ACCEPTED: ['IN_PROGRESS', 'SUBMITTED', 'DISPUTED'],
+  IN_PROGRESS: ['SUBMITTED', 'DISPUTED'],
+  SUBMITTED: ['APPROVED', 'COMPLETED', 'DISPUTED'],
+  APPROVED: ['RELEASED', 'REFUNDED'],
+  COMPLETED: [],
+  DISPUTED: ['IN_PROGRESS', 'RELEASED', 'REFUNDED', 'COMPLETED'],
+  CHANGES_REQUESTED: ['IN_PROGRESS', 'REJECTED'],
+  RELEASED: [],
+  REFUNDED: [],
+  REJECTED: [],
+  CANCELLED: [],
 };
 
-// Guarantee seller can finish delivery after accept (defensive — avoids stale deployments missing edges)
-STATUS_TRANSITIONS.ACCEPTED = [
-  ...new Set([
-    ...(STATUS_TRANSITIONS.ACCEPTED || []),
-    'SUBMITTED',
-    'DISPUTED',
-    'IN_PROGRESS'
-  ])
-];
-
-// Validate status transition
 function isValidStatusTransition(currentStatus, newStatus) {
   const cur = String(currentStatus ?? '').trim();
   const next = String(newStatus ?? '').trim();
-  const allowedTransitions = STATUS_TRANSITIONS[cur] || [];
-  return allowedTransitions.includes(next);
+  const allowed = STATUS_TRANSITIONS[cur] || [];
+  return allowed.includes(next);
 }
 
-// Update order status with logging
+// ── Update order status with append-only log ───────────────────────────────────
+
 async function updateOrderStatus(orderId, newStatus, byUserId, additionalData = {}) {
-  const order = await Order.findByPk(orderId);
-  
-  if (!order) {
-    throw new Error('Order not found');
-  }
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
 
   if (!isValidStatusTransition(order.status, newStatus)) {
     throw new Error(`Invalid status transition from ${order.status} to ${newStatus}`);
@@ -53,52 +43,25 @@ async function updateOrderStatus(orderId, newStatus, byUserId, additionalData = 
     timestamp: new Date().toISOString(),
     previousStatus: order.status,
     newStatus,
-    ...additionalData
+    ...additionalData,
   };
 
-  await order.update({
-    status: newStatus,
-    orderLogs: [...(order.orderLogs || []), logEntry]
-  });
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
 
-  return order;
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: newStatus,
+      orderLogs: [...currentLogs, logEntry],
+    },
+  });
 }
 
-// Create new order
-async function createOrder(orderData) {
-  const { 
-    orderId,
-    buyerId, 
-    sellerId, 
-    buyerName,
-    buyerEmail,
-    platform,
-    productLink,
-    country,
-    currency,
-    sellerContact,
-    escrowLink,
-    orderTrackingLink,
-    scopeBox 
-  } = orderData;
-  
-  const logEntry = {
-    event: 'ORDER_CREATED',
-    byUserId: buyerId,
-    timestamp: new Date().toISOString(),
-    buyerName,
-    buyerEmail,
-    platform,
-    productLink,
-    country,
-    currency,
-    sellerContact,
-    escrowLink,
-    orderTrackingLink
-  };
+// ── Create new order ──────────────────────────────────────────────────────────
 
-  return await Order.create({
-    id: orderId,
+async function createOrder(orderData) {
+  const {
+    orderId,
     buyerId,
     sellerId,
     buyerName,
@@ -111,431 +74,376 @@ async function createOrder(orderData) {
     escrowLink,
     orderTrackingLink,
     scopeBox,
-    status: 'PLACED',
-    orderLogs: [logEntry]
+  } = orderData;
+
+  const logEntry = {
+    event: 'ORDER_CREATED',
+    byUserId: buyerId,
+    timestamp: new Date().toISOString(),
+    buyerName,
+    buyerEmail,
+    platform,
+    productLink,
+    country,
+    currency,
+    sellerContact,
+    escrowLink,
+    orderTrackingLink,
+  };
+
+  const order = await prisma.order.create({
+    data: {
+      id: orderId,
+      buyerId,
+      sellerId: sellerId || null,
+      buyerName,
+      buyerEmail,
+      platform,
+      productLink: productLink || null,
+      country,
+      currency,
+      sellerContact,
+      escrowLink: escrowLink || null,
+      orderTrackingLink: orderTrackingLink || null,
+      scopeBox,
+      status: 'PLACED',
+      orderLogs: [logEntry],
+    },
   });
+
+  // Create chat room for the order
+  try {
+    await prisma.orderChatRoom.create({
+      data: {
+        orderId: order.id,
+        buyerId,
+        sellerId: sellerId || 'pending',
+      },
+    });
+  } catch (chatErr) {
+    console.error('Failed to create order chat room:', chatErr.message);
+  }
+
+  return order;
 }
 
-// Fund escrow
+// ── Fund escrow ────────────────────────────────────────────────────────────────
+
 async function fundEscrow(orderId, buyerId) {
-  return await updateOrderStatus(orderId, 'ESCROW_FUNDED', buyerId, {
-    event: 'ESCROW_FUNDED'
-  });
+  return updateOrderStatus(orderId, 'ESCROW_FUNDED', buyerId, { event: 'ESCROW_FUNDED' });
 }
 
-// Start work
+// ── Start work ─────────────────────────────────────────────────────────────────
+
 async function startWork(orderId, sellerId) {
-  return await updateOrderStatus(orderId, 'IN_PROGRESS', sellerId, {
-    event: 'WORK_STARTED'
-  });
+  return updateOrderStatus(orderId, 'IN_PROGRESS', sellerId, { event: 'WORK_STARTED' });
 }
 
-// Submit delivery — updates status without going through STATUS_TRANSITIONS so ACCEPTED/ESCROW_FUNDED/IN_PROGRESS
-// always work (avoids mismatches between Sequelize enum values and transition map keys).
+// ── Submit delivery ────────────────────────────────────────────────────────────
+
 async function submitDelivery(orderId, sellerId, deliveryFiles) {
-  const order = await Order.findByPk(orderId);
-
-  if (!order) {
-    throw new Error('Order not found');
-  }
-
-  if (order.sellerId !== sellerId) {
-    throw new Error('Unauthorized: Only the seller can submit delivery');
-  }
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.sellerId !== sellerId) throw new Error('Unauthorized: Only the seller can submit delivery');
 
   const status = String(order.status ?? '').trim();
   const allowedBeforeSubmit = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS'];
   if (!allowedBeforeSubmit.includes(status)) {
-    throw new Error(
-      `Cannot submit delivery from status "${status}". Allowed: ${allowedBeforeSubmit.join(', ')}`
-    );
+    throw new Error(`Cannot submit delivery from status "${status}". Allowed: ${allowedBeforeSubmit.join(', ')}`);
   }
 
-  const mergedFiles = [...(order.deliveryFiles || []), ...(deliveryFiles || [])];
-
+  const mergedFiles = [...(Array.isArray(order.deliveryFiles) ? order.deliveryFiles : []), ...(deliveryFiles || [])];
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
   const logEntry = {
     event: 'DELIVERY_SUBMITTED',
     byUserId: sellerId,
     timestamp: new Date().toISOString(),
     previousStatus: status,
     newStatus: 'SUBMITTED',
-    deliveryFiles: deliveryFiles || []
+    deliveryFiles: deliveryFiles || [],
   };
 
-  await order.update({
-    deliveryFiles: mergedFiles,
-    status: 'SUBMITTED',
-    orderLogs: [...(order.orderLogs || []), logEntry]
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      deliveryFiles: mergedFiles,
+      status: 'SUBMITTED',
+      orderLogs: [...currentLogs, logEntry],
+    },
   });
-
-  return order;
 }
 
-// Approve delivery
+// ── Approve delivery ───────────────────────────────────────────────────────────
+
 async function approveDelivery(orderId, buyerId) {
-  return await updateOrderStatus(orderId, 'APPROVED', buyerId, {
-    event: 'DELIVERY_APPROVED'
-  });
+  return updateOrderStatus(orderId, 'APPROVED', buyerId, { event: 'DELIVERY_APPROVED' });
 }
 
-// Raise dispute
+// ── Raise dispute ──────────────────────────────────────────────────────────────
+
 async function raiseDispute(orderId, userId, disputeData) {
-  const disputeId = uuidv4();
-  
-  return await updateOrderStatus(orderId, 'DISPUTED', userId, {
+  return updateOrderStatus(orderId, 'DISPUTED', userId, {
     event: 'DISPUTE_RAISED',
-    disputeId,
-    disputeData
+    disputeData,
   });
 }
 
-// Release funds (buyer only)
+// ── Release funds (buyer only) ─────────────────────────────────────────────────
+
 async function releaseFunds(orderId, buyerId) {
-  const order = await Order.findByPk(orderId);
-  
-  if (!order) {
-    throw new Error('Order not found');
-  }
-  
-  if (order.buyerId !== buyerId) {
-    throw new Error('Unauthorized: Only the buyer can release funds for this order');
-  }
-  
-  // Only allow release if order is SUBMITTED
-  if (order.status !== 'SUBMITTED') {
-    throw new Error('Order must be in SUBMITTED status to release funds');
-  }
-  
-  const previousStatus = order.status;
-  order.status = 'COMPLETED';
-  
-  // Add completion log
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.buyerId !== buyerId) throw new Error('Unauthorized: Only the buyer can release funds for this order');
+  if (order.status !== 'SUBMITTED') throw new Error('Order must be in SUBMITTED status to release funds');
+
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
   const logEntry = {
     event: 'ORDER_COMPLETED',
     byUserId: buyerId,
     timestamp: new Date().toISOString(),
-    previousStatus,
+    previousStatus: order.status,
     newStatus: 'COMPLETED',
     reason: 'Funds released by buyer',
-    action: 'FUNDS_RELEASED_TO_SELLER'
+    action: 'FUNDS_RELEASED_TO_SELLER',
   };
-  
-  order.orderLogs = [...(order.orderLogs || []), logEntry];
-  
-  // Save the order first
-  await order.save();
-  
-  // Send notification to seller about payment
-  try {
-    await sendSellerPaymentNotification(order);
-  } catch (notificationError) {
-    console.error('Error sending seller payment notification:', notificationError);
-    // Don't fail the entire operation if notification fails
-  }
-  
-  return order;
-}
 
-// Send payment notification to seller
-async function sendSellerPaymentNotification(order) {
-  const { sellerContact, scopeBox, id } = order;
-  
-  console.log('📧 Sending payment notification to seller:', sellerContact);
-  console.log('   Subject: Payment Received - Order', id);
-  console.log('   Message: Your payment has been released for the completed order');
-  console.log('   Order ID:', id);
-  console.log('   Amount:', scopeBox?.price || 0);
-  console.log('   Status: COMPLETED');
-  
-  // In a real implementation, you would:
-  // 1. Send email/SMS to seller
-  // 2. Update seller's account balance
-  // 3. Send confirmation to buyer
-  // 4. Update escrow account
-  
-  // For now, we'll just log the notification
-  console.log('✅ Payment notification sent to seller');
-}
-
-// Refund buyer (admin only)
-async function refundBuyer(orderId, adminId) {
-  return await updateOrderStatus(orderId, 'REFUNDED', adminId, {
-    event: 'BUYER_REFUNDED'
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'COMPLETED',
+      orderLogs: [...currentLogs, logEntry],
+    },
   });
+
+  // Notify seller (simulated)
+  console.log(`📧 Payment notification to seller: ${updated.sellerContact} — Order ${orderId} COMPLETED`);
+
+  return updated;
 }
 
-// Accept order (seller only) — moves to ACCEPTED and records time for buyer "Accepted" → "In progress" (1h) UI
+// ── Refund buyer (admin only) ──────────────────────────────────────────────────
+
+async function refundBuyer(orderId, adminId) {
+  return updateOrderStatus(orderId, 'REFUNDED', adminId, { event: 'BUYER_REFUNDED' });
+}
+
+// ── Accept order (seller only) ─────────────────────────────────────────────────
+
 async function acceptOrder(orderId, sellerId) {
-  const order = await Order.findByPk(orderId);
-
-  if (!order) {
-    throw new Error('Order not found');
-  }
-
-  if (order.sellerId !== sellerId) {
-    throw new Error('Unauthorized: Only the assigned seller can accept this order');
-  }
-
-  if (order.status !== 'ESCROW_FUNDED') {
-    throw new Error('Order must be in ESCROW_FUNDED status to be accepted');
-  }
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.sellerId !== sellerId) throw new Error('Unauthorized: Only the assigned seller can accept this order');
+  if (order.status !== 'ESCROW_FUNDED') throw new Error('Order must be in ESCROW_FUNDED status to be accepted');
 
   const acceptedAt = new Date();
-
-  const updated = await updateOrderStatus(orderId, 'ACCEPTED', sellerId, {
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
+  const logEntry = {
     event: 'ORDER_ACCEPTED',
-    reason: 'Accepted by seller — work in progress'
-  });
+    byUserId: sellerId,
+    timestamp: acceptedAt.toISOString(),
+    previousStatus: order.status,
+    newStatus: 'ACCEPTED',
+    reason: 'Accepted by seller — work in progress',
+  };
 
-  await updated.update({ sellerAcceptedAt: acceptedAt });
-  return updated.reload();
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'ACCEPTED',
+      sellerAcceptedAt: acceptedAt,
+      orderLogs: [...currentLogs, logEntry],
+    },
+  });
 }
 
-// Start work from accepted status (seller only) - moves from ACCEPTED to IN_PROGRESS
+// ── Start work from ACCEPTED (seller only) ────────────────────────────────────
+
 async function startWorkFromAccepted(orderId, sellerId) {
-  const order = await Order.findByPk(orderId);
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.sellerId !== sellerId) throw new Error('Unauthorized: Only the assigned seller can start work');
+  if (order.status !== 'ACCEPTED') throw new Error('Order must be in ACCEPTED status to start work');
 
-  if (!order) {
-    throw new Error('Order not found');
-  }
-
-  if (order.sellerId !== sellerId) {
-    throw new Error('Unauthorized: Only the assigned seller can start work on this order');
-  }
-
-  if (order.status !== 'ACCEPTED') {
-    throw new Error('Order must be in ACCEPTED status to start work');
-  }
-
-  return await updateOrderStatus(orderId, 'IN_PROGRESS', sellerId, {
+  return updateOrderStatus(orderId, 'IN_PROGRESS', sellerId, {
     event: 'WORK_STARTED',
-    reason: 'Work started by seller'
+    reason: 'Work started by seller',
   });
 }
 
-// Reject order (seller only)
+// ── Reject order (seller only) ─────────────────────────────────────────────────
+
 async function rejectOrder(orderId, sellerId) {
-  const order = await Order.findByPk(orderId);
-  
-  if (!order) {
-    throw new Error('Order not found');
-  }
-  
-  if (order.sellerId !== sellerId) {
-    throw new Error('Unauthorized: Only the assigned seller can reject this order');
-  }
-  
-  // Only allow rejection if order is ESCROW_FUNDED
-  if (order.status !== 'ESCROW_FUNDED') {
-    throw new Error('Order must be in ESCROW_FUNDED status to be rejected');
-  }
-  
-  const previousStatus = order.status;
-  order.status = 'REJECTED';
-  
-  // Add rejection log
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.sellerId !== sellerId) throw new Error('Unauthorized: Only the assigned seller can reject this order');
+  if (order.status !== 'ESCROW_FUNDED') throw new Error('Order must be in ESCROW_FUNDED status to be rejected');
+
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
   const logEntry = {
     event: 'ORDER_REJECTED',
     byUserId: sellerId,
     timestamp: new Date().toISOString(),
-    previousStatus,
+    previousStatus: order.status,
     newStatus: 'REJECTED',
-    reason: 'Rejected by seller'
+    reason: 'Rejected by seller',
   };
-  
-  order.orderLogs = [...(order.orderLogs || []), logEntry];
-  
-  return await order.save();
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'REJECTED',
+      orderLogs: [...currentLogs, logEntry],
+    },
+  });
 }
 
-// Request changes to order (seller only)
+// ── Request changes (seller only) ─────────────────────────────────────────────
+
 async function requestChanges(orderId, sellerId, changesData) {
-  const order = await Order.findByPk(orderId);
-  
-  if (!order) {
-    throw new Error('Order not found');
-  }
-  
-  if (order.sellerId !== sellerId) {
-    throw new Error('Unauthorized: Only the assigned seller can request changes to this order');
-  }
-  
-  // Only allow changes request if order is ESCROW_FUNDED
-  if (order.status !== 'ESCROW_FUNDED') {
-    throw new Error('Order must be in ESCROW_FUNDED status to request changes');
-  }
-  
-  const previousStatus = order.status;
-  order.status = 'CHANGES_REQUESTED';
-  
-  // Store the proposed changes separately
-  order.proposedScopeBox = {
-    ...order.scopeBox,
-    ...changesData.scopeBox,
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.sellerId !== sellerId) throw new Error('Unauthorized: Only the assigned seller can request changes');
+  if (order.status !== 'ESCROW_FUNDED') throw new Error('Order must be in ESCROW_FUNDED status to request changes');
+
+  const proposedScopeBox = {
+    ...((order.scopeBox && typeof order.scopeBox === 'object') ? order.scopeBox : {}),
+    ...(changesData.scopeBox || {}),
     changesRequested: true,
     requestedBy: 'seller',
     requestedAt: new Date().toISOString(),
-    changeReason: changesData.scopeBox?.changeReason || 'Changes requested by seller'
+    changeReason: changesData.scopeBox?.changeReason || 'Changes requested by seller',
   };
-  
-  // Add changes request log
+
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
   const logEntry = {
     event: 'CHANGES_REQUESTED',
     byUserId: sellerId,
     timestamp: new Date().toISOString(),
-    previousStatus,
+    previousStatus: order.status,
     newStatus: 'CHANGES_REQUESTED',
     reason: 'Changes requested by seller',
-    changesRequested: true
+    changesRequested: true,
   };
-  
-  order.orderLogs = [...(order.orderLogs || []), logEntry];
-  
-  return await order.save();
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'CHANGES_REQUESTED',
+      proposedScopeBox,
+      orderLogs: [...currentLogs, logEntry],
+    },
+  });
 }
 
-// Accept changes (buyer only)
+// ── Accept changes (buyer only) ────────────────────────────────────────────────
+
 async function acceptChanges(orderId, buyerId) {
-  const order = await Order.findByPk(orderId);
-  
-  if (!order) {
-    throw new Error('Order not found');
-  }
-  
-  if (order.buyerId !== buyerId) {
-    throw new Error('Unauthorized: Only the buyer can accept changes to this order');
-  }
-  
-  // Only allow acceptance if order is CHANGES_REQUESTED
-  if (order.status !== 'CHANGES_REQUESTED') {
-    throw new Error('Order must be in CHANGES_REQUESTED status to accept changes');
-  }
-  
-  const previousStatus = order.status;
-  order.status = 'IN_PROGRESS';
-  
-  // Update scope box with the proposed changes
-  if (order.proposedScopeBox) {
-    order.scopeBox = order.proposedScopeBox;
-    order.proposedScopeBox = null; // Clear the proposed changes
-  }
-  
-  // Add acceptance log
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.buyerId !== buyerId) throw new Error('Unauthorized: Only the buyer can accept changes');
+  if (order.status !== 'CHANGES_REQUESTED') throw new Error('Order must be in CHANGES_REQUESTED status to accept changes');
+
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
   const logEntry = {
     event: 'CHANGES_ACCEPTED',
     byUserId: buyerId,
     timestamp: new Date().toISOString(),
-    previousStatus,
+    previousStatus: order.status,
     newStatus: 'IN_PROGRESS',
-    reason: 'Changes accepted by buyer'
+    reason: 'Changes accepted by buyer',
   };
-  
-  order.orderLogs = [...(order.orderLogs || []), logEntry];
-  
-  return await order.save();
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'IN_PROGRESS',
+      scopeBox: order.proposedScopeBox || order.scopeBox,
+      proposedScopeBox: null,
+      orderLogs: [...currentLogs, logEntry],
+    },
+  });
 }
 
-// Reject changes (buyer only)
+// ── Reject changes (buyer only) ────────────────────────────────────────────────
+
 async function rejectChanges(orderId, buyerId) {
-  const order = await Order.findByPk(orderId);
-  
-  if (!order) {
-    throw new Error('Order not found');
-  }
-  
-  if (order.buyerId !== buyerId) {
-    throw new Error('Unauthorized: Only the buyer can reject changes to this order');
-  }
-  
-  // Only allow rejection if order is CHANGES_REQUESTED
-  if (order.status !== 'CHANGES_REQUESTED') {
-    throw new Error('Order must be in CHANGES_REQUESTED status to reject changes');
-  }
-  
-  const previousStatus = order.status;
-  order.status = 'REJECTED';
-  
-  // Clear the proposed changes
-  order.proposedScopeBox = null;
-  
-  // Add rejection log
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.buyerId !== buyerId) throw new Error('Unauthorized: Only the buyer can reject changes');
+  if (order.status !== 'CHANGES_REQUESTED') throw new Error('Order must be in CHANGES_REQUESTED status to reject changes');
+
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
   const logEntry = {
     event: 'CHANGES_REJECTED',
     byUserId: buyerId,
     timestamp: new Date().toISOString(),
-    previousStatus,
+    previousStatus: order.status,
     newStatus: 'REJECTED',
-    reason: 'Changes rejected by buyer'
+    reason: 'Changes rejected by buyer',
   };
-  
-  order.orderLogs = [...(order.orderLogs || []), logEntry];
-  
-  return await order.save();
-}
 
-// Get order by ID
-async function getOrderById(orderId) {
-  return await Order.findByPk(orderId);
-}
-
-// Get buyer orders
-async function getBuyerOrders(buyerId) {
-  return await Order.findAll({
-    where: { buyerId: buyerId },
-    order: [['createdAt', 'DESC']]
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'REJECTED',
+      proposedScopeBox: null,
+      orderLogs: [...currentLogs, logEntry],
+    },
   });
 }
 
-// Get seller orders
-async function getSellerOrders(sellerId) {
-  return await Order.findAll({
-    where: { sellerId: sellerId },
-    order: [['createdAt', 'DESC']]
-  });
-}
+// ── Cancel order (buyer only) ──────────────────────────────────────────────────
 
-// Get orders by user (buyer or seller)
-async function getOrdersByUser(userId, role = 'buyer') {
-  const whereClause = role === 'buyer' ? { buyerId: userId } : { sellerId: userId };
-  return await Order.findAll({
-    where: whereClause,
-    order: [['createdAt', 'DESC']]
-  });
-}
-
-// Cancel order (buyer only)
 async function cancelOrder(orderId, buyerId) {
-  const order = await Order.findByPk(orderId);
-  
-  if (!order) {
-    throw new Error('Order not found');
-  }
-  
-  if (order.buyerId !== buyerId) {
-    throw new Error('Unauthorized: Only the buyer can cancel this order');
-  }
-  
-  // Only allow cancellation if order is not accepted by seller yet
-  if (order.status !== 'PLACED' && order.status !== 'ESCROW_FUNDED') {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.buyerId !== buyerId) throw new Error('Unauthorized: Only the buyer can cancel this order');
+  if (!['PLACED', 'ESCROW_FUNDED'].includes(order.status)) {
     throw new Error('Order cannot be cancelled at this stage');
   }
-  
-  const previousStatus = order.status;
-  order.status = 'CANCELLED';
-  
-  // Add cancellation log
+
+  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
   const logEntry = {
     event: 'ORDER_CANCELLED',
     byUserId: buyerId,
     timestamp: new Date().toISOString(),
-    previousStatus,
+    previousStatus: order.status,
     newStatus: 'CANCELLED',
-    reason: 'Cancelled by buyer'
+    reason: 'Cancelled by buyer',
   };
-  
-  order.orderLogs = [...(order.orderLogs || []), logEntry];
-  
-  return await order.save();
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'CANCELLED',
+      orderLogs: [...currentLogs, logEntry],
+    },
+  });
+}
+
+// ── Query helpers ──────────────────────────────────────────────────────────────
+
+async function getOrderById(orderId) {
+  return prisma.order.findUnique({ where: { id: orderId } });
+}
+
+async function getBuyerOrders(buyerId) {
+  return prisma.order.findMany({
+    where: { buyerId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+async function getSellerOrders(sellerId) {
+  return prisma.order.findMany({
+    where: { sellerId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+async function getOrdersByUser(userId, role = 'buyer') {
+  const where = role === 'buyer' ? { buyerId: userId } : { sellerId: userId };
+  return prisma.order.findMany({ where, orderBy: { createdAt: 'desc' } });
 }
 
 module.exports = {
@@ -559,5 +467,5 @@ module.exports = {
   requestChanges,
   acceptChanges,
   rejectChanges,
-  startWorkFromAccepted
+  startWorkFromAccepted,
 };

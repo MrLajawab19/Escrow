@@ -1,6 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { Order } = require('../models');
 /**
  * Wallet Service - Handles all wallet operations
  * Implements double-entry ledger pattern for transactions
@@ -457,36 +456,33 @@ class WalletService {
       let underDisputeAmount = 0;
       let withdrawnAmount = 0;
 
+      const activeStatuses = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'DISPUTED', 'CHANGES_REQUESTED'];
+
       if (wallet.userRole === 'buyer') {
-        const activeBuyerOrders = await Order.findAll({
-          where: {
-            buyerId: userId,
-            status: ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'DISPUTED', 'CHANGES_REQUESTED']
-          }
+        const activeBuyerOrders = await prisma.order.findMany({
+          where: { buyerId: userId, status: { in: activeStatuses } },
         });
         activeBuyerOrders.forEach(order => {
+          const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
           if (order.status === 'DISPUTED') {
-            pendingRefundBalance += parseFloat(order.scopeBox?.price || 0);
+            pendingRefundBalance += parseFloat(scopeBox.price || 0);
           } else {
-            lockedEscrowBalance += parseFloat(order.scopeBox?.price || 0);
+            lockedEscrowBalance += parseFloat(scopeBox.price || 0);
           }
         });
       } else if (wallet.userRole === 'seller') {
-        const activeSellerOrders = await Order.findAll({
-          where: {
-            sellerId: userId,
-            status: ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'DISPUTED', 'CHANGES_REQUESTED']
-          }
+        const activeSellerOrders = await prisma.order.findMany({
+          where: { sellerId: userId, status: { in: activeStatuses } },
         });
         activeSellerOrders.forEach(order => {
+          const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
           if (order.status === 'DISPUTED') {
-            underDisputeAmount += parseFloat(order.scopeBox?.price || 0);
+            underDisputeAmount += parseFloat(scopeBox.price || 0);
           } else {
-            pendingEarnings += parseFloat(order.scopeBox?.price || 0);
+            pendingEarnings += parseFloat(scopeBox.price || 0);
           }
         });
-        
-        // Withdrawn amount is sum of successful withdrawals
+
         withdrawnAmount = debitTransactions
           .filter(t => t.category === 'WITHDRAWAL')
           .reduce((sum, t) => sum + t.amount, 0);
