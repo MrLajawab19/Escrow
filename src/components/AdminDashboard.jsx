@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 // ─── helpers ────────────────────────────────────────────────────────────────
 const adminHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('adminToken')}`
@@ -121,10 +119,10 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const [statsRes, disputesRes, ordersRes, withdrawalsRes] = await Promise.all([
-        axios.get(`${API}/api/admin/stats`, { headers: adminHeaders() }),
-        axios.get(`${API}/api/admin/disputes`, { headers: adminHeaders() }),
-        axios.get(`${API}/api/admin/orders`, { headers: adminHeaders() }),
-        axios.get(`${API}/api/wallet/admin/withdrawals`, { headers: adminHeaders() }),
+        axios.get(`/api/admin/stats`, { headers: adminHeaders() }),
+        axios.get(`/api/admin/disputes`, { headers: adminHeaders() }),
+        axios.get(`/api/admin/orders`, { headers: adminHeaders() }),
+        axios.get(`/api/wallet/admin/withdrawals`, { headers: adminHeaders() }),
       ]);
       setStats(statsRes.data.data);
       setDisputes(disputesRes.data.data || []);

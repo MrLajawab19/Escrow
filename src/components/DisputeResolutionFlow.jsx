@@ -3,8 +3,6 @@ import axios from 'axios';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-const API = import.meta.env.VITE_API_URL || '';
-
 const SEV_CONFIG = {
   CRITICAL: { bg: 'bg-red-50', border: 'border-red-200', badge: 'bg-red-100 text-red-700 border-red-200', icon: '🚨', label: 'Critical' },
   HIGH:     { bg: 'bg-orange-50', border: 'border-orange-200', badge: 'bg-orange-100 text-orange-700 border-orange-200', icon: '⚠️', label: 'High' },
@@ -131,7 +129,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API}/api/disputes/${order.disputeId}/full`, { headers });
+      const res = await axios.get(`/api/disputes/${order.disputeId}/full`, { headers });
       if (res.data.success) {
         setDetail(res.data.data);
         if (res.data.data.dispute.status === 'MEDIATION') setEscalated(true);
@@ -172,7 +170,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
       evidenceFiles.forEach(f => formData.append('files', f));
 
       await axios.post(
-        `${API}/api/disputes/${detail.dispute.id}/submit-evidence`,
+        `/api/disputes/${detail.dispute.id}/submit-evidence`,
         formData,
         { headers: { ...headers, 'Content-Type': 'multipart/form-data' } }
       );
@@ -189,7 +187,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
     setEscalating(true);
     try {
       await axios.post(
-        `${API}/api/disputes/${detail.dispute.id}/smart-escalate`,
+        `/api/disputes/${detail.dispute.id}/smart-escalate`,
         { reason: escalateReason || 'Not satisfied with the AI recommendation' },
         { headers }
       );
@@ -205,7 +203,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
 
   const handleRefreshAI = async () => {
     try {
-      await axios.post(`${API}/api/disputes/${detail.dispute.id}/ai-analysis`, {}, { headers });
+      await axios.post(`/api/disputes/${detail.dispute.id}/ai-analysis`, {}, { headers });
       await fetchDetail();
     } catch (e) {
       alert('Failed to refresh AI analysis');

@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EnhancedDisputeResolution from '../components/EnhancedDisputeResolution';
 
-const API = import.meta.env.VITE_API_URL || '';
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const SEV_COLORS = {
@@ -132,7 +130,7 @@ export default function AdminDisputeDetails() {
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API}/api/disputes/${id}/full`, {
+      const res = await axios.get(`/api/admin/disputes/${id}/full`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -159,7 +157,7 @@ export default function AdminDisputeDetails() {
   const handleRefreshAI = async () => {
     setRefreshingAI(true);
     try {
-      await axios.post(`${API}/api/disputes/${id}/ai-analysis`, {}, {
+      await axios.post(`/api/admin/disputes/${id}/ai-analysis`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchDetail();
@@ -176,8 +174,7 @@ export default function AdminDisputeDetails() {
     try {
       // admin.js expects action: "REFUND" | "RELEASE"
       const action = resolution === 'REFUND_BUYER' ? 'REFUND' : 'RELEASE';
-      await axios.post(
-        `${API}/api/admin/disputes/${id}/resolve`,
+      await axios.patch(`/api/admin/disputes/${id}/resolve`,
         { action, notes: resolutionNotes },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -205,7 +202,7 @@ export default function AdminDisputeDetails() {
       const action = actionMap[resolutionData.resolution] || 'REFUND';
       
       await axios.post(
-        `${API}/api/admin/disputes/${disputeId}/resolve`,
+        `/api/admin/disputes/${disputeId}/resolve`,
         { 
           action, 
           notes: resolutionData.resolutionNotes,
