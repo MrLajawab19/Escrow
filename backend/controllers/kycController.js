@@ -44,7 +44,7 @@ exports.submitID = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No documents uploaded' });
     }
 
-    const idDocUrls = req.files.map(file => \/uploads/kyc/\/\\);
+    const idDocUrls = req.files.map(file => `/uploads/kyc/${req.user.id}/${file.filename}`);
 
     const result = await kycService.submitID(req.user.id, {
       idDocType,

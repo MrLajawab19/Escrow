@@ -121,6 +121,8 @@ class KYCService {
     }
 
     return { success: true, message: "Phone verified successfully" };
+  }
+
   async submitID(userId, data) {
     const kyc = await prisma.kYC.findUnique({ where: { userId } });
     if (!kyc) throw new Error('KYC record not found');
