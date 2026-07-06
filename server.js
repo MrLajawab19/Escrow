@@ -14,6 +14,7 @@ const chatRoutes = require('./backend/routes/chat');            // ← NEW: orde
 const adminRoutes = require('./backend/routes/admin');          // ← NEW: admin API
 const walletRoutes = require('./backend/routes/wallet');        // ← NEW: wallet routes
 const deedsRoutes = require('./backend/routes/deeds');
+const kycRoutes = require('./backend/routes/kyc');
 const { registerChatSocket } = require('./backend/socket/chatSocket'); // ← NEW: socket handler
 const { startChatExpiryCron } = require('./backend/jobs/chatExpiry'); // ← NEW: expiry cron
 const fs = require('fs');
@@ -68,6 +69,7 @@ app.use('/api/chat', chatRoutes);                               // ← NEW: orde
 app.use('/api/admin', adminRoutes);                            // ← NEW: admin API
 app.use('/api/wallet', walletRoutes);                          // ← NEW: wallet routes
 app.use('/api/deeds', deedsRoutes);
+app.use('/api/kyc', kycRoutes);
 
 // ── Auto-release cron (checks orders hourly, releases approved ones) ───────────
 setInterval(async () => {

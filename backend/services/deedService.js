@@ -146,7 +146,7 @@ class DeedService {
   // ── SELLER JOIN (ACCEPT DEED) ─────────────────────────────────────────────
 
   async sellerJoin(inviteToken, sellerId) {
-    const deed = await prisma.deed.findUnique({ where: { inviteToken }, include: { buyer: true, chatRoom: true } });
+    const deed = await prisma.deed.findUnique({ where: { inviteToken }, include: { chatRoom: true } });
     if (!deed) throw new Error("DEED_NOT_FOUND");
     if (deed.status !== "PENDING_SELLER") throw new Error("DEED_NOT_AWAITING_SELLER");
     if (deed.inviteExpiresAt && deed.inviteExpiresAt < new Date()) throw new Error("INVITE_EXPIRED");
@@ -154,9 +154,9 @@ class DeedService {
     const seller = await prisma.seller.findUnique({ where: { id: sellerId } });
     if (!seller) throw new Error("SELLER_NOT_FOUND");
     
-    // We get the buyer object by querying or we used include: { buyer: true }
-    const buyerName = deed.buyer ? `${deed.buyer.firstName} ${deed.buyer.lastName}` : "Buyer";
-    const buyerEmail = deed.buyer ? deed.buyer.email : "buyer@example.com";
+    const buyer = await prisma.buyer.findUnique({ where: { id: deed.buyerId } });
+    const buyerName = buyer ? `${buyer.firstName} ${buyer.lastName}` : "Buyer";
+    const buyerEmail = buyer ? buyer.email : "buyer@example.com";
 
     // 1. Update Deed to ACTIVE
     // 2. Create Order
