@@ -694,33 +694,12 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
               </div>
             </div>
 
-            {/* Enhanced Result Determination */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-              <p className="text-xs font-bold text-slate-600 uppercase tracking-wider font-inter mb-3">Result Analysis</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="bg-white rounded-lg p-3 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 mb-1">🎯 Primary Factor</p>
-                  <p className="text-sm font-medium text-slate-800">
-                    {ai.sellerFaultProbability > ai.buyerFaultProbability ? 'Seller Performance' : 
-                     ai.buyerFaultProbability > ai.sellerFaultProbability ? 'Buyer Expectations' : 
-                     'Communication Issues'}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg p-3 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 mb-1">⚖️ Fairness Score</p>
-                  <p className="text-sm font-medium text-slate-800">
-                    {Math.max(0, Math.min(100, 100 - Math.abs(ai.sellerFaultProbability - ai.buyerFaultProbability) * 100)).toFixed(0)}%
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Confidence */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <p className="text-xs font-semibold text-neutral-600 font-inter uppercase tracking-wider">Confidence Level</p>
               </div>
-              <ConfidenceBar confidence={ai.confidence} />
+              <ConfidenceBar confidence={ai.confidenceScore / 100 || 0} />
             </div>
 
             {/* Reasoning */}
@@ -744,38 +723,6 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
               </div>
             )}
 
-            {/* Enhanced Fault Analysis */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="bg-orange-50 rounded-xl p-3 border border-orange-100">
-                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider font-inter mb-2">Seller Responsibility</p>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex-1 bg-orange-100 rounded-full h-2">
-                    <div className="bg-orange-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.round((ai.sellerFaultProbability || 0) * 100)}%` }} />
-                  </div>
-                  <span className="text-xs font-bold text-orange-600 font-inter">{Math.round((ai.sellerFaultProbability || 0) * 100)}%</span>
-                </div>
-                <p className="text-xs text-orange-700 font-inter">
-                  {ai.sellerFaultProbability > 0.6 ? 'High responsibility for issues' :
-                   ai.sellerFaultProbability > 0.3 ? 'Partial responsibility' :
-                   'Minimal responsibility'}
-                </p>
-              </div>
-              <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider font-intermb-2">Buyer Responsibility</p>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex-1 bg-blue-100 rounded-full h-2">
-                    <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.round((ai.buyerFaultProbability || 0) * 100)}%` }} />
-                  </div>
-                  <span className="text-xs font-bold text-blue-600 font-inter">{Math.round((ai.buyerFaultProbability || 0) * 100)}%</span>
-                </div>
-                <p className="text-xs text-blue-700 font-inter">
-                  {ai.buyerFaultProbability > 0.6 ? 'High responsibility for issues' :
-                   ai.buyerFaultProbability > 0.3 ? 'Partial responsibility' :
-                   'Minimal responsibility'}
-                </p>
-              </div>
-            </div>
-
             {/* Fraud Risk Alert */}
             {ai.fraudProbability > 0.2 && (
               <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-3">
@@ -797,17 +744,6 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
                 <p>
                   Based on the analysis, <strong>{recConfig.label.toLowerCase()}</strong> is recommended because:
                 </p>
-                <ul className="space-y-1 ml-4">
-                  {ai.sellerFaultProbability > 0.6 && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-violet-500 mt-0.5">•</span>
-                      <span>Seller bears primary responsibility ({Math.round(ai.sellerFaultProbability * 100)}% fault)</span>
-                    </li>
-                  )}
-                  {ai.buyerFaultProbability > 0.6 && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-violet-500 mt-0.5">•</span>
-                      <span>Buyer bears primary responsibility ({Math.round(ai.buyerFaultProbability * 100)}% fault)</span>
                     </li>
                   )}
                   {Math.abs(ai.sellerFaultProbability - ai.buyerFaultProbability) < 0.2 && (
@@ -954,3 +890,4 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
 };
 
 export default DisputeResolutionFlow;
+

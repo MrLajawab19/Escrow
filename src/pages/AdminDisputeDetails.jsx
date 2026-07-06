@@ -319,12 +319,12 @@ export default function AdminDisputeDetails() {
               <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Order Snapshot</h2>
               <div className="space-y-3">
                 {[
-                  { label: 'Service', value: order?.scopeBox?.productType || 'Content Writing' },
-                  { label: 'Blog Topic', value: order?.scopeBox?.contentWritingSpecific?.topic || order?.scopeBox?.topic || '—' },
-                  { label: 'Min. Word Count', value: rf?.minWordCount ? `${rf.minWordCount.toLocaleString()} words` : '—' },
-                  { label: 'Words Delivered', value: rf?.analyzedWordCount > 0 ? `${rf.analyzedWordCount.toLocaleString()} words` : 'Unknown (non-txt file)' },
-                  { label: 'Deadline', value: fmt(order?.scopeBox?.deadline) },
+                  { label: 'Product Type', value: order?.scopeBox?.productType || 'Unknown' },
+                  { label: 'Scope Title', value: order?.scopeBox?.title || order?.scopeBox?.topic || '—' },
+                  ...(order?.scopeBox?.contentWritingSpecific?.wordCount ? [{ label: 'Expected Words', value: `${order.scopeBox.contentWritingSpecific.wordCount} words` }] : []),
+                  ...(order?.scopeBox?.logoSpecific?.fileFormats ? [{ label: 'Required Formats', value: order.scopeBox.logoSpecific.fileFormats.join(', ') }] : []),
                   { label: 'Delivery Files', value: `${order?.deliveryFiles?.length || 0} file(s)` },
+                  { label: 'Deadline', value: fmt(order?.scopeBox?.deadline) },
                   { label: 'Buyer', value: buyer ? `${buyer.firstName} ${buyer.lastName} (${buyer.email})` : order?.buyerName || '—' },
                   { label: 'Seller', value: seller ? `${seller.firstName} ${seller.lastName}` : order?.sellerContact || '—' },
                 ].map((row, i) => (
@@ -407,19 +407,9 @@ export default function AdminDisputeDetails() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-[#0A2540] font-inter">Grok AI Analysis</h2>
+                    <h2 className="text-sm font-bold text-[#0A2540] font-inter">Dispute AI Analysis</h2>
                     <p className="text-xs text-neutral-400 font-inter">
-                      {ai
-                        ? `Source: ${
-                            ai.source === 'rule_engine_fallback'
-                              ? 'Rule Engine Fallback'
-                              : ai.source === 'grok'
-                                ? 'xAI Grok'
-                                : ai.source === 'gemini'
-                                  ? 'Google Gemini (legacy)'
-                                  : 'AI'
-                          }`
-                        : 'Analysis in progress...'}
+                      {ai ? 'AI Review Complete' : 'Analysis in progress...'}
                     </p>
                   </div>
                 </div>
@@ -448,56 +438,16 @@ export default function AdminDisputeDetails() {
                     <div className="flex-1">
                       <p className="text-[10px] text-neutral-500 font-inter font-bold uppercase tracking-wider">AI Recommends</p>
                       <p className={`text-xl font-black font-inter ${recCfg.color}`}>{recCfg.label}</p>
-                      <p className="text-xs text-neutral-500 font-inter italic mt-0.5">{ai.summary}</p>
                     </div>
                   </div>
 
                   {/* Confidence */}
-                  <ConfBar value={ai.confidence} color="bg-violet-500" label="Confidence Level" />
+                  <ConfBar value={ai.confidenceScore || 0} color="bg-violet-500" label="Confidence Level" />
 
                   {/* Reasoning */}
                   <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-100">
                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-inter mb-2">AI Reasoning</p>
                     <p className="text-sm text-neutral-700 font-inter leading-relaxed">{ai.reasoning}</p>
-                  </div>
-
-                  {/* Key Findings */}
-                  {ai.keyFindings?.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-inter mb-2">Key Findings</p>
-                      <ul className="space-y-1.5">
-                        {ai.keyFindings.map((f, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm font-inter text-neutral-700">
-                            <span className="text-violet-400 mt-0.5 flex-shrink-0">›</span>{f}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Fault probability bars */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-orange-50 rounded-xl p-3 border border-orange-100 space-y-2">
-                      <ConfBar value={ai.sellerFaultProbability || 0} color="bg-orange-500" label="Seller Fault Probability" />
-                    </div>
-                    <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 space-y-2">
-                      <ConfBar value={ai.buyerFaultProbability || 0} color="bg-blue-500" label="Buyer Fault Probability" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-100">
-                      <p className="text-[10px] text-neutral-400 font-inter font-semibold uppercase tracking-wider mb-1">Fraud Probability</p>
-                      <p className={`text-lg font-black font-inter ${ai.fraudProbability > 0.5 ? 'text-red-600' : ai.fraudProbability > 0.25 ? 'text-orange-500' : 'text-emerald-600'}`}>
-                        {Math.round((ai.fraudProbability || 0) * 100)}%
-                      </p>
-                    </div>
-                    <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-100">
-                      <p className="text-[10px] text-neutral-400 font-inter font-semibold uppercase tracking-wider mb-1">Behavioral Score</p>
-                      <p className={`text-lg font-black font-inter ${ai.behavioralScore >= 70 ? 'text-emerald-600' : ai.behavioralScore >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
-                        {ai.behavioralScore}/100
-                      </p>
-                    </div>
                   </div>
                 </div>
               )}

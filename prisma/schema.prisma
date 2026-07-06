@@ -465,8 +465,7 @@ model OrderDispute {
   priority             OrderDisputePriority @default(MEDIUM)
   status               OrderDisputeStatus   @default(OPEN)
 
-  ruleFlags            Json?                // output of runBlogDisputeEngine
-  analyzedWordCount    Int                  @default(0)
+  ruleFlags            Json?                // output of runDisputeEngine
   aiAnalysis           Json?                // output of analyzeDisputeWithAI
   evidenceResponses    Json                 @default("{}")
   timeline             Json                 @default("[]")

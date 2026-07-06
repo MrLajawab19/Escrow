@@ -55,25 +55,15 @@ const createDispute = async (req, res) => {
     })) : [];
     const evidenceUrls = evidenceFiles.map(file => `/uploads/${file.filename}`);
 
-    // ── Step 1: Detect word count from delivery files (if applicable) ──────────
-    let analyzedWordCount = 0;
+    // ── Step 1 & 2: Extract Proof Data & Run rule engine ───────────────────────
+    let ruleResult = { riskScore: 30, flagCount: 0, hasCritical: false, faultSide: 'UNKNOWN', autoRecommendation: 'MANUAL_REVIEW_REQUIRED' };
     try {
-      const { detectDeliveredWordCount } = require('../services/blogDisputeEngine');
-      if (order.deliveryFiles && order.deliveryFiles.length > 0) {
-        analyzedWordCount = await detectDeliveredWordCount(order.deliveryFiles);
-      }
-    } catch {
-      // word count detection is optional — don't fail on missing module
-    }
-
-    // ── Step 2: Run rule engine ────────────────────────────────────────────────
-    let ruleResult = { riskScore: 30, flagCount: 0, hasCritical: false, faultSide: 'unclear', autoRecommendation: 'manual_review' };
-    try {
-      const { runBlogDisputeEngine } = require('../services/blogDisputeEngine');
+      const { extractProofData, runDisputeEngine } = require('../services/disputeEngine');
       const tempDispute = { description, reason, createdAt: new Date(), raisedBy };
-      ruleResult = runBlogDisputeEngine(order, tempDispute, analyzedWordCount);
-    } catch {
-      // rule engine is optional — use defaults
+      const proofData = extractProofData(order);
+      ruleResult = runDisputeEngine(order, tempDispute, proofData);
+    } catch (e) {
+      console.error("Failed to run universal dispute engine:", e);
     }
 
     const initialTimeline = [
@@ -106,8 +96,7 @@ const createDispute = async (req, res) => {
         requestedResolution: requestedResolution || null,
         priority: ruleResult.hasCritical ? 'HIGH' : priority,
         status: 'OPEN',
-        ruleFlags: { ...ruleResult, analyzedWordCount },
-        analyzedWordCount,
+        ruleFlags: ruleResult,
         autoFlaggedAt: new Date(),
         evidenceResponses: {},
         timeline: initialTimeline,
@@ -124,12 +113,12 @@ const createDispute = async (req, res) => {
     // ── Step 5: Trigger AI analysis asynchronously (non-blocking) ─────────────
     setImmediate(async () => {
       try {
-        const { analyzeDisputeWithAI } = require('../services/blogDisputeAI');
+        const { analyzeDisputeWithAI } = require('../services/disputeAI');
         const chatMessages = await getChatMessages(orderId);
         const aiResult = await analyzeDisputeWithAI({
           order,
           dispute: { ...dispute, evidenceResponses: {} },
-          ruleEngineResult: { ...ruleResult, analyzedWordCount },
+          ruleEngineResult: ruleResult,
           chatMessages,
         });
 
@@ -146,8 +135,8 @@ const createDispute = async (req, res) => {
                   event: 'AI_ANALYSIS_COMPLETE',
                   by: 'ai',
                   timestamp: new Date().toISOString(),
-                  description: `Grok AI: ${aiResult.recommendation} (${Math.round(aiResult.confidence * 100)}% confidence)`,
-                  notes: aiResult.summary,
+                  description: `AI Analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidenceScore || 0)}% confidence)`,
+                  notes: aiResult.reasoning,
                 },
               ],
             },
@@ -230,7 +219,7 @@ const submitEvidence = async (req, res) => {
     // Re-run AI analysis in background with fresh evidence
     setImmediate(async () => {
       try {
-        const { analyzeDisputeWithAI } = require('../services/blogDisputeAI');
+        const { analyzeDisputeWithAI } = require('../services/disputeAI');
         const order = await prisma.order.findUnique({ where: { id: dispute.orderId } });
         if (!order) return;
         const chatMessages = await getChatMessages(dispute.orderId);
@@ -256,7 +245,7 @@ const submitEvidence = async (req, res) => {
                 by: 'ai',
                 timestamp: new Date().toISOString(),
                 description: `AI re-analysis after ${role} evidence: ${aiResult.recommendation}`,
-                notes: aiResult.summary,
+                notes: aiResult.reasoning,
               },
             ],
           },
@@ -346,7 +335,7 @@ const getFullDisputeDetail = async (req, res) => {
       const rf = dispute.ruleFlags;
       if ('riskScore' in rf || 'flags' in rf || 'autoRecommendation' in rf) {
         try {
-          const { analyzeDisputeWithAI } = require('../services/blogDisputeAI');
+          const { analyzeDisputeWithAI } = require('../services/disputeAI');
           chatMessages = await getChatMessages(dispute.orderId);
           const aiResult = await analyzeDisputeWithAI({
             order,
@@ -358,7 +347,7 @@ const getFullDisputeDetail = async (req, res) => {
           const alreadyLogged = currentTimeline.some(
             e => e.event === 'AI_ANALYSIS_COMPLETE' || e.event === 'AI_REANALYZED'
           );
-          const label = aiResult.source === 'grok' ? 'Grok AI' : 'Rule engine';
+          const label = 'AI Analysis';
           dispute = await prisma.orderDispute.update({
             where: { id },
             data: {
@@ -371,8 +360,8 @@ const getFullDisputeDetail = async (req, res) => {
                       event: 'AI_ANALYSIS_COMPLETE',
                       by: 'system',
                       timestamp: new Date().toISOString(),
-                      description: `${label}: ${aiResult.recommendation} (${Math.round((aiResult.confidence || 0) * 100)}% confidence)`,
-                      notes: aiResult.summary,
+                      description: `${label}: ${aiResult.recommendation} (${Math.round((aiResult.confidenceScore || 0))}%)`,
+                      notes: aiResult.reasoning,
                     },
                   ],
               lastActivity: new Date(),
@@ -448,7 +437,7 @@ const getFullDisputeDetail = async (req, res) => {
 const triggerAIAnalysis = async (req, res) => {
   try {
     const { id } = req.params;
-    const { analyzeDisputeWithAI } = require('../services/blogDisputeAI');
+    const { analyzeDisputeWithAI } = require('../services/disputeAI');
 
     const dispute = await prisma.orderDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
@@ -476,8 +465,8 @@ const triggerAIAnalysis = async (req, res) => {
             event: 'AI_REANALYZED',
             by: req.user?.role || 'admin',
             timestamp: new Date().toISOString(),
-            description: `AI re-analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidence * 100)}% confidence)`,
-            notes: aiResult.summary,
+            description: `AI re-analysis: ${aiResult.recommendation} (${Math.round((aiResult.confidenceScore || 0))} confidence)`,
+            notes: aiResult.reasoning,
           },
         ],
         lastActivity: new Date(),
