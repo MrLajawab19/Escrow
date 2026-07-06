@@ -98,6 +98,7 @@ export default function AdminDashboard() {
   const [disputes, setDisputes] = useState([]);
   const [orders, setOrders] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
+  const [kycQueue, setKycQueue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview'); // 'overview' | 'disputes' | 'orders' | 'settlements'
   const [statusFilter, setStatusFilter] = useState('');
@@ -118,16 +119,18 @@ export default function AdminDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, disputesRes, ordersRes, withdrawalsRes] = await Promise.all([
+      const [statsRes, disputesRes, ordersRes, withdrawalsRes, kycRes] = await Promise.all([
         axios.get(`/api/admin/stats`, { headers: adminHeaders() }),
         axios.get(`/api/admin/disputes`, { headers: adminHeaders() }),
         axios.get(`/api/admin/orders`, { headers: adminHeaders() }),
         axios.get(`/api/wallet/admin/withdrawals`, { headers: adminHeaders() }),
+        axios.get(`${import.meta.env.VITE_API_URL}/admin/kyc`, { headers: adminHeaders() }),
       ]);
       setStats(statsRes.data.data);
       setDisputes(disputesRes.data.data || []);
       setOrders(ordersRes.data.data || []);
       setWithdrawals(withdrawalsRes.data.data || []);
+      setKycQueue(kycRes.data.data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -199,6 +202,34 @@ export default function AdminDashboard() {
     return true;
   });
 
+  const handleApproveKyc = async (id) => {
+    try {
+      setActionLoading(true);
+      await axios.post(`${import.meta.env.VITE_API_URL}/admin/kyc/${id}/approve`, {}, { headers: adminHeaders() });
+      showToast('KYC Approved');
+      fetchAll();
+    } catch (e) {
+      showToast('Failed to approve KYC', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectKyc = async (id) => {
+    const reason = window.prompt("Enter rejection reason:");
+    if (!reason) return;
+    try {
+      setActionLoading(true);
+      await axios.post(`${import.meta.env.VITE_API_URL}/admin/kyc/${id}/reject`, { reason }, { headers: adminHeaders() });
+      showToast('KYC Rejected');
+      fetchAll();
+    } catch (e) {
+      showToast('Failed to reject KYC', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const autoFlagged = disputes.filter(d => d.autoFlag === 'AUTO_FLAGGED');
   const openDisputes = disputes.filter(d => d.status === 'OPEN');
 
@@ -240,7 +271,8 @@ export default function AdminDashboard() {
             { id: 'overview', icon: '📊', label: 'Overview' },
             { id: 'disputes', icon: '⚖️', label: 'Disputes', badge: openDisputes.length },
             { id: 'orders', icon: '📦', label: 'Orders' },
-            { id: 'settlements', icon: '💰', label: 'Settlements', badge: withdrawals.length }
+            { id: 'settlements', icon: '💰', label: 'Settlements', badge: withdrawals.length },
+            { id: 'kyc', icon: '🆔', label: 'KYC Queue', badge: kycQueue.length }
           ].map(item => (
             <button
               key={item.id}
@@ -614,6 +646,74 @@ export default function AdminDashboard() {
                                 </button>
                                 <button 
                                   onClick={() => handleFailWithdrawal(w.id)}
+                                  disabled={actionLoading}
+                                  className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 font-bold text-xs rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {/* ── KYC QUEUE TAB ── */}
+          {tab === 'kyc' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-black text-slate-800">KYC Queue</h1>
+                <p className="text-slate-500 text-sm mt-1">Review pending identity verifications</p>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                {kycQueue.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400">
+                    <div className="text-4xl mb-3">🆔</div>
+                    <p className="font-medium">No pending KYC submissions</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">User ID</th>
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Doc Type</th>
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Documents</th>
+                          <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {kycQueue.map(k => (
+                          <tr key={k.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="px-5 py-4 text-xs text-slate-400">{fmtDate(k.submittedAt)}<br/>{fmtTime(k.submittedAt)}</td>
+                            <td className="px-5 py-4 text-slate-700 font-medium text-xs font-mono">{k.userId?.slice(0, 8)}...</td>
+                            <td className="px-5 py-4 font-bold text-slate-800">{k.idDocType}</td>
+                            <td className="px-5 py-4 text-xs text-slate-600">
+                              <div className="flex gap-2">
+                                {k.idDocUrls.map((url, i) => (
+                                  <a key={i} href={`${import.meta.env.VITE_API_URL}${url}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                                    Doc {i + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button 
+                                  onClick={() => handleApproveKyc(k.id)}
+                                  disabled={actionLoading}
+                                  className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 font-bold text-xs rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  Approve
+                                </button>
+                                <button 
+                                  onClick={() => handleRejectKyc(k.id)}
                                   disabled={actionLoading}
                                   className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 font-bold text-xs rounded-lg transition-colors disabled:opacity-50"
                                 >

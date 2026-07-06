@@ -4,6 +4,7 @@ import MyDisputesPage from '../components/MyDisputesPage';
 import ChangesReviewModal from '../components/ChangesReviewModal';
 import WalletDashboard from '../components/WalletDashboard';
 import WalletHeader from '../components/WalletHeader';
+import KYCModal from '../components/KYCModal';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -18,6 +19,8 @@ const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });
+  const [showKycModal, setShowKycModal] = useState(false);
 
   useEffect(() => {
     // Extract user ID from JWT token
@@ -31,7 +34,23 @@ const BuyerDashboard = () => {
       }
     }
     fetchOrders();
+    fetchKycStatus();
   }, []);
+
+  const fetchKycStatus = async () => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('buyerToken');
+      if (!token) return;
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/kyc/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setKycStatus(response.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch KYC status', err);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -171,7 +190,35 @@ const BuyerDashboard = () => {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* KYC Banner */}
+        {!kycStatus.kycComplete && (
+          <div className="mb-6 bg-yellow-900/40 border border-yellow-700/50 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center text-yellow-500">
+              <svg className="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              <span>
+                <strong>Verify your identity</strong> to create deeds above ₹10,000. Current status: {kycStatus.reviewStatus}
+              </span>
+            </div>
+            <button 
+              onClick={() => setShowKycModal(true)}
+              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-md transition-colors"
+            >
+              Complete KYC
+            </button>
+          </div>
+        )}
+        {kycStatus.kycComplete && (
+          <div className="mb-6 bg-green-900/20 border border-green-800/50 rounded-lg p-4 flex items-center text-green-400">
+            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            KYC Verified
+          </div>
+        )}
         
         {/* Navigation Tabs */}
         <div className="flex space-x-6 border-b border-neutral-200 mb-8">
@@ -317,7 +364,7 @@ const BuyerDashboard = () => {
         </div>
         </div>
         )}
-      </div>
+      </main>
 
       {/* Changes Review Modal */}
       {showChangesReview && selectedOrder && (
@@ -327,8 +374,15 @@ const BuyerDashboard = () => {
           onUpdate={handleChangesReviewUpdate}
         />
       )}
+
+      {/* KYC Modal */}
+      <KYCModal 
+        isOpen={showKycModal}
+        onClose={() => setShowKycModal(false)}
+        onComplete={fetchKycStatus}
+      />
     </div>
   );
 };
 
-export default BuyerDashboard; 
+export default BuyerDashboard;

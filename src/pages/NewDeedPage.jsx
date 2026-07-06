@@ -3,6 +3,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import KYCModal from '../components/KYCModal';
 
 const platforms = ['Upwork', 'Fiverr', 'Freelancer', 'Instagram', 'Telegram', 'WhatsApp', 'Twitter', 'Reddit', 'Other'];
 
@@ -650,6 +651,8 @@ export default function NewDeedPage() {
     amount: ''
   });
   const [fundingLoading, setFundingLoading] = useState(false);
+  const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });
+  const [showKycModal, setShowKycModal] = useState(false);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
@@ -673,6 +676,24 @@ export default function NewDeedPage() {
       navigate('/buyer/auth');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    const fetchKycStatus = async () => {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('buyerToken');
+        if (!token) return;
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/kyc/status`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.success) {
+          setKycStatus(response.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch KYC status', err);
+      }
+    };
+    fetchKycStatus();
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -4966,6 +4987,22 @@ export default function NewDeedPage() {
                   </div>
                 </div>
                 <p className="text-xs text-neutral-500 font-inter">Enter the total project cost</p>
+                
+                {/* KYC Warning */}
+                {parseFloat(form.scopeBox.price || 0) > 10000 && !kycStatus.kycComplete && (
+                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex flex-col gap-2">
+                    <div className="flex items-start text-yellow-800 text-sm">
+                      <span className="mr-2">⚠️</span>
+                      <span><strong>KYC Required:</strong> Deeds over ₹10,000 require identity verification.</span>
+                    </div>
+                    <button 
+                      onClick={() => setShowKycModal(true)}
+                      className="self-start text-sm bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1.5 rounded-md font-medium transition-colors border border-yellow-300"
+                    >
+                      Complete KYC Now
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-6">
@@ -4977,7 +5014,7 @@ export default function NewDeedPage() {
                 </button>
                 <button
                   className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-inter w-full sm:w-auto sm:min-w-[120px]"
-                  disabled={!validateStep2()}
+                  disabled={!validateStep2() || (parseFloat(form.scopeBox.price || 0) > 10000 && !kycStatus.kycComplete)}
                   onClick={() => setStep(3)}
                 >
                   Next
@@ -5522,6 +5559,12 @@ export default function NewDeedPage() {
           )}
         </div>
       </div>
+      
+      <KYCModal 
+        isOpen={showKycModal}
+        onClose={() => setShowKycModal(false)}
+        onComplete={() => window.location.reload()}
+      />
     </div>
   );
 }
