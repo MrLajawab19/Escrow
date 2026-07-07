@@ -3,13 +3,13 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const notificationService = require('../services/notificationService');
-const { verifyToken } = require('../middleware/auth'); // Ensure this handles both buyer/seller tokens
+const { authenticateToken } = require('../middleware/auth'); // Ensure this handles both buyer/seller tokens
 
 // Optional: Custom middleware to extract user info from generic token if needed
-// Assuming verifyToken sets req.user = { id, role }
+// Assuming authenticateToken sets req.user = { id, role }
 
 // Get all notifications for the authenticated user
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     // req.user.role might not be set by some basic verifyToken implementations in this app.
@@ -32,7 +32,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // Mark a notification as read
-router.patch('/:id/read', verifyToken, async (req, res) => {
+router.patch('/:id/read', authenticateToken, async (req, res) => {
   try {
     const notificationId = req.params.id;
     const userId = req.user.id;
@@ -50,7 +50,7 @@ router.patch('/:id/read', verifyToken, async (req, res) => {
 });
 
 // Mark all as read
-router.patch('/read-all', verifyToken, async (req, res) => {
+router.patch('/read-all', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
