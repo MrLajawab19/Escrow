@@ -18,13 +18,16 @@ const OrderTrackingPage = () => {
       navigate('/buyer/auth');
       return;
     }
-    try {
-      setBuyerData(JSON.parse(data));
-      fetchOrder(token);
-    } catch (error) {
-      console.error('Error parsing buyer data:', error);
-      navigate('/buyer/auth');
+    if (data && data !== 'undefined') {
+      try {
+        setBuyerData(JSON.parse(data));
+      } catch (error) {
+        console.error('Error parsing buyer data:', error);
+        navigate('/buyer/auth');
+        return;
+      }
     }
+    fetchOrder(token);
   }, [orderId, navigate]);
 
   const fetchOrder = async (token) => {

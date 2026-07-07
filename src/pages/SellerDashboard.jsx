@@ -35,8 +35,10 @@ const SellerDashboard = () => {
   const getSellerUser = () => {
     try {
       const token = localStorage.getItem('sellerToken');
-      if (!token) return null;
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (!token || token === 'undefined') return null;
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const payload = JSON.parse(atob(parts[1]));
       const id = payload.userId || payload.id;
       return { userId: id, role: 'seller', firstName: payload.firstName, lastName: payload.lastName };
     } catch { return null; }
@@ -46,10 +48,13 @@ const SellerDashboard = () => {
   useEffect(() => {
     // Extract user ID from JWT token
     const token = localStorage.getItem('sellerToken');
-    if (token) {
+    if (token && token !== 'undefined') {
       try {
-        const decoded = JSON.parse(atob(token.split('.')[1]));
-        setUserId(decoded.userId || decoded.id);
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const decoded = JSON.parse(atob(parts[1]));
+          setUserId(decoded.userId || decoded.id);
+        }
       } catch (err) {
         console.error('Failed to decode token:', err);
       }

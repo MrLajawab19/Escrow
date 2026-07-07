@@ -83,7 +83,10 @@ const OrderDetails = () => {
   // Decode current user for chat
   const getCurrentUser = () => {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (!token || token === 'undefined') return null;
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const payload = JSON.parse(atob(parts[1]));
       return { userId: payload.userId, role: userType, firstName: payload.firstName, lastName: payload.lastName };
     } catch { return null; }
   };

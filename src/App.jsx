@@ -411,9 +411,9 @@ function App() {
     const buyerToken = localStorage.getItem('buyerToken');
     const buyerDataStr = localStorage.getItem('buyerData');
 
-    if (buyerToken && buyerDataStr) {
+    if (buyerToken && buyerDataStr && buyerDataStr !== 'undefined') {
       setIsBuyerAuthenticated(true);
-      setBuyerData(JSON.parse(buyerDataStr));
+      try { setBuyerData(JSON.parse(buyerDataStr)); } catch { setBuyerData(null); setIsBuyerAuthenticated(false); }
     } else {
       setIsBuyerAuthenticated(false);
       setBuyerData(null);
@@ -423,9 +423,9 @@ function App() {
     const sellerToken = localStorage.getItem('sellerToken');
     const sellerDataStr = localStorage.getItem('sellerData');
 
-    if (sellerToken && sellerDataStr) {
+    if (sellerToken && sellerDataStr && sellerDataStr !== 'undefined') {
       setIsSellerAuthenticated(true);
-      setSellerData(JSON.parse(sellerDataStr));
+      try { setSellerData(JSON.parse(sellerDataStr)); } catch { setSellerData(null); setIsSellerAuthenticated(false); }
     } else {
       setIsSellerAuthenticated(false);
       setSellerData(null);
@@ -435,9 +435,9 @@ function App() {
     const adminToken = localStorage.getItem('adminToken');
     const adminDataStr = localStorage.getItem('adminData');
 
-    if (adminToken && adminDataStr) {
+    if (adminToken && adminDataStr && adminDataStr !== 'undefined') {
       setIsAdminAuthenticated(true);
-      setAdminData(JSON.parse(adminDataStr));
+      try { setAdminData(JSON.parse(adminDataStr)); } catch { setAdminData(null); setIsAdminAuthenticated(false); }
     } else {
       setIsAdminAuthenticated(false);
       setAdminData(null);
