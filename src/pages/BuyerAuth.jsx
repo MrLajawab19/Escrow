@@ -63,7 +63,7 @@ const BuyerAuth = () => {
         }, { headers: { 'Content-Type': 'application/json' } });
         if (response.data.success) {
           localStorage.setItem('buyerToken', response.data.token);
-          localStorage.setItem('buyerData', JSON.stringify(response.data.user));
+          localStorage.setItem('buyerData', JSON.stringify(response.data.buyer));
           setSuccess('Login successful! Redirecting...');
           setTimeout(() => { window.location.href = '/buyer/dashboard'; }, 1500);
         }

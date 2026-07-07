@@ -61,7 +61,7 @@ const SellerAuth = () => {
         }, { headers: { 'Content-Type': 'application/json' } });
         if (response.data.success) {
           localStorage.setItem('sellerToken', response.data.token);
-          localStorage.setItem('sellerData', JSON.stringify(response.data.user));
+          localStorage.setItem('sellerData', JSON.stringify(response.data.seller));
           setSuccess('Login successful! Redirecting...');
           setTimeout(() => { window.location.href = '/seller/dashboard'; }, 1500);
         }
