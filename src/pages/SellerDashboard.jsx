@@ -687,7 +687,7 @@ const SellerDashboard = () => {
           </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Notification Modal */}
       <NotificationModal

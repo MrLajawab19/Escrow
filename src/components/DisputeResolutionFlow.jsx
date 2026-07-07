@@ -723,44 +723,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
               </div>
             )}
 
-            {/* Fraud Risk Alert */}
-            {ai.fraudProbability > 0.2 && (
-              <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-3">
-                <span className="text-lg">🚨</span>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-red-700 font-inter mb-1">Fraud Risk Detected</p>
-                  <p className="text-xs text-red-600 font-inter leading-relaxed">
-                    <span className="font-bold">{Math.round(ai.fraudProbability * 100)}% probability</span> — 
-                    Potential bad-faith behavior detected. Recommend careful review and possible escalation.
-                  </p>
-                </div>
-              </div>
-            )}
 
-            {/* Recommendation Justification */}
-            <div className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl p-4 border border-violet-100">
-              <p className="text-xs font-bold text-violet-700 font-inter mb-2">💡 Why This Resolution?</p>
-              <div className="text-sm text-violet-800 font-inter leading-relaxed space-y-2">
-                <p>
-                  Based on the analysis, <strong>{recConfig.label.toLowerCase()}</strong> is recommended because:
-                </p>
-                    </li>
-                  )}
-                  {Math.abs(ai.sellerFaultProbability - ai.buyerFaultProbability) < 0.2 && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-violet-500 mt-0.5">•</span>
-                      <span>Shared responsibility suggests compromise or neutral resolution</span>
-                    </li>
-                  )}
-                  {ai.confidence > 0.8 && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-violet-500 mt-0.5">•</span>
-                      <span>High confidence in evidence analysis ({Math.round(ai.confidence * 100)}%)</span>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            </div>
           </div>
         )}
       </div>
