@@ -1,43 +1,53 @@
-# ScrowX
+# ScrowX — Trust Infrastructure for Informal Micro-Transactions
 
 ## Project Overview
-ScrowX is a modern, secure, and user-friendly escrow platform designed to facilitate trustless transactions between buyers and sellers globally. It bridges the gap between independent contractors, freelancers, and clients by providing a robust framework for managing project scopes, holding funds securely, and coordinating payment releases upon successful delivery. 
+ScrowX is a modern, secure trust infrastructure platform for informal transactions of any size, specifically targeting the massive volume of freelance work and peer-to-peer sales under $50 (₹5,000). It operates as a digital notary, evidence recorder, and AI arbitration engine. 
 
-Our vision is to provide a truly universal and automated escrow experience, moving beyond generic transactions by implementing highly specialized logic for over 20+ digital and physical service categories.
+ScrowX acts as a **fund-locking trust layer**. It securely locks funds in escrow (powered by Razorpay) and releases them based on a digitally signed deed, evidence submission, and AI-powered arbitration—removing leverage from either party while keeping the process fast and informal.
 
 ## Problem Statement
-In the digital economy, freelance work, remote contracting, and online transactions often suffer from mutual distrust. Buyers are hesitant to pay upfront for services they haven't received, while sellers are reluctant to commit time and resources without a guarantee of payment. Existing solutions often feature high fees, complex onboarding processes, or lack specialized tools for managing digital deliverables across diverse service categories. Furthermore, dispute resolution is often slow and heavily reliant on manual, biased human intervention.
+Informal transactions often suffer from:
+- **Zero paper trail**: No formal documentation of what was agreed.
+- **No recourse**: Too small to pursue in court, leaving parties vulnerable to fraud.
+- **Platform lock-in**: Freelance platforms only protect users who stay within their walled gardens.
+- **Asymmetric power**: No neutral third party for fast, low-cost dispute resolution.
 
 ## Solution (ScrowX)
-ScrowX resolves these challenges by introducing a transparent escrow workflow that protects both parties. The platform allows buyers and sellers to agree on a predefined "Scope Box" detailing the deliverables, timeline, and cost. Funds are securely locked in escrow before work begins and are only released when the buyer is satisfied with the submitted delivery, ensuring a fair and equitable transaction process for everyone involved.
+ScrowX solves these challenges by introducing an immutable, cryptographically sealed workflow:
+1. Buyer locks funds with ScrowX.
+2. Both parties sign a digital **Deed**.
+3. ScrowX notifies the seller that funds are secured.
+4. The seller delivers the work.
+5. The buyer confirms delivery or raises a dispute within 7 days.
+6. In case of a dispute, the **AI Arbitration Engine** renders a verdict in under 48 hours.
 
-In the event of a disagreement, ScrowX utilizes an advanced AI-powered Universal Dispute Engine capable of analyzing delivery files, chat logs, and order scopes to automatically recommend fair resolutions in seconds.
+Funds are released exactly per the outcome—all backed by a full, immutable audit ledger preserved forever.
 
 ## Key Features
-- **Secure Escrow Payments:** Funds are held safely during the project lifecycle and released only upon delivery approval.
-- **Dynamic Scope Box (20+ Categories):** Customizable project requirements tailored specifically for various industries (Content Writing, Design, Development, Video Editing, Social Media Growth, Gaming Accounts, Physical Items, etc.).
-- **Automated AI Dispute Resolution:** Integrated universal rule engine and generative AI (Gemini) that detects word counts, file formats, and delivery timelines to auto-adjudicate disputes instantly.
-- **Robust KYC & Identity Verification:** Integrated with Fast2SMS for OTP phone verification and secure ID uploads to ensure high-value transactions (over ₹10,000) remain compliant and secure.
-- **Interactive Dashboards:** Dedicated portal views for Buyers, Sellers, and Admins to track order status, messaging, and action items.
-- **Real-Time Communication:** Integrated real-time chat rooms for buyers and sellers to communicate securely within the platform.
-- **Responsive UI/UX:** A modern, intuitive design optimized for desktop and mobile workflows.
+- **Secure Fund Locking:** Funds are held safely during the project lifecycle via Razorpay and released only upon delivery approval or arbitration verdict.
+- **Digital Deeds & Milestones:** Legally structured digital agreements detailing scope, deadlines, and acceptance criteria. Supports milestone-based payments with auto-release options.
+- **Immutable Audit Ledger:** Every action is recorded as a chained, hashed entry, providing a tamper-evident history of the transaction.
+- **Formal Notice System:** Replaces unstructured chat with legally-weighted, structured communication records (e.g., Progress Requests, Revision Requests) with enforced deadlines.
+- **AI Arbitration Engine:** Resolves disputes in under 48 hours using GPT-4o. Analyzes the deed, submitted evidence, and behavioral risk scores. Includes percentage-based dispute fees and human escalation options.
+- **Behavioral Risk & Fraud Detection:** Maintains a Behavioral Risk Score (BRS) for every user to deter bad actors, and automatically runs fraud possibility assessments (e.g., image originality, metadata checks) during disputes.
+- **One-Time KYC:** Secure, one-time phone and identity verification required before engaging in transactions.
 
 ## How the System Works
-1. **Scope Negotiation:** The buyer or seller defines the project scope, including deliverables, conditions, deadlines, and pricing (specialized by category).
-2. **KYC Verification:** Users completing high-value transactions securely verify their identity via phone OTP and document uploads.
-3. **Acceptance & Funding:** Once both parties agree to the terms, the buyer funds the escrow account securely.
-4. **Execution:** The seller is notified that funds are secured and begins work on the project.
-5. **Delivery:** The seller submits the completed work and any necessary digital files through the platform.
-6. **Review & Release:** The buyer reviews the deliverables. If satisfied, they approve the delivery, and funds are automatically released to the seller. 
-7. **Dispute Handling:** If a dispute arises, the Universal Rule Engine assesses delivery evidence automatically, and the AI Dispute system generates a resolution recommendation for Admins or the parties to accept.
+1. **Deed Creation:** The buyer or seller defines the project scope, acceptance criteria, and amount (supports milestones).
+2. **KYC & Identity:** Both parties must have completed their one-time KYC verification.
+3. **Acceptance & Funding:** Both parties digitally sign the Deed via OTP. The buyer funds the escrow account securely.
+4. **Execution & Notices:** The seller begins work. Any communication happens via Formal Notices.
+5. **Delivery:** The seller submits deliverables (files, links) with cryptographic hashes recorded in the ledger.
+6. **Review & Release:** The buyer has 7 days to review. If satisfied, they approve, and funds are released.
+7. **Dispute Handling:** If a dispute arises, both parties submit evidence. The AI Arbitration Engine provides a fair verdict within 48 hours, automatically executing the fund release or refund.
 
 ## Tech Stack
 - **Frontend:** React, React Router, Vite, TailwindCSS, Framer Motion
-- **Backend:** Node.js, Express.js
+- **Backend:** Node.js, Express.js, Socket.io
 - **Database:** PostgreSQL with Prisma ORM
-- **Authentication:** JWT (JSON Web Tokens), bcryptjs
-- **AI & External APIs:** Google Generative AI (Gemini), Fast2SMS (OTP generation)
-- **File Management:** Multer (for handling digital deliveries, KYC documents, and dispute evidence)
+- **Authentication:** Custom JWT (migrating to Clerk)
+- **AI & File Analysis:** OpenAI API (GPT-4o), Tesseract.js, Sharp, imghash
+- **Payments:** Razorpay Integration
 
 ## Installation and Setup Instructions
 
@@ -62,8 +72,10 @@ Create a `.env` file in the root directory and add the necessary variables:
 PORT=3000
 DATABASE_URL=postgres://user:password@localhost:5432/scrowx
 JWT_SECRET=your_secure_jwt_secret
-GEMINI_API_KEY=your_gemini_api_key
+OPENAI_API_KEY=your_openai_api_key
 FAST2SMS_API_KEY=your_fast2sms_api_key
+RAZORPAY_KEY_ID=your_razorpay_key
+RAZORPAY_KEY_SECRET=your_razorpay_secret
 ```
 
 ### 4. Database Setup
@@ -101,6 +113,7 @@ Escrow/
 ```
 
 ## Future Roadmap
-- Implementation of multi-currency support and advanced payment gateways (Razorpay integration upcoming).
-- Upgraded Admin Dashboard with detailed analytics, financial reporting, and comprehensive KYC queues.
-- Mobile application development for iOS and Android platforms.
+- Integration with Clerk for production-grade authentication.
+- Cloudinary/S3 integration for scalable file storage.
+- Admin dashboard upgrades for manual dispute escalation queues and arbitration prompt engineering.
+- API access for third-party platforms to integrate ScrowX as their native trust layer.
