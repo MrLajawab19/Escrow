@@ -118,6 +118,8 @@ function validateXBoxFields(xBox) {
 // ── POST /api/orders — Create new order (REMOVED: Handled by Deeds API) ──────
 
 
+const Razorpay = require('razorpay');
+
 // ── POST /api/orders/:id/fund-escrow ──────────────────────────────────────────
 
 async function fundEscrow(req, res) {
@@ -126,19 +128,47 @@ async function fundEscrow(req, res) {
     const buyerData = req.user;
     if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can fund escrow' });
 
-    const { paymentMethod, amount, cardDetails } = req.body;
-    if (!paymentMethod) return res.status(400).json({ success: false, message: 'Payment method is required' });
+    const { amount } = req.body;
+    if (!amount) return res.status(400).json({ success: false, message: 'Amount is required' });
 
-    // TODO Phase 5: Replace with real Razorpay — for now simulate payment
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const order = await orderService.fundEscrow(id, buyerData.id);
-    return res.json({ success: true, data: order, message: 'Escrow funded successfully' });
+    // Initialize Razorpay
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    // Create a Razorpay Order
+    const options = {
+      amount: amount * 100, // amount in the smallest currency unit (paise)
+      currency: "INR",
+      receipt: `receipt_order_${id}`,
+      notes: {
+        orderId: id,
+        buyerId: buyerData.id
+      }
+    };
+
+    const razorpayOrder = await razorpay.orders.create(options);
+
+    if (!razorpayOrder) {
+      return res.status(500).json({ success: false, message: 'Failed to create Razorpay order' });
+    }
+
+    return res.json({ 
+      success: true, 
+      data: {
+        razorpayOrderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        orderId: id
+      }, 
+      message: 'Razorpay order created successfully' 
+    });
   } catch (error) {
     console.error('fundEscrow error:', error);
     return res.status(500).json({ success: false, message: error.message || 'Failed to fund escrow' });
   }
 }
-
 // ── PATCH /api/orders/:id/start ────────────────────────────────────────────────
 
 async function startWork(req, res) {

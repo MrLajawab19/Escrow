@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const walletController = require('../controllers/walletController');
+const paymentController = require('../controllers/paymentController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 
 /**
  * Wallet Routes
  * All routes require authentication except noted
  */
+
+// Razorpay Webhook (No auth required)
+router.post('/razorpay-webhook', paymentController.handleRazorpayWebhook);
 
 // Get or create wallet
 router.post('/init', authenticateToken, walletController.getOrCreateWallet);

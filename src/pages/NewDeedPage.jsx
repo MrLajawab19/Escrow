@@ -1850,30 +1850,62 @@ export default function NewDeedPage() {
 
     try {
       const token = localStorage.getItem('buyerToken');
-      // Simulate real payment delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      
+      // 1. Create Razorpay order on backend
       const fundResponse = await axios.post(`/api/deeds/${orderData.id}/fund`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (fundResponse.data.success) {
-        setShowFundingModal(false);
-        setShowSuccess(true);
+      if (fundResponse.data.success && fundResponse.data.data.razorpayOrderId) {
+        const { razorpayOrderId, amount, currency } = fundResponse.data.data;
+        
+        // 2. Open Razorpay Checkout modal
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY', 
+          amount: amount,
+          currency: currency,
+          name: 'ScrowX',
+          description: `Fund Escrow for Deed: ${orderData.title}`,
+          order_id: razorpayOrderId,
+          handler: function (response) {
+             // Razorpay payment successful, the webhook will update the backend state.
+             setShowFundingModal(false);
+             setShowSuccess(true);
+             
+             toast.success('Payment successful! Escrow funded.');
+             
+             // Redirect to order tracking page after 3 seconds
+             setTimeout(() => {
+               navigate(`/buyer/order/${orderData.orderId}`);
+             }, 3000);
+          },
+          prefill: {
+            name: buyerData.firstName + ' ' + buyerData.lastName,
+            email: buyerData.email,
+            contact: buyerData.phone || ''
+          },
+          theme: {
+            color: '#4f46e5' // Indigo 600
+          }
+        };
 
-        // Redirect to order tracking page after 3 seconds
-        setTimeout(() => {
-          navigate(`/buyer/order/${orderData.orderId}`);
-        }, 3000);
+        const rzp = new window.Razorpay(options);
+        
+        rzp.on('payment.failed', function (response) {
+          console.error('Razorpay Payment Failed', response.error);
+          toast.error('Payment failed: ' + response.error.description);
+        });
+        
+        rzp.open();
       } else {
-        toast.error('Failed to fund escrow. Please try again.');
+        toast.error('Failed to initiate escrow funding. Please try again.');
       }
     } catch (error) {
       console.error('Error funding escrow:', error);
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
-        toast.error('Payment failed. Please check your card details and try again.');
+        toast.error('Payment initialization failed. Please try again.');
       }
     } finally {
       setFundingLoading(false);

@@ -11,8 +11,41 @@ exports.createDeed = async (req, res) => {
 
 exports.fundDeed = async (req, res) => {
   try {
-    const deed = await deedService.fundDeed(req.params.id, req.user.id);
-    res.status(200).json({ success: true, data: deed, message: "Deed funded successfully." });
+    const deedId = req.params.id;
+    const buyerId = req.user.id;
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    
+    if (!deed || deed.buyerId !== buyerId) {
+       return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const Razorpay = require('razorpay');
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+    
+    const options = {
+      amount: deed.amount * 100, // paise
+      currency: deed.currency || "INR",
+      receipt: `receipt_deed_${deed.id}`,
+      notes: { orderId: deed.id, buyerId, type: 'deed' }
+    };
+    
+    const razorpayOrder = await razorpay.orders.create(options);
+    
+    res.status(200).json({ 
+      success: true, 
+      data: {
+         razorpayOrderId: razorpayOrder.id,
+         amount: razorpayOrder.amount,
+         currency: razorpayOrder.currency,
+         orderId: deed.id
+      },
+      message: "Razorpay order created successfully." 
+    });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }

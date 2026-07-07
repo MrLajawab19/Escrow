@@ -99,15 +99,25 @@ const WalletDashboard = ({ userId }) => {
           </div>
           <div className="flex gap-3">
             {isBuyer ? (
-              <button
-                onClick={() => setShowTopUpModal(true)}
-                className="group relative px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
-                <span className="relative flex items-center gap-2">
-                  <span className="text-lg">⊕</span> Add Funds
-                </span>
-              </button>
+              <>
+                <button
+                  onClick={() => setShowTopUpModal(true)}
+                  className="group relative px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
+                  <span className="relative flex items-center gap-2">
+                    <span className="text-lg">⊕</span> Add Funds
+                  </span>
+                </button>
+                <button
+                  onClick={() => setShowWithdrawalModal(true)}
+                  className="group relative px-6 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold shadow-sm hover:bg-slate-50 hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  <span className="relative flex items-center gap-2">
+                    <span className="text-lg">↗</span> Withdraw
+                  </span>
+                </button>
+              </>
             ) : (
               <button
                 onClick={() => setShowWithdrawalModal(true)}
@@ -401,6 +411,7 @@ const WalletDashboard = ({ userId }) => {
           onClose={() => setShowWithdrawalModal(false)}
           onSuccess={handleWithdrawalSuccess}
           maxAmount={summary?.balance || 0}
+          userType={isBuyer ? 'buyer' : 'seller'}
         />
       )}
     </div>
