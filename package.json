@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "prisma generate && prisma db push"
   },
   "dependencies": {
     "@prisma/client": "5.10.0",
