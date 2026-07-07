@@ -220,6 +220,21 @@ async function submitDelivery(req, res) {
       },
     });
 
+    // Trigger Notification for the buyer
+    const notificationService = require('../services/notificationService');
+    await notificationService.createNotification({
+      userId: updated.buyerId,
+      userRole: 'buyer',
+      type: 'ORDER_UPDATE',
+      title: 'Delivery Submitted',
+      message: `The seller has submitted the delivery for ${updated.scopeBox?.title || 'an order'}. Please review.`,
+      link: '/buyer-dashboard',
+      emailOptions: {
+        templateName: 'deliverySubmitted',
+        context: { order: updated }
+      }
+    });
+
     return res.json({ success: true, data: updated, message: 'Delivery submitted' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -234,6 +249,25 @@ async function approveDelivery(req, res) {
     const buyerData = req.user;
     if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can approve delivery' });
     const order = await orderService.approveDelivery(id, buyerData.id);
+
+    // Trigger Notification for the seller
+    if (order.sellerId) {
+      const notificationService = require('../services/notificationService');
+      await notificationService.createNotification({
+        userId: order.sellerId,
+        userRole: 'seller',
+        type: 'ORDER_UPDATE',
+        title: 'Delivery Approved',
+        message: `The buyer has approved your delivery for ${order.scopeBox?.title || 'an order'}.`,
+        link: '/seller-dashboard',
+        emailOptions: {
+          to: order.sellerContact,
+          subject: 'Delivery Approved!',
+          actionText: 'View Details'
+        }
+      });
+    }
+
     return res.json({ success: true, data: order, message: 'Delivery approved' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -254,6 +288,27 @@ async function raiseDispute(req, res) {
 
     const evidenceFiles = req.files ? req.files.map(f => ({ filename: f.filename, path: f.path })) : [];
     const order = await orderService.raiseDispute(id, userData.id, { reason, description, requestedResolution, evidenceFiles });
+
+    // Trigger Notification for the other party
+    const notificationService = require('../services/notificationService');
+    const notifyUserId = userData.role === 'buyer' ? order.sellerId : order.buyerId;
+    const notifyUserRole = userData.role === 'buyer' ? 'seller' : 'buyer';
+
+    if (notifyUserId) {
+      await notificationService.createNotification({
+        userId: notifyUserId,
+        userRole: notifyUserRole,
+        type: 'DISPUTE',
+        title: 'Dispute Raised',
+        message: `A dispute has been raised for ${order.scopeBox?.title || 'an order'}. Reason: ${reason}.`,
+        link: `/${notifyUserRole}-dashboard`,
+        emailOptions: {
+          templateName: 'disputeRaised',
+          context: { dispute: { orderId: order.id, reason } }
+        }
+      });
+    }
+
     return res.json({ success: true, data: order, message: 'Dispute raised' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

@@ -520,3 +520,19 @@ model OrderChatMessage {
 
   @@index([roomId])
 }
+
+// --------- NOTIFICATIONS -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  userRole  String   // "buyer" | "seller"
+  type      String   // e.g., "ORDER_UPDATE", "DISPUTE", "WALLET"
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?  // Optional navigation path
+  createdAt DateTime @default(now())
+  
+  @@index([userId, userRole])
+}

@@ -55,7 +55,7 @@ const handleRazorpayWebhook = async (req, res) => {
             
             const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
             
-            await prisma.order.update({
+            const updatedOrder = await prisma.order.update({
               where: { id: orderId },
               data: {
                 status: 'ESCROW_FUNDED',
@@ -64,6 +64,23 @@ const handleRazorpayWebhook = async (req, res) => {
             });
             
             console.log(`Order ${orderId} successfully funded via Razorpay Webhook`);
+            
+            // Trigger Notification
+            const notificationService = require('../services/notificationService');
+            if (updatedOrder.sellerId) {
+              await notificationService.createNotification({
+                userId: updatedOrder.sellerId,
+                userRole: 'seller',
+                type: 'ORDER_UPDATE',
+                title: 'Order Funded',
+                message: `Funds for ${updatedOrder.scopeBox?.title || 'an order'} have been secured in escrow.`,
+                link: '/seller-dashboard',
+                emailOptions: {
+                  templateName: 'orderFunded',
+                  context: { order: updatedOrder }
+                }
+              });
+            }
           }
         }
       }

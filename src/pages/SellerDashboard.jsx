@@ -44,6 +44,7 @@ const SellerDashboard = () => {
   const sellerUser = getSellerUser();
 
   useEffect(() => {
+    // Extract user ID from JWT token
     const token = localStorage.getItem('sellerToken');
     if (token) {
       try {
@@ -77,20 +78,26 @@ const SellerDashboard = () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('sellerToken');
-      if (!token) { setError('Authentication required'); return; }
+      if (!token) {
+        setError('Authentication required');
+        return;
+      }
+
       const response = await axios.get('/api/orders/seller', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
       if (response.data.success) {
         setOrders(response.data.data);
       } else {
         setError(response.data.message || 'Failed to load orders');
       }
     } catch (err) {
+      console.error('Error fetching orders:', err);
       if (err.response?.status === 401) {
         setError('Authentication required. Please login again.');
       } else {
-        setError('Failed to load orders');
+        setError(err.response?.data?.message || 'Failed to load orders');
       }
     } finally {
       setLoading(false);
@@ -98,34 +105,33 @@ const SellerDashboard = () => {
   };
 
   const handleOrderUpdate = (updatedOrder) => {
-    setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+    setOrders(prevOrders => prevOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+    if (selectedOrder?.id === updatedOrder.id) {
+      setSelectedOrder(updatedOrder);
+    }
   };
 
   const handleAcceptOrder = async (order) => {
     try {
       const token = localStorage.getItem('sellerToken');
       if (!token) { setNotification({ isOpen: true, title: 'Auth Required', message: 'Please login.', type: 'error' }); return; }
+      
       const response = await axios.patch(`/api/orders/${order.id}/accept`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
       if (response.data.success) {
-        const data = response.data.data || {};
-        const updatedOrder = {
-          ...order,
-          ...data,
-          status: data.status || 'ACCEPTED',
-          sellerAcceptedAt: data.sellerAcceptedAt ?? new Date().toISOString()
-        };
+        const updatedOrder = { ...order, status: 'ACCEPTED' };
         setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
         setScopeBoxOrder(null);
         setShowRequests(false);
         setSelectedOrder(updatedOrder);
-        setNotification({ isOpen: true, title: 'Success', message: 'Order accepted successfully!', type: 'success' });
+        setNotification({ isOpen: true, title: 'Success', message: 'Order accepted!', type: 'success' });
       } else {
-        setNotification({ isOpen: true, title: 'Error', message: 'Failed to accept order: ' + response.data.message, type: 'error' });
+        setNotification({ isOpen: true, title: 'Error', message: 'Failed: ' + response.data.message, type: 'error' });
       }
     } catch (error) {
-      setNotification({ isOpen: true, title: 'Error', message: 'Error accepting order. Please try again.', type: 'error' });
+      setNotification({ isOpen: true, title: 'Error', message: 'Error accepting order.', type: 'error' });
     }
   };
 
@@ -133,9 +139,11 @@ const SellerDashboard = () => {
     try {
       const token = localStorage.getItem('sellerToken');
       if (!token) { setNotification({ isOpen: true, title: 'Auth Required', message: 'Please login.', type: 'error' }); return; }
+      
       const response = await axios.patch(`/api/orders/${order.id}/reject`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
       if (response.data.success) {
         const updatedOrder = { ...order, status: 'REJECTED' };
         setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
@@ -231,6 +239,7 @@ const SellerDashboard = () => {
             <h1 className="text-xl font-bold text-[#0A2540] tracking-tight font-inter">Seller Dashboard</h1>
             <div className="flex items-center space-x-3">
               <span className="text-sm text-neutral-500 font-medium font-inter hidden sm:inline-block">Welcome, Seller</span>
+              <NotificationDropdown userType="seller" />
               {userId && <WalletHeader userId={userId} onNavigateToWallet={() => setActiveTab('wallet')} />}
               <button
                 onClick={() => setShowMyDisputes(true)}

@@ -7,6 +7,7 @@ import WalletHeader from '../components/WalletHeader';
 import KYCModal from '../components/KYCModal';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const BuyerDashboard = () => {
   const navigate = useNavigate();
@@ -158,6 +159,7 @@ const BuyerDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-neutral-500 font-medium hidden sm:inline-block">Welcome back</span>
+              <NotificationDropdown userType="buyer" />
               {userId && <WalletHeader userId={userId} onNavigateToWallet={() => setActiveTab('wallet')} />}
               <button
                 onClick={() => setShowMyDisputes(true)}

@@ -70,6 +70,8 @@ app.use('/api/admin', adminRoutes);                            // ← NEW: admin
 app.use('/api/wallet', walletRoutes);                          // ← NEW: wallet routes
 app.use('/api/deeds', deedsRoutes);
 app.use('/api/kyc', kycRoutes);
+const notificationsRoutes = require('./backend/routes/notifications');
+app.use('/api/notifications', notificationsRoutes);
 
 // ── Auto-release cron (checks orders hourly, releases approved ones) ───────────
 setInterval(async () => {
