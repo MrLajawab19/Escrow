@@ -307,6 +307,80 @@ router.post('/seed', async (req, res) => {
   }
 });
 
+// ── GET /api/admin/financials ────────────────────────────────────────────────
+router.get('/financials', adminAuth, async (req, res) => {
+  try {
+    const [wallets, lockedTx, releasedTx, recentTransactions] = await Promise.all([
+      prisma.wallet.findMany({ select: { lockedBalance: true } }),
+      prisma.walletTransaction.aggregate({
+        where: { category: 'ESCROW_LOCK', status: 'SUCCESS' },
+        _sum: { amount: true }
+      }),
+      prisma.walletTransaction.aggregate({
+        where: { category: 'ESCROW_RELEASE', status: 'SUCCESS' },
+        _sum: { amount: true, fee: true }
+      }),
+      prisma.walletTransaction.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        include: { wallet: { select: { userRole: true, userId: true } } }
+      })
+    ]);
+
+    const totalActiveEscrow = wallets.reduce((sum, w) => sum + (w.lockedBalance || 0), 0);
+    const totalEscrowVolume = lockedTx._sum.amount || 0;
+    
+    // In our system right now we might not be explicitly storing fee on ESCROW_RELEASE
+    // So we can compute a mock platform revenue (e.g., 5% of released volume)
+    const totalReleasedVolume = releasedTx._sum.amount || 0;
+    const totalPlatformRevenue = (releasedTx._sum.fee || 0) > 0 
+      ? releasedTx._sum.fee 
+      : totalReleasedVolume * 0.05; 
+
+    // Time-series data: Group by day for the last 30 days (simplified)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const dailyVolumeRaw = await prisma.walletTransaction.groupBy({
+      by: ['createdAt'], // Grouping by createdAt requires date truncating which Prisma doesn't do natively across all DBs easily
+      where: { category: 'ESCROW_LOCK', status: 'SUCCESS', createdAt: { gte: thirtyDaysAgo } },
+      _sum: { amount: true }
+    });
+    
+    // Since Prisma groupBy doesn't easily truncate to Date, let's just fetch recent locks and group in JS
+    const recentLocks = await prisma.walletTransaction.findMany({
+      where: { category: 'ESCROW_LOCK', status: 'SUCCESS', createdAt: { gte: thirtyDaysAgo } },
+      select: { amount: true, createdAt: true }
+    });
+    
+    const volumeByDay = {};
+    recentLocks.forEach(tx => {
+      const dateStr = tx.createdAt.toISOString().split('T')[0];
+      volumeByDay[dateStr] = (volumeByDay[dateStr] || 0) + tx.amount;
+    });
+    
+    const revenueOverTime = Object.keys(volumeByDay).sort().map(date => ({
+      date,
+      volume: volumeByDay[date],
+      revenue: volumeByDay[date] * 0.05
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        totalActiveEscrow,
+        totalEscrowVolume,
+        totalPlatformRevenue,
+        recentTransactions,
+        revenueOverTime
+      }
+    });
+  } catch (err) {
+    console.error('Admin financials error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch financials' });
+  }
+});
+
 // +?+? GET /api/admin/kyc (Queue)
 router.get('/kyc', adminAuth, async (req, res) => {
   try {
@@ -347,6 +421,42 @@ router.post('/kyc/:id/reject', adminAuth, async (req, res) => {
   } catch (err) {
     console.error('Admin KYC reject error:', err);
     return res.status(500).json({ success: false, message: 'Failed to reject KYC' });
+  }
+});
+
+// ── GET /api/admin/deeds ──────────────────────────────────────────────────────
+router.get('/deeds', adminAuth, async (req, res) => {
+  try {
+    const deeds = await prisma.deed.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        milestones: { select: { id: true, status: true, amount: true } }
+      }
+    });
+    return res.json({ success: true, data: deeds });
+  } catch (err) {
+    console.error('Admin deeds error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch deeds' });
+  }
+});
+
+// ── GET /api/admin/deeds/:id ──────────────────────────────────────────────────
+router.get('/deeds/:id', adminAuth, async (req, res) => {
+  try {
+    const deed = await prisma.deed.findUnique({
+      where: { id: req.params.id },
+      include: {
+        milestones: { orderBy: { milestoneNumber: 'asc' } },
+        ledgerEntries: { orderBy: { createdAt: 'asc' } },
+        dispute: true
+      }
+    });
+    if (!deed) return res.status(404).json({ success: false, message: 'Deed not found' });
+    return res.json({ success: true, data: deed });
+  } catch (err) {
+    console.error('Admin deed detail error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch deed details' });
   }
 });
 

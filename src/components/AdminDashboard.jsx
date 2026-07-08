@@ -97,9 +97,11 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [disputes, setDisputes] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [deeds, setDeeds] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
   const [kycQueue, setKycQueue] = useState([]);
   const [users, setUsers] = useState({ buyers: [], sellers: [] });
+  const [financials, setFinancials] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview'); // 'overview' | 'disputes' | 'orders' | 'settlements'
   const [statusFilter, setStatusFilter] = useState('');
@@ -120,20 +122,24 @@ export default function AdminDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, disputesRes, ordersRes, withdrawalsRes, kycRes, usersRes] = await Promise.all([
+      const [statsRes, disputesRes, ordersRes, withdrawalsRes, kycRes, usersRes, finRes, deedsRes] = await Promise.all([
         axios.get(`/api/admin/stats`, { headers: adminHeaders() }),
         axios.get(`/api/admin/disputes`, { headers: adminHeaders() }),
         axios.get(`/api/admin/orders`, { headers: adminHeaders() }),
         axios.get(`/api/wallet/admin/withdrawals`, { headers: adminHeaders() }),
         axios.get(`/api/admin/kyc`, { headers: adminHeaders() }),
         axios.get(`/api/admin/users`, { headers: adminHeaders() }),
+        axios.get(`/api/admin/financials`, { headers: adminHeaders() }),
+        axios.get(`/api/admin/deeds`, { headers: adminHeaders() }),
       ]);
       setStats(statsRes.data.data);
       setDisputes(disputesRes.data.data || []);
       setOrders(ordersRes.data.data || []);
+      setDeeds(deedsRes.data.data || []);
       setWithdrawals(withdrawalsRes.data.data || []);
       setKycQueue(kycRes.data.data || []);
       setUsers(usersRes.data.data || { buyers: [], sellers: [] });
+      setFinancials(finRes.data.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -290,7 +296,9 @@ export default function AdminDashboard() {
             { id: 'overview', icon: '📊', label: 'Overview' },
             { id: 'disputes', icon: '⚖️', label: 'Disputes', badge: openDisputes.length },
             { id: 'orders', icon: '📦', label: 'Orders' },
-            { id: 'settlements', icon: '💰', label: 'Settlements', badge: withdrawals.length },
+            { id: 'deeds', icon: '📜', label: 'Deeds' },
+            { id: 'financials', icon: '💰', label: 'Financials' },
+            { id: 'settlements', icon: '🏦', label: 'Settlements', badge: withdrawals.length },
             { id: 'kyc', icon: '🆔', label: 'KYC Queue', badge: kycQueue.length },
             { id: 'users', icon: '👥', label: 'Users' }
           ].map(item => (
@@ -846,6 +854,179 @@ export default function AdminDashboard() {
                               >
                                 {s.status === 'active' ? 'Suspend' : 'Activate'}
                               </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── FINANCIALS TAB ── */}
+          {tab === 'financials' && financials && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-black text-slate-800">Financial Reports</h1>
+                <p className="text-slate-500 text-sm mt-1">Platform revenue, escrow volume, and transaction logs</p>
+              </div>
+
+              {/* Stat Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatCard 
+                  label="Total Escrow Volume" 
+                  value={`₹${financials.totalEscrowVolume.toLocaleString()}`} 
+                  icon="💸" 
+                  accent="bg-indigo-50" 
+                  sub="All-time locked volume" 
+                />
+                <StatCard 
+                  label="Active Escrow Balance" 
+                  value={`₹${financials.totalActiveEscrow.toLocaleString()}`} 
+                  icon="🏦" 
+                  accent="bg-blue-50" 
+                  sub="Currently locked in escrow" 
+                />
+                <StatCard 
+                  label="Est. Platform Revenue" 
+                  value={`₹${financials.totalPlatformRevenue.toLocaleString()}`} 
+                  icon="📈" 
+                  accent="bg-emerald-50" 
+                  sub="5% fee on released funds" 
+                />
+              </div>
+
+              {/* Bar Chart (Simplified using DOM elements) */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h2 className="text-lg font-bold text-slate-800 mb-6">Revenue Over Time (Last 30 Days)</h2>
+                {financials.revenueOverTime.length === 0 ? (
+                  <p className="text-slate-500 text-sm">No revenue data found for the past 30 days.</p>
+                ) : (
+                  <div className="h-48 flex items-end gap-2 overflow-x-auto pb-2">
+                    {financials.revenueOverTime.map(d => {
+                      const maxVol = Math.max(...financials.revenueOverTime.map(r => r.volume), 1);
+                      const heightPct = (d.volume / maxVol) * 100;
+                      return (
+                        <div key={d.date} className="flex flex-col items-center justify-end flex-1 min-w-[30px] group relative">
+                          {/* Tooltip */}
+                          <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 pointer-events-none">
+                            {d.date}<br/>Vol: ₹{d.volume}
+                          </div>
+                          <div 
+                            className="w-full bg-indigo-500 rounded-t hover:bg-indigo-600 transition-colors" 
+                            style={{ height: `${heightPct}%`, minHeight: '4px' }} 
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Transaction Log */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-slate-800">Recent Transactions</h2>
+                  <span className="text-xs font-bold bg-slate-200 text-slate-600 px-2 py-1 rounded">Latest 50</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <th className="px-6 py-3">TxID / Ref</th>
+                        <th className="px-6 py-3">Date</th>
+                        <th className="px-6 py-3">Type</th>
+                        <th className="px-6 py-3">Amount</th>
+                        <th className="px-6 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+                      {financials.recentTransactions.map(tx => (
+                        <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <span className="font-mono text-slate-600">{tx.id.substring(0,8)}</span>
+                            {tx.reference && <div className="text-xs text-slate-400 mt-0.5">Ref: {tx.reference.substring(0,8)}</div>}
+                          </td>
+                          <td className="px-6 py-4 text-slate-500">{fmtDate(tx.createdAt)} {fmtTime(tx.createdAt)}</td>
+                          <td className="px-6 py-4">
+                            <span className="font-semibold text-slate-700">{tx.category.replace(/_/g, ' ')}</span>
+                            <div className="text-xs text-slate-400 mt-0.5">{tx.type}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`font-bold ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-800'}`}>
+                              {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2 py-0.5 rounded text-xs font-bold ${
+                              tx.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' : 
+                              tx.status === 'FAILED' ? 'bg-red-100 text-red-700' : 
+                              'bg-amber-100 text-amber-700'
+                            }`}>
+                              {tx.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── DEEDS TAB ── */}
+          {tab === 'deeds' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-black text-slate-800">Deed Management</h1>
+                <p className="text-slate-500 text-sm mt-1">Smart contracts and milestone tracking</p>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                  <h2 className="text-lg font-bold text-slate-800">Recent Deeds</h2>
+                </div>
+                {deeds.length === 0 ? (
+                  <div className="p-10 text-center text-slate-400 text-sm">No deeds found</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          <th className="px-6 py-3">Deed ID / Title</th>
+                          <th className="px-6 py-3">Type</th>
+                          <th className="px-6 py-3">Value</th>
+                          <th className="px-6 py-3">Status</th>
+                          <th className="px-6 py-3">Milestones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+                        {deeds.map(deed => (
+                          <tr key={deed.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-semibold text-slate-900 truncate max-w-[200px]" title={deed.title}>{deed.title}</div>
+                              <div className="font-mono text-xs text-slate-400 mt-1">{deed.id.substring(0, 8)}...</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-semibold">{deed.transactionType}</span>
+                            </td>
+                            <td className="px-6 py-4 font-bold text-slate-800">
+                              {deed.currency} {deed.amount.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4">
+                              <StatusBadge status={deed.status} />
+                            </td>
+                            <td className="px-6 py-4 text-xs">
+                              {deed.isMilestone ? (
+                                <span className="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">
+                                  {deed.milestones?.length || 0} stages
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">Standard</span>
+                              )}
                             </td>
                           </tr>
                         ))}
