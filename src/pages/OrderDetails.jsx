@@ -7,6 +7,7 @@ import MilestoneList from '../components/order/MilestoneList';
 import DeliveryActions from '../components/order/DeliveryActions';
 import OrderChat from '../components/order/OrderChat';
 import DisputeResolutionFlow from '../components/DisputeResolutionFlow';
+import ReviewModal from '../components/ReviewModal';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   // Detect user type
   const userType = location.pathname.includes('/seller/') ? 'seller' : 'buyer';
@@ -210,6 +212,22 @@ const OrderDetails = () => {
 
             {/* ── TIMELINE ────────────────────────────────────────────────── */}
             <OrderTimeline status={order.status} />
+
+            {/* ── REVIEW BANNER ───────────────────────────────────────────── */}
+            {userType === 'buyer' && (order.status === 'RELEASED' || order.status === 'COMPLETED' || order.status === 'CLOSED') && (
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                <div>
+                  <h3 className="text-lg font-bold text-emerald-800 font-inter">How was your experience?</h3>
+                  <p className="text-emerald-600 text-sm mt-1">Leave a review for your seller to help them grow.</p>
+                </div>
+                <button 
+                  onClick={() => setIsReviewModalOpen(true)}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium font-inter shadow-sm transition-colors whitespace-nowrap"
+                >
+                  Leave a Review
+                </button>
+              </div>
+            )}
 
             {/* ── DATE CARDS ──────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -383,6 +401,12 @@ const OrderDetails = () => {
                 />
               </div>
             )}
+
+            <ReviewModal 
+              isOpen={isReviewModalOpen} 
+              onClose={() => setIsReviewModalOpen(false)} 
+              deedId={order.id}
+            />
           </>
         )}
       </div>
