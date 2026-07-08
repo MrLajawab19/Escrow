@@ -164,6 +164,7 @@ model Deed {
   dispute             Dispute?
   chatRoom            DeedChatRoom?
   ledgerEntries       AuditLedger[]
+  review              Review?
 
   @@index([buyerId])
   @@index([sellerId])
@@ -535,4 +536,20 @@ model Notification {
   createdAt DateTime @default(now())
   
   @@index([userId, userRole])
+}
+
+// --------- REVIEWS -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+model Review {
+  id        String   @id @default(uuid())
+  deedId    String   @unique
+  deed      Deed     @relation(fields: [deedId], references: [id])
+  buyerId   String
+  sellerId  String
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  @@index([sellerId])
+  @@index([buyerId])
 }

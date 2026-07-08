@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const deedController = require('../controllers/deedController');
+const reviewController = require('../controllers/reviewController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireKYC } = require('../middleware/kycGate');
 
@@ -10,5 +11,7 @@ router.post('/:id/accept-seller', authenticateToken, deedController.acceptDeed);
 router.get('/buyer', authenticateToken, deedController.getBuyerDeeds);
 router.get('/seller', authenticateToken, deedController.getSellerDeeds);
 router.get('/invite/:token', deedController.getDeedByInvite); // No auth needed to view invite (or we could enforce it, but typically invite is public until accepted)
+
+router.post('/:id/review', authenticateToken, reviewController.createReview);
 
 module.exports = router;
