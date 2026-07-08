@@ -251,6 +251,62 @@ router.get('/users', adminAuth, async (req, res) => {
   }
 });
 
+// ── POST /api/admin/users/:id/suspend ───────────────────────────────────────
+router.post('/users/:id/suspend', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let user = await prisma.buyer.updateMany({ where: { id }, data: { status: 'suspended' } });
+    if (user.count === 0) {
+      user = await prisma.seller.updateMany({ where: { id }, data: { status: 'suspended' } });
+    }
+    return res.json({ success: true, message: 'User suspended' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to suspend user' });
+  }
+});
+
+// ── POST /api/admin/users/:id/activate ──────────────────────────────────────
+router.post('/users/:id/activate', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let user = await prisma.buyer.updateMany({ where: { id }, data: { status: 'active' } });
+    if (user.count === 0) {
+      user = await prisma.seller.updateMany({ where: { id }, data: { status: 'active' } });
+    }
+    return res.json({ success: true, message: 'User activated' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to activate user' });
+  }
+});
+
+// ── POST /api/admin/seed ────────────────────────────────────────────────────
+router.post('/seed', async (req, res) => {
+  try {
+    const { ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+      return res.status(400).json({ success: false, message: 'Admin credentials not found in env' });
+    }
+    
+    const existing = await prisma.admin.findUnique({ where: { email: ADMIN_EMAIL } });
+    if (existing) return res.status(400).json({ success: false, message: 'Admin already exists' });
+    
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
+    const admin = await prisma.admin.create({
+      data: {
+        email: ADMIN_EMAIL,
+        password: hashedPassword,
+        name: 'System Admin'
+      }
+    });
+    
+    return res.status(201).json({ success: true, message: 'Admin created' });
+  } catch (err) {
+    console.error('Seed Admin Error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to seed admin' });
+  }
+});
+
 // +?+? GET /api/admin/kyc (Queue)
 router.get('/kyc', adminAuth, async (req, res) => {
   try {

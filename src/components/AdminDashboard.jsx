@@ -99,6 +99,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
   const [kycQueue, setKycQueue] = useState([]);
+  const [users, setUsers] = useState({ buyers: [], sellers: [] });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview'); // 'overview' | 'disputes' | 'orders' | 'settlements'
   const [statusFilter, setStatusFilter] = useState('');
@@ -119,18 +120,20 @@ export default function AdminDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, disputesRes, ordersRes, withdrawalsRes, kycRes] = await Promise.all([
+      const [statsRes, disputesRes, ordersRes, withdrawalsRes, kycRes, usersRes] = await Promise.all([
         axios.get(`/api/admin/stats`, { headers: adminHeaders() }),
         axios.get(`/api/admin/disputes`, { headers: adminHeaders() }),
         axios.get(`/api/admin/orders`, { headers: adminHeaders() }),
         axios.get(`/api/wallet/admin/withdrawals`, { headers: adminHeaders() }),
-        axios.get(`${import.meta.env.VITE_API_URL}/admin/kyc`, { headers: adminHeaders() }),
+        axios.get(`/api/admin/kyc`, { headers: adminHeaders() }),
+        axios.get(`/api/admin/users`, { headers: adminHeaders() }),
       ]);
       setStats(statsRes.data.data);
       setDisputes(disputesRes.data.data || []);
       setOrders(ordersRes.data.data || []);
       setWithdrawals(withdrawalsRes.data.data || []);
       setKycQueue(kycRes.data.data || []);
+      setUsers(usersRes.data.data || { buyers: [], sellers: [] });
     } catch (e) {
       console.error(e);
     } finally {
@@ -205,7 +208,7 @@ export default function AdminDashboard() {
   const handleApproveKyc = async (id) => {
     try {
       setActionLoading(true);
-      await axios.post(`${import.meta.env.VITE_API_URL}/admin/kyc/${id}/approve`, {}, { headers: adminHeaders() });
+      await axios.post(`/api/admin/kyc/${id}/approve`, {}, { headers: adminHeaders() });
       showToast('KYC Approved');
       fetchAll();
     } catch (e) {
@@ -220,11 +223,27 @@ export default function AdminDashboard() {
     if (!reason) return;
     try {
       setActionLoading(true);
-      await axios.post(`${import.meta.env.VITE_API_URL}/admin/kyc/${id}/reject`, { reason }, { headers: adminHeaders() });
+      await axios.post(`/api/admin/kyc/${id}/reject`, { reason }, { headers: adminHeaders() });
       showToast('KYC Rejected');
       fetchAll();
     } catch (e) {
       showToast('Failed to reject KYC', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUserStatus = async (id, currentStatus) => {
+    const action = currentStatus === 'suspended' ? 'activate' : 'suspend';
+    if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
+    
+    try {
+      setActionLoading(true);
+      await axios.post(`/api/admin/users/${id}/${action}`, {}, { headers: adminHeaders() });
+      showToast(`User ${action}d successfully`);
+      fetchAll();
+    } catch (e) {
+      showToast(`Failed to ${action} user`, 'error');
     } finally {
       setActionLoading(false);
     }
@@ -272,7 +291,8 @@ export default function AdminDashboard() {
             { id: 'disputes', icon: '⚖️', label: 'Disputes', badge: openDisputes.length },
             { id: 'orders', icon: '📦', label: 'Orders' },
             { id: 'settlements', icon: '💰', label: 'Settlements', badge: withdrawals.length },
-            { id: 'kyc', icon: '🆔', label: 'KYC Queue', badge: kycQueue.length }
+            { id: 'kyc', icon: '🆔', label: 'KYC Queue', badge: kycQueue.length },
+            { id: 'users', icon: '👥', label: 'Users' }
           ].map(item => (
             <button
               key={item.id}
@@ -720,6 +740,112 @@ export default function AdminDashboard() {
                                   Reject
                                 </button>
                               </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── USERS TAB ── */}
+          {tab === 'users' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-black text-slate-800">User Management</h1>
+                <p className="text-slate-500 text-sm mt-1">Manage buyers and sellers across the platform</p>
+              </div>
+
+              {/* Buyers Section */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                  <h2 className="text-lg font-bold text-slate-800">Buyers ({users.buyers.length})</h2>
+                </div>
+                {users.buyers.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">No buyers found</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          <th className="px-6 py-3">Name</th>
+                          <th className="px-6 py-3">Email</th>
+                          <th className="px-6 py-3">Joined</th>
+                          <th className="px-6 py-3">Status</th>
+                          <th className="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+                        {users.buyers.map(b => (
+                          <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-semibold text-slate-900">{b.firstName} {b.lastName}</td>
+                            <td className="px-6 py-4 text-slate-500">{b.email}</td>
+                            <td className="px-6 py-4 text-slate-500">{fmtDate(b.createdAt)}</td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex px-2 py-0.5 rounded text-xs font-bold ${b.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                {b.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleUserStatus(b.id, b.status)}
+                                disabled={actionLoading}
+                                className={`px-3 py-1.5 font-bold text-xs rounded-lg transition-colors disabled:opacity-50 ${b.status === 'active' ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                              >
+                                {b.status === 'active' ? 'Suspend' : 'Activate'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Sellers Section */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                  <h2 className="text-lg font-bold text-slate-800">Sellers ({users.sellers.length})</h2>
+                </div>
+                {users.sellers.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">No sellers found</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          <th className="px-6 py-3">Business / Name</th>
+                          <th className="px-6 py-3">Email</th>
+                          <th className="px-6 py-3">Joined</th>
+                          <th className="px-6 py-3">Status</th>
+                          <th className="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+                        {users.sellers.map(s => (
+                          <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-semibold text-slate-900">
+                              {s.businessName || `${s.firstName} ${s.lastName}`}
+                            </td>
+                            <td className="px-6 py-4 text-slate-500">{s.email}</td>
+                            <td className="px-6 py-4 text-slate-500">{fmtDate(s.createdAt)}</td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex px-2 py-0.5 rounded text-xs font-bold ${s.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                {s.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleUserStatus(s.id, s.status)}
+                                disabled={actionLoading}
+                                className={`px-3 py-1.5 font-bold text-xs rounded-lg transition-colors disabled:opacity-50 ${s.status === 'active' ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                              >
+                                {s.status === 'active' ? 'Suspend' : 'Activate'}
+                              </button>
                             </td>
                           </tr>
                         ))}
