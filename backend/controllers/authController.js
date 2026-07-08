@@ -171,4 +171,29 @@ async function getCurrentUser(req, res) {
   }
 }
 
-module.exports = { buyerSignup, buyerLogin, sellerSignup, sellerLogin, adminLogin, getCurrentUser };
+// ── UPLOAD AVATAR ─────────────────────────────────────────────────────────────
+async function uploadAvatar(req, res) {
+  try {
+    const { id, role } = req.user;
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file provided" });
+    }
+
+    const imagePath = `/uploads/${req.file.filename}`;
+
+    if (role === "buyer") {
+      await prisma.buyer.update({ where: { id }, data: { profileImage: imagePath } });
+    } else if (role === "seller") {
+      await prisma.seller.update({ where: { id }, data: { profileImage: imagePath } });
+    } else {
+      return res.status(403).json({ success: false, message: "Admins cannot upload avatars" });
+    }
+
+    res.json({ success: true, profileImage: imagePath });
+  } catch (err) {
+    console.error("uploadAvatar error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+module.exports = { buyerSignup, buyerLogin, sellerSignup, sellerLogin, adminLogin, getCurrentUser, uploadAvatar };

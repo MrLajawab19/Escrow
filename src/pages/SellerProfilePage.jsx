@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { FiUser, FiStar, FiCheckCircle, FiAward, FiClock } from 'react-icons/fi';
+import EditProfileModal from '../components/EditProfileModal';
 
 const SellerProfilePage = () => {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const currentUserDataStr = localStorage.getItem('sellerData');
+  const currentUser = currentUserDataStr ? JSON.parse(currentUserDataStr) : null;
+  const isOwnProfile = currentUser?.id === id;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -40,7 +47,15 @@ const SellerProfilePage = () => {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
       {/* Profile Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 mb-8 flex flex-col md:flex-row items-center md:items-start gap-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 mb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative">
+        {isOwnProfile && (
+          <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="absolute top-6 right-6 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
+          >
+            Edit Picture
+          </button>
+        )}
         <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-3xl text-slate-400 overflow-hidden shrink-0">
           {seller.profileImage ? (
             <img src={`${import.meta.env.VITE_API_URL}${seller.profileImage}`} alt={seller.firstName} className="w-full h-full object-cover" />
@@ -129,6 +144,14 @@ const SellerProfilePage = () => {
           ))
         )}
       </div>
+
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        user={seller}
+        userType="seller"
+        onProfileUpdated={fetchProfile}
+      />
     </div>
   );
 };

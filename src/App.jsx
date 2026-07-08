@@ -13,6 +13,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminDisputeDetails from './pages/AdminDisputeDetails';
 import LandingPage from './components/LandingPage';
 import SellerProfilePage from './pages/SellerProfilePage';
+import BuyerProfilePage from './pages/BuyerProfilePage';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -108,9 +109,18 @@ const AppNav = ({
                   Buyer Dashboard
                 </Link>
                 <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200">
-                  <span className="text-sm text-neutral-500 font-inter">
-                    Welcome, <span className="font-semibold text-[#0A2540]">{buyerData?.firstName || 'Buyer'}</span>
-                  </span>
+                  <Link to={`/buyer/profile/${buyerData?.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                    {buyerData?.profileImage ? (
+                      <img src={`${import.meta.env.VITE_API_URL}${buyerData.profileImage}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                        {buyerData?.firstName?.charAt(0) || 'B'}
+                      </div>
+                    )}
+                    <span className="text-sm text-neutral-500 font-inter">
+                      Welcome, <span className="font-semibold text-[#0A2540]">{buyerData?.firstName || 'Buyer'}</span>
+                    </span>
+                  </Link>
                   <button
                     onClick={handleBuyerLogout}
                     className="px-3 py-1.5 text-sm rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-inter font-medium transition-colors"
@@ -128,9 +138,18 @@ const AppNav = ({
                   Seller Dashboard
                 </Link>
                 <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200">
-                  <span className="text-sm text-neutral-500 font-inter">
-                    Welcome, <span className="font-semibold text-[#0A2540]">{sellerData?.firstName || 'Seller'}</span>
-                  </span>
+                  <Link to={`/seller/profile/${sellerData?.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                    {sellerData?.profileImage ? (
+                      <img src={`${import.meta.env.VITE_API_URL}${sellerData.profileImage}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm">
+                        {sellerData?.firstName?.charAt(0) || 'S'}
+                      </div>
+                    )}
+                    <span className="text-sm text-neutral-500 font-inter">
+                      Welcome, <span className="font-semibold text-[#0A2540]">{sellerData?.firstName || 'Seller'}</span>
+                    </span>
+                  </Link>
                   <button
                     onClick={handleSellerLogout}
                     className="px-3 py-1.5 text-sm rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-inter font-medium transition-colors"
@@ -564,6 +583,7 @@ function App() {
             <Route path="/buyer/new-deed" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
             <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
             <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderDetails /></ProtectedBuyerRoute>} />
+            <Route path="/buyer/profile/:id" element={<BuyerProfilePage />} />
             <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
             <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><OrderDetails /></ProtectedSellerRoute>} />
             <Route path="/seller/profile/:id" element={<SellerProfilePage />} />
