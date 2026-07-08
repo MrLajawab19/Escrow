@@ -105,3 +105,49 @@ exports.getDeedByInvite = async (req, res) => {
   }
 };
 
+exports.getDeedById = async (req, res) => {
+  try {
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    const deed = await prisma.deed.findUnique({
+      where: { id: req.params.id },
+      include: {
+        milestones: { orderBy: { milestoneNumber: 'asc' } },
+        ledgerEntries: { orderBy: { createdAt: 'asc' } }
+      }
+    });
+
+    if (!deed) {
+      return res.status(404).json({ success: false, message: 'Deed not found' });
+    }
+
+    if (deed.buyerId !== req.user.id && deed.sellerId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    res.status(200).json({ success: true, data: deed });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.signDeedBuyer = async (req, res) => {
+  try {
+    const deedService = require('../services/deedService');
+    const updated = await deedService.signDeed(req.params.id, req.user.id, 'buyer');
+    res.status(200).json({ success: true, data: updated, message: 'Deed signed successfully' });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.signDeedSeller = async (req, res) => {
+  try {
+    const deedService = require('../services/deedService');
+    const updated = await deedService.signDeed(req.params.id, req.user.id, 'seller');
+    res.status(200).json({ success: true, data: updated, message: 'Deed signed successfully' });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
 import OrderTimeline from '../components/order/OrderTimeline';
@@ -208,6 +208,31 @@ const OrderDetails = () => {
                   <p className="text-xs text-neutral-400 font-inter mt-0.5">Escrow Amount</p>
                 </div>
               </div>
+            </div>
+
+            {/* ── DEED ACTIONS ──────────────────────────────────────────────── */}
+            <div className="flex flex-wrap gap-3 mb-6">
+              <Link 
+                to={`/${userType}/deed/${order.id}/milestones`}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-medium font-inter hover:bg-indigo-100 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                View Milestones
+              </Link>
+              <Link 
+                to={`/${userType}/deed/${order.id}/sign`}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-medium font-inter hover:bg-purple-100 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                Digital Signature
+              </Link>
+              <Link 
+                to={`/${userType}/deed/${order.id}/audit`}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium font-inter hover:bg-slate-200 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Audit Ledger
+              </Link>
             </div>
 
             {/* ── TIMELINE ────────────────────────────────────────────────── */}

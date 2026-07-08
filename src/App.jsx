@@ -14,6 +14,9 @@ import AdminDisputeDetails from './pages/AdminDisputeDetails';
 import LandingPage from './components/LandingPage';
 import SellerProfilePage from './pages/SellerProfilePage';
 import BuyerProfilePage from './pages/BuyerProfilePage';
+import DeedMilestonePage from './pages/DeedMilestonePage';
+import DeedSigningPage from './pages/DeedSigningPage';
+import AuditLedgerPage from './pages/AuditLedgerPage';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -583,9 +586,15 @@ function App() {
             <Route path="/buyer/new-deed" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
             <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
             <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderDetails /></ProtectedBuyerRoute>} />
+            <Route path="/buyer/deed/:id/milestones" element={<ProtectedBuyerRoute><DeedMilestonePage /></ProtectedBuyerRoute>} />
+            <Route path="/buyer/deed/:id/sign" element={<ProtectedBuyerRoute><DeedSigningPage /></ProtectedBuyerRoute>} />
+            <Route path="/buyer/deed/:id/audit" element={<ProtectedBuyerRoute><AuditLedgerPage /></ProtectedBuyerRoute>} />
             <Route path="/buyer/profile/:id" element={<BuyerProfilePage />} />
             <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
             <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><OrderDetails /></ProtectedSellerRoute>} />
+            <Route path="/seller/deed/:id/milestones" element={<ProtectedSellerRoute><DeedMilestonePage /></ProtectedSellerRoute>} />
+            <Route path="/seller/deed/:id/sign" element={<ProtectedSellerRoute><DeedSigningPage /></ProtectedSellerRoute>} />
+            <Route path="/seller/deed/:id/audit" element={<ProtectedSellerRoute><AuditLedgerPage /></ProtectedSellerRoute>} />
             <Route path="/seller/profile/:id" element={<SellerProfilePage />} />
             <Route path="/deed/invite/:token" element={<DeedInvitePage />} />
           </Routes>
