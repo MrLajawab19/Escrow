@@ -192,14 +192,14 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">
-                    {formatCurrency(transaction.amount || 0)}
+                    {formatCurrency(transaction.amount || 0, transaction.currency || 'INR')}
                   </td>
                   <td className="px-6 py-4 text-sm text-right text-gray-600">
-                    {transaction.fee > 0 ? formatCurrency(transaction.fee) : '-'}
+                    {transaction.fee > 0 ? formatCurrency(transaction.fee, transaction.currency || 'INR') : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-right font-semibold">
                     <span className={transaction.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}>
-                      {transaction.type === 'CREDIT' ? '+' : '-'}{formatCurrency(transaction.netAmount || 0)}
+                      {transaction.type === 'CREDIT' ? '+' : '-'}{formatCurrency(transaction.netAmount || 0, transaction.currency || 'INR')}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">

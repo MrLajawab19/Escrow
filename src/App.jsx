@@ -19,6 +19,7 @@ import DeedSigningPage from './pages/DeedSigningPage';
 import AuditLedgerPage from './pages/AuditLedgerPage';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { Toaster } from 'react-hot-toast';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Route Change Handler Component
 const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {

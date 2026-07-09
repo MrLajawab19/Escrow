@@ -143,7 +143,7 @@ export default function DeedInvitePage() {
             <div>
               <p className="font-semibold text-indigo-900 text-sm font-inter">Secured by ScrowX</p>
               <p className="text-xs text-indigo-700 mt-1 font-inter">
-                The buyer has already funded this deed. Once you accept, the funds will be held in our secure escrow until the work is completed and approved.
+                The buyer has already funded this deed. Once you accept, the funds will be locked and released only once the work is completed and approved.
               </p>
             </div>
           </div>

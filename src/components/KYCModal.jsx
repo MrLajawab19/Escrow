@@ -18,7 +18,7 @@ export default function KYCModal({ isOpen, onClose, onComplete }) {
     if (!phone || phone.length < 10) return toast.error("Enter a valid 10-digit phone number");
     setLoading(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/kyc/send-otp`, { phone }, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/kyc/send-otp`, { phone }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       toast.success("OTP sent!");
@@ -34,7 +34,7 @@ export default function KYCModal({ isOpen, onClose, onComplete }) {
     if (!otp || otp.length < 6) return toast.error("Enter a valid 6-digit OTP");
     setLoading(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/kyc/verify-otp`, { phone, otp }, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/kyc/verify-otp`, { phone, otp }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       toast.success("Phone verified!");
@@ -60,7 +60,7 @@ export default function KYCModal({ isOpen, onClose, onComplete }) {
 
     setLoading(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/kyc/submit-id`, formData, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/kyc/submit-id`, formData, {
         headers: { 
           Authorization: `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'multipart/form-data'

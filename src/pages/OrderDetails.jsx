@@ -21,6 +21,7 @@ const STATUS_CONFIG = {
   APPROVED:          { label: 'Approved',           cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   RELEASED:          { label: 'Completed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   DISPUTED:          { label: 'Disputed',           cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
+  REJECTED:          { label: 'Rejected',           cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
   REFUNDED:          { label: 'Refunded',           cls: 'bg-neutral-100 text-neutral-600 border-neutral-200', dot: 'bg-neutral-400' },
   CANCELLED:         { label: 'Cancelled',          cls: 'bg-neutral-100 text-neutral-600 border-neutral-200', dot: 'bg-neutral-400' },
 };
@@ -101,7 +102,15 @@ const OrderDetails = () => {
       const endpoint = userType === 'buyer' ? `/api/orders/${orderId}` : `/api/orders/${orderId}`;
       const res = await axios.get(endpoint, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
-        setOrder(res.data.data);
+        const orderData = res.data.data;
+        if (typeof orderData.orderLogs === 'string') {
+          try {
+            orderData.orderLogs = JSON.parse(orderData.orderLogs);
+          } catch(e) {
+            orderData.orderLogs = [];
+          }
+        }
+        setOrder(orderData);
       } else {
         setError(res.data.message || 'Order not found');
       }
@@ -203,7 +212,7 @@ const OrderDetails = () => {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-3xl font-black text-[#0A2540] font-inter">
-                    {formatCurrency(order.scopeBox?.price || 0)}
+                    {formatCurrency(order.scopeBox?.price || 0, order.currency || 'INR')}
                   </p>
                   <p className="text-xs text-neutral-400 font-inter mt-0.5">Escrow Amount</p>
                 </div>
@@ -213,21 +222,21 @@ const OrderDetails = () => {
             {/* ── DEED ACTIONS ──────────────────────────────────────────────── */}
             <div className="flex flex-wrap gap-3 mb-6">
               <Link 
-                to={`/${userType}/deed/${order.id}/milestones`}
+                to={`/${userType}/deed/${order.scopeBox?.deedId || order.id}/milestones`}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-medium font-inter hover:bg-indigo-100 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 View Milestones
               </Link>
               <Link 
-                to={`/${userType}/deed/${order.id}/sign`}
+                to={`/${userType}/deed/${order.scopeBox?.deedId || order.id}/sign`}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-medium font-inter hover:bg-purple-100 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 Digital Signature
               </Link>
               <Link 
-                to={`/${userType}/deed/${order.id}/audit`}
+                to={`/${userType}/deed/${order.scopeBox?.deedId || order.id}/audit`}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium font-inter hover:bg-slate-200 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>

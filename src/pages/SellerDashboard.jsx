@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import NotificationDropdown from '../components/NotificationDropdown';
 import OrderCard from '../components/OrderCard';
 import MyDisputesPage from '../components/MyDisputesPage';
 import NotificationModal from '../components/NotificationModal';
@@ -8,6 +9,7 @@ import WalletHeader from '../components/WalletHeader';
 import KYCModal from '../components/KYCModal';
 import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
+import { useNavigate } from 'react-router-dom';
 
 const inputClass = "w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm shadow-sm";
 const labelClass = "block text-sm font-medium mb-1.5 text-[#0A2540] font-inter";
@@ -28,6 +30,8 @@ const SellerDashboard = () => {
   const [userId, setUserId] = useState(null);
   const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });
   const [showKycModal, setShowKycModal] = useState(false);
+  const [inviteLinkInput, setInviteLinkInput] = useState('');
+  const navigate = useNavigate();
 
   const { formatCurrency, currency } = useCurrency();
 
@@ -67,7 +71,7 @@ const SellerDashboard = () => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('sellerToken');
       if (!token) return;
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/kyc/status`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/kyc/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -290,7 +294,7 @@ const SellerDashboard = () => {
                         <div className="text-sm text-neutral-500 font-inter mb-2">From: {order.buyerName || 'Unknown Buyer'}</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
                           <div><span className="text-neutral-400 font-inter">Deadline: </span><span className="font-medium text-[#0A2540] font-inter">{order.scopeBox?.deadline ? new Date(order.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
-                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-[#0A2540] font-inter">{formatCurrency(order.scopeBox?.price || 0)}</span></div>
+                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-[#0A2540] font-inter">{formatCurrency(order.scopeBox?.price || 0, order.currency || 'INR')}</span></div>
                           <div><span className="text-neutral-400 font-inter">Platform: </span><span className="font-medium text-[#0A2540] font-inter">{order.platform || 'N/A'}</span></div>
                         </div>
                         {order.scopeBox?.description && (
@@ -339,7 +343,7 @@ const SellerDashboard = () => {
               </div>
               <div className="flex justify-between py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter">Price</span>
-                <span className="font-bold text-[#0A2540] font-inter">{formatCurrency(scopeBoxOrder.scopeBox?.price || 0)}</span>
+                <span className="font-bold text-[#0A2540] font-inter">{formatCurrency(scopeBoxOrder.scopeBox?.price || 0, scopeBoxOrder.currency || 'INR')}</span>
               </div>
               {scopeBoxOrder.scopeBox?.attachments?.length > 0 && (
                 <div className="py-2">
@@ -387,7 +391,7 @@ const SellerDashboard = () => {
                             'bg-neutral-100 text-neutral-600 border border-neutral-200'
                       }`}>{selectedOrder.status.replace(/_/g, ' ')}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-[#0A2540] font-inter">{formatCurrency(selectedOrder.scopeBox?.price || 0)}</span></div>
+                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-[#0A2540] font-inter">{formatCurrency(selectedOrder.scopeBox?.price || 0, selectedOrder.currency || 'INR')}</span></div>
                   <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Deadline</span><span className="font-medium text-[#0A2540] font-inter">{selectedOrder.scopeBox?.deadline ? new Date(selectedOrder.scopeBox.deadline).toLocaleDateString() : 'No deadline'}</span></div>
                   <div className="flex justify-between py-1.5"><span className="text-neutral-500 font-inter">Updated</span><span className="font-medium text-[#0A2540] font-inter">{new Date(selectedOrder.updatedAt).toLocaleString()}</span></div>
                 </div>
@@ -441,7 +445,7 @@ const SellerDashboard = () => {
                   <div><span className="font-medium text-neutral-500 font-inter">Title: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.title}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Description: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.description}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Product Type: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.productType}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Price: </span><span className="text-[#0A2540] font-inter font-bold">{formatCurrency(requestChangesOrder.scopeBox?.price || 0)}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Price: </span><span className="text-[#0A2540] font-inter font-bold">{formatCurrency(requestChangesOrder.scopeBox?.price || 0, requestChangesOrder.currency || 'INR')}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Deadline: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.deadline ? new Date(requestChangesOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
                   <div>
                     <span className="font-medium text-neutral-500 font-inter">Deliverables:</span>
@@ -615,7 +619,7 @@ const SellerDashboard = () => {
               <div className="ml-4">
                 <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Earnings</p>
                 <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">
-                  {formatCurrency(orders.reduce((sum, o) => sum + (o.scopeBox?.price || 0), 0))}
+                  {formatCurrency(orders.filter(o => !['REJECTED', 'CANCELLED', 'REFUNDED', 'PLACED'].includes(o.status)).reduce((sum, o) => sum + (o.scopeBox?.price || 0), 0), 'INR')}
                 </p>
               </div>
             </div>
@@ -624,8 +628,30 @@ const SellerDashboard = () => {
 
         {/* Orders Section */}
         <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
+          <div className="px-6 py-5 border-b border-neutral-100 bg-neutral-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-lg font-bold text-[#0A2540] font-inter">Your Orders</h2>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!inviteLinkInput.trim()) return;
+              // Extract the token from the end of the URL or use it directly
+              const token = inviteLinkInput.trim().split('/').pop();
+              if (token) navigate(`/deed/invite/${token}`);
+            }} className="flex items-center gap-2 w-full sm:w-auto">
+              <input 
+                type="text" 
+                value={inviteLinkInput}
+                onChange={(e) => setInviteLinkInput(e.target.value)}
+                placeholder="Paste Invite Link or Token..." 
+                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-indigo-500 min-w-[250px]"
+              />
+              <button 
+                type="submit"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
+              >
+                Open Invite
+              </button>
+            </form>
           </div>
           <div className="p-6 bg-neutral-50/30">
             {orders.length === 0 ? (

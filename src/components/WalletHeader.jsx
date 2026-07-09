@@ -43,7 +43,7 @@ const WalletHeader = ({ userId, onNavigateToWallet }) => {
           <p className="text-sm font-bold text-red-600">Error</p>
         ) : (
           <p className="text-lg font-bold text-blue-600">
-            {formatCurrency(balance)}
+            {formatCurrency(balance, currency || 'INR')}
           </p>
         )}
       </div>

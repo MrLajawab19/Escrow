@@ -178,7 +178,29 @@ class WalletService {
   }
 
   /**
-   * Lock funds for escrow
+   * Update the physical wallet balance based on all successful transactions
+   */
+  async updateWalletBalance(walletId) {
+    try {
+      const transactions = await prisma.walletTransaction.findMany({
+        where: { walletId, status: 'SUCCESS' },
+      });
+      
+      const balance = this.calculateBalanceFromTransactions(transactions);
+      
+      await prisma.wallet.update({
+        where: { id: walletId },
+        data: { balance },
+      });
+      
+      return balance;
+    } catch (error) {
+      console.error(`Failed to update wallet balance: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    */
   async lockEscrowFunds(buyerId, orderId, amount, currency = 'USD') {
     try {
@@ -266,6 +288,12 @@ class WalletService {
 
       // Process the transaction immediately
       await this.processTransaction(transaction.id);
+
+      // Decrement locked balance
+      await prisma.wallet.update({
+        where: { id: wallet.id },
+        data: { lockedBalance: { decrement: amount } }
+      });
 
       return transaction;
     } catch (error) {

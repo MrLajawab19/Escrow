@@ -99,23 +99,45 @@ class DeedService {
     const wallet = await prisma.wallet.findUnique({ where: { userId: buyerId } });
     if (!wallet) throw new Error("WALLET_NOT_FOUND");
 
+    const transactions = [];
+
     // For MVP/testing: Auto-top up if balance is insufficient
+    let currentBalance = wallet.balance;
     if (wallet.balance < deed.amount) {
-      await prisma.wallet.update({
-        where: { id: wallet.id },
-        data: { balance: { increment: deed.amount } }
-      });
+      const topUpAmount = deed.amount - wallet.balance;
+      
+      // Add DEPOSIT transaction to the batch
+      transactions.push(
+        prisma.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: "CREDIT",
+            category: "DEPOSIT",
+            amount: topUpAmount,
+            currency: deed.currency,
+            status: "SUCCESS",
+            description: `Auto-top up for deed: ${deed.title}`,
+            reference: deedId,
+            netAmount: topUpAmount,
+          },
+        })
+      );
+      currentBalance += topUpAmount;
     }
 
     // Deduct from balance, add to lockedBalance
-    await prisma.$transaction([
+    transactions.push(
       prisma.wallet.update({
         where: { userId: buyerId },
         data: {
-          balance: { decrement: deed.amount },
+          balance: currentBalance - deed.amount,
           lockedBalance: { increment: deed.amount },
         },
-      }),
+      })
+    );
+
+    // ESCROW_LOCK transaction
+    transactions.push(
       prisma.walletTransaction.create({
         data: {
           walletId: wallet.id,
@@ -128,12 +150,18 @@ class DeedService {
           reference: deedId,
           netAmount: deed.amount,
         },
-      }),
+      })
+    );
+
+    // Update deed status
+    transactions.push(
       prisma.deed.update({
         where: { id: deedId },
         data: { status: "PENDING_SELLER" },
       })
-    ]);
+    );
+
+    await prisma.$transaction(transactions);
 
     await ledgerService.appendEvent(deedId, "FUNDS_LOCKED", "buyer", buyerId, {
       amount: deed.amount,
@@ -177,16 +205,17 @@ class DeedService {
           country: "Global",
           currency: deed.currency,
           sellerContact: seller.email,
-          scopeBox: deed.scopeBox || {
+          scopeBox: {
             title: deed.title,
             description: deed.description,
             price: deed.amount,
             deadline: deed.deadline,
             acceptanceCriteria: deed.acceptanceCriteria,
-            productType: deed.transactionType
+            productType: deed.transactionType,
+            ...(deed.scopeBox && typeof deed.scopeBox === 'object' ? deed.scopeBox : {})
           },
           status: "ESCROW_FUNDED",
-          orderLogs: JSON.stringify([{ action: "CREATED", timestamp: new Date(), by: "system" }])
+          orderLogs: [{ action: "CREATED", timestamp: new Date(), by: "system" }]
         }
       })
     ]);

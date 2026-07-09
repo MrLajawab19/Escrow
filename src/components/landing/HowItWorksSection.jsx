@@ -15,7 +15,7 @@ const HowItWorksSection = () => {
     {
       step: '02',
       title: 'Fund Escrow',
-      description: 'Buyer deposits payment securely into escrow — funds are protected',
+      description: 'Buyer commits payment securely — control when funds move',
       icon: (
         <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

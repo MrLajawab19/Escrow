@@ -26,8 +26,8 @@ const HeroSection = ({ navigate }) => {
 
           {/* Description */}
           <p className="text-lg sm:text-xl max-w-3xl mx-auto text-neutral-500 font-normal leading-relaxed">
-            The premium escrow platform for freelance work and digital products.
-            Protect your payments and ensure fair delivery with enterprise-grade security.
+            The premium trust layer for freelance work and digital products.
+            Lock in the terms and ensure fair delivery with enterprise-grade security.
           </p>
 
           {/* CTA Buttons */}

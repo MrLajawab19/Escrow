@@ -12,6 +12,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "5.10.0",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
@@ -34,6 +35,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.6.0",
+    "react-icons": "^5.7.0",
     "react-router-dom": "^7.7.0",
     "resend": "^6.17.1",
     "sharp": "^0.34.3",

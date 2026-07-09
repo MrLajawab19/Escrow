@@ -17,18 +17,20 @@ const BuyerProfilePage = () => {
   const isOwnProfile = currentUser?.id === id;
 
   const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken') || localStorage.getItem('adminToken');
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/profiles/buyer/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setProfile(res.data);
-      } catch (err) {
-        toast.error('Failed to load buyer profile');
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      const token = localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken') || localStorage.getItem('adminToken');
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/profiles/buyer/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProfile(res.data);
+    } catch (err) {
+      toast.error('Failed to load buyer profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
   }, [id]);
 

@@ -72,6 +72,22 @@ const OrderTimeline = ({ status }) => {
   const currentStep = STATUS_STEP_MAP[status] ?? 0;
   const percentage = Math.round((currentStep / (STEPS.length - 1)) * 100);
 
+  if (status === 'REJECTED' || status === 'CANCELLED') {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6 bg-red-50/30">
+        <div className="flex items-center gap-3 text-red-600">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2 className="text-base font-bold font-inter">Order {status === 'REJECTED' ? 'Rejected' : 'Cancelled'}</h2>
+        </div>
+        <p className="mt-2 text-sm text-red-500 font-inter ml-9">
+          This order was {status.toLowerCase()} and will not proceed further.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
       <div className="flex items-center justify-between mb-6">

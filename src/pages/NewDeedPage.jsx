@@ -67,7 +67,7 @@ export default function NewDeedPage() {
       try {
         const token = localStorage.getItem('buyerToken') || localStorage.getItem('token');
         if (!token) return;
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/kyc/status`, {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/kyc/status`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.success) {
@@ -204,13 +204,28 @@ export default function NewDeedPage() {
           name: 'ScrowX',
           description: `Fund Escrow for Deed: ${deedData.title}`,
           order_id: razorpayOrderId,
-          handler: function (response) {
-             setShowFundingModal(false);
-             setShowSuccess(true);
-             toast.success('Payment successful! Escrow funded.');
-             setTimeout(() => {
-               navigate(`/buyer/order/${deedData.orderId}`);
-             }, 3000);
+          handler: async function (response) {
+            try {
+              toast.loading('Verifying payment...', { id: 'verify-payment' });
+              const verifyRes = await axios.post(`/api/deeds/${deedData.id}/verify-payment`, {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              }, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+
+              if (verifyRes.data.success) {
+                 toast.success('Payment successful! Escrow funded.', { id: 'verify-payment' });
+                 setShowFundingModal(false);
+                 setShowSuccess(true);
+              } else {
+                 toast.error(`Payment verification failed: ${verifyRes.data.message}`, { id: 'verify-payment' });
+              }
+            } catch (err) {
+              console.error('Verification error:', err);
+              toast.error(err.response?.data?.message || 'Payment verification failed.', { id: 'verify-payment' });
+            }
           },
           prefill: {
             name: buyerData?.firstName ? `${buyerData.firstName} ${buyerData.lastName}` : '',
@@ -449,7 +464,7 @@ export default function NewDeedPage() {
             <div className="p-6 md:p-10 space-y-8 animate-fadeIn">
               <div>
                 <h2 className="text-2xl font-bold text-navy-900 font-inter mb-1">Review & Payment</h2>
-                <p className="text-neutral-500 font-inter text-sm mb-6">Set the final price and securely fund the escrow.</p>
+                <p className="text-neutral-500 font-inter text-sm mb-6">Set the final price and securely lock in the terms.</p>
               </div>
 
               <div className="bg-neutral-50 p-6 rounded-xl border border-neutral-200">

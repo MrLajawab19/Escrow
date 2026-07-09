@@ -8,6 +8,8 @@ import KYCModal from '../components/KYCModal';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import NotificationDropdown from '../components/NotificationDropdown';
+import { toast } from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const BuyerDashboard = () => {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ const BuyerDashboard = () => {
   const [userId, setUserId] = useState(null);
   const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });
   const [showKycModal, setShowKycModal] = useState(false);
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     // Extract user ID from JWT token
@@ -45,7 +48,7 @@ const BuyerDashboard = () => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('buyerToken');
       if (!token) return;
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/kyc/status`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/kyc/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -55,6 +58,8 @@ const BuyerDashboard = () => {
       console.error('Failed to fetch KYC status', err);
     }
   };
+
+  const [deeds, setDeeds] = useState([]);
 
   const fetchOrders = async () => {
     try {
@@ -67,23 +72,24 @@ const BuyerDashboard = () => {
         return;
       }
 
-      const response = await axios.get('/api/orders/buyer', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const [ordersRes, deedsRes] = await Promise.all([
+        axios.get('/api/orders/buyer', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { success: false } })),
+        axios.get('/api/deeds/buyer', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { success: false } }))
+      ]);
 
-      if (response.data.success) {
-        setOrders(response.data.data);
-      } else {
-        setError(response.data.message || 'Failed to load orders');
+      if (ordersRes.data.success) {
+        setOrders(ordersRes.data.data);
+      }
+      if (deedsRes.data.success) {
+        // Only show deeds that are funded but not yet accepted
+        setDeeds(deedsRes.data.data.filter(d => d.status === 'PENDING_SELLER'));
       }
     } catch (err) {
-      console.error('Error fetching orders:', err);
+      console.error('Error fetching data:', err);
       if (err.response?.status === 401) {
         setError('Authentication required. Please login again.');
       } else {
-        setError(err.response?.data?.message || 'Failed to load orders');
+        setError(err.response?.data?.message || 'Failed to load dashboard data');
       }
     } finally {
       setLoading(false);
@@ -329,6 +335,45 @@ const BuyerDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Pending Deeds Section */}
+        {deeds.length > 0 && (
+          <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden mt-6 mb-6">
+            <div className="px-6 py-5 border-b border-neutral-100 bg-amber-50/50 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-bold text-navy-900">Pending Deeds</h2>
+                <p className="text-sm text-neutral-500 mt-1">Share the invite link with a seller to start the order.</p>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {deeds.map(deed => (
+                  <div key={deed.id} className="border border-neutral-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white hover:border-amber-300 transition-colors">
+                    <div>
+                      <h3 className="font-bold text-navy-900">{deed.title || 'Untitled Deed'}</h3>
+                      <p className="text-sm text-neutral-500 mt-1">Amount: {formatCurrency(deed.amount, deed.currency)}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => {
+                          const inviteLink = `${window.location.origin}/invite/${deed.inviteToken}`;
+                          navigator.clipboard.writeText(inviteLink);
+                          toast.success('Invite link copied to clipboard!');
+                        }}
+                        className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                        Copy Invite Link
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Orders Section */}
         <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden mt-6">

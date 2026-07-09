@@ -81,8 +81,8 @@ const OrderTrackingPage = () => {
 
   const getStatusDescription = (status) => {
     const descriptions = {
-      'PLACED': 'Order created and waiting for escrow funding',
-      'ESCROW_FUNDED': 'Payment secured in escrow, seller notified',
+      'PLACED': 'Order created and waiting for funds to be committed',
+      'ESCROW_FUNDED': 'Payment committed and tracked, seller notified',
       'IN_PROGRESS': 'Seller is working on your project',
       'SUBMITTED': 'Seller has submitted the delivery for review',
       'APPROVED': 'Delivery approved, funds will be released',

@@ -47,9 +47,16 @@ export const CurrencyProvider = ({ children }) => {
     localStorage.setItem('preferredCurrency', newCurrency);
   };
 
-  const formatCurrency = (amountInUSD) => {
+  const formatCurrency = (amount, sourceCurrency = 'USD') => {
+    // 1. Convert source to USD
+    let amountInUSD = parseFloat(amount || 0);
+    if (sourceCurrency !== 'USD' && exchangeRates[sourceCurrency]) {
+      amountInUSD = amountInUSD / exchangeRates[sourceCurrency];
+    }
+    
+    // 2. Convert USD to target currency
     const rate = exchangeRates[currency] || 1;
-    const convertedAmount = parseFloat(amountInUSD || 0) * rate;
+    const convertedAmount = amountInUSD * rate;
     const symbol = currencySymbols[currency] || '$';
     
     // Formatting correctly based on the locale to look native (e.g. 1,000.00)
@@ -64,9 +71,13 @@ export const CurrencyProvider = ({ children }) => {
     })}`;
   };
 
-  const formatCurrencyRaw = (amountInUSD) => {
+  const formatCurrencyRaw = (amount, sourceCurrency = 'USD') => {
+    let amountInUSD = parseFloat(amount || 0);
+    if (sourceCurrency !== 'USD' && exchangeRates[sourceCurrency]) {
+      amountInUSD = amountInUSD / exchangeRates[sourceCurrency];
+    }
     const rate = exchangeRates[currency] || 1;
-    return parseFloat(amountInUSD || 0) * rate;
+    return amountInUSD * rate;
   };
 
   return (

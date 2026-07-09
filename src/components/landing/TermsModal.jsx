@@ -59,17 +59,17 @@ const TermsModal = ({ show, onClose }) => {
                   <h3 className="text-xl font-bold text-white mb-3">1. Introduction</h3>
                   <p className="leading-relaxed">
                     Welcome to ScrowX. By accessing and using our platform, you agree to be bound by these Terms and Conditions. 
-                    ScrowX provides a secure escrow service for digital transactions, ensuring trust and safety for both buyers and sellers.
+                    ScrowX provides a secure trust layer for digital transactions, ensuring trust and safety for both buyers and sellers.
                   </p>
                 </div>
 
                 <div>
                   <h3 className="text-xl font-bold text-white mb-3">2. Escrow Services</h3>
                   <p className="leading-relaxed mb-2">
-                    ScrowX acts as a neutral third party to hold funds during transactions. Our services include:
+                    ScrowX acts as a neutral third party that controls when and how funds are released during a transaction, in partnership with a licensed payment provider that holds the funds.
                   </p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li>Secure fund holding until transaction completion</li>
+                    <li>Secure, conditional fund release until transaction completion</li>
                     <li>AI-powered dispute resolution</li>
                     <li>Real-time order tracking and status updates</li>
                     <li>Evidence-based conflict management</li>
@@ -91,7 +91,7 @@ const TermsModal = ({ show, onClose }) => {
                 <div>
                   <h3 className="text-xl font-bold text-white mb-3">4. Payment Terms</h3>
                   <p className="leading-relaxed">
-                    All payments are held in escrow until the buyer confirms satisfactory delivery. ScrowX charges a service fee 
+                    All payments are locked and released only once the buyer confirms satisfactory delivery, or a dispute is resolved. ScrowX charges a service fee 
                     based on the transaction value. Fees are transparently displayed before transaction confirmation. Funds are 
                     released to sellers within 24-48 hours of buyer approval.
                   </p>
@@ -120,7 +120,7 @@ const TermsModal = ({ show, onClose }) => {
                   <p className="leading-relaxed">
                     ScrowX is not liable for delays or failures in service due to circumstances beyond our control. We are not 
                     responsible for the quality, safety, or legality of items exchanged. Our maximum liability is limited to the 
-                    transaction value held in escrow.
+                    transaction value locked until conditions are met.
                   </p>
                 </div>
 
@@ -132,7 +132,7 @@ const TermsModal = ({ show, onClose }) => {
                     <li>Trading illegal goods or services</li>
                     <li>Manipulating the dispute resolution process</li>
                     <li>Creating multiple accounts to circumvent restrictions</li>
-                    <li>Attempting to bypass the escrow system</li>
+                    <li>Attempting to bypass the trust system</li>
                   </ul>
                 </div>
 

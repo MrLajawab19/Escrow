@@ -43,6 +43,7 @@ router.patch('/:id/start', authenticateToken, orderController.startWork);
 router.patch('/:id/start-work', authenticateToken, orderController.startWorkFromAccepted);
 router.patch('/:id/submit', authenticateToken, upload.array('deliveryFiles', 10), orderController.submitDelivery);
 router.patch('/:id/request-changes', authenticateToken, orderController.requestChanges);
+router.post('/:id/revision', authenticateToken, orderController.requestRevision); // distinct controller for buyers
 
 // Buyer actions
 router.patch('/:id/approve', authenticateToken, orderController.approveDelivery);

@@ -30,7 +30,7 @@ exports.fundDeed = async (req, res) => {
     const options = {
       amount: deed.amount * 100, // paise
       currency: deed.currency || "INR",
-      receipt: `receipt_deed_${deed.id}`,
+      receipt: `deed_${deed.id.substring(0, 8)}`,
       notes: { orderId: deed.id, buyerId, type: 'deed' }
     };
     
@@ -47,7 +47,50 @@ exports.fundDeed = async (req, res) => {
       message: "Razorpay order created successfully." 
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    console.error('Razorpay Error:', error);
+    res.status(400).json({ success: false, message: error.message || error.description || "Unknown error" });
+  }
+};
+
+exports.verifyPayment = async (req, res) => {
+  try {
+    const deedId = req.params.id;
+    const buyerId = req.user.id;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    const crypto = require("crypto");
+    const deedService = require("../services/deedService");
+
+    console.log("Verify Payment Body:", req.body);
+    console.log("Secret:", process.env.RAZORPAY_KEY_SECRET);
+
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed || deed.buyerId !== buyerId) {
+       return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const generated_signature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest("hex");
+
+    if (generated_signature !== razorpay_signature) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Payment verification failed: Invalid signature",
+        debug: { generated_signature, razorpay_signature, razorpay_order_id, razorpay_payment_id }
+      });
+    }
+
+    if (deed.status === "DRAFT") {
+      await deedService.fundDeed(deedId, buyerId);
+    }
+
+    res.status(200).json({ success: true, message: "Payment verified successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message, stack: error.stack });
   }
 };
 

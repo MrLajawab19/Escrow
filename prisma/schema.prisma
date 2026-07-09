@@ -422,6 +422,8 @@ model Order {
   proposedScopeBox   Json?
   sellerAcceptedAt   DateTime?
   disputeId          String?
+  revisionCount      Int           @default(0)
+  formalNoticeCount  Int           @default(0)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 

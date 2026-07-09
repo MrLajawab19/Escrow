@@ -159,17 +159,17 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-emerald-100 mb-1 uppercase tracking-wider">Available Balance</h3>
                 <p className="text-3xl font-black mb-2">
                   <span className="text-xl font-medium opacity-80 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.balance)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.balance, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-emerald-100/80 bg-black/10 inline-block px-2 py-1 rounded-md">Ready to use</p>
               </div>
 
               <div className="relative overflow-hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md group hover:-translate-y-1 transition-all duration-300">
                 <div className="absolute top-0 right-0 p-4 opacity-5 text-indigo-500 text-5xl transform translate-x-2 -translate-y-2 group-hover:scale-110 transition-transform duration-500">🔒</div>
-                <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Locked in Escrow</h3>
+                <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Funds Locked</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.lockedEscrowBalance)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.lockedEscrowBalance, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded-md">Secured in orders</p>
               </div>
@@ -179,7 +179,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Pending Refund</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.pendingRefundBalance)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.pendingRefundBalance, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded-md">From disputes</p>
               </div>
@@ -189,7 +189,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Total Wallet Value</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw((Number(summary?.balance) || 0) + (Number(summary?.lockedEscrowBalance) || 0) + (Number(summary?.pendingRefundBalance) || 0))} />
+                  <AnimatedValue value={formatCurrencyRaw((Number(summary?.balance) || 0) + (Number(summary?.lockedEscrowBalance) || 0) + (Number(summary?.pendingRefundBalance) || 0), summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded-md">Overall equity</p>
               </div>
@@ -199,7 +199,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Total Lifetime Deposits</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.totalPurchases)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.totalPurchases, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded-md">Funds added</p>
               </div>
@@ -209,7 +209,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Total Withdrawals</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.totalDeposited)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.totalDeposited, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded-md">Funds withdrawn</p>
               </div>
@@ -231,7 +231,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-indigo-100 mb-1 uppercase tracking-wider">Available Earnings</h3>
                 <p className="text-3xl font-black mb-2">
                   <span className="text-xl font-medium opacity-80 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.balance)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.balance, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-indigo-100/80 bg-black/10 inline-block px-2 py-1 rounded-md">Ready to withdraw</p>
               </div>
@@ -241,7 +241,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Pending Earnings</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.pendingEarningBalance)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.pendingEarnings, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-amber-600 bg-amber-50 inline-block px-2 py-1 rounded-md">From active orders</p>
               </div>
@@ -251,7 +251,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Under Dispute</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.underDisputeBalance)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.underDisputeAmount, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-red-600 bg-red-50 inline-block px-2 py-1 rounded-md">Funds frozen</p>
               </div>
@@ -261,7 +261,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Total Wallet Value</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw((Number(summary?.balance) || 0) + (Number(summary?.pendingEarnings) || 0) + (Number(summary?.underDisputeAmount) || 0))} />
+                  <AnimatedValue value={formatCurrencyRaw((Number(summary?.balance) || 0) + (Number(summary?.pendingEarnings) || 0) + (Number(summary?.underDisputeAmount) || 0), summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded-md">Overall equity</p>
               </div>
@@ -271,7 +271,7 @@ const WalletDashboard = ({ userId }) => {
                 <h3 className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Total Withdrawals</h3>
                 <p className="text-3xl font-black text-slate-800 mb-2">
                   <span className="text-xl font-medium text-slate-400 mr-1">{currencySymbol}</span>
-                  <AnimatedValue value={formatCurrencyRaw(summary?.withdrawnAmount)} />
+                  <AnimatedValue value={formatCurrencyRaw(summary?.withdrawnAmount, summary?.currency || 'INR')} />
                 </p>
                 <p className="text-xs font-medium text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded-md">Lifetime withdrawn</p>
               </div>
@@ -298,7 +298,7 @@ const WalletDashboard = ({ userId }) => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">{isBuyer ? 'Deposits' : 'Income'}</p>
-                <p className="text-xl font-bold text-slate-800">{currencySymbol}{formatCurrencyRaw(summary?.monthlyStats?.monthlyIncome || 0)}</p>
+                <p className="text-xl font-bold text-slate-800">{currencySymbol}{formatCurrencyRaw(summary?.monthlyStats?.monthlyIncome || 0, summary?.currency || 'INR')}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -307,7 +307,7 @@ const WalletDashboard = ({ userId }) => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">{isBuyer ? 'Purchases' : 'Withdrawn'}</p>
-                <p className="text-xl font-bold text-slate-800">{currencySymbol}{formatCurrencyRaw(summary?.monthlyStats?.monthlyExpense || 0)}</p>
+                <p className="text-xl font-bold text-slate-800">{currencySymbol}{formatCurrencyRaw(summary?.monthlyStats?.monthlyExpense || 0, summary?.currency || 'INR')}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -317,7 +317,7 @@ const WalletDashboard = ({ userId }) => {
               <div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Net Flow</p>
                 <p className={`text-xl font-bold ${summary?.monthlyStats?.monthlyNet >= 0 ? 'text-indigo-600' : 'text-orange-600'}`}>
-                  {currencySymbol}{formatCurrencyRaw(Math.abs(summary?.monthlyStats?.monthlyNet || 0))}
+                  {currencySymbol}{formatCurrencyRaw(Math.abs(summary?.monthlyStats?.monthlyNet || 0), summary?.currency || 'INR')}
                 </p>
               </div>
             </div>
@@ -371,7 +371,7 @@ const WalletDashboard = ({ userId }) => {
                     </div>
                     <div className="text-right">
                       <p className={`text-2xl font-black tracking-tight ${summary.lastTransaction.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-800'}`}>
-                        {summary.lastTransaction.type === 'CREDIT' ? '+' : '-'}{currencySymbol}{formatCurrencyRaw(summary.lastTransaction.amount || 0)}
+                        {summary.lastTransaction.type === 'CREDIT' ? '+' : '-'}{currencySymbol}{formatCurrencyRaw(summary.lastTransaction.amount || 0, summary?.currency || 'INR')}
                       </p>
                       <span className="inline-flex mt-1 items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600">
                         {summary.lastTransaction.status}

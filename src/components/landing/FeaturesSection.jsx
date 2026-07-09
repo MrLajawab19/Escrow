@@ -9,7 +9,7 @@ const FeaturesSection = () => {
         </svg>
       ),
       title: 'Dispute Resolution',
-      description: 'Raise disputes and track resolution with evidence upload. Our fair resolution system protects all parties.'
+      description: 'Raise disputes and track resolution with evidence upload. Our fair resolution system tracks every step.'
     },
     {
       icon: (
@@ -18,7 +18,7 @@ const FeaturesSection = () => {
         </svg>
       ),
       title: 'Secure Escrow',
-      description: 'Funds held securely in compliant escrow infrastructure until both parties are satisfied. Eliminate payment risk.'
+      description: 'Funds stay locked through compliant payment infrastructure until both parties are satisfied. Eliminate payment risk.'
     },
     {
       icon: (

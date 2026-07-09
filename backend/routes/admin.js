@@ -129,7 +129,7 @@ router.get('/disputes', adminAuth, async (req, res) => {
 
 // ── GET /api/admin/disputes/:id ────────────────────────────────────────────────
 
-router.get('/disputes/:id', adminAuth, async (req, res) => {
+const getDisputeFull = async (req, res) => {
   try {
     const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
@@ -172,7 +172,10 @@ router.get('/disputes/:id', adminAuth, async (req, res) => {
     console.error('Admin dispute detail error:', err);
     return res.status(500).json({ success: false, message: 'Failed to fetch dispute detail' });
   }
-});
+};
+
+router.get('/disputes/:id', adminAuth, getDisputeFull);
+router.get('/disputes/:id/full', adminAuth, getDisputeFull);
 
 // ── POST /api/admin/disputes/:id/resolve ──────────────────────────────────────
 
@@ -218,6 +221,62 @@ router.post('/disputes/:id/resolve', adminAuth, async (req, res) => {
   } catch (err) {
     console.error('Admin resolve error:', err);
     return res.status(500).json({ success: false, message: 'Failed to resolve dispute' });
+  }
+});
+
+// ── POST /api/admin/disputes/:id/ai-analysis ──────────────────────────────────
+
+router.post('/disputes/:id/ai-analysis', adminAuth, async (req, res) => {
+  try {
+    const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
+    if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
+    
+    const order = await prisma.order.findUnique({ where: { id: dispute.orderId } });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    
+    // Fetch chat messages
+    const room = await prisma.orderChatRoom.findUnique({ where: { orderId: order.id } });
+    let chatMessages = [];
+    if (room) {
+      chatMessages = await prisma.orderChatMessage.findMany({
+        where: { roomId: room.id },
+        orderBy: { createdAt: 'asc' },
+        take: 20,
+      });
+    }
+
+    // Call AI
+    const { analyzeDisputeWithAI } = require('../services/disputeAI');
+    const aiResult = await analyzeDisputeWithAI({
+      order,
+      dispute: { ...dispute, evidenceResponses: {} }, // Mock evidence shape if needed
+      ruleEngineResult: { riskScore: 50, flags: [] }, // Mock fallback if missing
+      chatMessages,
+    });
+    
+    const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
+    
+    const updatedDispute = await prisma.orderDispute.update({
+      where: { id: dispute.id },
+      data: {
+        aiAnalysis: aiResult,
+        timeline: [
+          ...currentTimeline,
+          {
+            event: 'ADMIN_AI_ANALYSIS_TRIGGERED',
+            by: req.admin?.id || 'admin',
+            timestamp: new Date().toISOString(),
+            description: `Admin forced AI Analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidenceScore || 0)}% confidence)`,
+            notes: aiResult.reasoning,
+          },
+        ],
+      }
+    });
+
+    return res.json({ success: true, message: 'AI Analysis complete.', data: updatedDispute });
+  } catch (err) {
+    console.error('Admin AI analysis error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to trigger AI analysis: ' + err.message });
   }
 });
 

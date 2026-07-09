@@ -2,6 +2,35 @@ const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 } = require('uuid');
 
 const prisma = new PrismaClient();
+const ledgerService = require('./ledgerService');
+const walletService = require('./walletService');
+
+async function appendLedger(updatedOrder, logEntry, actorId) {
+  try {
+    const deedId = updatedOrder.scopeBox?.deedId;
+    if (deedId && logEntry) {
+      let actorRole = 'system';
+      if (actorId === updatedOrder.buyerId) actorRole = 'buyer';
+      else if (actorId === updatedOrder.sellerId) actorRole = 'seller';
+      else if (actorId) actorRole = 'admin';
+
+      await ledgerService.appendEvent(
+        deedId, 
+        logEntry.event || logEntry.action || 'ORDER_UPDATED', 
+        actorRole, 
+        actorId || 'system', 
+        { 
+          reason: logEntry.reason, 
+          previousStatus: logEntry.previousStatus, 
+          newStatus: logEntry.newStatus 
+        }
+      );
+    }
+  } catch(e) { 
+    console.error('Ledger error:', e); 
+  }
+}
+
 
 // Status transition rules
 const STATUS_TRANSITIONS = {
@@ -214,6 +243,7 @@ async function releaseFunds(orderId, buyerId) {
       orderLogs: [...currentLogs, logEntry],
     },
   });
+  await appendLedger(updated, logEntry, buyerId);
 
   // Notify seller (simulated)
   console.log(`📧 Payment notification to seller: ${updated.sellerContact} — Order ${orderId} COMPLETED`);
@@ -246,7 +276,7 @@ async function acceptOrder(orderId, sellerId) {
     reason: 'Accepted by seller — work in progress',
   };
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: 'ACCEPTED',
@@ -254,6 +284,8 @@ async function acceptOrder(orderId, sellerId) {
       orderLogs: [...currentLogs, logEntry],
     },
   });
+  await appendLedger(updated, logEntry, sellerId);
+  return updated;
 }
 
 // ── Start work from ACCEPTED (seller only) ────────────────────────────────────
@@ -288,13 +320,26 @@ async function rejectOrder(orderId, sellerId) {
     reason: 'Rejected by seller',
   };
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: 'REJECTED',
       orderLogs: [...currentLogs, logEntry],
     },
   });
+  
+  // Refund the buyer's virtual wallet
+  try {
+    const amount = order.scopeBox?.price || 0;
+    if (amount > 0) {
+      await walletService.refundBuyer(order.buyerId, orderId, amount, order.currency, 'Order rejected by seller');
+    }
+  } catch (err) {
+    console.error(`Failed to refund buyer for rejected order ${orderId}:`, err);
+  }
+
+  await appendLedger(updated, logEntry, sellerId);
+  return updated;
 }
 
 // ── Request changes (seller only) ─────────────────────────────────────────────
@@ -325,7 +370,7 @@ async function requestChanges(orderId, sellerId, changesData) {
     changesRequested: true,
   };
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: 'CHANGES_REQUESTED',
@@ -333,6 +378,8 @@ async function requestChanges(orderId, sellerId, changesData) {
       orderLogs: [...currentLogs, logEntry],
     },
   });
+  await appendLedger(updated, logEntry, sellerId);
+  return updated;
 }
 
 // ── Accept changes (buyer only) ────────────────────────────────────────────────
@@ -412,13 +459,28 @@ async function cancelOrder(orderId, buyerId) {
     reason: 'Cancelled by buyer',
   };
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: 'CANCELLED',
       orderLogs: [...currentLogs, logEntry],
     },
   });
+  
+  // Refund the buyer's virtual wallet if it was escrow funded
+  if (order.status === 'ESCROW_FUNDED') {
+    try {
+      const amount = order.scopeBox?.price || 0;
+      if (amount > 0) {
+        await walletService.refundBuyer(order.buyerId, orderId, amount, order.currency, 'Order cancelled by buyer');
+      }
+    } catch (err) {
+      console.error(`Failed to refund buyer for cancelled order ${orderId}:`, err);
+    }
+  }
+
+  await appendLedger(updated, logEntry, buyerId);
+  return updated;
 }
 
 // ── Query helpers ──────────────────────────────────────────────────────────────

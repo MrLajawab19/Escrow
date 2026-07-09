@@ -8,6 +8,7 @@ const { requireKYC } = require('../middleware/kycGate');
 
 router.post('/', authenticateToken, requireKYC, deedController.createDeed);
 router.post('/:id/fund', authenticateToken, deedController.fundDeed);
+router.post('/:id/verify-payment', authenticateToken, deedController.verifyPayment);
 router.post('/:id/accept-seller', authenticateToken, deedController.acceptDeed);
 router.get('/buyer', authenticateToken, deedController.getBuyerDeeds);
 router.get('/seller', authenticateToken, deedController.getSellerDeeds);

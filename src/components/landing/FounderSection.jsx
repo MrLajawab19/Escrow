@@ -30,7 +30,7 @@ const FounderSection = () => {
               <h3 className="text-3xl font-bold text-navy-900 mb-2">Ayush Bardhani</h3>
               <p className="text-primary-600 font-semibold mb-4 text-lg">Founder & CEO</p>
               <p className="text-neutral-600 text-lg leading-relaxed mb-6">
-                Founder of ScrowX — building secure escrow infrastructure that make online transactions safe, fast, and transparent.
+                Founder of ScrowX — building secure trust infrastructure that makes online transactions safe, fast, and transparent.
                 Passionate about creating trust in the digital economy through modern fintech solutions.
               </p>
 

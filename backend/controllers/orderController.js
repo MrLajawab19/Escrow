@@ -141,7 +141,7 @@ async function fundEscrow(req, res) {
     const options = {
       amount: amount * 100, // amount in the smallest currency unit (paise)
       currency: "INR",
-      receipt: `receipt_order_${id}`,
+      receipt: `order_${id.substring(0, 8)}`,
       notes: {
         orderId: id,
         buyerId: buyerData.id
@@ -490,9 +490,85 @@ async function rejectChanges(req, res) {
   }
 }
 
+// ── POST /api/orders/:id/revision ────────────────────────────────────────────
+
+async function requestRevision(req, res) {
+  try {
+    const { id } = req.params;
+    const buyerData = req.user;
+    if (buyerData.role !== 'buyer') {
+      return res.status(403).json({ success: false, message: 'Only buyers can request revisions' });
+    }
+
+    const { reason } = req.body;
+    if (!reason) {
+      return res.status(400).json({ success: false, message: 'Reason is required for revision' });
+    }
+
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (order.buyerId !== buyerData.id) return res.status(403).json({ success: false, message: 'Unauthorized' });
+    if (order.status !== 'SUBMITTED') {
+      return res.status(400).json({ success: false, message: `Cannot request revision from status ${order.status}. Must be SUBMITTED.` });
+    }
+
+    const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
+    const updated = await prisma.order.update({
+      where: { id },
+      data: {
+        status: 'CHANGES_REQUESTED',
+        revisionCount: { increment: 1 },
+        formalNoticeCount: { increment: 1 },
+        orderLogs: [
+          ...currentLogs,
+          {
+            event: 'REVISION_REQUESTED',
+            byUserId: buyerData.id,
+            timestamp: new Date().toISOString(),
+            previousStatus: order.status,
+            newStatus: 'CHANGES_REQUESTED',
+            notes: reason,
+          }
+        ]
+      }
+    });
+
+    const notificationService = require('../services/notificationService');
+    await notificationService.createNotification({
+      userId: updated.sellerId,
+      userRole: 'seller',
+      type: 'ORDER_UPDATE',
+      title: 'Revision Requested',
+      message: `The buyer has requested a revision: ${reason}`,
+      link: '/seller-dashboard',
+    });
+
+    return res.json({ success: true, data: updated, message: 'Revision requested successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
-  fundEscrow, startWork, submitDelivery, approveDelivery,
-  raiseDispute, releaseFunds, refundBuyer, getOrder, getBuyerOrders,
-  getSellerOrders, cancelOrder, getOrdersByUser, acceptOrder, rejectOrder,
-  startWorkFromAccepted, requestChanges, acceptChanges, rejectChanges,
+  fundEscrow,
+  startWork,
+  submitDelivery,
+  approveDelivery,
+  raiseDispute,
+  releaseFunds,
+  refundBuyer,
+  getOrder,
+  getBuyerOrders,
+  getSellerOrders,
+  getOrdersByUser,
+  cancelOrder,
+  acceptOrder,
+  startWorkFromAccepted,
+  rejectOrder,
+  requestChanges,
+  acceptChanges,
+  rejectChanges,
+  requestRevision,
 };
