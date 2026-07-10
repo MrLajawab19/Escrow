@@ -21,11 +21,12 @@ void main() {
     vec3 darkBase = vec3(3.0/255.0, 7.0/255.0, 18.0/255.0); // Deep Navy
     vec3 baseColor = mix(lightBase, darkBase, uTheme);
 
-    vec3 indigo = mix(vec3(79., 70., 229.)/255., vec3(99., 102., 241.)/255., uTheme); 
-    vec3 violet = mix(vec3(124., 58., 237.)/255., vec3(168., 85., 247.)/255., uTheme); 
-    vec3 cyan   = mix(vec3(6., 182., 212.)/255., vec3(34., 211., 238.)/255., uTheme); 
-    vec3 pink   = mix(vec3(236., 72., 153.)/255., vec3(232., 121., 249.)/255., uTheme); 
-    vec3 orange = mix(vec3(249., 115., 22.)/255., vec3(251., 146., 60.)/255., uTheme); 
+    // Make colors significantly brighter and more vibrant/neon
+    vec3 indigo = mix(vec3(99., 102., 241.)/255., vec3(129., 140., 255.)/255., uTheme); 
+    vec3 violet = mix(vec3(139., 92., 246.)/255., vec3(192., 132., 252.)/255., uTheme); 
+    vec3 cyan   = mix(vec3(34., 211., 238.)/255., vec3(103., 232., 249.)/255., uTheme); 
+    vec3 pink   = mix(vec3(236., 72., 153.)/255., vec3(244., 114., 182.)/255., uTheme); 
+    vec3 orange = mix(vec3(251., 146., 60.)/255., vec3(253., 186., 116.)/255., uTheme); 
 
     // Rotate coordinate system to create a diagonal flow (bottom-left to top-right)
     float angle = 0.35; 
@@ -36,17 +37,17 @@ void main() {
     // Ribbon 1 (Main Central)
     float y1 = sin(rp.x * 0.9 + t) * 0.4 + cos(rp.x * 0.5 - t * 0.8) * 0.3;
     float d1 = abs(rp.y - y1);
-    float m1 = smoothstep(0.8, 0.0, d1); // Ribbon thickness
+    float m1 = smoothstep(0.6, 0.0, d1); // Tighter thickness for clarity
 
     // Ribbon 2 (Lower offset)
     float y2 = sin(rp.x * 1.1 - t * 1.1) * 0.3 + cos(rp.x * 0.6 + t * 0.9) * 0.4 - 0.4;
     float d2 = abs(rp.y - y2);
-    float m2 = smoothstep(0.7, 0.0, d2);
+    float m2 = smoothstep(0.5, 0.0, d2);
 
     // Ribbon 3 (Upper offset)
     float y3 = sin(rp.x * 0.8 + t * 1.3) * 0.5 + cos(rp.x * 0.7 - t * 0.7) * 0.2 + 0.5;
     float d3 = abs(rp.y - y3);
-    float m3 = smoothstep(0.9, 0.0, d3);
+    float m3 = smoothstep(0.7, 0.0, d3);
 
     // Create color gradients along the X axis for each ribbon
     // rp.x goes roughly from -2.0 to 2.0
@@ -77,26 +78,25 @@ void main() {
     // Blend everything
     vec3 col = baseColor;
     
-    // Base opacity multiplier
-    float baseOp = mix(0.45, 0.85, uTheme) * readMask;
+    // Base opacity multiplier - increase base opacity for clarity
+    float baseOp = mix(0.6, 0.95, uTheme) * readMask;
 
     // Layer the ribbons back to front: 3, 2, 1
-    col = mix(col, c3, m3 * baseOp * 0.7);
-    col = mix(col, c2, m2 * baseOp * 0.8);
+    col = mix(col, c3, m3 * baseOp * 0.85);
+    col = mix(col, c2, m2 * baseOp * 0.95);
     col = mix(col, c1, m1 * baseOp);
 
-    // Add soft, glowing ridges (volumetric depth instead of sharp lines)
-    float r1 = smoothstep(0.25, 0.0, d1) * 0.4;
-    float r2 = smoothstep(0.2, 0.0, d2) * 0.3;
-    float r3 = smoothstep(0.2, 0.0, d3) * 0.25;
+    // Add glowing ridges - sharpen slightly for better wave definition
+    float r1 = smoothstep(0.15, 0.0, d1) * 0.6;
+    float r2 = smoothstep(0.12, 0.0, d2) * 0.5;
+    float r3 = smoothstep(0.12, 0.0, d3) * 0.4;
     
-    // Use the underlying gradient color heavily mixed with a touch of white
-    // so it looks like illuminated color, not a separate white line.
-    vec3 hl1 = mix(c1, vec3(1.0), 0.25);
-    vec3 hl2 = mix(c2, vec3(1.0), 0.25);
-    vec3 hl3 = mix(c3, vec3(1.0), 0.25);
+    // Use the underlying gradient color mixed with white
+    vec3 hl1 = mix(c1, vec3(1.0), 0.35);
+    vec3 hl2 = mix(c2, vec3(1.0), 0.35);
+    vec3 hl3 = mix(c3, vec3(1.0), 0.35);
     
-    float hlOp = mix(0.4, 0.8, uTheme) * readMask;
+    float hlOp = mix(0.6, 1.0, uTheme) * readMask;
     
     col += r3 * hl3 * hlOp;
     col += r2 * hl2 * hlOp;

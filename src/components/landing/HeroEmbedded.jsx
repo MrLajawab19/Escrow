@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import HeroFlowShader from './HeroFlowShader';
-import { Shield, ArrowRight, CheckCircle2, Lock } from 'lucide-react';
+import { Shield, ArrowRight, CheckCircle2, Lock, PlayCircle } from 'lucide-react';
 
 const HeroEmbedded = ({ onAuthClick }) => {
   const [amount, setAmount] = useState(0);
@@ -45,7 +45,7 @@ const HeroEmbedded = ({ onAuthClick }) => {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 text-primary-700 dark:text-primary-300 text-sm font-medium mb-6">
               <Shield size={16} />
-              <span>Secure Transaction Infrastructure</span>
+              <span>Secure Trust Infrastructure</span>
             </div>
             
             <h1 className="text-5xl lg:text-6xl font-black text-navy-900 dark:text-white tracking-tight leading-[1.1] mb-6 font-inter">
@@ -56,7 +56,7 @@ const HeroEmbedded = ({ onAuthClick }) => {
               Most online deals still rely on a leap of faith and a risky advance. ScrowX protects both sides from agreement to payment.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <button 
                 onClick={onAuthClick}
                 className="px-6 py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
@@ -67,9 +67,25 @@ const HeroEmbedded = ({ onAuthClick }) => {
                 href="#how-it-works"
                 className="px-6 py-3.5 bg-white dark:bg-navy-900 border border-neutral-200 dark:border-white/20 hover:bg-neutral-50 dark:hover:bg-navy-800 hover:border-neutral-300 dark:hover:border-white/30 text-navy-900 dark:text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
-                How it Works
-                <ArrowRight size={18} className="text-neutral-500 dark:text-neutral-400" />
+                <PlayCircle size={18} className="text-neutral-500 dark:text-neutral-400" />
+                How It Works
               </a>
+            </div>
+
+            {/* Trust Markers */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-neutral-500 dark:text-neutral-400 font-medium">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-primary-600 dark:text-primary-400" />
+                <span>Free to join</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-primary-600 dark:text-primary-400" />
+                <span>Transparent fees</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Lock size={16} className="text-primary-600 dark:text-primary-400" />
+                <span>Protected transactions</span>
+              </div>
             </div>
           </motion.div>
           

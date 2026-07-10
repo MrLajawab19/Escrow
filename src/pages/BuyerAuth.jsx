@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import HeroFlowShader from '../components/landing/HeroFlowShader';
 
 const BuyerAuth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -104,11 +105,10 @@ const BuyerAuth = () => {
   const labelClass = "block text-sm font-medium mb-1.5 text-[#0A2540] font-inter";
 
   return (
-    <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center p-4 relative">
-      {/* Top accent stripe */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-600 via-blue-500 to-indigo-600" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-white dark:bg-navy-950">
+      <HeroFlowShader />
 
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <img src="/Logo.png" alt="ScrowX Logo" className="mx-auto mb-3 h-12 w-auto" />
