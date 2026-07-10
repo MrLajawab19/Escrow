@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import HeroFlowShader from './HeroFlowShader';
 import { Shield, ArrowRight, CheckCircle2, Lock } from 'lucide-react';
 
 const HeroEmbedded = ({ onAuthClick }) => {
@@ -31,6 +32,7 @@ const HeroEmbedded = ({ onAuthClick }) => {
 
   return (
     <section className="relative pt-32 pb-20 lg:pt-32 lg:pb-20 overflow-hidden bg-white dark:bg-navy-950 min-h-screen flex items-center border-b border-neutral-100 dark:border-white/10">
+      <HeroFlowShader />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
           
