@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ChevronRight } from 'lucide-react';
+import { Menu, X, ChevronRight, Moon, Sun } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 const LandingNavbar = ({ onAuthClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,8 +26,8 @@ const LandingNavbar = ({ onAuthClick }) => {
     <nav
       className={`absolute top-0 inset-x-0 z-50 transition-all duration-300 border-b ${
         isScrolled
-          ? 'bg-white/95 backdrop-blur-md border-neutral-200 shadow-[0_1px_2px_rgba(0,0,0,0.02)] py-3'
-          : 'bg-transparent border-neutral-200/50 py-5'
+          ? 'bg-white/95 dark:bg-navy-950/95 backdrop-blur-md border-neutral-200 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.02)] py-3'
+          : 'bg-transparent border-neutral-200/50 dark:border-white/10 py-5'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,7 +43,7 @@ const LandingNavbar = ({ onAuthClick }) => {
               <a
                 key={link.name}
                 href={link.href}
-                className="text-[15px] font-semibold text-navy-900 hover:bg-neutral-100/80 px-4 py-2 rounded-full transition-all tracking-tight"
+                className="text-[15px] font-semibold text-navy-900 dark:text-white hover:bg-neutral-100/80 dark:hover:bg-white/10 px-4 py-2 rounded-full transition-all tracking-tight focus:outline-none focus:ring-2 focus:ring-primary-500"
                 onClick={(e) => {
                   e.preventDefault();
                   const el = document.querySelector(link.href);
@@ -56,8 +58,16 @@ const LandingNavbar = ({ onAuthClick }) => {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-2">
             <button
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+              title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+              className="p-2 text-neutral-600 dark:text-neutral-400 hover:text-navy-900 dark:hover:text-white rounded-full hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button
               onClick={onAuthClick}
-              className="text-[15px] font-semibold text-navy-900 hover:bg-neutral-100/80 px-4 py-2 rounded-full transition-all tracking-tight"
+              className="text-[15px] font-semibold text-navy-900 dark:text-white hover:bg-neutral-100/80 dark:hover:bg-white/10 px-4 py-2 rounded-full transition-all tracking-tight focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               Sign in
             </button>
@@ -65,7 +75,7 @@ const LandingNavbar = ({ onAuthClick }) => {
               onClick={onAuthClick}
               className="px-4 py-2 text-[15px] font-semibold rounded-full text-white bg-primary-600 hover:bg-primary-700 transition-all shadow-[0_2px_10px_-3px_rgba(99,91,255,0.4)] hover:shadow-[0_4px_14px_-2px_rgba(99,91,255,0.5)] flex items-center gap-1.5 tracking-tight ml-2"
             >
-              Get started <ChevronRight size={16} strokeWidth={3} />
+              Start a transaction <ChevronRight size={16} strokeWidth={3} />
             </button>
           </div>
 
@@ -75,11 +85,18 @@ const LandingNavbar = ({ onAuthClick }) => {
               onClick={onAuthClick}
               className="px-4 py-2 text-xs font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors"
             >
-              Get started
+              Start a transaction
+            </button>
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+              className="p-1 text-neutral-600 dark:text-neutral-400 hover:text-navy-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
+            >
+              {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
             </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-neutral-600 hover:text-navy-900 focus:outline-none p-1"
+              className="text-neutral-600 dark:text-neutral-400 hover:text-navy-900 dark:hover:text-white focus:outline-none p-1 focus:ring-2 focus:ring-primary-500 rounded"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -89,12 +106,12 @@ const LandingNavbar = ({ onAuthClick }) => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-neutral-200 shadow-lg py-4 px-4 flex flex-col space-y-4">
+        <div className="md:hidden absolute top-full left-0 w-full bg-white dark:bg-navy-950 border-b border-neutral-200 dark:border-white/10 shadow-lg py-4 px-4 flex flex-col space-y-4">
           {navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
-              className="text-base font-medium text-neutral-600 hover:text-navy-900 px-2 py-1"
+              className="text-base font-medium text-neutral-600 dark:text-neutral-300 hover:text-navy-900 dark:hover:text-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
               onClick={(e) => {
                 e.preventDefault();
                 setIsMobileMenuOpen(false);
@@ -105,13 +122,13 @@ const LandingNavbar = ({ onAuthClick }) => {
               {link.name}
             </a>
           ))}
-          <div className="pt-4 border-t border-neutral-100 flex flex-col space-y-3">
+          <div className="pt-4 border-t border-neutral-100 dark:border-white/10 flex flex-col space-y-3">
             <button
               onClick={() => {
                 setIsMobileMenuOpen(false);
                 onAuthClick();
               }}
-              className="w-full text-center py-2 text-base font-medium text-neutral-600 hover:text-navy-900"
+              className="w-full text-center py-2 text-base font-medium text-neutral-600 dark:text-neutral-300 hover:text-navy-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
             >
               Log in
             </button>
@@ -122,7 +139,7 @@ const LandingNavbar = ({ onAuthClick }) => {
               }}
               className="w-full text-center py-2 px-4 text-base font-medium rounded-xl text-white bg-navy-900 hover:bg-navy-800"
             >
-              Get started
+              Start a transaction
             </button>
           </div>
         </div>

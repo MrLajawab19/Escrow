@@ -30,7 +30,7 @@ const HeroEmbedded = ({ onAuthClick }) => {
   }, []);
 
   return (
-    <section className="relative pt-32 pb-20 lg:pt-32 lg:pb-20 overflow-hidden bg-white min-h-screen flex items-center border-b border-neutral-100">
+    <section className="relative pt-32 pb-20 lg:pt-32 lg:pb-20 overflow-hidden bg-white dark:bg-navy-950 min-h-screen flex items-center border-b border-neutral-100 dark:border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
           
@@ -41,17 +41,17 @@ const HeroEmbedded = ({ onAuthClick }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 border border-primary-100 text-primary-700 text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 text-primary-700 dark:text-primary-300 text-sm font-medium mb-6">
               <Shield size={16} />
-              <span>Secure Trust Infrastructure</span>
+              <span>Secure Transaction Infrastructure</span>
             </div>
             
-            <h1 className="text-5xl lg:text-6xl font-black text-navy-900 tracking-tight leading-[1.1] mb-6 font-inter">
+            <h1 className="text-5xl lg:text-6xl font-black text-navy-900 dark:text-white tracking-tight leading-[1.1] mb-6 font-inter">
               Automating trust in every deal.
             </h1>
             
-            <p className="text-lg text-neutral-600 mb-8 max-w-lg leading-relaxed">
-              Most informal deals rely on a leap of faith and a risky advance. Trust shouldn't be a gamble. ScrowX replaces uncertain prepayments with a secure trust infrastructure.
+            <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 max-w-lg leading-relaxed">
+              Most online deals still rely on a leap of faith and a risky advance. ScrowX protects both sides from agreement to payment.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
@@ -63,10 +63,10 @@ const HeroEmbedded = ({ onAuthClick }) => {
               </button>
               <a 
                 href="#how-it-works"
-                className="px-6 py-3.5 bg-white border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 text-navy-900 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                className="px-6 py-3.5 bg-white dark:bg-navy-900 border border-neutral-200 dark:border-white/20 hover:bg-neutral-50 dark:hover:bg-navy-800 hover:border-neutral-300 dark:hover:border-white/30 text-navy-900 dark:text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
                 How it Works
-                <ArrowRight size={18} className="text-neutral-500" />
+                <ArrowRight size={18} className="text-neutral-500 dark:text-neutral-400" />
               </a>
             </div>
           </motion.div>
@@ -79,12 +79,12 @@ const HeroEmbedded = ({ onAuthClick }) => {
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           >
             {/* The UI Panel */}
-            <div className="bg-white rounded-2xl shadow-elevated border border-neutral-200 overflow-hidden ml-auto max-w-[600px] relative">
+            <div className="bg-white dark:bg-navy-900 rounded-2xl shadow-elevated border border-neutral-200 dark:border-white/10 overflow-hidden ml-auto max-w-[600px] relative">
               {/* Header */}
-              <div className="px-6 py-4 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-white/10 flex justify-between items-center bg-neutral-50/50 dark:bg-white/5">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-navy-900">Transaction #TXN-78291</span>
-                  <span className="px-2 py-0.5 rounded-full bg-success-50 border border-success-200 text-success-700 text-xs font-semibold">
+                  <span className="text-sm font-semibold text-navy-900 dark:text-white">Transaction #TXN-78291</span>
+                  <span className="px-2 py-0.5 rounded-full bg-success-50 dark:bg-success-900/30 border border-success-200 dark:border-success-800 text-success-700 dark:text-success-400 text-xs font-semibold">
                     Funds Secured
                   </span>
                 </div>
@@ -95,30 +95,30 @@ const HeroEmbedded = ({ onAuthClick }) => {
                 <div className="flex items-center justify-between mb-8">
                   {/* Buyer */}
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-navy-100 text-navy-700 flex items-center justify-center font-bold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-navy-100 dark:bg-navy-800 text-navy-700 dark:text-navy-300 flex items-center justify-center font-bold text-sm">
                       AS
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-navy-900">Arjun Sharma</div>
-                      <div className="text-xs text-neutral-500">Buyer</div>
+                      <div className="text-sm font-bold text-navy-900 dark:text-white">Arjun Sharma</div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400">Buyer</div>
                     </div>
                   </div>
                   
                   {/* Divider */}
                   <div className="flex-1 px-4 flex items-center justify-center">
-                    <div className="h-px bg-neutral-200 w-full relative">
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-neutral-300"></div>
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-neutral-300"></div>
+                    <div className="h-px bg-neutral-200 dark:bg-white/10 w-full relative">
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-white/20"></div>
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-white/20"></div>
                     </div>
                   </div>
                   
                   {/* Seller */}
                   <div className="flex items-center gap-3 text-right">
                     <div>
-                      <div className="text-sm font-bold text-navy-900">Studio North</div>
-                      <div className="text-xs text-neutral-500">Seller</div>
+                      <div className="text-sm font-bold text-navy-900 dark:text-white">Studio North</div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400">Seller</div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-navy-900 flex items-center justify-center font-bold text-sm">
                       SN
                     </div>
                   </div>
@@ -127,22 +127,22 @@ const HeroEmbedded = ({ onAuthClick }) => {
                 {/* Project Details */}
                 <div className="mb-8">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-bold text-navy-900">Brand Identity Design</h3>
+                    <h3 className="text-lg font-bold text-navy-900 dark:text-white">Brand Identity Design</h3>
                     <div className="text-right">
-                      <div className="text-xl font-bold text-navy-900 tabular-nums">
+                      <div className="text-xl font-bold text-navy-900 dark:text-white tabular-nums">
                         ₹{amount.toLocaleString()}
                       </div>
-                      <div className="text-xs text-neutral-500">Transaction Value</div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400">Transaction Value</div>
                     </div>
                   </div>
-                  <p className="text-sm text-neutral-600 leading-relaxed max-w-sm">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed max-w-sm">
                     Complete brand identity design for startup including logo, brand guidelines, and marketing assets.
                   </p>
                 </div>
                 
                 {/* Timeline */}
                 <div className="flex justify-between items-center mb-8 relative px-4">
-                  <div className="absolute left-6 right-6 top-3 h-0.5 bg-neutral-100 -z-10"></div>
+                  <div className="absolute left-6 right-6 top-3 h-0.5 bg-neutral-100 dark:bg-white/10 -z-10"></div>
                   <div className="absolute left-6 w-[50%] top-3 h-0.5 bg-success-500 -z-10"></div>
                   
                   {[
@@ -155,13 +155,13 @@ const HeroEmbedded = ({ onAuthClick }) => {
                     <div key={i} className="flex flex-col items-center gap-2">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 
                         ${s.done ? 'bg-success-500 border-success-500 text-white' : 
-                          s.current ? 'bg-primary-600 border-primary-600 text-white shadow-[0_0_0_4px_rgba(99,91,255,0.15)]' : 
-                          'bg-white border-neutral-200 text-neutral-400'}`}
+                          s.current ? 'bg-primary-600 border-primary-600 text-white shadow-[0_0_0_4px_rgba(99,91,255,0.15)] dark:shadow-[0_0_0_4px_rgba(99,91,255,0.3)]' : 
+                          'bg-white dark:bg-navy-900 border-neutral-200 dark:border-white/20 text-neutral-400 dark:text-neutral-500'}`}
                       >
                         {s.done ? <CheckCircle2 size={12} strokeWidth={3} /> : i + 1}
                       </div>
                       <span className={`text-[10px] font-semibold text-center leading-tight max-w-[60px] 
-                        ${s.current ? 'text-primary-700' : s.done ? 'text-navy-900' : 'text-neutral-400'}`}>
+                        ${s.current ? 'text-primary-700 dark:text-primary-400' : s.done ? 'text-navy-900 dark:text-white' : 'text-neutral-400 dark:text-neutral-500'}`}>
                         {s.step}
                       </span>
                     </div>
@@ -169,19 +169,19 @@ const HeroEmbedded = ({ onAuthClick }) => {
                 </div>
                 
                 {/* Footer Data */}
-                <div className="grid grid-cols-2 gap-4 bg-neutral-50 rounded-xl p-4 border border-neutral-100">
+                <div className="grid grid-cols-2 gap-4 bg-neutral-50 dark:bg-navy-800 rounded-xl p-4 border border-neutral-100 dark:border-white/10">
                   <div>
-                    <div className="text-xs text-neutral-500 mb-1">Secured Value</div>
-                    <div className="text-sm font-bold text-navy-900">₹25,000.00</div>
-                    <div className="text-[10px] text-neutral-500 mt-0.5">Secured on May 12, 2026</div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Secured Value</div>
+                    <div className="text-sm font-bold text-navy-900 dark:text-white">₹25,000.00</div>
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">Secured on May 12, 2026</div>
                   </div>
-                  <div className="flex items-center gap-3 border-l border-neutral-200 pl-4">
-                    <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center">
+                  <div className="flex items-center gap-3 border-l border-neutral-200 dark:border-white/10 pl-4">
+                    <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 flex items-center justify-center">
                       <Lock size={14} />
                     </div>
                     <div>
-                      <div className="text-xs text-neutral-500 mb-1">Locked Balance</div>
-                      <div className="text-sm font-bold text-navy-900">₹25,000.00</div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Locked Balance</div>
+                      <div className="text-sm font-bold text-navy-900 dark:text-white">₹25,000.00</div>
                     </div>
                   </div>
                 </div>
@@ -190,7 +190,7 @@ const HeroEmbedded = ({ onAuthClick }) => {
             </div>
             
             {/* Decorative background element behind UI */}
-            <div className="absolute -inset-4 bg-gradient-to-br from-neutral-100 to-white opacity-50 blur-2xl -z-10 rounded-full mix-blend-multiply"></div>
+            <div className="absolute -inset-4 bg-gradient-to-br from-neutral-100 dark:from-navy-900 to-white dark:to-navy-950 opacity-50 dark:opacity-20 blur-2xl -z-10 rounded-full mix-blend-multiply dark:mix-blend-screen"></div>
           </motion.div>
         </div>
       </div>

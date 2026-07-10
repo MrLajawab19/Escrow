@@ -53,7 +53,7 @@ const LandingPage = ({ onAuthClear }) => {
   };
 
   return (
-    <div className="min-h-screen bg-white relative font-inter text-neutral-900 selection:bg-primary-100 selection:text-primary-900">
+    <div className="min-h-screen bg-white dark:bg-navy-950 relative font-inter text-neutral-900 dark:text-white selection:bg-primary-100 selection:text-primary-900 dark:selection:bg-primary-900 dark:selection:text-primary-100 transition-colors duration-300">
       
       {/* 1. Navigation */}
       <LandingNavbar onAuthClick={handleAuthClick} />

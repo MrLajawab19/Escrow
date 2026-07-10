@@ -21,7 +21,7 @@ const FooterSection = ({ setShowTermsModal }) => {
   ];
 
   return (
-    <footer className="relative py-16 px-4 sm:px-6 lg:px-8 bg-navy-900 border-t border-navy-800">
+    <footer className="relative py-16 px-4 sm:px-6 lg:px-8 bg-navy-900 dark:bg-navy-950 border-t border-navy-800 dark:border-white/10">
       <div className="max-w-7xl mx-auto">
         {/* Footer Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
@@ -31,12 +31,11 @@ const FooterSection = ({ setShowTermsModal }) => {
               <ul className="space-y-3">
                 {section.links.map((link, linkIdx) => (
                   <li key={linkIdx}>
-                    <a
-                      href="#"
-                      className="text-neutral-400 hover:text-white transition-colors text-sm"
+                    <span
+                      className="text-neutral-500 cursor-default text-sm"
                     >
                       {link}
-                    </a>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -99,34 +98,31 @@ const FooterSection = ({ setShowTermsModal }) => {
             <div className="flex flex-wrap gap-6 justify-center text-sm">
               <a
                 href="#home"
-                className="text-neutral-500 hover:text-white transition-colors"
+                className="text-neutral-500 hover:text-white transition-colors cursor-pointer"
               >
                 Home
               </a>
-              <a
-                href="#"
-                className="text-neutral-500 hover:text-white transition-colors"
+              <span
+                className="text-neutral-600 cursor-default"
               >
                 About
-              </a>
-              <a
-                href="#"
-                className="text-neutral-500 hover:text-white transition-colors"
+              </span>
+              <span
+                className="text-neutral-600 cursor-default"
               >
                 Privacy Policy
-              </a>
+              </span>
               <button
                 onClick={() => setShowTermsModal(true)}
                 className="text-neutral-500 hover:text-white transition-colors"
               >
                 Terms
               </button>
-              <a
-                href="#"
-                className="text-neutral-500 hover:text-white transition-colors"
+              <span
+                className="text-neutral-600 cursor-default"
               >
                 Contact
-              </a>
+              </span>
             </div>
           </div>
         </div>

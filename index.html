@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ScrowX - Secure Escrow Platform</title>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+      // Prevent theme flash for ScrowX landing page
+      (function() {
+        try {
+          if (window.location.pathname === '/') {
+            const theme = localStorage.getItem('theme');
+            // Explicitly only apply if set to 'dark', otherwise default to light
+            if (theme === 'dark') {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <style>
       /* Hide Scrollbar but maintain scroll functionality */
       ::-webkit-scrollbar {

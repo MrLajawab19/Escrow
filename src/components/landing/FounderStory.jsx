@@ -25,7 +25,7 @@ const InstagramIcon = ({ size }) => (
 
 const FounderStory = () => {
   return (
-    <section className="py-24 bg-white border-t border-neutral-100 overflow-hidden">
+    <section className="py-8 lg:py-12 bg-white dark:bg-navy-950 border-t border-neutral-100 dark:border-white/10 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
           
@@ -33,10 +33,10 @@ const FounderStory = () => {
           <div className="relative mb-12 lg:mb-0 flex justify-center lg:justify-end pr-0 lg:pr-8">
             <div className="relative w-64 md:w-80">
               {/* Background decorative blob */}
-              <div className="absolute inset-0 bg-primary-50 rounded-full blur-3xl opacity-60 translate-x-6 translate-y-6 z-0"></div>
+              <div className="absolute inset-0 bg-primary-50 dark:bg-primary-900/10 rounded-full blur-3xl opacity-60 translate-x-6 translate-y-6 z-0"></div>
               
               {/* Founder Image Container */}
-              <div className="relative z-10 aspect-square md:aspect-[4/5] rounded-3xl overflow-hidden border-[6px] border-white shadow-xl bg-neutral-100">
+              <div className="relative z-10 aspect-square md:aspect-[4/5] rounded-3xl overflow-hidden border-[6px] border-white dark:border-navy-900 shadow-xl bg-neutral-100 dark:bg-navy-800">
                 <img 
                   src="/Profile.png" 
                   alt="Ayush Bardhani" 
@@ -45,14 +45,13 @@ const FounderStory = () => {
               </div>
               
               {/* Floating Badge */}
-              <div className="absolute -bottom-5 -right-5 md:-bottom-8 md:-left-8 lg:-left-12 bg-white rounded-2xl p-4 shadow-lg border border-neutral-100 z-20 animate-[slideUp_1s_ease-out] w-max">
+              <div className="absolute -bottom-5 -right-5 md:-bottom-8 md:-left-8 lg:-left-12 bg-white dark:bg-navy-800 rounded-2xl p-4 shadow-lg border border-neutral-100 dark:border-white/10 z-20 animate-[slideUp_1s_ease-out] w-max">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-lg">
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold text-lg">
                     "
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-navy-900">Building trust.</div>
-                    <div className="text-xs text-neutral-500">Not just software.</div>
+                    <div className="text-sm font-bold text-navy-900 dark:text-white">I built what I wish had existed.</div>
                   </div>
                 </div>
               </div>
@@ -61,27 +60,27 @@ const FounderStory = () => {
 
           {/* Right Column: Story Content */}
           <div>
-            <p className="text-sm font-bold text-primary-600 uppercase tracking-wider mb-4">The Founder's Story</p>
-            <h2 className="text-4xl md:text-5xl font-black text-navy-900 font-inter mb-6 leading-[1.1]">
+            <p className="text-sm font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-4">The Founder's Story</p>
+            <h2 className="text-4xl md:text-5xl font-black text-navy-900 dark:text-white font-inter mb-6 leading-[1.1]">
               Why I built ScrowX.
             </h2>
             
-            <div className="space-y-6 text-neutral-600 text-lg leading-relaxed mb-10">
+            <div className="space-y-6 text-neutral-600 dark:text-neutral-400 text-lg leading-relaxed mb-10">
               <p>
-                As a freelancer and agency owner, I experienced firsthand the anxiety of starting a new project. Will the client pay on time? Will the freelancer deliver quality work? 
+                "In my second year of college, I was managing Instagram campaigns as a side income. For one project, I paid a manager ₹8,000 in advance. Soon after, he stopped responding.
               </p>
               <p>
-                I lost time chasing invoices and dealing with scope creep, while my clients were equally worried about paying upfront for work they hadn't seen yet.
+                I spent months trying to recover the money through calls, messages, and eventually legal action. The problem wasn't just one bad deal. Informal online transactions gave neither side a clear way to protect themselves when something went wrong.
               </p>
               <p>
-                I built ScrowX to eliminate this friction entirely. By combining legally binding ScopeBoxes with secure, automated trust infrastructure, we ensure that both parties are protected from day one. When trust is automated, you can finally focus purely on doing great work.
+                I built ScrowX so people don't have to choose between trusting a stranger and walking away from a deal."
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-8 border-t border-neutral-100 gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-8 border-t border-neutral-100 dark:border-white/10 gap-6">
               <div>
-                <h4 className="font-bold text-navy-900 text-lg">Ayush Bardhani</h4>
-                <p className="text-sm text-neutral-500">Founder & CEO, ScrowX</p>
+                <h4 className="font-bold text-navy-900 dark:text-white text-lg">Ayush Bardhani</h4>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">Founder & CEO, ScrowX</p>
               </div>
               
               <div className="flex items-center gap-4">
@@ -89,7 +88,7 @@ const FounderStory = () => {
                   href="https://www.linkedin.com/in/ayushbardhani-java-developer/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-neutral-100 hover:bg-[#0077b5] hover:text-white flex items-center justify-center text-neutral-600 transition-colors shadow-sm"
+                  className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-navy-800 hover:bg-[#0077b5] dark:hover:bg-[#0077b5] hover:text-white dark:hover:text-white flex items-center justify-center text-neutral-600 dark:text-neutral-400 transition-colors shadow-sm"
                   aria-label="LinkedIn"
                 >
                   <LinkedinIcon size={18} />
@@ -98,7 +97,7 @@ const FounderStory = () => {
                   href="https://github.com/MrLajawab19" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-neutral-100 hover:bg-[#333] hover:text-white flex items-center justify-center text-neutral-600 transition-colors shadow-sm"
+                  className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-navy-800 hover:bg-[#333] dark:hover:bg-white hover:text-white dark:hover:text-[#333] flex items-center justify-center text-neutral-600 dark:text-neutral-400 transition-colors shadow-sm"
                   aria-label="GitHub"
                 >
                   <GithubIcon size={18} />

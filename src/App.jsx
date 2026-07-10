@@ -18,6 +18,7 @@ import DeedMilestonePage from './pages/DeedMilestonePage';
 import DeedSigningPage from './pages/DeedSigningPage';
 import AuditLedgerPage from './pages/AuditLedgerPage';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -555,8 +556,9 @@ function App() {
     <CurrencyProvider>
       <Toaster position="top-right" />
       <Router>
-        <div className="App">
-        {/* Navigation */}
+        <ThemeProvider>
+          <div className="App">
+          {/* Navigation */}
         <AppNav
           isBuyerAuthenticated={isBuyerAuthenticated}
           isSellerAuthenticated={isSellerAuthenticated}
@@ -601,6 +603,7 @@ function App() {
           </Routes>
         </RouteChangeHandler>
       </div>
+        </ThemeProvider>
       </Router>
     </CurrencyProvider>
   );

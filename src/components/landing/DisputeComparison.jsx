@@ -4,7 +4,7 @@ import { Scale, Clock, AlertCircle, FileImage, ArrowRight, ShieldCheck, CheckCir
 
 const DisputeComparison = () => {
   return (
-    <section id="disputes" className="py-24 bg-navy-900 text-white overflow-hidden relative">
+    <section id="disputes" className="py-8 lg:py-12 bg-navy-900 text-white overflow-hidden relative">
       {/* Subtle grid background for the dark section */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-50 z-0"></div>
 
@@ -15,13 +15,13 @@ const DisputeComparison = () => {
           {/* Left Column: Typography */}
           <div className="lg:col-span-4 mb-16 lg:mb-0">
             <p className="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Scale size={16} /> AI-Powered Dispute Resolution
+              <Scale size={16} /> AI-Assisted Dispute Resolution
             </p>
             <h2 className="text-4xl md:text-5xl font-black text-white font-inter mb-6 leading-[1.1]">
-              Disputes resolved with fairness and speed.
+              Resolve disputes with evidence, not arguments.
             </h2>
             <p className="text-lg text-neutral-400 mb-8 leading-relaxed">
-              Our AI Arbitration Engine reviews evidence against the locked ScopeBox and transaction data to deliver a fair decision in minutes. Human escalation is always available if required.
+              Our AI Arbitration Engine reviews the locked ScopeBox, submitted evidence, and transaction history to recommend an outcome based on what was actually agreed. Complex cases can be escalated for human review.
             </p>
             
             <div className="space-y-6 mb-8">
@@ -31,7 +31,7 @@ const DisputeComparison = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-white mb-1">Evidence Analysis</h4>
-                  <p className="text-sm text-neutral-400">AI evaluates all submitted evidence objectively.</p>
+                  <p className="text-sm text-neutral-400">Reviews submitted evidence against the locked agreement.</p>
                 </div>
               </div>
               
@@ -40,8 +40,8 @@ const DisputeComparison = () => {
                   <Clock size={20} className="text-cyan-400" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white mb-1">Instant Resolution</h4>
-                  <p className="text-sm text-neutral-400">Most disputes resolved within minutes, not weeks.</p>
+                  <h4 className="font-bold text-white mb-1">Faster Resolution</h4>
+                  <p className="text-sm text-neutral-400">Clear cases can be resolved without weeks of back-and-forth.</p>
                 </div>
               </div>
               
@@ -51,13 +51,13 @@ const DisputeComparison = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-white mb-1">Human Escalation</h4>
-                  <p className="text-sm text-neutral-400">Expert human review available if required.</p>
+                  <p className="text-sm text-neutral-400">Complex or contested cases can be escalated for human review.</p>
                 </div>
               </div>
             </div>
             
             <button className="px-6 py-3 border border-neutral-700 hover:border-neutral-500 hover:bg-navy-800 rounded-xl font-semibold transition-all inline-flex items-center gap-2 text-sm">
-              Learn more about disputes <ArrowRight size={16} />
+              See how disputes are resolved <ArrowRight size={16} />
             </button>
           </div>
 
