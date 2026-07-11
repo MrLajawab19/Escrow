@@ -40,13 +40,20 @@ async function runTests() {
   console.log("Setting up test data...");
   let buyer = await prisma.buyer.findFirst();
   let seller = await prisma.seller.findFirst();
+  let buyerWallet = buyer ? await prisma.wallet.findUnique({ where: { userId: buyer.id } }) : null;
+  let sellerWallet = seller ? await prisma.wallet.findUnique({ where: { userId: seller.id } }) : null;
   
-  if (!buyer || !seller) {
+  if (!buyer || !seller || !buyerWallet || !sellerWallet) {
      console.log("Seeding test users...");
-     buyer = await prisma.buyer.create({ data: { firstName: 'B1', lastName: 'L1', email: 'buyer1@test.com', password: 'hash' } });
-     seller = await prisma.seller.create({ data: { firstName: 'S1', lastName: 'L2', email: 'seller1@test.com', password: 'hash', phone: '123' } });
-     await prisma.wallet.create({ data: { userId: buyer.id, userRole: 'buyer', balance: 0, lockedBalance: 0, currency: 'INR' } });
-     await prisma.wallet.create({ data: { userId: seller.id, userRole: 'seller', balance: 0, lockedBalance: 0, currency: 'INR' } });
+     // clear existing if partial
+     await prisma.buyer.deleteMany();
+     await prisma.seller.deleteMany();
+     await prisma.wallet.deleteMany();
+     
+     buyer = await prisma.buyer.create({ data: { firstName: 'B1', lastName: 'L1', email: `b_${Date.now()}@test.com`, password: 'hash' } });
+     seller = await prisma.seller.create({ data: { firstName: 'S1', lastName: 'L2', email: `s_${Date.now()}@test.com`, password: 'hash', phone: '123' } });
+     buyerWallet = await prisma.wallet.create({ data: { userId: buyer.id, userRole: 'buyer', balance: 0, lockedBalance: 0, currency: 'INR' } });
+     sellerWallet = await prisma.wallet.create({ data: { userId: seller.id, userRole: 'seller', balance: 0, lockedBalance: 0, currency: 'INR' } });
   }
 
   // Create a fresh deed for testing
@@ -191,9 +198,117 @@ async function runTests() {
   console.log(`Event Status after retry: ${recoveredEvent.status} (Expected: COMPLETED)`);
   
   if (res4.status === 200 && recoveredEvent.status === 'COMPLETED') {
-     console.log("TEST 4 PASSED! Webhook properly recovered a stale crashed event instead of ignoring it.");
+     const wallet4 = await prisma.wallet.findUnique({ where: { userId: buyer.id } });
+     if (wallet4.balance > finalWallet.balance) {
+        console.log(`Final Wallet Balance: ${wallet4.balance} (Expected: Increased by 500000)`);
+        console.log("TEST 4 PASSED! Webhook properly recovered a stale crashed event and credited wallet.");
+     } else {
+        console.error("TEST 4 FAILED! Event recovered but wallet not credited.");
+     }
   } else {
-     console.error("TEST 4 FAILED!");
+     console.error("TEST 4 FAILED! Event ignored.");
+  }
+
+  // --- Test 5: Payout Processed (completeWithdrawal) ---
+  console.log("\n--- TEST 5: Payout Processed (completeWithdrawal) ---");
+  console.log("Creating a pending withdrawal transaction...");
+  // Create an initial withdrawal manually to simulate walletService.requestWithdrawal
+  await prisma.wallet.update({ where: { userId: seller.id }, data: { balance: { increment: 1000000 } } }); // give seller some money
+  
+  // Note: we'll simulate what requestWithdrawal does.
+  // We deduct 500000
+  await prisma.wallet.update({ where: { userId: seller.id }, data: { balance: { decrement: 500000 } } });
+  
+  const withdrawalTx = await prisma.walletTransaction.create({
+    data: {
+      walletId: sellerWallet.id,
+      type: 'DEBIT',
+      category: 'WITHDRAWAL',
+      amount: 500000,
+      currency: 'INR',
+      netAmount: 490000,
+      fee: 10000,
+      status: 'PENDING',
+      description: 'Test withdrawal',
+      metadata: { withdrawalStatus: 'REQUESTED' }
+    }
+  });
+
+  const payload5 = {
+    event: 'payout.processed',
+    payload: {
+      payout: {
+        entity: {
+          id: `pout_${Date.now()}`,
+          reference_id: withdrawalTx.id
+        }
+      }
+    }
+  };
+  const sig5 = generateSignature(JSON.stringify(payload5));
+  
+  console.log("Firing payout.processed webhook...");
+  const res5 = await sendWebhookRequest(payload5, sig5, `evt_pout_proc_${Date.now()}`);
+  console.log(`Request Status: ${res5.status} | Body: ${res5.data}`);
+  
+  const processedTx = await prisma.walletTransaction.findUnique({ where: { id: withdrawalTx.id } });
+  console.log(`Transaction Status: ${processedTx.status} (Expected: SUCCESS)`);
+  
+  if (res5.status === 200 && processedTx.status === 'SUCCESS') {
+    console.log("TEST 5 PASSED! Payout successfully completed.");
+  } else {
+    console.error("TEST 5 FAILED!");
+  }
+
+  // --- Test 6: Payout Failed (failTransaction) ---
+  console.log("\n--- TEST 6: Payout Failed (failTransaction) ---");
+  console.log("Creating another pending withdrawal transaction...");
+  // Deduct another 500000
+  const walletBeforeFail = await prisma.wallet.update({ where: { userId: seller.id }, data: { balance: { decrement: 500000 } } });
+  
+  const withdrawalFailTx = await prisma.walletTransaction.create({
+    data: {
+      walletId: sellerWallet.id, 
+      type: 'DEBIT',
+      category: 'WITHDRAWAL',
+      amount: 500000,
+      currency: 'INR',
+      netAmount: 490000,
+      fee: 10000,
+      status: 'PENDING',
+      description: 'Test failed withdrawal',
+      metadata: { withdrawalStatus: 'REQUESTED' }
+    }
+  });
+
+  const payload6 = {
+    event: 'payout.failed',
+    payload: {
+      payout: {
+        entity: {
+          id: `pout_fail_${Date.now()}`,
+          reference_id: withdrawalFailTx.id
+        }
+      }
+    }
+  };
+  const sig6 = generateSignature(JSON.stringify(payload6));
+  
+  console.log("Firing payout.failed webhook...");
+  const res6 = await sendWebhookRequest(payload6, sig6, `evt_pout_fail_${Date.now()}`);
+  console.log(`Request Status: ${res6.status} | Body: ${res6.data}`);
+  
+  const failedTx = await prisma.walletTransaction.findUnique({ where: { id: withdrawalFailTx.id } });
+  console.log(`Transaction Status: ${failedTx.status} (Expected: FAILED)`);
+  
+  const walletAfterFail = await prisma.wallet.findUnique({ where: { userId: seller.id } });
+  console.log(`Wallet Balance Before Fail: ${walletBeforeFail.balance}`);
+  console.log(`Wallet Balance After Fail: ${walletAfterFail.balance} (Expected: Increased by 500000)`);
+
+  if (res6.status === 200 && failedTx.status === 'FAILED' && walletAfterFail.balance === walletBeforeFail.balance + 500000) {
+    console.log("TEST 6 PASSED! Payout failure properly refunded the locked balance.");
+  } else {
+    console.error("TEST 6 FAILED!");
   }
 
   process.exit(0);

@@ -36,17 +36,26 @@ const handleRazorpayWebhook = async (req, res) => {
               // Likely a concurrent race, tell Razorpay to back off and retry later
               return res.status(429).send('Processing in progress, try again later');
            }
-           // Else, it's a stale crashed event. Let it re-process.
-           await prisma.webhookEvent.update({
-             where: { id: eventId },
-             data: { updatedAt: new Date() }
+           // Older than 5 minutes: It's a stale crashed event. Let it safely re-process.
+           const updateResult = await prisma.webhookEvent.updateMany({
+             where: { id: eventId, updatedAt: eventRecord.updatedAt },
+             data: { updatedAt: new Date() } // Refresh the lock
            });
+           
+           if (updateResult.count === 0) {
+              // Another concurrent request just claimed it
+              return res.status(429).send('Concurrent request processing');
+           }
         } else if (eventRecord.status === 'FAILED') {
-           // Allow retry
-           await prisma.webhookEvent.update({
-             where: { id: eventId },
+           // A previously failed event being cleanly retried by Razorpay
+           const updateResult2 = await prisma.webhookEvent.updateMany({
+             where: { id: eventId, status: 'FAILED' },
              data: { status: 'PROCESSING', updatedAt: new Date() }
            });
+           
+           if (updateResult2.count === 0) {
+              return res.status(429).send('Concurrent request processing');
+           }
         }
       } else {
         try {

@@ -160,19 +160,43 @@ class WalletService {
    */
   async failTransaction(transactionId, reason = null) {
     try {
-      const transaction = await prisma.walletTransaction.update({
-        where: { id: transactionId },
-        data: {
-          status: 'FAILED',
-          metadata: {
-            ...transaction.metadata,
-            failureReason: reason,
-            failedAt: new Date(),
-          },
-        },
-      });
+      return await prisma.$transaction(async (tx) => {
+        const transaction = await tx.walletTransaction.findUnique({
+          where: { id: transactionId },
+          include: { wallet: true }
+        });
 
-      return transaction;
+        if (!transaction) {
+          throw new Error('Transaction not found');
+        }
+
+        if (transaction.status === 'FAILED') {
+          return transaction; // Already failed (Idempotency)
+        }
+
+        // 1. Mark as failed
+        const updatedTransaction = await tx.walletTransaction.update({
+          where: { id: transactionId },
+          data: {
+            status: 'FAILED',
+            metadata: {
+              ...(transaction.metadata || {}),
+              failureReason: reason,
+              failedAt: new Date(),
+            },
+          },
+        });
+
+        // 2. Refund the balance atomically if it was a withdrawal
+        if (transaction.type === 'DEBIT' && transaction.category === 'WITHDRAWAL') {
+          await tx.wallet.update({
+            where: { id: transaction.walletId },
+            data: { balance: { increment: transaction.amount } }
+          });
+        }
+
+        return updatedTransaction;
+      });
     } catch (error) {
       throw new Error(`Failed to fail transaction: ${error.message}`);
     }
@@ -382,8 +406,8 @@ class WalletService {
             reference: null,
             fee,
             netAmount,
-            status: 'SUCCESS',
-            metadata: { bankDetails, withdrawalStatus: 'PROCESSED', requestedAt: new Date(), processedAt: new Date(), payoutMethod: 'simulated_or_razorpay' }
+            status: 'PENDING', // MUST BE PENDING initially!
+            metadata: { bankDetails, withdrawalStatus: 'REQUESTED', requestedAt: new Date(), payoutMethod: 'simulated_or_razorpay' }
           }
         });
 
@@ -399,8 +423,28 @@ class WalletService {
    */
   async completeWithdrawal(transactionId) {
     try {
-      const transaction = await this.processTransaction(transactionId);
-      return transaction;
+      return await prisma.$transaction(async (tx) => {
+        const transaction = await tx.walletTransaction.findUnique({
+          where: { id: transactionId },
+        });
+
+        if (!transaction) throw new Error('Transaction not found');
+        if (transaction.status === 'SUCCESS') return transaction; // Idempotency
+
+        const updatedTx = await tx.walletTransaction.update({
+          where: { id: transactionId },
+          data: { 
+            status: 'SUCCESS',
+            metadata: {
+               ...(transaction.metadata || {}),
+               withdrawalStatus: 'PROCESSED',
+               processedAt: new Date()
+            }
+          },
+        });
+
+        return updatedTx;
+      });
     } catch (error) {
       throw new Error(`Failed to complete withdrawal: ${error.message}`);
     }
