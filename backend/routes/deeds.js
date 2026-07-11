@@ -25,7 +25,7 @@ router.post('/:id/sign-seller', authenticateToken, deedController.signDeedSeller
 // Money Moving Actions
 router.post('/:id/release', authenticateToken, walletLimiter, deedController.releasePayment);
 router.post('/:id/cancel', authenticateToken, walletLimiter, deedController.cancelDeed);
-router.post('/:id/reject', authenticateToken, deedController.rejectDeed);
+router.post('/:id/reject', authenticateToken, walletLimiter, deedController.rejectDeed);
 router.post('/:id/refund', authenticateAdmin, walletLimiter, deedController.adminRefund);
 
 // Milestones

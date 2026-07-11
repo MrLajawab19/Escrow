@@ -238,12 +238,6 @@ exports.completeWithdrawal = async (req, res) => {
   }
 };
 
-
-
-    });
-  }
-};
-
 // Fail transaction (Admin only)
 exports.failTransaction = async (req, res) => {
   try {
