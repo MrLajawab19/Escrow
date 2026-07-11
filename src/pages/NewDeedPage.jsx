@@ -189,8 +189,8 @@ export default function NewDeedPage() {
       const token = localStorage.getItem('buyerToken') || localStorage.getItem('token');
       
       // 1. Call Wallet Top-Up with targetDeedId
-      const fundResponse = await axios.post(`/api/wallet/topup`, {
-        amount: deedData.amount / 100, // Pass amount in INR, backend expects INR and converts to paise
+      const fundResponse = await axios.post(`/api/wallet/top-up`, {
+        amount: deedData.amount, // Send in paise, backend expects paise
         targetDeedId: deedData.id
       }, {
         headers: { Authorization: `Bearer ${token}` }

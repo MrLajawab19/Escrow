@@ -129,7 +129,7 @@ exports.getTransactionHistory = async (req, res) => {
 exports.topUpWallet = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { amount, targetDeedId } = req.body; // amount is expected in INR rupees (e.g. 500 for ₹500)
+    const { amount, targetDeedId } = req.body; // amount is expected in paise
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -139,8 +139,8 @@ exports.topUpWallet = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid amount' });
     }
 
-    // Convert amount to paise (e.g., 500 INR -> 50000 Paise)
-    const amountPaise = Math.round(amount * 100);
+    // amount is expected in paise (e.g. 50000 for ₹500)
+    const amountPaise = amount;
 
     // Call PaymentService to create Razorpay Order
     const transaction = await paymentService.createTopUpOrder(userId, amountPaise, targetDeedId);
