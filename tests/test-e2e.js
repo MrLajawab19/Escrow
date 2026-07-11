@@ -6,6 +6,42 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const deedService = require('../backend/services/deedService');
 
+const crypto = require('crypto');
+const http = require('http');
+
+const PORT = 3000;
+const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'scrowx_razorpay_webhook_secret_2026';
+
+function generateSignature(payload) {
+  return crypto.createHmac('sha256', WEBHOOK_SECRET).update(payload).digest('hex');
+}
+
+function sendWebhookRequest(payloadObj, signature, eventId) {
+  return new Promise((resolve, reject) => {
+    const payloadStr = JSON.stringify(payloadObj);
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: '/api/wallet/razorpay-webhook',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-razorpay-signature': signature,
+        'x-razorpay-event-id': eventId
+      }
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({ status: res.statusCode, data }));
+    });
+    req.on('error', reject);
+    req.write(payloadStr);
+    req.end();
+  });
+}
+
 async function runE2E() {
   try {
     console.log("--- STARTING E2E TEST: ORIGINAL SIMPLE PATH ---");
@@ -37,11 +73,40 @@ async function runE2E() {
     });
     console.log(`   Deed created. Status: ${deed.status}`);
 
-    // 3. Fund Deed
-    console.log("2. Buyer funds Deed...");
-    await deedService.fundDeed(deed.id, buyer.id);
+    // 3. Fund Deed via Webhook
+    console.log("2. Buyer funds Deed via Razorpay Webhook...");
+    const eventId = `evt_e2e_${Date.now()}`;
+    const payload = {
+      entity: "event",
+      account_id: "acc_test",
+      event: "order.paid",
+      contains: ["payment"],
+      payload: {
+        payment: {
+          entity: {
+            id: `pay_e2e_${Date.now()}`,
+            amount: 10000, 
+            currency: "INR",
+            status: "authorized",
+            notes: {
+              userId: buyer.id,
+              type: "jit_topup",
+              targetDeedId: deed.id
+            }
+          }
+        }
+      }
+    };
+
+    const sig = generateSignature(JSON.stringify(payload));
+    const res = await sendWebhookRequest(payload, sig, eventId);
+    console.log(`   Webhook fired. Status: ${res.status}`);
+    
+    // Wait for webhook async processing
+    await new Promise(r => setTimeout(r, 2000));
+    
     let currentDeed = await prisma.deed.findUnique({ where: { id: deed.id } });
-    console.log(`   Deed funded. Status: ${currentDeed.status}`);
+    console.log(`   Deed funded via JIT. Status: ${currentDeed.status}`);
 
     // 4. Seller Joins
     console.log("3. Seller joins...");

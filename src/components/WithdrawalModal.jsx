@@ -128,9 +128,12 @@ const WithdrawalModal = ({ isOpen, onClose, maxAmount = 0, onSuccess }) => {
             <div className="text-5xl mb-4">✓</div>
             <h3 className="text-xl font-bold text-green-600 mb-2">Success!</h3>
             <p className="text-gray-600 mb-2">Your withdrawal request has been submitted.</p>
-            <p className="text-sm text-gray-500">
-              You'll receive {currencySymbol}{netAmount} to your account in 2-5 business days.
-            </p>
+            <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg text-left">
+              <p className="text-sm font-semibold text-orange-800">⚠️ Payouts are not live</p>
+              <p className="text-xs text-orange-700 mt-1">
+                The database reflects your withdrawal, but real payouts require RazorpayX business onboarding. No real money will be sent to your bank account at this time.
+              </p>
+            </div>
           </div>
         ) : (
           <form onSubmit={step === 1 ? handleAmountSubmit : step === 2 ? handleBankDetailsSubmit : handleSubmit} className="space-y-6">

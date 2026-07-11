@@ -54,10 +54,25 @@ class PaymentService {
     };
 
     try {
+      /*
+      =============================================================================
+      🚨🚨 LOUD WARNING: PAYOUTS ARE NOT LIVE - SIMULATED SUCCESS ONLY 🚨🚨
+      =============================================================================
+      Real payouts require RazorpayX business onboarding, KYC, and an active funding account. 
+      Because we do not have these credentials yet, this function is a STUB.
+      
+      Sellers are NOT actually paid when this fires. The database state will show 
+      SUCCESS and the money will be deducted from their virtual wallet balance, but 
+      zero real rupees will reach their actual bank account.
+      
+      DO NOT SHIP THIS TO REAL USERS UNTIL THIS STUB IS REPLACED WITH A LIVE
+      RAZORPAYX API CALL.
+      =============================================================================
+      */
+
       // In a real environment with RazorpayX enabled, we call:
       // const payout = await this.razorpay.payouts.create(payoutOptions);
-      // For now, since Razorpay standard test mode doesn't support live payouts API directly without RazorpayX,
-      // we log it and simulate success for the webhook.
+      
       console.log('Initiating Razorpay Payout (Simulated for non-RazorpayX test mode):', payoutOptions);
       
       return { 
