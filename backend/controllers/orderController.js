@@ -333,20 +333,6 @@ async function releaseFunds(req, res) {
   }
 }
 
-// ── PATCH /api/orders/:id/refund ──────────────────────────────────────────────
-
-async function refundBuyer(req, res) {
-  try {
-    const { id } = req.params;
-    const userData = req.user;
-    if (userData.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin access required' });
-    const order = await orderService.refundBuyer(id, userData.id);
-    return res.json({ success: true, data: order, message: 'Buyer refunded' });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-}
-
 // ── GET /api/orders/:id ───────────────────────────────────────────────────────
 
 async function getOrder(req, res) {
@@ -378,20 +364,6 @@ async function getSellerOrders(req, res) {
     const sellerData = req.user;
     const orders = await orderService.getSellerOrders(sellerData.id);
     return res.json({ success: true, data: orders });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-}
-
-// ── PATCH /api/orders/:id/cancel ──────────────────────────────────────────────
-
-async function cancelOrder(req, res) {
-  try {
-    const { id } = req.params;
-    const buyerData = req.user;
-    if (buyerData.role !== 'buyer') return res.status(403).json({ success: false, message: 'Only buyers can cancel orders' });
-    const order = await orderService.cancelOrder(id, buyerData.id);
-    return res.json({ success: true, data: order, message: 'Order cancelled' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -433,20 +405,6 @@ async function startWorkFromAccepted(req, res) {
     if (sellerData.role !== 'seller') return res.status(403).json({ success: false, message: 'Only sellers can start work' });
     const order = await orderService.startWorkFromAccepted(id, sellerData.id);
     return res.json({ success: true, data: order, message: 'Work started' });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-}
-
-// ── PATCH /api/orders/:id/reject ──────────────────────────────────────────────
-
-async function rejectOrder(req, res) {
-  try {
-    const { id } = req.params;
-    const sellerData = req.user;
-    if (sellerData.role !== 'seller') return res.status(403).json({ success: false, message: 'Only sellers can reject orders' });
-    const order = await orderService.rejectOrder(id, sellerData.id);
-    return res.json({ success: true, data: order, message: 'Order rejected' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -562,15 +520,12 @@ module.exports = {
   approveDelivery,
   raiseDispute,
   releaseFunds,
-  refundBuyer,
   getOrder,
   getBuyerOrders,
   getSellerOrders,
   getOrdersByUser,
-  cancelOrder,
   acceptOrder,
   startWorkFromAccepted,
-  rejectOrder,
   requestChanges,
   acceptChanges,
   rejectChanges,

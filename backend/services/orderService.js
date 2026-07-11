@@ -251,12 +251,6 @@ async function releaseFunds(orderId, buyerId) {
   return updated;
 }
 
-// ── Refund buyer (admin only) ──────────────────────────────────────────────────
-
-async function refundBuyer(orderId, adminId) {
-  return updateOrderStatus(orderId, 'REFUNDED', adminId, { event: 'BUYER_REFUNDED' });
-}
-
 // ── Accept order (seller only) ─────────────────────────────────────────────────
 
 async function acceptOrder(orderId, sellerId) {
@@ -300,46 +294,6 @@ async function startWorkFromAccepted(orderId, sellerId) {
     event: 'WORK_STARTED',
     reason: 'Work started by seller',
   });
-}
-
-// ── Reject order (seller only) ─────────────────────────────────────────────────
-
-async function rejectOrder(orderId, sellerId) {
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!order) throw new Error('Order not found');
-  if (order.sellerId !== sellerId) throw new Error('Unauthorized: Only the assigned seller can reject this order');
-  if (order.status !== 'ESCROW_FUNDED') throw new Error('Order must be in ESCROW_FUNDED status to be rejected');
-
-  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
-  const logEntry = {
-    event: 'ORDER_REJECTED',
-    byUserId: sellerId,
-    timestamp: new Date().toISOString(),
-    previousStatus: order.status,
-    newStatus: 'REJECTED',
-    reason: 'Rejected by seller',
-  };
-
-  const updated = await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      status: 'REJECTED',
-      orderLogs: [...currentLogs, logEntry],
-    },
-  });
-  
-  // Refund the buyer's virtual wallet
-  try {
-    const amount = order.scopeBox?.price || 0;
-    if (amount > 0) {
-      await walletService.refundBuyer(order.buyerId, orderId, amount, order.currency, 'Order rejected by seller');
-    }
-  } catch (err) {
-    console.error(`Failed to refund buyer for rejected order ${orderId}:`, err);
-  }
-
-  await appendLedger(updated, logEntry, sellerId);
-  return updated;
 }
 
 // ── Request changes (seller only) ─────────────────────────────────────────────
@@ -439,50 +393,6 @@ async function rejectChanges(orderId, buyerId) {
   });
 }
 
-// ── Cancel order (buyer only) ──────────────────────────────────────────────────
-
-async function cancelOrder(orderId, buyerId) {
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!order) throw new Error('Order not found');
-  if (order.buyerId !== buyerId) throw new Error('Unauthorized: Only the buyer can cancel this order');
-  if (!['PLACED', 'ESCROW_FUNDED'].includes(order.status)) {
-    throw new Error('Order cannot be cancelled at this stage');
-  }
-
-  const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];
-  const logEntry = {
-    event: 'ORDER_CANCELLED',
-    byUserId: buyerId,
-    timestamp: new Date().toISOString(),
-    previousStatus: order.status,
-    newStatus: 'CANCELLED',
-    reason: 'Cancelled by buyer',
-  };
-
-  const updated = await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      status: 'CANCELLED',
-      orderLogs: [...currentLogs, logEntry],
-    },
-  });
-  
-  // Refund the buyer's virtual wallet if it was escrow funded
-  if (order.status === 'ESCROW_FUNDED') {
-    try {
-      const amount = order.scopeBox?.price || 0;
-      if (amount > 0) {
-        await walletService.refundBuyer(order.buyerId, orderId, amount, order.currency, 'Order cancelled by buyer');
-      }
-    } catch (err) {
-      console.error(`Failed to refund buyer for cancelled order ${orderId}:`, err);
-    }
-  }
-
-  await appendLedger(updated, logEntry, buyerId);
-  return updated;
-}
-
 // ── Query helpers ──────────────────────────────────────────────────────────────
 
 
@@ -553,16 +463,13 @@ module.exports = {
   approveDelivery,
   raiseDispute,
   releaseFunds,
-  refundBuyer,
   getOrderById,
   getBuyerOrders,
   getSellerOrders,
-  cancelOrder,
   getOrdersByUser,
   updateOrderStatus,
   isValidStatusTransition,
   acceptOrder,
-  rejectOrder,
   requestChanges,
   acceptChanges,
   rejectChanges,
