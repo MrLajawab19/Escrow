@@ -519,5 +519,16 @@ router.get('/deeds/:id', adminAuth, async (req, res) => {
   }
 });
 
+// Reconcile a user's locked balance
+router.get('/reconcile-wallet/:userId', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const reconciliation = await walletService.verifyLockedBalance(userId);
+    res.json(reconciliation);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
 

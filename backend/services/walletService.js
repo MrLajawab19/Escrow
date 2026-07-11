@@ -626,6 +626,41 @@ class WalletService {
       monthlyNet: monthlyIncome - monthlyExpense,
     };
   }
+
+  /**
+   * Read-only reconciliation of locked balance against active Deeds.
+   */
+  async verifyLockedBalance(userId) {
+    const wallet = await prisma.wallet.findUnique({ where: { userId } });
+    if (!wallet) throw new Error('Wallet not found');
+
+    const activeDeedStatuses = [
+      'PENDING_SELLER', 'PENDING_SIGNATURES', 'ACTIVE', 'ESCROW_LOCKED', 
+      'IN_PROGRESS', 'SUBMITTED', 'CONFIRMED', 'DISPUTED', 'ARBITRATING', 
+      'ARBITRATED', 'ESCALATED', 'CHANGES_REQUESTED'
+    ];
+
+    const aggregate = await prisma.deed.aggregate({
+      _sum: { amount: true },
+      where: {
+        buyerId: userId,
+        status: { in: activeDeedStatuses }
+      }
+    });
+
+    const derivedLockedBalance = aggregate._sum.amount || 0;
+    const storedLockedBalance = wallet.lockedBalance;
+    const mismatch = storedLockedBalance !== derivedLockedBalance;
+
+    return {
+      userId,
+      storedLockedBalance,
+      derivedLockedBalance,
+      difference: storedLockedBalance - derivedLockedBalance,
+      isMatch: !mismatch
+    };
+  }
+
 }
 
 module.exports = new WalletService();
