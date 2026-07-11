@@ -50,7 +50,7 @@ const WithdrawalModal = ({ isOpen, onClose, maxAmount = 0, onSuccess }) => {
     try {
       setLoading(true);
       const response = await axios.post('/api/wallet/withdraw', {
-        amount: parseFloat(amount),
+        amount: Math.round(parseFloat(amount) * 100),
         bankDetails,
       });
 

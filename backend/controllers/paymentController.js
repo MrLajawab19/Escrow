@@ -50,7 +50,7 @@ const handleRazorpayWebhook = async (req, res) => {
               event: 'ESCROW_FUNDED_VIA_RAZORPAY',
               timestamp: new Date().toISOString(),
               razorpayPaymentId: paymentEntity.id,
-              amount: paymentEntity.amount / 100 // convert back to INR from paise
+              amount: paymentEntity.amount // convert back to INR from paise
             };
             
             const currentLogs = Array.isArray(order.orderLogs) ? order.orderLogs : [];

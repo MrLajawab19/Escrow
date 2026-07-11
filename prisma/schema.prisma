@@ -90,6 +90,7 @@ enum DeedStatus {
   ESCALATED
   CLOSED
   CANCELLED
+  CHANGES_REQUESTED
 }
 
 enum DisputeStatus {
@@ -139,13 +140,14 @@ model Deed {
   inviteToken         String?         @unique
   inviteExpiresAt     DateTime?
 
-  amount              Float
+  amount             Int
   currency            String          @default("INR")
   paymentMethod       String?
   paymentReference    String?
 
   deadline            DateTime?
-  revisionLimit       Int             @default(0)
+  revisionLimit       Int             @default(3)
+  revisionCount       Int             @default(0)
   deliverableFormats  String[]        @default([])
   isMilestone         Boolean         @default(false)
   scopeBox            Json?
@@ -182,7 +184,7 @@ model Milestone {
   title              String
   description        String?
   acceptanceCriteria String?
-  amount             Float
+  amount             Int
   deadline           DateTime?
   autoPay            Boolean   @default(false)
   status             String    @default("PENDING")
@@ -237,7 +239,7 @@ model Dispute {
 
   dayNumber           Int
   feePercentage       Float
-  feeAmount           Float
+  feeAmount           Int
   feeDeducted         Boolean         @default(false)
 
   aiVerdict           String?
@@ -271,7 +273,7 @@ model HumanEscalation {
   dispute         Dispute          @relation(fields: [disputeId], references: [id])
   requestedById   String
   requestedByRole String
-  escalationFee   Float
+  escalationFee   Int
   feeDeducted     Boolean          @default(false)
   aiVerdictJson   String
   status          EscalationStatus @default(PENDING)
@@ -327,8 +329,8 @@ model Wallet {
   userId        String              @unique
   userRole      String
   currency      String              @default("INR")
-  balance       Float               @default(0)
-  lockedBalance Float               @default(0)
+  balance            Int               @default(0)
+  lockedBalance      Int               @default(0)
   isActive      Boolean             @default(true)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
@@ -341,7 +343,7 @@ model WalletTransaction {
   wallet            Wallet   @relation(fields: [walletId], references: [id])
   type              String
   category          String
-  amount            Float
+  amount             Int
   currency          String   @default("INR")
   status            String   @default("PENDING")
   description       String
@@ -349,8 +351,8 @@ model WalletTransaction {
   razorpayOrderId   String?
   razorpayPaymentId String?
   razorpayPayoutId  String?
-  fee               Float    @default(0)
-  netAmount         Float    @default(0)
+  fee                 Int    @default(0)
+  netAmount           Int    @default(0)
   metadata          Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

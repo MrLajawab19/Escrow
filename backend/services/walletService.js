@@ -1,3 +1,4 @@
+const { validateAmount } = require('../utils/validationUtils');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 /**
@@ -98,10 +99,10 @@ class WalletService {
 
       // Apply fees for certain transaction types
       if (category === 'WITHDRAWAL') {
-        fee = amount * 0.02; // 2% withdrawal fee
+        fee = Math.floor(amount * 0.02); // 2% withdrawal fee
         netAmount = amount - fee;
       } else if (category === 'TOP_UP') {
-        fee = amount * 0.01; // 1% payment processing fee
+        fee = Math.floor(amount * 0.01); // 1% payment processing fee
         netAmount = amount - fee;
       }
 
@@ -306,28 +307,38 @@ class WalletService {
    */
   async topUpWallet(userId, amount, paymentMethod = 'card', reference = null) {
     try {
-      const wallet = await prisma.wallet.findUnique({
-        where: { userId },
+      validateAmount(amount);
+      return await prisma.$transaction(async (tx) => {
+        const wallet = await tx.wallet.findUnique({ where: { userId } });
+        if (!wallet) throw new Error('Wallet not found');
+
+        const updateResult = await tx.wallet.updateMany({
+          where: { id: wallet.id, balance: wallet.balance },
+          data: { balance: { increment: amount } }
+        });
+        
+        if (updateResult.count === 0) throw new Error('Concurrency conflict during top-up');
+
+        const fee = Math.floor(amount * 0.01);
+        const netAmount = amount - fee;
+
+        const transaction = await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'CREDIT',
+            category: 'TOP_UP',
+            amount,
+            currency: wallet.currency,
+            description: `Top-up via ${paymentMethod}`,
+            reference,
+            fee,
+            netAmount,
+            status: 'SUCCESS',
+            metadata: { paymentMethod, topUpDate: new Date() }
+          }
+        });
+        return transaction;
       });
-
-      if (!wallet) {
-        throw new Error('Wallet not found');
-      }
-
-      const transaction = await this.createTransaction(
-        wallet.id,
-        'CREDIT',
-        'TOP_UP',
-        amount,
-        `Top-up via ${paymentMethod}`,
-        reference,
-        { paymentMethod, topUpDate: new Date() }
-      );
-
-      // Process the transaction immediately
-      await this.processTransaction(transaction.id);
-
-      return transaction;
     } catch (error) {
       throw new Error(`Failed to top up wallet: ${error.message}`);
     }
@@ -338,62 +349,46 @@ class WalletService {
    */
   async requestWithdrawal(userId, amount, bankDetails) {
     try {
-      const wallet = await prisma.wallet.findUnique({
-        where: { userId },
-      });
+      validateAmount(amount);
+      return await prisma.$transaction(async (tx) => {
+        const wallet = await tx.wallet.findUnique({ where: { userId } });
+        if (!wallet) throw new Error('Wallet not found');
+        
+        if (wallet.balance < amount) throw new Error('Insufficient balance for withdrawal');
 
-      if (!wallet) {
-        throw new Error('Wallet not found');
-      }
+        const updateResult = await tx.wallet.updateMany({
+          where: { 
+            id: wallet.id,
+            balance: { gte: amount }
+          },
+          data: { balance: { decrement: amount } }
+        });
 
-      // Check if sufficient balance
-      const balance = await this.getCalculatedBalance(wallet.id);
-      if (balance < amount) {
-        throw new Error('Insufficient balance for withdrawal');
-      }
-
-      let transaction = await this.createTransaction(
-        wallet.id,
-        'DEBIT',
-        'WITHDRAWAL',
-        amount,
-        'Withdrawal requested',
-        null,
-        { bankDetails, withdrawalStatus: 'PENDING', requestedAt: new Date() }
-      );
-
-      // Attempt Real RazorpayX Payout
-      try {
-        const Razorpay = require('razorpay');
-        if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-          const razorpay = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET,
-          });
-          // Note: Real payouts require creating a Contact and FundAccount first. 
-          // Since RazorpayX API requires extensive setup, we simulate the 'SUCCESS' 
-          // status here but log that it would be executed.
-          console.log(`[RazorpayX] Initiating payout of ${amount} to ${bankDetails.upiId || bankDetails.accountNumber}`);
+        if (updateResult.count === 0) {
+          throw new Error('Concurrency conflict or insufficient balance during withdrawal');
         }
-      } catch (rzpError) {
-        console.warn('RazorpayX Payout skipped/failed, falling back to simulated success', rzpError.message);
-      }
 
-      // Automatically mark as SUCCESS to simulate fast payouts for MVP
-      transaction = await prisma.walletTransaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: 'SUCCESS',
-          metadata: {
-            ...transaction.metadata,
-            withdrawalStatus: 'PROCESSED',
-            processedAt: new Date(),
-            payoutMethod: 'simulated_or_razorpay'
+        const fee = Math.floor(amount * 0.02);
+        const netAmount = amount - fee;
+
+        let transaction = await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'DEBIT',
+            category: 'WITHDRAWAL',
+            amount,
+            currency: wallet.currency,
+            description: 'Withdrawal requested',
+            reference: null,
+            fee,
+            netAmount,
+            status: 'SUCCESS',
+            metadata: { bankDetails, withdrawalStatus: 'PROCESSED', requestedAt: new Date(), processedAt: new Date(), payoutMethod: 'simulated_or_razorpay' }
           }
-        }
-      });
+        });
 
-      return transaction;
+        return transaction;
+      });
     } catch (error) {
       throw new Error(`Failed to request withdrawal: ${error.message}`);
     }
@@ -524,9 +519,9 @@ class WalletService {
         activeBuyerOrders.forEach(order => {
           const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
           if (order.status === 'DISPUTED') {
-            pendingRefundBalance += parseFloat(scopeBox.price || 0);
+            pendingRefundBalance += parseInt(scopeBox.price || 0, 10);
           } else {
-            lockedEscrowBalance += parseFloat(scopeBox.price || 0);
+            lockedEscrowBalance += parseInt(scopeBox.price || 0, 10);
           }
         });
       } else if (wallet.userRole === 'seller') {
@@ -536,9 +531,9 @@ class WalletService {
         activeSellerOrders.forEach(order => {
           const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
           if (order.status === 'DISPUTED') {
-            underDisputeAmount += parseFloat(scopeBox.price || 0);
+            underDisputeAmount += parseInt(scopeBox.price || 0, 10);
           } else {
-            pendingEarnings += parseFloat(scopeBox.price || 0);
+            pendingEarnings += parseInt(scopeBox.price || 0, 10);
           }
         });
 

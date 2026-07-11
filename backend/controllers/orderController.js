@@ -131,6 +131,10 @@ async function fundEscrow(req, res) {
     const { amount } = req.body;
     if (!amount) return res.status(400).json({ success: false, message: 'Amount is required' });
 
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(400).json({ success: false, message: 'Payments not yet configured.' });
+    }
+
     // Initialize Razorpay
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
@@ -139,7 +143,7 @@ async function fundEscrow(req, res) {
 
     // Create a Razorpay Order
     const options = {
-      amount: amount * 100, // amount in the smallest currency unit (paise)
+      amount: amount, // already in paise
       currency: "INR",
       receipt: `order_${id.substring(0, 8)}`,
       notes: {

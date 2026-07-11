@@ -33,11 +33,6 @@ router.post('/withdraw', authenticateToken, walletController.requestWithdrawal);
 // Complete withdrawal (Admin only)
 router.patch('/withdraw/:transactionId/complete', authenticateToken, walletController.completeWithdrawal);
 
-// Lock escrow funds (Internal - called by order operations)
-router.post('/escrow/lock', walletController.lockEscrowFunds);
-
-// Release escrow funds (Internal - called by order operations)
-router.post('/escrow/release', walletController.releaseEscrowFunds);
 
 // Refund buyer (Internal - called by order operations)
 router.post('/refund', walletController.refundBuyer);

@@ -292,8 +292,8 @@ export default function AdminDisputeDetails() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                 {[
-                  { label: 'Escrow Amount', value: `$${financial?.escrowAmount?.toFixed(2) || '0.00'}`, icon: '💰' },
-                  { label: 'Platform Fee (5%)', value: `$${financial?.platformFee?.toFixed(2) || '0.00'}`, icon: '🏛️' },
+                  { label: 'Escrow Amount', value: `$${(financial?.escrowAmount / 100)?.toFixed(2) || '0.00'}`, icon: '💰' },
+                  { label: 'Platform Fee (5%)', value: `$${(financial?.platformFee / 100)?.toFixed(2) || '0.00'}`, icon: '🏛️' },
                   { label: 'Raised By', value: dispute?.raisedBy?.charAt(0).toUpperCase() + dispute?.raisedBy?.slice(1), icon: '👤' },
                   { label: 'Filed', value: fmt(dispute?.createdAt), icon: '📅' },
                 ].map((item, i) => (
@@ -527,9 +527,9 @@ export default function AdminDisputeDetails() {
 
               <div className="space-y-2 mb-4">
                 {[
-                  { label: 'Escrow Held', value: `$${financial?.escrowAmount?.toFixed(2) || '0'}`, color: 'text-[#0A2540]', bold: true },
-                  { label: 'Platform Fee (5%)', value: `-$${financial?.platformFee?.toFixed(2) || '0'}`, color: 'text-neutral-500' },
-                  { label: 'Net to Seller', value: `$${financial?.netToSeller?.toFixed(2) || '0'}`, color: 'text-emerald-600' },
+                  { label: 'Escrow Held', value: `$${(financial?.escrowAmount / 100)?.toFixed(2) || '0'}`, color: 'text-[#0A2540]', bold: true },
+                  { label: 'Platform Fee (5%)', value: `-$${(financial?.platformFee / 100)?.toFixed(2) || '0'}`, color: 'text-neutral-500' },
+                  { label: 'Net to Seller', value: `$${(financial?.netToSeller / 100)?.toFixed(2) || '0'}`, color: 'text-emerald-600' },
                 ].map((row, i) => (
                   <div key={i} className={`flex justify-between items-center py-2 ${i === 0 ? 'border-b border-neutral-100' : ''}`}>
                     <p className="text-xs text-neutral-500 font-inter">{row.label}</p>
@@ -546,7 +546,7 @@ export default function AdminDisputeDetails() {
                   <span className="text-base">💸</span>
                   <div className="flex-1 text-xs font-inter">
                     <p className="font-bold text-red-700 mb-1">Full Refund to Buyer</p>
-                    <p className="text-neutral-500">Buyer gets: <strong className="text-red-600">${financial?.refundScenario?.buyerReceives?.toFixed(2) || '0'}</strong></p>
+                    <p className="text-neutral-500">Buyer gets: <strong className="text-red-600">${(financial?.refundScenario?.buyerReceives / 100)?.toFixed(2) || '0'}</strong></p>
                     <p className="text-neutral-500">Seller gets: <strong>$0</strong></p>
                     <p className="text-neutral-500">Platform: <strong>$0</strong></p>
                   </div>
@@ -558,8 +558,8 @@ export default function AdminDisputeDetails() {
                   <div className="flex-1 text-xs font-inter">
                     <p className="font-bold text-emerald-700 mb-1">Release to Seller</p>
                     <p className="text-neutral-500">Buyer gets: <strong>$0</strong></p>
-                    <p className="text-neutral-500">Seller gets: <strong className="text-emerald-600">${financial?.releaseScenario?.sellerReceives?.toFixed(2) || '0'}</strong></p>
-                    <p className="text-neutral-500">Platform: <strong>${financial?.releaseScenario?.platformReceives?.toFixed(2) || '0'}</strong></p>
+                    <p className="text-neutral-500">Seller gets: <strong className="text-emerald-600">${(financial?.releaseScenario?.sellerReceives / 100)?.toFixed(2) || '0'}</strong></p>
+                    <p className="text-neutral-500">Platform: <strong>${(financial?.releaseScenario?.platformReceives / 100)?.toFixed(2) || '0'}</strong></p>
                   </div>
                 </div>
 
@@ -569,7 +569,7 @@ export default function AdminDisputeDetails() {
                     <span className="text-base">⚖️</span>
                     <div className="flex-1 text-xs font-inter">
                       <p className="font-bold text-amber-700 mb-1">{s.label}</p>
-                      <p className="text-neutral-500">Buyer: <strong className="text-amber-600">${s.buyerReceives?.toFixed(2)}</strong> · Seller: <strong>${s.sellerReceives?.toFixed(2)}</strong></p>
+                      <p className="text-neutral-500">Buyer: <strong className="text-amber-600">${(s.buyerReceives / 100)?.toFixed(2)}</strong> · Seller: <strong>${(s.sellerReceives / 100)?.toFixed(2)}</strong></p>
                     </div>
                   </div>
                 ))}

@@ -1,3 +1,4 @@
+const { validateAmount } = require("../utils/validationUtils");
 const { PrismaClient } = require("@prisma/client");
 const crypto = require("crypto");
 const { v4: uuidv4 } = require("uuid");
@@ -19,6 +20,7 @@ function computeDayNumber(createdAt) {
 function hashDeedContent(deed) {
   const content = JSON.stringify({
     title: deed.title,
+            deedId: deed.id,
     description: deed.description,
     acceptanceCriteria: deed.acceptanceCriteria,
     amount: deed.amount,
@@ -32,6 +34,7 @@ class DeedService {
   // ── CREATE ────────────────────────────────────────────────────────────────
 
   async createDeed(buyerId, data) {
+    data.amount = validateAmount(data.amount);
     const inviteToken = uuidv4();
     const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -42,7 +45,7 @@ class DeedService {
         description: data.description,
         acceptanceCriteria: data.acceptanceCriteria,
         buyerId,
-        amount: parseFloat(data.amount),
+        amount: parseInt(data.amount),
         currency: data.currency || "INR",
         paymentMethod: data.paymentMethod || null,
         paymentReference: data.paymentReference || null,
@@ -71,7 +74,7 @@ class DeedService {
           title: m.title,
           description: m.description || null,
           acceptanceCriteria: m.acceptanceCriteria || null,
-          amount: parseFloat(m.amount),
+          amount: parseInt(m.amount),
           deadline: m.deadline ? new Date(m.deadline) : null,
           autoPay: m.autoPay || false,
         })),
@@ -99,46 +102,24 @@ class DeedService {
     const wallet = await prisma.wallet.findUnique({ where: { userId: buyerId } });
     if (!wallet) throw new Error("WALLET_NOT_FOUND");
 
-    const transactions = [];
-
-    // For MVP/testing: Auto-top up if balance is insufficient
-    let currentBalance = wallet.balance;
-    if (wallet.balance < deed.amount) {
-      const topUpAmount = deed.amount - wallet.balance;
-      
-      // Add DEPOSIT transaction to the batch
-      transactions.push(
-        prisma.walletTransaction.create({
-          data: {
-            walletId: wallet.id,
-            type: "CREDIT",
-            category: "DEPOSIT",
-            amount: topUpAmount,
-            currency: deed.currency,
-            status: "SUCCESS",
-            description: `Auto-top up for deed: ${deed.title}`,
-            reference: deedId,
-            netAmount: topUpAmount,
-          },
-        })
-      );
-      currentBalance += topUpAmount;
-    }
-
-    // Deduct from balance, add to lockedBalance
-    transactions.push(
-      prisma.wallet.update({
-        where: { userId: buyerId },
-        data: {
-          balance: currentBalance - deed.amount,
-          lockedBalance: { increment: deed.amount },
+    await prisma.$transaction(async (tx) => {
+      // Subphase A: Atomic decrement with guard condition
+      const updateResult = await tx.wallet.updateMany({
+        where: {
+          id: wallet.id,
+          balance: { gte: deed.amount }
         },
-      })
-    );
+        data: {
+          balance: { decrement: deed.amount },
+          lockedBalance: { increment: deed.amount }
+        }
+      });
 
-    // ESCROW_LOCK transaction
-    transactions.push(
-      prisma.walletTransaction.create({
+      if (updateResult.count === 0) {
+        throw new Error("INSUFFICIENT_BALANCE");
+      }
+
+      await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
           type: "DEBIT",
@@ -150,18 +131,13 @@ class DeedService {
           reference: deedId,
           netAmount: deed.amount,
         },
-      })
-    );
+      });
 
-    // Update deed status
-    transactions.push(
-      prisma.deed.update({
+      await tx.deed.update({
         where: { id: deedId },
         data: { status: "PENDING_SELLER" },
-      })
-    );
-
-    await prisma.$transaction(transactions);
+      });
+    });
 
     await ledgerService.appendEvent(deedId, "FUNDS_LOCKED", "buyer", buyerId, {
       amount: deed.amount,
@@ -248,6 +224,7 @@ class DeedService {
   async signDeed(deedId, userId, role) {
     const deed = await prisma.deed.findUnique({ where: { id: deedId } });
     if (!deed) throw new Error("DEED_NOT_FOUND");
+    if (deed.amount !== undefined) validateAmount(deed.amount);
     if (!["PENDING_SIGNATURES"].includes(deed.status)) throw new Error("DEED_NOT_SIGNABLE");
 
     const now = new Date();
@@ -293,7 +270,7 @@ class DeedService {
   async submitDelivery(deedId, sellerId, deliveryData) {
     const deed = await prisma.deed.findUnique({ where: { id: deedId } });
     if (!deed || deed.sellerId !== sellerId) throw new Error("DEED_NOT_FOUND");
-    if (!["ESCROW_LOCKED", "IN_PROGRESS"].includes(deed.status)) {
+    if (!["ESCROW_LOCKED", "IN_PROGRESS", "ACTIVE"].includes(deed.status)) {
       throw new Error("DEED_NOT_IN_PROGRESS");
     }
 
@@ -341,45 +318,51 @@ class DeedService {
   async releasePayment(deedId, triggeredBy = "system") {
     const deed = await prisma.deed.findUnique({ where: { id: deedId } });
     if (!deed) throw new Error("DEED_NOT_FOUND");
+    if (deed.amount !== undefined) validateAmount(deed.amount);
     if (!["CONFIRMED", "ARBITRATED"].includes(deed.status)) throw new Error("DEED_NOT_RELEASABLE");
 
-    const buyerWallet = await prisma.wallet.findUnique({ where: { userId: deed.buyerId } });
-    if (!buyerWallet) throw new Error("BUYER_WALLET_NOT_FOUND");
-
-    await prisma.wallet.update({
-      where: { userId: deed.buyerId },
-      data: { lockedBalance: { decrement: deed.amount } },
-    });
-
-    let sellerWallet = await prisma.wallet.findUnique({ where: { userId: deed.sellerId } });
-    if (!sellerWallet) {
-      sellerWallet = await prisma.wallet.create({
-        data: { userId: deed.sellerId, userRole: "seller", currency: deed.currency },
+    await prisma.$transaction(async (tx) => {
+      // Subphase A: Atomic decrement of locked balance with guard condition
+      const updateResult = await tx.wallet.updateMany({
+        where: { userId: deed.buyerId, lockedBalance: { gte: deed.amount } },
+        data: { lockedBalance: { decrement: deed.amount } },
       });
-    }
 
-    await prisma.wallet.update({
-      where: { userId: deed.sellerId },
-      data: { balance: { increment: deed.amount } },
-    });
+      if (updateResult.count === 0) {
+        throw new Error("INSUFFICIENT_LOCKED_BALANCE");
+      }
 
-    await prisma.walletTransaction.create({
-      data: {
-        walletId: sellerWallet.id,
-        type: "CREDIT",
-        category: "ESCROW_RELEASE",
-        amount: deed.amount,
-        currency: deed.currency,
-        status: "SUCCESS",
-        description: `Payment released for deed: ${deed.title}`,
-        reference: deedId,
-        netAmount: deed.amount,
-      },
-    });
+      let sellerWallet = await tx.wallet.findUnique({ where: { userId: deed.sellerId } });
+      if (!sellerWallet) {
+        sellerWallet = await tx.wallet.create({
+          data: { userId: deed.sellerId, userRole: "seller", currency: deed.currency },
+        });
+      }
 
-    const updated = await prisma.deed.update({
-      where: { id: deedId },
-      data: { status: "CLOSED" },
+      // Atomic increment of seller balance
+      await tx.wallet.update({
+        where: { userId: deed.sellerId },
+        data: { balance: { increment: deed.amount } },
+      });
+
+      await tx.walletTransaction.create({
+        data: {
+          walletId: sellerWallet.id,
+          type: "CREDIT",
+          category: "ESCROW_RELEASE",
+          amount: deed.amount,
+          currency: deed.currency,
+          status: "SUCCESS",
+          description: `Payment released for deed: ${deed.title}`,
+          reference: deedId,
+          netAmount: deed.amount,
+        },
+      });
+
+      await tx.deed.update({
+        where: { id: deedId },
+        data: { status: "CLOSED" },
+      });
     });
 
     await ledgerService.appendEvent(deedId, "PAYMENT_RELEASED", "system", triggeredBy, {
@@ -388,7 +371,7 @@ class DeedService {
       triggeredBy,
     });
 
-    return updated;
+    return await prisma.deed.findUnique({ where: { id: deedId } });
   }
 
   // ── REFUND TO BUYER ───────────────────────────────────────────────────────
@@ -396,35 +379,43 @@ class DeedService {
   async refundBuyer(deedId, triggeredBy = "system") {
     const deed = await prisma.deed.findUnique({ where: { id: deedId } });
     if (!deed) throw new Error("DEED_NOT_FOUND");
+    if (deed.amount !== undefined) validateAmount(deed.amount);
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId: deed.buyerId } });
-    if (!wallet) throw new Error("BUYER_WALLET_NOT_FOUND");
+    await prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.findUnique({ where: { userId: deed.buyerId } });
+      if (!wallet) throw new Error("BUYER_WALLET_NOT_FOUND");
 
-    await prisma.wallet.update({
-      where: { userId: deed.buyerId },
-      data: {
-        balance: { increment: deed.amount },
-        lockedBalance: { decrement: deed.amount },
-      },
-    });
+      // Subphase A: Atomic lockedBalance decrement with guard condition
+      const updateResult = await tx.wallet.updateMany({
+        where: { id: wallet.id, lockedBalance: { gte: deed.amount } },
+        data: {
+          balance: { increment: deed.amount },
+          lockedBalance: { decrement: deed.amount },
+        },
+      });
 
-    await prisma.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        type: "CREDIT",
-        category: "REFUND",
-        amount: deed.amount,
-        currency: deed.currency,
-        status: "SUCCESS",
-        description: `Refund for deed: ${deed.title}`,
-        reference: deedId,
-        netAmount: deed.amount,
-      },
-    });
+      if (updateResult.count === 0) {
+        throw new Error("INSUFFICIENT_LOCKED_BALANCE");
+      }
 
-    const updated = await prisma.deed.update({
-      where: { id: deedId },
-      data: { status: "CLOSED" },
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: "CREDIT",
+          category: "REFUND",
+          amount: deed.amount,
+          currency: deed.currency,
+          status: "SUCCESS",
+          description: `Refund for deed: ${deed.title}`,
+          reference: deedId,
+          netAmount: deed.amount,
+        },
+      });
+
+      await tx.deed.update({
+        where: { id: deedId },
+        data: { status: "CLOSED" },
+      });
     });
 
     await ledgerService.appendEvent(deedId, "PAYMENT_REFUNDED", "system", triggeredBy, {
@@ -433,7 +424,7 @@ class DeedService {
       triggeredBy,
     });
 
-    return updated;
+    return await prisma.deed.findUnique({ where: { id: deedId } });
   }
 
   // ── RAISE DISPUTE ─────────────────────────────────────────────────────────
@@ -441,7 +432,8 @@ class DeedService {
   async raiseDispute(deedId, userId, role, data) {
     const deed = await prisma.deed.findUnique({ where: { id: deedId } });
     if (!deed) throw new Error("DEED_NOT_FOUND");
-    if (!["SUBMITTED", "CONFIRMED", "ESCROW_LOCKED", "IN_PROGRESS"].includes(deed.status)) {
+    if (deed.amount !== undefined) validateAmount(deed.amount);
+    if (!["SUBMITTED", "CONFIRMED", "ESCROW_LOCKED", "IN_PROGRESS", "ACTIVE", "CHANGES_REQUESTED"].includes(deed.status)) {
       throw new Error("DEED_NOT_DISPUTABLE");
     }
 
@@ -451,7 +443,7 @@ class DeedService {
 
     const dayNumber = computeDayNumber(deed.createdAt);
     const feePercentage = getDisputeFeePercentage(dayNumber);
-    const feeAmount = (feePercentage / 100) * deed.amount;
+    const feeAmount = Math.floor((feePercentage / 100) * deed.amount);
     const counterWindowEnds = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
     const dispute = await prisma.dispute.create({
@@ -488,6 +480,66 @@ class DeedService {
   }
 
   // ── QUERY ─────────────────────────────────────────────────────────────────
+
+  
+  // ── REVISIONS ─────────────────────────────────────────────────────────────
+
+  async requestChanges(deedId, buyerId, changesData) {
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed || deed.buyerId !== buyerId) throw new Error("DEED_NOT_FOUND");
+    if (deed.status !== "SUBMITTED") throw new Error("DEED_NOT_SUBMITTED");
+
+    // Enforce revision limit if set
+    if (deed.revisionLimit > 0 && deed.revisionCount >= deed.revisionLimit) {
+      throw new Error("REVISION_LIMIT_REACHED");
+    }
+
+    const updated = await prisma.deed.update({
+      where: { id: deedId },
+      data: { 
+        status: "CHANGES_REQUESTED",
+        revisionCount: { increment: 1 }
+      },
+    });
+
+    await ledgerService.appendEvent(deedId, "CHANGES_REQUESTED", "buyer", buyerId, {
+      reason: changesData.reason || "",
+      description: changesData.description || "",
+      revisionNumber: deed.revisionCount + 1
+    });
+
+    return updated;
+  }
+
+  async acceptChanges(deedId, sellerId) {
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed || deed.sellerId !== sellerId) throw new Error("DEED_NOT_FOUND");
+    if (deed.status !== "CHANGES_REQUESTED") throw new Error("NO_CHANGES_REQUESTED");
+
+    const updated = await prisma.deed.update({
+      where: { id: deedId },
+      data: { status: "ACTIVE" },
+    });
+
+    await ledgerService.appendEvent(deedId, "CHANGES_ACCEPTED", "seller", sellerId, {});
+    return updated;
+  }
+
+  async rejectChanges(deedId, sellerId) {
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed || deed.sellerId !== sellerId) throw new Error("DEED_NOT_FOUND");
+    if (deed.status !== "CHANGES_REQUESTED") throw new Error("NO_CHANGES_REQUESTED");
+
+    // Automatically raise a dispute since seller rejected buyer's requested changes
+    const data = {
+      reason: "OTHER",
+      description: "Seller rejected the requested revisions.",
+      evidenceUrls: []
+    };
+    
+    // Call the existing raiseDispute engine
+    return await this.raiseDispute(deedId, sellerId, "seller", data);
+  }
 
   async getDeed(deedId, userId) {
     return prisma.deed.findUnique({

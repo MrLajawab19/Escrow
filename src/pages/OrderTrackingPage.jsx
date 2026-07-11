@@ -101,7 +101,7 @@ const OrderTrackingPage = () => {
 
   const formatPrice = (price, currency) => {
     if (!price) return 'Not set';
-    return `${currency} ${parseFloat(price).toFixed(2)}`;
+    return `${currency} ${(parseFloat(price) / 100).toFixed(2)}`;
   };
 
   if (loading) {

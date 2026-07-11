@@ -26,13 +26,13 @@ function adminAuth(req, res, next) {
 function computeFlag(dispute, order) {
   if (!order) return { flag: 'MANUAL', riskScore: 30, riskReason: 'Standard dispute' };
   const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
-  const price = parseFloat(scopeBox.price || 0);
+  const price = parseInt(scopeBox.price || 0, 10);
   const isAfterDelivery = order.status === 'SUBMITTED' || order.status === 'APPROVED';
-  const isHighValue = price > 300;
+  const isHighValue = price > 30000;
 
   if (isAfterDelivery && isHighValue) return { flag: 'AUTO_FLAGGED', riskScore: 90, riskReason: 'High-value dispute after delivery' };
   if (isAfterDelivery) return { flag: 'AUTO_FLAGGED', riskScore: 65, riskReason: 'Dispute raised after delivery submitted' };
-  if (isHighValue) return { flag: 'AUTO_FLAGGED', riskScore: 55, riskReason: `High-value order (₹${price})` };
+  if (isHighValue) return { flag: 'AUTO_FLAGGED', riskScore: 55, riskReason: `High-value order (₹${price / 100})` };
   return { flag: 'MANUAL', riskScore: 25, riskReason: 'Standard dispute' };
 }
 

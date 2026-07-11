@@ -238,59 +238,7 @@ exports.completeWithdrawal = async (req, res) => {
   }
 };
 
-// Lock escrow funds (Called from order controller)
-exports.lockEscrowFunds = async (req, res) => {
-  try {
-    const { buyerId, orderId, amount, currency } = req.body;
 
-    if (!buyerId || !orderId || !amount) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: buyerId, orderId, amount',
-      });
-    }
-
-    const transaction = await walletService.lockEscrowFunds(buyerId, orderId, amount, currency);
-
-    res.json({
-      success: true,
-      message: 'Escrow funds locked',
-      data: transaction,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// Release escrow funds (Called from order controller)
-exports.releaseEscrowFunds = async (req, res) => {
-  try {
-    const { sellerId, orderId, amount, currency } = req.body;
-
-    if (!sellerId || !orderId || !amount) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: sellerId, orderId, amount',
-      });
-    }
-
-    const transaction = await walletService.releaseEscrowFunds(sellerId, orderId, amount, currency);
-
-    res.json({
-      success: true,
-      message: 'Escrow funds released',
-      data: transaction,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 
 // Refund buyer (Called from order controller)
 exports.refundBuyer = async (req, res) => {

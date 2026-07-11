@@ -258,8 +258,9 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
               try {
                 showNotification('Processing fund release...', 'info');
                 const token = localStorage.getItem('buyerToken');
-                const response = await fetch(`/api/orders/${order.id}/release`, {
-                  method: 'PATCH',
+                const targetId = order.scopeBox?.deedId || order.id;
+                const response = await fetch(`/api/deeds/${targetId}/release`, {
+                  method: 'POST',
                   headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -295,10 +296,16 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
         {userType === 'buyer' && (order.status === 'PLACED' || order.status === 'ESCROW_FUNDED') && (
           <button
             onClick={async () => {
+              // Redirect to dispute if ACTIVE
+              if (order.status === 'ACTIVE' || order.status === 'IN_PROGRESS') {
+                 showNotification('Order is active. Please use the Dispute flow if you need to cancel.', 'info');
+                 return;
+              }
               try {
                 const token = localStorage.getItem('buyerToken');
-                const response = await fetch(`/api/orders/${order.id}/cancel`, {
-                  method: 'PATCH',
+                const targetId = order.scopeBox?.deedId || order.id;
+                const response = await fetch(`/api/deeds/${targetId}/cancel`, {
+                  method: 'POST',
                   headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -316,7 +323,9 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
                     showNotification(result.message || 'Failed to cancel order', 'error');
                   }
                 } else {
-                  showNotification('Failed to cancel order', 'error');
+                  let errMessage = 'Failed to cancel order';
+                  try { const errorData = await response.json(); errMessage = errorData.message || errMessage; } catch(e){}
+                  showNotification(errMessage, 'error');
                 }
               } catch (error) {
                 console.error('Error cancelling order:', error);
@@ -362,8 +371,9 @@ const OrderCard = ({ order, userType, onOrderUpdate, onReviewChanges }) => {
                   showNotification('Please log in again as a seller.', 'error');
                   return;
                 }
-                const response = await fetch(`/api/orders/${order.id}/submit`, {
-                  method: 'PATCH',
+                const targetId = order.scopeBox?.deedId || order.id;
+                const response = await fetch(`/api/deeds/${targetId}/submit`, {
+                  method: 'POST',
                   headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'

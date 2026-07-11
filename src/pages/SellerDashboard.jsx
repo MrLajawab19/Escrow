@@ -149,7 +149,13 @@ const SellerDashboard = () => {
       const token = localStorage.getItem('sellerToken');
       if (!token) { setNotification({ isOpen: true, title: 'Auth Required', message: 'Please login.', type: 'error' }); return; }
       
-      const response = await axios.patch(`/api/orders/${order.id}/reject`, {}, {
+      if (order.status === 'ACTIVE' || order.status === 'IN_PROGRESS') {
+        setNotification({ isOpen: true, title: 'Not Allowed', message: 'Order is active. Please use Dispute flow to walk away.', type: 'error' });
+        return;
+      }
+
+      const targetId = order.scopeBox?.deedId || order.id;
+      const response = await axios.post(`/api/deeds/${targetId}/reject`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -172,6 +178,7 @@ const SellerDashboard = () => {
     setRequestChangesOrder(order);
     setModifiedScopeBox({
       ...order.scopeBox,
+      price: (order.scopeBox?.price || 0) / 100,
       changesRequested: true,
       requestedBy: 'seller',
       requestedAt: new Date().toISOString()
@@ -187,8 +194,12 @@ const SellerDashboard = () => {
     try {
       const token = localStorage.getItem('sellerToken');
       if (!token) { setNotification({ isOpen: true, title: 'Auth Required', message: 'Please login.', type: 'error' }); return; }
+      const payloadScopeBox = {
+        ...modifiedScopeBox,
+        price: Math.round(parseFloat(modifiedScopeBox.price || 0) * 100)
+      };
       const response = await axios.patch(`/api/orders/${requestChangesOrder.id}/request-changes`, {
-        scopeBox: modifiedScopeBox,
+        scopeBox: payloadScopeBox,
         changesRequested: true
       }, { headers: { 'Authorization': `Bearer ${token}` } });
       if (response.data.success) {
@@ -364,9 +375,13 @@ const SellerDashboard = () => {
               )}
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-100">
-              <button className="px-5 py-2.5 bg-[#16C784] hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleAcceptOrder(scopeBoxOrder)}>✓ Accept</button>
-              <button className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleRejectOrder(scopeBoxOrder)}>✕ Reject</button>
-              <button className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleRequestChanges(scopeBoxOrder)}>✎ Request Changes</button>
+              {(!scopeBoxOrder.status || scopeBoxOrder.status === 'PLACED' || scopeBoxOrder.status === 'ESCROW_FUNDED') && (
+                <>
+                  <button className="px-5 py-2.5 bg-[#16C784] hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleAcceptOrder(scopeBoxOrder)}>✓ Accept</button>
+                  <button className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleRejectOrder(scopeBoxOrder)}>✕ Reject</button>
+                  <button className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleRequestChanges(scopeBoxOrder)}>✎ Request Changes</button>
+                </>
+              )}
             </div>
           </div>
         </div>

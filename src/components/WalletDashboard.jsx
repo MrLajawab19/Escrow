@@ -371,7 +371,7 @@ const WalletDashboard = ({ userId }) => {
                     </div>
                     <div className="text-right">
                       <p className={`text-2xl font-black tracking-tight ${summary.lastTransaction.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-800'}`}>
-                        {summary.lastTransaction.type === 'CREDIT' ? '+' : '-'}{currencySymbol}{formatCurrencyRaw(summary.lastTransaction.amount || 0, summary?.currency || 'INR')}
+                        {summary.lastTransaction.type === 'CREDIT' ? '+' : '-'}{currencySymbol}{formatCurrencyRaw(summary.lastTransaction.amount || 0, summary?.currency || 'INR').toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       <span className="inline-flex mt-1 items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600">
                         {summary.lastTransaction.status}
@@ -410,7 +410,7 @@ const WalletDashboard = ({ userId }) => {
           isOpen={showWithdrawalModal}
           onClose={() => setShowWithdrawalModal(false)}
           onSuccess={handleWithdrawalSuccess}
-          maxAmount={summary?.balance || 0}
+          maxAmount={(summary?.balance || 0) / 100}
           userType={isBuyer ? 'buyer' : 'seller'}
         />
       )}

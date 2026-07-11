@@ -374,9 +374,9 @@ const getFullDisputeDetail = async (req, res) => {
     }
 
     const scopeBox = order?.scopeBox || {};
-    const price = parseFloat(scopeBox.price || 0);
-    const platformFee = parseFloat((price * 0.05).toFixed(2));
-    const netToSeller = parseFloat((price - platformFee).toFixed(2));
+    const price = parseInt(scopeBox.price || 0, 10);
+    const platformFee = Math.floor(price * 0.05);
+    const netToSeller = price - platformFee; // Exact remainder after fee
 
     const financial = {
       escrowAmount: price,
@@ -386,12 +386,16 @@ const getFullDisputeDetail = async (req, res) => {
       currency: order?.currency || 'INR',
       refundScenario: { buyerReceives: price, sellerReceives: 0, platformReceives: 0 },
       releaseScenario: { buyerReceives: 0, sellerReceives: netToSeller, platformReceives: platformFee },
-      partialScenarios: [50, 70, 30].map(pct => ({
-        label: `${pct}% refund to buyer`,
-        buyerReceives: parseFloat((price * pct / 100).toFixed(2)),
-        sellerReceives: parseFloat((price * (1 - pct / 100) - platformFee).toFixed(2)),
-        platformReceives: platformFee,
-      })),
+      partialScenarios: [50, 70, 30].map(pct => {
+        const buyerReceives = Math.floor((price * pct) / 100);
+        const sellerReceives = price - buyerReceives - platformFee; // Exact remainder avoids lost paise
+        return {
+          label: `${pct}% refund to buyer`,
+          buyerReceives,
+          sellerReceives,
+          platformReceives: platformFee,
+        };
+      }),
     };
 
     return res.json({

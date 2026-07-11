@@ -38,7 +38,6 @@ router.post('/:id/fund-escrow', authenticateToken, orderController.fundEscrow);
 
 // Seller actions
 router.patch('/:id/accept', authenticateToken, orderController.acceptOrder);
-router.patch('/:id/reject', authenticateToken, orderController.rejectOrder);
 router.patch('/:id/start', authenticateToken, orderController.startWork);
 router.patch('/:id/start-work', authenticateToken, orderController.startWorkFromAccepted);
 router.patch('/:id/submit', authenticateToken, upload.array('deliveryFiles', 10), orderController.submitDelivery);
@@ -49,8 +48,6 @@ router.post('/:id/revision', authenticateToken, orderController.requestRevision)
 router.patch('/:id/approve', authenticateToken, orderController.approveDelivery);
 router.patch('/:id/accept-changes', authenticateToken, orderController.acceptChanges);
 router.patch('/:id/reject-changes', authenticateToken, orderController.rejectChanges);
-router.patch('/:id/release', authenticateToken, orderController.releaseFunds);
-router.patch('/:id/cancel', authenticateToken, orderController.cancelOrder);
 
 // Dispute (buyer or seller)
 router.patch('/:id/dispute', authenticateToken, upload.array('evidence', 5), orderController.raiseDispute);

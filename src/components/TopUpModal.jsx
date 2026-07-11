@@ -24,7 +24,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       setLoading(true);
       const response = await axios.post('/api/wallet/top-up', {
-        amount: parseFloat(amount),
+        amount: Math.round(parseFloat(amount) * 100),
         paymentMethod,
       });
 

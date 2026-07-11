@@ -18,7 +18,8 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
         return;
       }
 
-      const response = await axios.patch(`/api/orders/${order.id}/accept-changes`, {}, {
+      const targetId = order.scopeBox?.deedId || order.id;
+      const response = await axios.post(`/api/deeds/${targetId}/accept-changes`, {}, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -55,7 +56,8 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
         return;
       }
 
-      const response = await axios.patch(`/api/orders/${order.id}/reject-changes`, {}, {
+      const targetId = order.scopeBox?.deedId || order.id;
+      const response = await axios.post(`/api/deeds/${targetId}/reject-changes`, {}, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

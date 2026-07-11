@@ -18,7 +18,8 @@ const DeliveryActions = ({ order, userType, onUpdate }) => {
   const handleRelease = async () => {
     setLoading('release');
     try {
-      const res = await axios.patch(`/api/orders/${order.id}/release`, {}, { headers });
+      const targetId = order.scopeBox?.deedId || order.id;
+      const res = await axios.post(`/api/deeds/${targetId}/release`, {}, { headers });
       if (res.data.success) {
         showNotice('Funds released! Order completed.');
         onUpdate?.({ ...order, status: 'RELEASED' });
@@ -129,6 +130,7 @@ const DeliveryActions = ({ order, userType, onUpdate }) => {
 
       <RevisionModal
         orderId={order.id}
+        deedId={order.scopeBox?.deedId || order.id}
         isOpen={showRevision}
         onClose={() => setShowRevision(false)}
         onSuccess={() => showNotice('Revision request submitted!')}

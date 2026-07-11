@@ -77,7 +77,7 @@ const WithdrawalModal = ({ isOpen, onClose, maxAmount, onSuccess, userType }) =>
       setLoading(true);
       const token = localStorage.getItem(`${userType}Token`);
       const response = await axios.post('/api/wallet/withdraw', {
-        amount: withdrawAmount,
+        amount: Math.round(withdrawAmount * 100),
         bankDetails: payloadBankDetails
       }, {
         headers: { 'Authorization': `Bearer ${token}` }

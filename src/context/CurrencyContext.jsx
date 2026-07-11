@@ -49,7 +49,7 @@ export const CurrencyProvider = ({ children }) => {
 
   const formatCurrency = (amount, sourceCurrency = 'USD') => {
     // 1. Convert source to USD
-    let amountInUSD = parseFloat(amount || 0);
+    let amountInUSD = parseFloat(amount || 0) / 100;
     if (sourceCurrency !== 'USD' && exchangeRates[sourceCurrency]) {
       amountInUSD = amountInUSD / exchangeRates[sourceCurrency];
     }
@@ -72,7 +72,7 @@ export const CurrencyProvider = ({ children }) => {
   };
 
   const formatCurrencyRaw = (amount, sourceCurrency = 'USD') => {
-    let amountInUSD = parseFloat(amount || 0);
+    let amountInUSD = parseFloat(amount || 0) / 100;
     if (sourceCurrency !== 'USD' && exchangeRates[sourceCurrency]) {
       amountInUSD = amountInUSD / exchangeRates[sourceCurrency];
     }

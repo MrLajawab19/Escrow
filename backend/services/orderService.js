@@ -485,27 +485,64 @@ async function cancelOrder(orderId, buyerId) {
 
 // ── Query helpers ──────────────────────────────────────────────────────────────
 
+
+async function attachDeedState(orders) {
+  if (!orders || orders.length === 0) return orders;
+  const isArray = Array.isArray(orders);
+  const orderList = isArray ? orders : [orders];
+  
+  const deedIds = orderList.map(o => o.scopeBox?.deedId).filter(Boolean);
+  if (deedIds.length === 0) return orders;
+
+  const deeds = await prisma.deed.findMany({ where: { id: { in: deedIds } } });
+  const deedMap = Object.fromEntries(deeds.map(d => [d.id, d]));
+
+  orderList.forEach(order => {
+    const deedId = order.scopeBox?.deedId;
+    if (deedId && deedMap[deedId]) {
+      const deedStatus = deedMap[deedId].status;
+      // Derived status mapping
+      if (deedStatus === 'PENDING_SELLER') order.status = 'ESCROW_FUNDED';
+      else if (deedStatus === 'ACTIVE') order.status = 'IN_PROGRESS'; // Maps to legacy active working state
+      else if (deedStatus === 'CONFIRMED' || deedStatus === 'CLOSED') order.status = 'COMPLETED';
+      else order.status = deedStatus; // SUBMITTED, CHANGES_REQUESTED, DISPUTED match 1:1
+      
+      // Pass along revision counts if needed
+      if (deedMap[deedId].revisionCount !== undefined) {
+         order.revisionsUsed = deedMap[deedId].revisionCount;
+         order.revisionsAllowed = deedMap[deedId].revisionLimit || 3;
+      }
+    }
+  });
+  
+  return isArray ? orderList : orderList[0];
+}
+
 async function getOrderById(orderId) {
-  return prisma.order.findUnique({ where: { id: orderId } });
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  return attachDeedState(order);
 }
 
 async function getBuyerOrders(buyerId) {
-  return prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: { buyerId },
     orderBy: { createdAt: 'desc' },
   });
+  return attachDeedState(orders);
 }
 
 async function getSellerOrders(sellerId) {
-  return prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: { sellerId },
     orderBy: { createdAt: 'desc' },
   });
+  return attachDeedState(orders);
 }
 
 async function getOrdersByUser(userId, role = 'buyer') {
   const where = role === 'buyer' ? { buyerId: userId } : { sellerId: userId };
-  return prisma.order.findMany({ where, orderBy: { createdAt: 'desc' } });
+  const orders = await prisma.order.findMany({ where, orderBy: { createdAt: 'desc' } });
+  return attachDeedState(orders);
 }
 
 module.exports = {

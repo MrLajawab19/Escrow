@@ -154,13 +154,13 @@ export default function NewDeedPage() {
         title: form.title,
         description: form.description,
         acceptanceCriteria: form.acceptanceCriteria,
-        amount: parseFloat(form.amount),
+        amount: Math.round(parseFloat(form.amount) * 100),
         currency: form.currency,
         deadline: form.deadline,
         revisionLimit: parseInt(form.revisionLimit) || 0,
         deliverableFormats: form.deliverableFormats.split(',').map(s => s.trim()).filter(Boolean),
         isMilestone: form.isMilestone,
-        milestones: form.isMilestone ? form.milestones : [],
+        milestones: form.isMilestone ? form.milestones.map(m => ({ ...m, amount: Math.round(parseFloat(m.amount) * 100) })) : [],
         scopeBox: form.scopeBox,
         transactionType: 'SERVICE'
       };
