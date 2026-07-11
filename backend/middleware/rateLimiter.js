@@ -17,13 +17,13 @@ const globalLimiter = rateLimit({
  */
 const walletLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // strictly limit to 5 financial requests per 15 mins
+  max: 20, // strictly limit to 20 financial requests per 15 mins
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    // If the user is authenticated, limit by their ID.
-    // Otherwise fallback to IP (though these routes should be protected anyway).
-    return req.user ? req.user.id : req.ip;
+    // These routes are authenticated, so req.user will always exist
+    // Returning req.user.id directly prevents IPv6 validation errors from express-rate-limit
+    return req.user.id;
   },
   message: { success: false, message: 'Too many financial transactions attempted. Please try again later.' }
 });
