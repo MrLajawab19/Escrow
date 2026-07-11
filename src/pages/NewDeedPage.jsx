@@ -188,8 +188,11 @@ export default function NewDeedPage() {
     try {
       const token = localStorage.getItem('buyerToken') || localStorage.getItem('token');
       
-      // 1. Create Razorpay order on backend
-      const fundResponse = await axios.post(`/api/deeds/${deedData.id}/fund`, {}, {
+      // 1. Call Wallet Top-Up with targetDeedId
+      const fundResponse = await axios.post(`/api/wallet/topup`, {
+        amount: deedData.amount / 100, // Pass amount in INR, backend expects INR and converts to paise
+        targetDeedId: deedData.id
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -206,22 +209,41 @@ export default function NewDeedPage() {
           order_id: razorpayOrderId,
           handler: async function (response) {
             try {
-              toast.loading('Verifying payment...', { id: 'verify-payment' });
-              const verifyRes = await axios.post(`/api/deeds/${deedData.id}/verify-payment`, {
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
-              }, {
-                headers: { Authorization: `Bearer ${token}` }
-              });
-
-              if (verifyRes.data.success) {
-                 toast.success('Payment successful! Escrow funded.', { id: 'verify-payment' });
-                 setShowFundingModal(false);
-                 setShowSuccess(true);
-              } else {
-                 toast.error(`Payment verification failed: ${verifyRes.data.message}`, { id: 'verify-payment' });
-              }
+              toast.loading('Payment received! Finishing setup, this may take a minute...', { id: 'verify-payment' });
+              
+              // Poll for Deed Status (up to 20 times, 3 seconds apart = 60s timeout)
+              let attempts = 0;
+              const maxAttempts = 20;
+              const pollInterval = setInterval(async () => {
+                attempts++;
+                try {
+                  const checkRes = await axios.get(`/api/deeds/${deedData.id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  const status = checkRes.data.data?.status;
+                  
+                  if (status && status !== 'DRAFT') {
+                    clearInterval(pollInterval);
+                    toast.success('Payment successful! Escrow funded.', { id: 'verify-payment' });
+                    setShowFundingModal(false);
+                    setShowSuccess(true);
+                  } else if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    toast.success('Payment received! Finishing setup. Check your dashboard for status.', { id: 'verify-payment' });
+                    setShowFundingModal(false);
+                    setShowSuccess(true);
+                  }
+                } catch (pollErr) {
+                  console.error('Polling error:', pollErr);
+                  // Keep polling unless we hit max attempts
+                  if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    toast.success('Payment received! Finishing setup. Check your dashboard for status.', { id: 'verify-payment' });
+                    setShowFundingModal(false);
+                    setShowSuccess(true);
+                  }
+                }
+              }, 3000);
             } catch (err) {
               console.error('Verification error:', err);
               toast.error(err.response?.data?.message || 'Payment verification failed.', { id: 'verify-payment' });

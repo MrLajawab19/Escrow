@@ -1,4 +1,5 @@
 const walletService = require('../services/walletService');
+const paymentService = require('../services/paymentService');
 
 /**
  * Wallet Controller - Handles all wallet API endpoints
@@ -128,37 +129,34 @@ exports.getTransactionHistory = async (req, res) => {
 exports.topUpWallet = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { amount, paymentMethod = 'card', reference } = req.body;
+    const { amount, targetDeedId } = req.body; // amount is expected in INR rupees (e.g. 500 for ₹500)
 
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'User not authenticated',
-      });
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
     }
 
     if (!amount || amount <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid amount',
-      });
+      return res.status(400).json({ success: false, message: 'Invalid amount' });
     }
 
-    // In a real scenario, you would integrate with a payment gateway here (Stripe, PayPal, etc.)
-    // For now, we'll simulate the transaction
+    // Convert amount to paise (e.g., 500 INR -> 50000 Paise)
+    const amountPaise = Math.round(amount * 100);
 
-    const transaction = await walletService.topUpWallet(userId, amount, paymentMethod, reference);
+    // Call PaymentService to create Razorpay Order
+    const transaction = await paymentService.createTopUpOrder(userId, amountPaise, targetDeedId);
 
     res.json({
       success: true,
-      message: 'Top-up successful',
-      data: transaction,
+      message: 'Razorpay order created successfully',
+      data: {
+        razorpayOrderId: transaction.id,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        targetDeedId
+      }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
