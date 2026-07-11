@@ -28,15 +28,41 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
         paymentMethod,
       });
 
-      if (response.data.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          onSuccess();
-          handleClose();
-        }, 2000);
-      }
+      const { razorpayOrderId, amount: rzpAmount, currency } = response.data.data;
+      
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TAVbIcT7jdp31E',
+        amount: rzpAmount,
+        currency: currency,
+        name: 'ScrowX',
+        description: 'Wallet Top-Up',
+        order_id: razorpayOrderId,
+        handler: async function (paymentResponse) {
+          try {
+            setSuccess(true);
+            
+            // Wait 3 seconds for webhook to process, then notify
+            setTimeout(() => {
+              onSuccess(); // Triggers a wallet balance refresh in the parent
+              setTimeout(() => handleClose(), 3000);
+            }, 3000);
+            
+          } catch (err) {
+            console.error('Payment handler error:', err);
+            setError('Payment succeeded but verification timed out. Check balance shortly.');
+          }
+        },
+        theme: { color: '#2563eb' }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        setError(response.error.description || 'Payment failed.');
+      });
+      rzp.open();
+
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to process top-up');
+      setError(err.response?.data?.message || 'Failed to initialize top-up');
     } finally {
       setLoading(false);
     }
@@ -68,9 +94,9 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
 
         {success ? (
           <div className="text-center py-8">
-            <div className="text-5xl mb-4">✓</div>
-            <h3 className="text-xl font-bold text-green-600 mb-2">Success!</h3>
-            <p className="text-gray-600">Your top-up of {currencySymbol}{amount} has been processed.</p>
+            <div className="text-5xl mb-4 text-green-600 animate-pulse">↻</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Payment Received</h3>
+            <p className="text-gray-600">Finishing setup. Your top-up of {currencySymbol}{amount} will reflect in your wallet shortly.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
