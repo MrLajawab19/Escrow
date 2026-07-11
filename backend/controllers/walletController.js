@@ -1,5 +1,7 @@
 const walletService = require('../services/walletService');
 const paymentService = require('../services/paymentService');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 /**
  * Wallet Controller - Handles all wallet API endpoints
@@ -137,6 +139,20 @@ exports.topUpWallet = async (req, res) => {
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid amount' });
+    }
+
+    if (targetDeedId) {
+      const deed = await prisma.deed.findUnique({ where: { id: targetDeedId } });
+      
+      if (!deed) {
+        return res.status(404).json({ success: false, message: 'Deed not found' });
+      }
+      if (deed.buyerId !== userId) {
+        return res.status(403).json({ success: false, message: 'Unauthorized: You are not the buyer of this deed' });
+      }
+      if (deed.status !== 'DRAFT') {
+        return res.status(400).json({ success: false, message: 'Deed is not in a fundable state (must be DRAFT)' });
+      }
     }
 
     // amount is expected in paise (e.g. 50000 for ₹500)

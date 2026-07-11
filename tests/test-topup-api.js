@@ -45,14 +45,58 @@ async function runTests() {
   console.log("Plain Top-Up Response Status:", res1.status);
   console.log("Plain Top-Up Razorpay Order Amount (should be 10000 paise):", res1.data.data?.amount);
   
-  // 2. JIT Top-Up (like NewDeedPage) - Deed is ₹1500
-  const jitPayload = { amount: 150000, targetDeedId: 'some-fake-id' };
-  console.log("\nSending JIT Top-Up payload:", jitPayload);
+  // 2. JIT Top-Up (like NewDeedPage) - Valid Deed
+  const validDeed = await prisma.deed.create({
+    data: {
+      buyerId: buyer.id,
+      sellerId: buyer.id, // For test simplicity
+      title: "Valid JIT Deed",
+      description: "Testing successful validation",
+      acceptanceCriteria: "None",
+      amount: 150000, 
+      currency: "INR",
+      status: "DRAFT",
+      inviteToken: "valid-invite-" + Date.now()
+    }
+  });
+
+  const jitPayload = { amount: 150000, targetDeedId: validDeed.id };
+  console.log("\nSending JIT Top-Up payload with Valid Deed ID:", jitPayload);
   
   const res2 = await sendTopUpRequest(token, jitPayload);
   console.log("JIT Top-Up Response Status:", res2.status);
   console.log("JIT Top-Up Razorpay Order Amount (should be 150000 paise):", res2.data.data?.amount);
 
+  // 3. JIT Top-Up with WRONG Deed ID (Fake ID)
+  const fakeJitPayload = { amount: 150000, targetDeedId: 'invalid-deed-id' };
+  console.log("\nSending JIT Top-Up payload with Fake Deed ID:", fakeJitPayload);
+  const res3 = await sendTopUpRequest(token, fakeJitPayload);
+  console.log("Fake Deed ID Response Status (should be 404):", res3.status);
+  console.log("Fake Deed ID Response Message:", res3.data.message);
+
+  // 4. JIT Top-Up with WRONG Buyer (Deed belongs to someone else)
+  let otherBuyer = await prisma.buyer.findFirst({ where: { id: { not: buyer.id } } });
+  if (otherBuyer) {
+    const otherDeed = await prisma.deed.create({
+      data: {
+        buyerId: otherBuyer.id,
+        sellerId: otherBuyer.id,
+        title: "Other Buyer's Deed",
+        description: "Testing unauthorized access",
+        acceptanceCriteria: "None",
+        amount: 200000, 
+        currency: "INR",
+        status: "DRAFT",
+        inviteToken: "fake-invite-token-" + Date.now()
+      }
+    });
+
+    const unauthorizedPayload = { amount: 150000, targetDeedId: otherDeed.id };
+    console.log("\nSending JIT Top-Up payload for someone else's deed:", unauthorizedPayload);
+    const res4 = await sendTopUpRequest(token, unauthorizedPayload);
+    console.log("Unauthorized Deed Response Status (should be 403):", res4.status);
+    console.log("Unauthorized Deed Response Message:", res4.data.message);
+  }
 }
 
 runTests().catch(console.error).finally(() => prisma.$disconnect());
