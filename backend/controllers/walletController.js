@@ -240,29 +240,6 @@ exports.completeWithdrawal = async (req, res) => {
 
 
 
-// Refund buyer (Called from order controller)
-exports.refundBuyer = async (req, res) => {
-  try {
-    const { buyerId, orderId, amount, currency, reason } = req.body;
-
-    if (!buyerId || !orderId || !amount) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: buyerId, orderId, amount',
-      });
-    }
-
-    const transaction = await walletService.refundBuyer(buyerId, orderId, amount, currency, reason);
-
-    res.json({
-      success: true,
-      message: 'Buyer refunded',
-      data: transaction,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
     });
   }
 };

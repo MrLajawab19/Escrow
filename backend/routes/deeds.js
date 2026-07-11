@@ -5,9 +5,10 @@ const reviewController = require('../controllers/reviewController');
 const milestoneController = require('../controllers/milestoneController');
 const { authenticateToken, authenticateAdmin } = require('../middleware/auth');
 const { requireKYC } = require('../middleware/kycGate');
+const { walletLimiter } = require('../middleware/rateLimiter');
 
 router.post('/', authenticateToken, requireKYC, deedController.createDeed);
-router.post('/:id/fund', authenticateToken, deedController.fundDeed);
+router.post('/:id/fund', authenticateToken, walletLimiter, deedController.fundDeed);
 router.post('/:id/verify-payment', authenticateToken, deedController.verifyPayment);
 router.post('/:id/accept-seller', authenticateToken, deedController.acceptDeed);
 router.get('/buyer', authenticateToken, deedController.getBuyerDeeds);
@@ -22,10 +23,10 @@ router.post('/:id/sign-buyer', authenticateToken, deedController.signDeedBuyer);
 router.post('/:id/sign-seller', authenticateToken, deedController.signDeedSeller);
 
 // Money Moving Actions
-router.post('/:id/release', authenticateToken, deedController.releasePayment);
-router.post('/:id/cancel', authenticateToken, deedController.cancelDeed);
+router.post('/:id/release', authenticateToken, walletLimiter, deedController.releasePayment);
+router.post('/:id/cancel', authenticateToken, walletLimiter, deedController.cancelDeed);
 router.post('/:id/reject', authenticateToken, deedController.rejectDeed);
-router.post('/:id/refund', authenticateAdmin, deedController.adminRefund);
+router.post('/:id/refund', authenticateAdmin, walletLimiter, deedController.adminRefund);
 
 // Milestones
 router.patch('/:id/milestones/:mId/submit', authenticateToken, milestoneController.submitMilestone);

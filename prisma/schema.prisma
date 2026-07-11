@@ -358,6 +358,15 @@ model WalletTransaction {
   updatedAt         DateTime @updatedAt
 }
 
+// --------- WEBHOOKS -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+model WebhookEvent {
+  id          String   @id // Maps to x-razorpay-event-id
+  provider    String   @default("RAZORPAY")
+  status      String   @default("PROCESSED") // To track state
+  createdAt   DateTime @default(now())
+}
+
 // --------- CHAT ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 model DeedChatRoom {
