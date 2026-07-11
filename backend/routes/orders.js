@@ -53,7 +53,7 @@ router.patch('/:id/reject-changes', authenticateToken, orderController.rejectCha
 router.patch('/:id/dispute', authenticateToken, upload.array('evidence', 5), orderController.raiseDispute);
 
 // Admin actions
-router.patch('/:id/refund', authenticateToken, orderController.refundBuyer);
+// router.patch('/:id/refund', authenticateToken, orderController.refundBuyer); // DEPRECATED: Handled via Deeds
 
 // ── Query routes (specific before parameterized) ───────────────────────────────
 router.get('/buyer', authenticateToken, orderController.getBuyerOrders);
