@@ -365,6 +365,7 @@ model WebhookEvent {
   provider    String   @default("RAZORPAY")
   status      String   @default("PROCESSED") // To track state
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 // --------- CHAT ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

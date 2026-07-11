@@ -24,20 +24,43 @@ const handleRazorpayWebhook = async (req, res) => {
     const eventName = req.body.event;
 
     // 2. Webhook Idempotency Core
-    // We attempt to insert the event_id into the DB. If it fails with a UniqueConstraint violation,
-    // we know it's a duplicate and we immediately return 200 OK.
-    try {
-      if (eventId) {
-        await prisma.webhookEvent.create({
-          data: { id: eventId, provider: 'RAZORPAY', status: 'PROCESSING' }
-        });
+    if (eventId) {
+      let eventRecord = await prisma.webhookEvent.findUnique({ where: { id: eventId } });
+      if (eventRecord) {
+        if (eventRecord.status === 'COMPLETED') {
+           console.log(`Duplicate webhook event safely ignored: ${eventId}`);
+           return res.status(200).send('OK');
+        } else if (eventRecord.status === 'PROCESSING') {
+           const age = Date.now() - eventRecord.updatedAt.getTime();
+           if (age < 5 * 60 * 1000) {
+              // Likely a concurrent race, tell Razorpay to back off and retry later
+              return res.status(429).send('Processing in progress, try again later');
+           }
+           // Else, it's a stale crashed event. Let it re-process.
+           await prisma.webhookEvent.update({
+             where: { id: eventId },
+             data: { updatedAt: new Date() }
+           });
+        } else if (eventRecord.status === 'FAILED') {
+           // Allow retry
+           await prisma.webhookEvent.update({
+             where: { id: eventId },
+             data: { status: 'PROCESSING', updatedAt: new Date() }
+           });
+        }
+      } else {
+        try {
+          await prisma.webhookEvent.create({
+            data: { id: eventId, provider: 'RAZORPAY', status: 'PROCESSING' }
+          });
+        } catch (error) {
+          if (error.code === 'P2002') {
+             // Concurrent request beat us to the insert
+             return res.status(429).send('Concurrent request processing');
+          }
+          throw error;
+        }
       }
-    } catch (error) {
-      if (error.code === 'P2002') { // Unique constraint failed
-        console.log(`Duplicate webhook event ignored: ${eventId}`);
-        return res.status(200).send('OK'); // Acknowledge duplicate to prevent retries
-      }
-      throw error;
     }
 
     // 3. Process the payload
@@ -66,10 +89,17 @@ const handleRazorpayWebhook = async (req, res) => {
              await deedService.fundDeed(targetDeedId, userId);
              console.log(`JIT Funding Successful: Deed ${targetDeedId} locked.`);
           } catch (fundError) {
-             // If fundDeed fails, we DO NOT throw back to the top-level catch block!
-             // We catch it here so the webhook returns 200 OK, the CREDIT remains safely in the wallet,
-             // and the user simply uses their new balance manually.
              console.error(`JIT Funding Failed for Deed ${targetDeedId}, but money is safe in wallet. Error:`, fundError.message);
+             // Notify the buyer so they aren't left in the dark
+             const notificationService = require('../services/notificationService');
+             await notificationService.createNotification({
+                userId,
+                userRole: 'buyer',
+                type: 'WALLET_UPDATE',
+                title: 'Wallet Topped Up, but Deed Funding Failed',
+                message: `Your wallet was successfully topped up with ₹${amountPaise / 100}, but we couldn't automatically fund your deed. You can fund it manually from your dashboard. Reason: ${fundError.message}`,
+                link: '/buyer-dashboard'
+             }).catch(err => console.error('Failed to send notification:', err.message));
           }
         }
       }
@@ -103,6 +133,12 @@ const handleRazorpayWebhook = async (req, res) => {
     res.status(200).send('OK');
   } catch (error) {
     console.error('Webhook processing error:', error);
+    if (req.headers['x-razorpay-event-id']) {
+       await prisma.webhookEvent.updateMany({
+         where: { id: req.headers['x-razorpay-event-id'], status: 'PROCESSING' },
+         data: { status: 'FAILED' }
+       }).catch(e => console.error("Failed to update webhook status to FAILED", e));
+    }
     // Let Razorpay know we failed, so they retry later
     res.status(500).send('Internal Server Error');
   }
