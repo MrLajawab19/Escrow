@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimiter');
+const { signupValidation, loginValidation, validateRequest } = require('../middleware/validation');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -32,16 +34,16 @@ const upload = multer({
   }
 });
 
-// ── Buyer routes ──────────────────────────────────────────────────────────────
-router.post('/buyer/signup', authController.buyerSignup);
-router.post('/buyer/login', authController.buyerLogin);
+// ── Buyer routes (auth-limited: 10 req / 15 min / IP) ─────────────────────────
+router.post('/buyer/signup', authLimiter, signupValidation, validateRequest, authController.buyerSignup);
+router.post('/buyer/login', authLimiter, loginValidation, validateRequest, authController.buyerLogin);
 
-// ── Seller routes ─────────────────────────────────────────────────────────────
-router.post('/seller/signup', authController.sellerSignup);
-router.post('/seller/login', authController.sellerLogin);
+// ── Seller routes (auth-limited) ──────────────────────────────────────────────
+router.post('/seller/signup', authLimiter, signupValidation, validateRequest, authController.sellerSignup);
+router.post('/seller/login', authLimiter, loginValidation, validateRequest, authController.sellerLogin);
 
-// ── Admin routes ──────────────────────────────────────────────────────────────
-router.post('/admin/login', authController.adminLogin);
+// ── Admin routes (auth-limited) ───────────────────────────────────────────────
+router.post('/admin/login', authLimiter, loginValidation, validateRequest, authController.adminLogin);
 
 // ── Current user (token verify) ───────────────────────────────────────────────
 router.get('/me', authenticateToken, authController.getCurrentUser);

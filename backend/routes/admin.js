@@ -95,11 +95,14 @@ router.get('/disputes', adminAuth, async (req, res) => {
     const disputes = await prisma.orderDispute.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      take: 100,
     });
 
-    const enriched = await Promise.all(disputes.map(async (d) => {
-      const order = await prisma.order.findUnique({ where: { id: d.orderId } }).catch(() => null);
+    const orderIds = [...new Set(disputes.map(d => d.orderId).filter(Boolean))];
+    const orders = await prisma.order.findMany({ where: { id: { in: orderIds } } });
+    const orderMap = orders.reduce((acc, o) => { acc[o.id] = o; return acc; }, {});
+
+    const enriched = disputes.map(d => {
+      const order = orderMap[d.orderId] || null;
       const { flag: autoFlag, riskScore, riskReason } = computeFlag(d, order);
       return {
         ...d,
@@ -110,7 +113,7 @@ router.get('/disputes', adminAuth, async (req, res) => {
         } : null,
         autoFlag, riskScore, riskReason,
       };
-    }));
+    });
 
     const filtered = flag ? enriched.filter(d => d.autoFlag === flag) : enriched;
     const searched = search
@@ -121,7 +124,21 @@ router.get('/disputes', adminAuth, async (req, res) => {
         )
       : filtered;
 
-    return res.json({ success: true, data: searched });
+    const { limit = 20, page = 1 } = req.query;
+    const take = parseInt(limit, 10);
+    const skip = (parseInt(page, 10) - 1) * take;
+
+    const paginatedDisputes = searched.slice(skip, skip + take);
+
+    return res.json({ 
+      success: true, 
+      data: {
+        disputes: paginatedDisputes,
+        total: searched.length,
+        page: parseInt(page, 10),
+        limit: take
+      } 
+    });
   } catch (err) {
     console.error('Admin disputes error:', err);
     return res.status(500).json({ success: false, message: 'Failed to fetch disputes' });
@@ -285,29 +302,76 @@ router.post('/disputes/:id/ai-analysis', adminAuth, async (req, res) => {
 
 router.get('/orders', adminAuth, async (req, res) => {
   try {
+    const { limit = 20, page = 1 } = req.query;
+    const take = parseInt(limit, 10);
+    const skip = (parseInt(page, 10) - 1) * take;
+
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take,
+      skip,
     });
-    return res.json({ success: true, data: orders });
+    
+    const total = await prisma.order.count();
+
+    return res.json({ 
+      success: true, 
+      data: {
+        orders,
+        total,
+        page: parseInt(page, 10),
+        limit: take
+      } 
+    });
   } catch (err) {
     console.error('Admin orders error:', err);
     return res.status(500).json({ success: false, message: 'Failed to fetch orders' });
   }
 });
 
-// ── GET /api/admin/users ──────────────────────────────────────────────────────
+// ── GET /api/admin/buyers ─────────────────────────────────────────────────────
 
-router.get('/users', adminAuth, async (req, res) => {
+router.get('/buyers', adminAuth, async (req, res) => {
   try {
-    const [buyers, sellers] = await Promise.all([
-      prisma.buyer.findMany({ select: { id: true, email: true, firstName: true, lastName: true, status: true, createdAt: true } }),
-      prisma.seller.findMany({ select: { id: true, email: true, firstName: true, lastName: true, businessName: true, status: true, createdAt: true } }),
-    ]);
-    return res.json({ success: true, data: { buyers, sellers } });
+    const { limit = 20, page = 1 } = req.query;
+    const take = parseInt(limit, 10);
+    const skip = (parseInt(page, 10) - 1) * take;
+
+    const buyers = await prisma.buyer.findMany({ 
+      select: { id: true, email: true, firstName: true, lastName: true, status: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      take,
+      skip,
+    });
+    const total = await prisma.buyer.count();
+
+    return res.json({ success: true, data: { buyers, total, page: parseInt(page, 10), limit: take } });
   } catch (err) {
-    console.error('Admin users error:', err);
-    return res.status(500).json({ success: false, message: 'Failed to fetch users' });
+    console.error('Admin buyers error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch buyers' });
+  }
+});
+
+// ── GET /api/admin/sellers ────────────────────────────────────────────────────
+
+router.get('/sellers', adminAuth, async (req, res) => {
+  try {
+    const { limit = 20, page = 1 } = req.query;
+    const take = parseInt(limit, 10);
+    const skip = (parseInt(page, 10) - 1) * take;
+
+    const sellers = await prisma.seller.findMany({ 
+      select: { id: true, email: true, firstName: true, lastName: true, businessName: true, status: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      take,
+      skip,
+    });
+    const total = await prisma.seller.count();
+
+    return res.json({ success: true, data: { sellers, total, page: parseInt(page, 10), limit: take } });
+  } catch (err) {
+    console.error('Admin sellers error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch sellers' });
   }
 });
 
@@ -444,11 +508,22 @@ router.get('/financials', adminAuth, async (req, res) => {
 // +?+? GET /api/admin/kyc (Queue)
 router.get('/kyc', adminAuth, async (req, res) => {
   try {
+    const { limit = 20, page = 1 } = req.query;
+    const take = parseInt(limit, 10);
+    const skip = (parseInt(page, 10) - 1) * take;
+
     const pendingKyc = await prisma.kYC.findMany({
       where: { reviewStatus: 'PENDING', idDocUrls: { isEmpty: false } },
-      orderBy: { submittedAt: 'asc' }
+      orderBy: { submittedAt: 'asc' },
+      take,
+      skip,
     });
-    return res.json({ success: true, data: pendingKyc });
+    
+    const total = await prisma.kYC.count({
+      where: { reviewStatus: 'PENDING', idDocUrls: { isEmpty: false } }
+    });
+
+    return res.json({ success: true, data: { pendingKyc, total, page: parseInt(page, 10), limit: take } });
   } catch (err) {
     console.error('Admin KYC error:', err);
     return res.status(500).json({ success: false, message: 'Failed to fetch KYC queue' });
@@ -487,14 +562,30 @@ router.post('/kyc/:id/reject', adminAuth, async (req, res) => {
 // ── GET /api/admin/deeds ──────────────────────────────────────────────────────
 router.get('/deeds', adminAuth, async (req, res) => {
   try {
+    const { limit = 20, page = 1 } = req.query;
+    const take = parseInt(limit, 10);
+    const skip = (parseInt(page, 10) - 1) * take;
+
     const deeds = await prisma.deed.findMany({
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take,
+      skip,
       include: {
         milestones: { select: { id: true, status: true, amount: true } }
       }
     });
-    return res.json({ success: true, data: deeds });
+    
+    const total = await prisma.deed.count();
+
+    return res.json({ 
+      success: true, 
+      data: {
+        deeds,
+        total,
+        page: parseInt(page, 10),
+        limit: take
+      } 
+    });
   } catch (err) {
     console.error('Admin deeds error:', err);
     return res.status(500).json({ success: false, message: 'Failed to fetch deeds' });

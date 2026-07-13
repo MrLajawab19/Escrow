@@ -6,8 +6,9 @@ const milestoneController = require('../controllers/milestoneController');
 const { authenticateToken, authenticateAdmin } = require('../middleware/auth');
 const { requireKYC } = require('../middleware/kycGate');
 const { walletLimiter } = require('../middleware/rateLimiter');
+const { createDeedValidation, createReviewValidation, validateRequest } = require('../middleware/validation');
 
-router.post('/', authenticateToken, requireKYC, deedController.createDeed);
+router.post('/', authenticateToken, requireKYC, createDeedValidation, validateRequest, deedController.createDeed);
 router.post('/:id/fund', authenticateToken, walletLimiter, deedController.fundDeed);
 router.post('/:id/verify-payment', authenticateToken, deedController.verifyPayment);
 router.post('/:id/accept-seller', authenticateToken, deedController.acceptDeed);
@@ -16,7 +17,7 @@ router.get('/seller', authenticateToken, deedController.getSellerDeeds);
 router.get('/invite/:token', deedController.getDeedByInvite); // No auth needed to view invite (or we could enforce it, but typically invite is public until accepted)
 router.get('/:id', authenticateToken, deedController.getDeedById);
 
-router.post('/:id/review', authenticateToken, reviewController.createReview);
+router.post('/:id/review', authenticateToken, createReviewValidation, validateRequest, reviewController.createReview);
 
 // Signing
 router.post('/:id/sign-buyer', authenticateToken, deedController.signDeedBuyer);

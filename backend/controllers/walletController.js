@@ -297,23 +297,36 @@ exports.getPendingWithdrawals = async (req, res) => {
       });
     }
 
+    const { limit = 20, page = 1 } = req.query;
+    const take = parseInt(limit);
+    const skip = (parseInt(page) - 1) * take;
+
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
 
+    const whereClause = {
+      category: 'WITHDRAWAL',
+      status: 'PENDING'
+    };
+
     const pendingWithdrawals = await prisma.walletTransaction.findMany({
-      where: {
-        category: 'WITHDRAWAL',
-        status: 'PENDING'
-      },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
-      include: {
-        wallet: true
-      }
+      include: { wallet: true },
+      take,
+      skip,
     });
+
+    const total = await prisma.walletTransaction.count({ where: whereClause });
 
     res.json({
       success: true,
-      data: pendingWithdrawals,
+      data: {
+        withdrawals: pendingWithdrawals,
+        total,
+        page: parseInt(page),
+        limit: take
+      },
     });
   } catch (error) {
     res.status(500).json({

@@ -40,11 +40,18 @@ async function runTests() {
   console.log("Setting up JIT Test...");
   let buyer = await prisma.buyer.findFirst();
   let seller = await prisma.seller.findFirst();
+
+  // Reset wallet state for isolated test
+  await prisma.wallet.update({
+    where: { userId: buyer.id },
+    data: { balance: 0, lockedBalance: 0 }
+  });
+
   let buyerWallet = await prisma.wallet.findUnique({ where: { userId: buyer.id } });
 
-  console.log(`Initial Wallet Balance: ₹${buyerWallet.balance}`);
+  console.log(`Initial Wallet Balance (paise): ₹${buyerWallet.balance}`);
 
-  // Create a DRAFT deed
+  // Create a DRAFT deed using PAISE (150000 = ₹1500)
   const deed = await prisma.deed.create({
     data: {
       buyerId: buyer.id,
@@ -52,7 +59,7 @@ async function runTests() {
       title: "JIT Funding Test Deed",
       description: "Testing webhook auto-funding",
       acceptanceCriteria: "Funds should be safely secured via webhook",
-      amount: 1500, // ₹1500
+      amount: 150000, 
       currency: "INR",
       status: "DRAFT",
       inviteToken: crypto.randomBytes(16).toString("hex")
@@ -60,18 +67,19 @@ async function runTests() {
   });
 
   console.log(`Created DRAFT Deed ID: ${deed.id}`);
+  console.log(`Deed Amount: ₹${deed.amount}`);
 
   const eventId = `evt_jit_${Date.now()}`;
   const payload = {
     entity: "event",
     account_id: "acc_test",
-    event: "order.paid",
+    event: "order.paid", // Accurate Razorpay successful payment event
     contains: ["payment"],
     payload: {
       payment: {
         entity: {
           id: `pay_jit_${Date.now()}`,
-          amount: 150000, // ₹1500 * 100
+          amount: 150000, // Matching ₹1500 * 100 in paise
           currency: "INR",
           status: "authorized",
           notes: {
@@ -96,8 +104,8 @@ async function runTests() {
   const updatedWallet = await prisma.wallet.findUnique({ where: { userId: buyer.id } });
   const updatedDeed = await prisma.deed.findUnique({ where: { id: deed.id } });
 
-  console.log(`Final Wallet Balance: ₹${updatedWallet.balance}`);
-  console.log(`Final Wallet Locked Balance: ₹${updatedWallet.lockedBalance}`);
+  console.log(`Final Wallet Balance (paise): ₹${updatedWallet.balance}`);
+  console.log(`Final Wallet Locked Balance (paise): ₹${updatedWallet.lockedBalance}`);
   console.log(`Final Deed Status: ${updatedDeed.status}`);
 
   if (updatedDeed.status === "ESCROW_FUNDED" || updatedDeed.status === "PENDING_SELLER") {

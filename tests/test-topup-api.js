@@ -76,27 +76,60 @@ async function runTests() {
 
   // 4. JIT Top-Up with WRONG Buyer (Deed belongs to someone else)
   let otherBuyer = await prisma.buyer.findFirst({ where: { id: { not: buyer.id } } });
-  if (otherBuyer) {
-    const otherDeed = await prisma.deed.create({
+  if (!otherBuyer) {
+    const fakeUserId = "fake-user-" + Date.now();
+    otherBuyer = await prisma.buyer.create({
       data: {
-        buyerId: otherBuyer.id,
-        sellerId: otherBuyer.id,
-        title: "Other Buyer's Deed",
-        description: "Testing unauthorized access",
-        acceptanceCriteria: "None",
-        amount: 200000, 
-        currency: "INR",
-        status: "DRAFT",
-        inviteToken: "fake-invite-token-" + Date.now()
+        id: fakeUserId,
+        email: fakeUserId + "@example.com",
+        password: "dummy",
+        firstName: "Fake",
+        lastName: "User"
       }
     });
-
-    const unauthorizedPayload = { amount: 150000, targetDeedId: otherDeed.id };
-    console.log("\nSending JIT Top-Up payload for someone else's deed:", unauthorizedPayload);
-    const res4 = await sendTopUpRequest(token, unauthorizedPayload);
-    console.log("Unauthorized Deed Response Status (should be 403):", res4.status);
-    console.log("Unauthorized Deed Response Message:", res4.data.message);
   }
+
+  const otherDeed = await prisma.deed.create({
+    data: {
+      buyerId: otherBuyer.id,
+      sellerId: otherBuyer.id,
+      title: "Other Buyer's Deed",
+      description: "Testing unauthorized access",
+      acceptanceCriteria: "None",
+      amount: 200000, 
+      currency: "INR",
+      status: "DRAFT",
+      inviteToken: "fake-invite-" + Date.now()
+    }
+  });
+
+  const unauthorizedPayload = { amount: 150000, targetDeedId: otherDeed.id };
+  console.log("\nSending JIT Top-Up payload for someone else's deed:", unauthorizedPayload);
+  const res4 = await sendTopUpRequest(token, unauthorizedPayload);
+  console.log("Unauthorized Deed Response Status (should be 403):", res4.status);
+  console.log("Unauthorized Deed Response Message:", res4.data.message);
+
+  // 5. JIT Top-Up with WRONG Status (Deed is already ACTIVE)
+  const activeDeed = await prisma.deed.create({
+    data: {
+      buyerId: buyer.id,
+      sellerId: buyer.id,
+      title: "Active Deed",
+      description: "Testing status validation",
+      acceptanceCriteria: "None",
+      amount: 150000, 
+      currency: "INR",
+      status: "ACTIVE",
+      inviteToken: "active-invite-" + Date.now()
+    }
+  });
+
+  const wrongStatusPayload = { amount: 150000, targetDeedId: activeDeed.id };
+  console.log("\nSending JIT Top-Up payload for an ACTIVE deed:", wrongStatusPayload);
+  const res5 = await sendTopUpRequest(token, wrongStatusPayload);
+  console.log("Wrong Status Deed Response Status (should be 400):", res5.status);
+  console.log("Wrong Status Deed Response Message:", res5.data.message);
+
 }
 
 runTests().catch(console.error).finally(() => prisma.$disconnect());
