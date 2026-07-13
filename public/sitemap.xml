@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://scrowx.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <!-- 
+    Profiles and specific deed invites are dynamically discovered by spiders where linked. 
+    Currently, the Landing Page is the only statically known entry point.
+  -->
+</urlset>

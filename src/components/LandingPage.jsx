@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 
 // Import New Components
 import LandingNavbar from './landing/LandingNavbar';
@@ -54,6 +55,10 @@ const LandingPage = ({ onAuthClear }) => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-navy-950 relative font-inter text-neutral-900 dark:text-white selection:bg-primary-100 selection:text-primary-900 dark:selection:bg-primary-900 dark:selection:text-primary-100 transition-colors duration-300">
+      <Helmet>
+        <title>ScrowX | The Safest Way to Transact Online</title>
+        <meta name="description" content="Secure escrow services, verified KYC, and dispute resolution for freelance, B2B, and digital marketplace transactions." />
+      </Helmet>
       
       {/* 1. Navigation */}
       <LandingNavbar onAuthClick={handleAuthClick} />

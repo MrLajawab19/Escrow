@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { Helmet } from 'react-helmet-async';
 
 export default function DeedInvitePage() {
   const { token } = useParams();
@@ -94,6 +95,10 @@ export default function DeedInvitePage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <Helmet>
+        <title>You've been invited to a Deed | ScrowX</title>
+        <meta name="description" content="Review and sign your digital deed securely on ScrowX." />
+      </Helmet>
       <div className="bg-white rounded-3xl shadow-xl max-w-2xl w-full overflow-hidden border border-neutral-100">
         <div className="bg-indigo-600 p-8 text-center text-white relative">
           <div className="absolute top-0 right-0 p-4 opacity-20">

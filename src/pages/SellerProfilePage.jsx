@@ -4,6 +4,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { FiUser, FiStar, FiCheckCircle, FiAward, FiClock } from 'react-icons/fi';
 import EditProfileModal from '../components/EditProfileModal';
+import { Helmet } from 'react-helmet-async';
 
 const SellerProfilePage = () => {
   const { id } = useParams();
@@ -32,8 +33,23 @@ const SellerProfilePage = () => {
     fetchProfile();
   }, [id]);
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
-  if (!profile) return <div className="p-8 text-center text-red-500">Profile not found</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-20">
+      <Helmet>
+        <title>Profile | ScrowX</title>
+      </Helmet>
+      <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+  
+  if (!profile) return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-20">
+      <Helmet>
+        <title>Profile Not Found | ScrowX</title>
+      </Helmet>
+      <div className="text-gray-500">Profile not found</div>
+    </div>
+  );
 
   const { seller, reviews } = profile;
 
@@ -45,7 +61,11 @@ const SellerProfilePage = () => {
   if (seller.completedDeeds === 0) badges.push({ name: 'New Seller', color: 'bg-orange-100 text-orange-800' });
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pt-24 min-h-screen">
+      <Helmet>
+        <title>{`${seller.firstName} ${seller.lastName}'s Profile | ScrowX`}</title>
+        <meta name="description" content={`View the public profile and transaction history for ${seller.firstName}.`} />
+      </Helmet>
       {/* Profile Header */}
       <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 mb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative">
         {isOwnProfile && (

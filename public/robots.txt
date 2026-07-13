@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /deed/invite/
+Allow: /buyer/profile/
+Allow: /seller/profile/
+
+Disallow: /buyer/dashboard/
+Disallow: /buyer/new-deed
+Disallow: /buyer/order/
+Disallow: /buyer/deed/
+Disallow: /seller/dashboard/
+Disallow: /seller/order/
+Disallow: /seller/deed/
+Disallow: /admin/

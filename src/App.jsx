@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import BuyerAuth from './pages/BuyerAuth';
-import SellerAuth from './pages/SellerAuth';
-import BuyerDashboard from './pages/BuyerDashboard';
-import SellerDashboard from './pages/SellerDashboard';
-import NewDeedPage from './pages/NewDeedPage';
-import DeedInvitePage from './pages/DeedInvitePage';
-import OrderTrackingPage from './pages/OrderTrackingPage';
-import OrderDetails from './pages/OrderDetails';
-import AdminLogin from './pages/AdminLogin';
-import AdminDashboard from './components/AdminDashboard';
-import AdminDisputeDetails from './pages/AdminDisputeDetails';
-import LandingPage from './components/LandingPage';
-import SellerProfilePage from './pages/SellerProfilePage';
-import BuyerProfilePage from './pages/BuyerProfilePage';
-import DeedMilestonePage from './pages/DeedMilestonePage';
-import DeedSigningPage from './pages/DeedSigningPage';
-import AuditLedgerPage from './pages/AuditLedgerPage';
+import LandingPage from './components/LandingPage'; // Keep eager
+
+const BuyerAuth = lazy(() => import('./pages/BuyerAuth'));
+const SellerAuth = lazy(() => import('./pages/SellerAuth'));
+const BuyerDashboard = lazy(() => import('./pages/BuyerDashboard'));
+const SellerDashboard = lazy(() => import('./pages/SellerDashboard'));
+const NewDeedPage = lazy(() => import('./pages/NewDeedPage'));
+const DeedInvitePage = lazy(() => import('./pages/DeedInvitePage'));
+const OrderDetails = lazy(() => import('./pages/OrderDetails'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const AdminDisputeDetails = lazy(() => import('./pages/AdminDisputeDetails'));
+const SellerProfilePage = lazy(() => import('./pages/SellerProfilePage'));
+const BuyerProfilePage = lazy(() => import('./pages/BuyerProfilePage'));
+const DeedMilestonePage = lazy(() => import('./pages/DeedMilestonePage'));
+const DeedSigningPage = lazy(() => import('./pages/DeedSigningPage'));
+const AuditLedgerPage = lazy(() => import('./pages/AuditLedgerPage'));
 import { CurrencyProvider } from './context/CurrencyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
@@ -576,31 +576,32 @@ function App() {
 
         {/* Routes */}
         <RouteChangeHandler onAuthClear={clearAuthState} onCheckAuth={checkAuth}>
-          <Routes>
-            <Route path="/" element={<LandingPage onAuthClear={clearAuthState} />} />
-            <Route path="/buyer/auth" element={<BuyerAuth />} />
-            <Route path="/seller/auth" element={<SellerAuth />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
-            <Route path="/admin/dispute/:id" element={<ProtectedAdminRoute><AdminDisputeDetails /></ProtectedAdminRoute>} />
-            <Route path="/buyer/dashboard" element={<ProtectedBuyerRoute><BuyerDashboard /></ProtectedBuyerRoute>} />
-            {/* Unified Deed Flow */}
-            {/* Unified Deed Flow */}
-            <Route path="/buyer/new-deed" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
-            <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
-            <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderDetails /></ProtectedBuyerRoute>} />
-            <Route path="/buyer/deed/:id/milestones" element={<ProtectedBuyerRoute><DeedMilestonePage /></ProtectedBuyerRoute>} />
-            <Route path="/buyer/deed/:id/sign" element={<ProtectedBuyerRoute><DeedSigningPage /></ProtectedBuyerRoute>} />
-            <Route path="/buyer/deed/:id/audit" element={<ProtectedBuyerRoute><AuditLedgerPage /></ProtectedBuyerRoute>} />
-            <Route path="/buyer/profile/:id" element={<BuyerProfilePage />} />
-            <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
-            <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><OrderDetails /></ProtectedSellerRoute>} />
-            <Route path="/seller/deed/:id/milestones" element={<ProtectedSellerRoute><DeedMilestonePage /></ProtectedSellerRoute>} />
-            <Route path="/seller/deed/:id/sign" element={<ProtectedSellerRoute><DeedSigningPage /></ProtectedSellerRoute>} />
-            <Route path="/seller/deed/:id/audit" element={<ProtectedSellerRoute><AuditLedgerPage /></ProtectedSellerRoute>} />
-            <Route path="/seller/profile/:id" element={<SellerProfilePage />} />
-            <Route path="/deed/invite/:token" element={<DeedInvitePage />} />
-          </Routes>
+          <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <Routes>
+              <Route path="/" element={<LandingPage onAuthClear={clearAuthState} />} />
+              <Route path="/buyer/auth" element={<BuyerAuth />} />
+              <Route path="/seller/auth" element={<SellerAuth />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+              <Route path="/admin/dispute/:id" element={<ProtectedAdminRoute><AdminDisputeDetails /></ProtectedAdminRoute>} />
+              <Route path="/buyer/dashboard" element={<ProtectedBuyerRoute><BuyerDashboard /></ProtectedBuyerRoute>} />
+              {/* Unified Deed Flow */}
+              <Route path="/buyer/new-deed" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
+              <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
+              <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderDetails /></ProtectedBuyerRoute>} />
+              <Route path="/buyer/deed/:id/milestones" element={<ProtectedBuyerRoute><DeedMilestonePage /></ProtectedBuyerRoute>} />
+              <Route path="/buyer/deed/:id/sign" element={<ProtectedBuyerRoute><DeedSigningPage /></ProtectedBuyerRoute>} />
+              <Route path="/buyer/deed/:id/audit" element={<ProtectedBuyerRoute><AuditLedgerPage /></ProtectedBuyerRoute>} />
+              <Route path="/buyer/profile/:id" element={<BuyerProfilePage />} />
+              <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
+              <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><OrderDetails /></ProtectedSellerRoute>} />
+              <Route path="/seller/deed/:id/milestones" element={<ProtectedSellerRoute><DeedMilestonePage /></ProtectedSellerRoute>} />
+              <Route path="/seller/deed/:id/sign" element={<ProtectedSellerRoute><DeedSigningPage /></ProtectedSellerRoute>} />
+              <Route path="/seller/deed/:id/audit" element={<ProtectedSellerRoute><AuditLedgerPage /></ProtectedSellerRoute>} />
+              <Route path="/seller/profile/:id" element={<SellerProfilePage />} />
+              <Route path="/deed/invite/:token" element={<DeedInvitePage />} />
+            </Routes>
+          </Suspense>
         </RouteChangeHandler>
       </div>
         </ThemeProvider>
