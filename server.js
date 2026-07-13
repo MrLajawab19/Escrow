@@ -1,6 +1,7 @@
 require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
 const express = require('express');
+const helmet = require('helmet');
 const http = require('http');                                   // ← NEW: needed for Socket.IO
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -50,6 +51,58 @@ app.use(cors({
   credentials: true
 }));
 
+// ── Security Headers (helmet) ─────────────────────────────────────────────────
+// Applied early, before any routes. CSP is configured to allow:
+//  - Razorpay Checkout script + iframe
+//  - Google Fonts (fonts.googleapis.com + fonts.gstatic.com)
+//  - Inline scripts (theme-flash prevention in index.html)
+//  - Vite dev server HMR websocket (dev only)
+app.use(helmet({
+  // CSP: the most impactful header — misconfigured CSP silently breaks Razorpay/fonts
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",           // needed for index.html theme-flash script + Vite HMR
+        "https://checkout.razorpay.com",
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",           // Tailwind + Razorpay inject inline styles
+        "https://fonts.googleapis.com",
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://*.razorpay.com",
+      ],
+      connectSrc: [
+        "'self'",
+        "https://*.razorpay.com",    // Razorpay API calls from checkout widget
+        "ws://localhost:*",          // Vite HMR in dev (harmless in prod — no ws server)
+        "wss://localhost:*",
+      ],
+      frameSrc: [
+        "'self'",
+        "https://*.razorpay.com",    // Razorpay Checkout opens in an iframe
+        "https://api.razorpay.com",
+      ],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+  // Razorpay checkout loads cross-origin resources inside its iframe;
+  // COEP would block them, so we disable it.
+  crossOriginEmbedderPolicy: false,
+}));
+
 // ── Uploads directory (unchanged) ────────────────────────────────────────────
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -59,6 +112,12 @@ if (!fs.existsSync(uploadDir)) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(uploadDir));
+
+// ── Global API rate limiter ──────────────────────────────────────────────────
+// 100 requests per 15 min per IP — baseline ceiling for all API traffic.
+// The Razorpay webhook is exempt (handled via skip() inside the limiter).
+const { globalLimiter } = require('./backend/middleware/rateLimiter');
+app.use('/api', globalLimiter);
 
 // ── Routes (all originals unchanged + new chat route) ────────────────────────
 app.use('/api/orders', orderRoutes);
