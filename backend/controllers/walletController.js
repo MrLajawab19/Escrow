@@ -163,9 +163,9 @@ exports.topUpWallet = async (req, res) => {
     const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
 
     // Phase 2 (Subphase A Fix): Atomic Double-Payment Prevention
-    // Use an atomic DB transaction to check and insert a placeholder, using the Wallet row as a lock
     let placeholderTx = null;
     let existingTx = null;
+    let waitForCreation = false;
 
     await prisma.$transaction(async (tx) => {
       // 1. Acquire row-level lock on the user's wallet
@@ -187,9 +187,11 @@ exports.topUpWallet = async (req, res) => {
       if (txCheck) {
         if (txCheck.razorpayOrderId && txCheck.razorpayOrderId.startsWith('PENDING_CREATION_')) {
            if (txCheck.createdAt > thirtySecondsAgo) {
-             throw new Error('CONCURRENT_CREATION');
+             // Another request is currently calling Razorpay. We will wait outside the lock.
+             waitForCreation = true;
+             return;
            }
-           // If it's older than 30s, the previous request probably crashed. We ignore it and create a new placeholder.
+           // If it's older than 30s, the previous request probably crashed. Ignore it and create a new placeholder.
         } else {
            existingTx = txCheck;
            return;
@@ -197,6 +199,10 @@ exports.topUpWallet = async (req, res) => {
       }
 
       // 3. Create placeholder
+      // TODO (Cleanup): Abandoned INITIATED rows will sit in the database permanently.
+      // While they are harmless to balance calculations (which filter for 'PENDING'),
+      // a future cron job should periodically delete INITIATED transactions older than
+      // 1 hour to prevent table bloat over the lifetime of the product.
       placeholderTx = await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
@@ -213,6 +219,38 @@ exports.topUpWallet = async (req, res) => {
         }
       });
     });
+
+    // Gracefully handle concurrent creation by polling for up to 5 seconds
+    if (waitForCreation) {
+      let retries = 10;
+      while (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const checkAgain = await prisma.walletTransaction.findFirst({
+          where: {
+            walletId: wallet.id,
+            category: 'TOP_UP',
+            status: 'INITIATED',
+            amount: amountPaise,
+            reference: targetDeedId || null,
+            createdAt: { gte: fifteenMinutesAgo }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        
+        if (checkAgain && checkAgain.razorpayOrderId && !checkAgain.razorpayOrderId.startsWith('PENDING_CREATION_')) {
+          existingTx = checkAgain;
+          break;
+        }
+        retries--;
+      }
+      
+      if (!existingTx) {
+        return res.status(409).json({
+          success: false, 
+          message: 'Order creation is taking longer than expected. Please try again in a few moments.'
+        });
+      }
+    }
 
     if (existingTx && existingTx.razorpayOrderId) {
       return res.json({
