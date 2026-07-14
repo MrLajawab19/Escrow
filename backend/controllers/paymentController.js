@@ -87,7 +87,8 @@ const handleRazorpayWebhook = async (req, res) => {
           userId, 
           amountPaise, 
           'Razorpay', 
-          paymentEntity.id
+          paymentEntity.id,
+          paymentEntity.order_id // Pass the Razorpay Order ID to upgrade the INITIATED tx
         );
         console.log(`Successfully credited ${amountPaise} paise to user ${userId}'s wallet.`);
 

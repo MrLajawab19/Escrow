@@ -178,7 +178,7 @@ class WalletService {
   /**
    * Top up wallet (add funds)
    */
-  async topUpWallet(userId, amount, paymentMethod = 'card', reference = null) {
+  async topUpWallet(userId, amount, paymentMethod = 'card', reference = null, razorpayOrderId = null) {
     try {
       validateAmount(amount);
       return await prisma.$transaction(async (tx) => {
@@ -195,21 +195,54 @@ class WalletService {
         const fee = Math.floor(amount * 0.01);
         const netAmount = amount - fee;
 
-        const transaction = await tx.walletTransaction.create({
-          data: {
-            walletId: wallet.id,
-            type: 'CREDIT',
-            category: 'TOP_UP',
-            amount,
-            currency: wallet.currency,
-            description: `Top-up via ${paymentMethod}`,
-            reference,
-            fee,
-            netAmount,
-            status: 'SUCCESS',
-            metadata: { paymentMethod, topUpDate: new Date() }
+        let transaction;
+        
+        // If a razorpayOrderId is provided, check if we have an INITIATED transaction to upgrade
+        if (razorpayOrderId) {
+          const existingInitiated = await tx.walletTransaction.findFirst({
+            where: {
+              walletId: wallet.id,
+              category: 'TOP_UP',
+              status: 'INITIATED',
+              razorpayOrderId: razorpayOrderId
+            }
+          });
+          
+          if (existingInitiated) {
+            transaction = await tx.walletTransaction.update({
+              where: { id: existingInitiated.id },
+              data: {
+                status: 'SUCCESS',
+                metadata: { paymentMethod, topUpDate: new Date() },
+                // Just in case amount changed or was unrecorded
+                amount,
+                fee,
+                netAmount
+              }
+            });
           }
-        });
+        }
+        
+        // If no INITIATED transaction was found, create a new SUCCESS one
+        if (!transaction) {
+          transaction = await tx.walletTransaction.create({
+            data: {
+              walletId: wallet.id,
+              type: 'CREDIT',
+              category: 'TOP_UP',
+              amount,
+              currency: wallet.currency,
+              description: `Top-up via ${paymentMethod}`,
+              reference,
+              razorpayOrderId,
+              fee,
+              netAmount,
+              status: 'SUCCESS',
+              metadata: { paymentMethod, topUpDate: new Date() }
+            }
+          });
+        }
+        
         return transaction;
       });
     } catch (error) {

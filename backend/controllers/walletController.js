@@ -158,8 +158,55 @@ exports.topUpWallet = async (req, res) => {
     // amount is expected in paise (e.g. 50000 for ₹500)
     const amountPaise = amount;
 
+    const wallet = await walletService.getOrCreateWallet(userId, req.user.role);
+
+    // Phase 2: Double-Payment Prevention
+    // Check if there's a recent (15 min) INITIATED order for the same deed (or general top-up if no deed)
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const existingInitiatedTx = await prisma.walletTransaction.findFirst({
+      where: {
+        walletId: wallet.id,
+        category: 'TOP_UP',
+        status: 'INITIATED',
+        amount: amountPaise,
+        reference: targetDeedId || null,
+        createdAt: { gte: fifteenMinutesAgo }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (existingInitiatedTx && existingInitiatedTx.razorpayOrderId) {
+      return res.json({
+        success: true,
+        message: 'Reused existing pending Razorpay order',
+        data: {
+          razorpayOrderId: existingInitiatedTx.razorpayOrderId,
+          amount: existingInitiatedTx.amount,
+          currency: existingInitiatedTx.currency,
+          targetDeedId
+        }
+      });
+    }
+
     // Call PaymentService to create Razorpay Order
     const transaction = await paymentService.createTopUpOrder(userId, amountPaise, targetDeedId);
+
+    // Save as INITIATED in DB
+    await prisma.walletTransaction.create({
+      data: {
+        walletId: wallet.id,
+        type: 'CREDIT',
+        category: 'TOP_UP',
+        amount: amountPaise,
+        currency: transaction.currency,
+        status: 'INITIATED',
+        description: `Top-up for ${targetDeedId ? 'Deed ' + targetDeedId : 'Wallet'}`,
+        reference: targetDeedId || null,
+        razorpayOrderId: transaction.id,
+        fee: 0,
+        netAmount: amountPaise
+      }
+    });
 
     res.json({
       success: true,
