@@ -4,13 +4,7 @@ const crypto = require("crypto");
 const { v4: uuidv4 } = require("uuid");
 const prisma = new PrismaClient();
 const ledgerService = require("./ledgerService");
-
-// Dispute fee by day number (% of deed amount)
-const DISPUTE_FEE_BY_DAY = { 1: 7.5, 2: 8.5, 3: 10.0, 4: 11.0, 5: 12.0, 6: 13.5, 7: 15.0 };
-
-function getDisputeFeePercentage(dayNumber) {
-  return DISPUTE_FEE_BY_DAY[Math.min(dayNumber, 7)] || 15.0;
-}
+// Day number calculation kept for legacy logging
 
 function computeDayNumber(createdAt) {
   const diffMs = Date.now() - new Date(createdAt).getTime();
@@ -453,8 +447,6 @@ class DeedService {
     }
 
     const dayNumber = computeDayNumber(deed.createdAt);
-    const feePercentage = getDisputeFeePercentage(dayNumber);
-    const feeAmount = Math.floor((feePercentage / 100) * deed.amount);
     const counterWindowEnds = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
     const dispute = await prisma.dispute.create({
@@ -467,8 +459,8 @@ class DeedService {
         evidenceUrls: data.evidenceUrls || [],
         deedClauseCited: data.deedClauseCited || [],
         dayNumber,
-        feePercentage,
-        feeAmount,
+        feePercentage: 0, // Legacy field, fee calculated at resolution
+        feeAmount: 0,     // Legacy field, fee calculated at resolution
         counterWindowEnds,
         status: "COUNTER_WINDOW",
       },
@@ -482,8 +474,6 @@ class DeedService {
     await ledgerService.appendEvent(deedId, "DISPUTE_RAISED", role, userId, {
       reason: data.reason,
       dayNumber,
-      feePercentage,
-      feeAmount,
       counterWindowEnds,
     });
 

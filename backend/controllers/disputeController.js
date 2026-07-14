@@ -5,6 +5,33 @@ const prisma = new PrismaClient();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function calculateResolutionAmounts(price, buyerPct, disputeStatus = 'NONE') {
+  if (buyerPct === 100) {
+    return { buyerGross: price, sellerGross: 0, buyerFee: 0, sellerFee: 0, buyerNet: price, sellerNet: 0, platformFee: 0 };
+  }
+  let disputeRate = 0;
+  if (disputeStatus === 'RESOLVED') disputeRate = 0.01;
+  else if (disputeStatus === 'ESCALATED') disputeRate = 0.02;
+
+  const sellerBaseRate = 0.025; // 2.5%
+
+  // 1. Exact Split (Seller floored, remainder to buyer)
+  const sellerGross = Math.floor(price * ((100 - buyerPct) / 100));
+  const buyerGross = price - sellerGross;
+
+  // 2. Individual floored fees
+  const buyerFee = Math.floor(buyerGross * disputeRate);
+  const sellerFee = Math.floor(sellerGross * (sellerBaseRate + disputeRate));
+
+  // 3. Final Nets
+  const buyerNet = buyerGross - buyerFee;
+  const sellerNet = sellerGross - sellerFee;
+
+  // 4. Platform Fee aggregates both
+  const platformFee = buyerFee + sellerFee;
+  return { buyerGross, sellerGross, buyerFee, sellerFee, buyerNet, sellerNet, platformFee };
+}
+
 /**
  * Fetch the most recent chat messages for an order (for AI context).
  * Uses OrderChatRoom → OrderChatMessage (Prisma models).
@@ -375,25 +402,27 @@ const getFullDisputeDetail = async (req, res) => {
 
     const scopeBox = order?.scopeBox || {};
     const price = parseInt(scopeBox.price || 0, 10);
-    const platformFee = Math.floor(price * 0.05);
-    const netToSeller = price - platformFee; // Exact remainder after fee
+    
+    const feeModelStatus = dispute.status === 'MEDIATION' ? 'ESCALATED' : 'RESOLVED';
+    
+    const releaseSim = calculateResolutionAmounts(price, 0, feeModelStatus);
+    const refundSim = calculateResolutionAmounts(price, 100, feeModelStatus);
 
     const financial = {
       escrowAmount: price,
-      platformFee,
-      netToSeller,
-      netToBuyer: price,
+      platformFee: releaseSim.platformFee,
+      netToSeller: releaseSim.sellerNet,
+      netToBuyer: refundSim.buyerNet,
       currency: order?.currency || 'INR',
-      refundScenario: { buyerReceives: price, sellerReceives: 0, platformReceives: 0 },
-      releaseScenario: { buyerReceives: 0, sellerReceives: netToSeller, platformReceives: platformFee },
+      refundScenario: { buyerReceives: refundSim.buyerNet, sellerReceives: refundSim.sellerNet, platformReceives: refundSim.platformFee },
+      releaseScenario: { buyerReceives: releaseSim.buyerNet, sellerReceives: releaseSim.sellerNet, platformReceives: releaseSim.platformFee },
       partialScenarios: [50, 70, 30].map(pct => {
-        const buyerReceives = Math.floor((price * pct) / 100);
-        const sellerReceives = price - buyerReceives - platformFee; // Exact remainder avoids lost paise
+        const sim = calculateResolutionAmounts(price, pct, feeModelStatus);
         return {
           label: `${pct}% refund to buyer`,
-          buyerReceives,
-          sellerReceives,
-          platformReceives: platformFee,
+          buyerReceives: sim.buyerNet,
+          sellerReceives: sim.sellerNet,
+          platformReceives: sim.platformFee,
         };
       }),
     };
@@ -559,49 +588,141 @@ const updateDisputeStatus = async (req, res) => {
 const resolveDispute = async (req, res) => {
   try {
     const { id } = req.params;
-    const { action, notes, enhancedAnalysis, scopeCompliance } = req.body;
+    const { action, notes, enhancedAnalysis, scopeCompliance, buyerPct } = req.body;
 
     const dispute = await prisma.orderDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
+    
+    const order = await prisma.order.findUnique({ where: { id: dispute.orderId } });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
     const resolutionMap = { REFUND: 'REFUND_BUYER', RELEASE: 'RELEASE_TO_SELLER' };
     const resolution = resolutionMap[action] || action;
 
-    const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
+    // --- Phase 3: Dual-sided fee split and Wallet Balance updates ---
+    let finalBuyerPct = 100;
+    if (buyerPct !== undefined) {
+      finalBuyerPct = buyerPct;
+    } else if (resolution === 'RELEASE_TO_SELLER' || resolution.includes('RELEASE')) {
+      finalBuyerPct = 0;
+    }
 
-    const updateData = {
-      status: 'RESOLVED',
-      resolution,
-      resolvedBy: req.user.userId || req.user.id,
-      resolvedAt: new Date(),
-      timeline: [
-        ...currentTimeline,
-        {
-          event: 'DISPUTE_RESOLVED',
-          by: req.user.role,
-          timestamp: new Date().toISOString(),
-          description: `Admin resolved: ${resolution}`,
-          notes: notes || '',
-          enhancedAnalysis: enhancedAnalysis || null,
-          scopeCompliance: scopeCompliance || null,
-        },
-      ],
-      lastActivity: new Date(),
-    };
+    const price = parseInt(order.scopeBox?.price || 0, 10);
+    const feeModelStatus = dispute.status === 'MEDIATION' ? 'ESCALATED' : 'RESOLVED';
+    const split = calculateResolutionAmounts(price, finalBuyerPct, feeModelStatus);
 
-    if (enhancedAnalysis) updateData.enhancedAnalysis = enhancedAnalysis;
-    if (scopeCompliance) updateData.scopeCompliance = scopeCompliance;
+    await prisma.$transaction(async (tx) => {
+      // 1. Un-lock Buyer's balance (gte guard ensures we don't underflow or double-spend)
+      const buyerWallet = await tx.wallet.findUnique({ where: { userId: order.buyerId } });
+      if (!buyerWallet) throw new Error("BUYER_WALLET_NOT_FOUND");
 
-    const updated = await prisma.orderDispute.update({ where: { id }, data: updateData });
+      const updateLock = await tx.wallet.updateMany({
+        where: { id: buyerWallet.id, lockedBalance: { gte: price } },
+        data: { lockedBalance: { decrement: price } }
+      });
+      if (updateLock.count === 0) throw new Error("INSUFFICIENT_LOCKED_BALANCE");
 
-    // Update linked order status
-    const orderStatus = (resolution === 'REFUND_BUYER' || resolution.includes('REFUND'))
-      ? 'REFUNDED'
-      : 'COMPLETED';
-    await prisma.order.update({
-      where: { id: dispute.orderId },
-      data: { status: orderStatus },
+      // 2. Refund Buyer (increment)
+      if (split.buyerNet > 0) {
+        await tx.wallet.update({
+          where: { id: buyerWallet.id },
+          data: { balance: { increment: split.buyerNet } }
+        });
+        await tx.walletTransaction.create({
+          data: {
+            walletId: buyerWallet.id,
+            type: "CREDIT",
+            category: "DISPUTE_REFUND",
+            amount: split.buyerGross,
+            currency: order.currency || "INR",
+            status: "SUCCESS",
+            description: `Dispute Refund: ${order.scopeBox?.title || order.id}`,
+            reference: dispute.id,
+            netAmount: split.buyerNet,
+            fee: split.buyerFee,
+            metadata: {
+              feeTier: `DISPUTE_${feeModelStatus}_BUYER`,
+              feePercentage: feeModelStatus === 'ESCALATED' ? 2 : (feeModelStatus === 'RESOLVED' ? 1 : 0),
+              baseAmount: split.buyerGross,
+              feeDeducted: split.buyerFee
+            }
+          }
+        });
+      }
+
+      // 3. Credit Seller (increment)
+      if (split.sellerNet > 0 && order.sellerId) {
+        let sellerWallet = await tx.wallet.findUnique({ where: { userId: order.sellerId } });
+        if (!sellerWallet) {
+          sellerWallet = await tx.wallet.create({
+            data: { userId: order.sellerId, userRole: "seller", currency: order.currency || "INR" }
+          });
+        }
+        await tx.wallet.update({
+          where: { id: sellerWallet.id },
+          data: { balance: { increment: split.sellerNet } }
+        });
+        await tx.walletTransaction.create({
+          data: {
+            walletId: sellerWallet.id,
+            type: "CREDIT",
+            category: "DISPUTE_RELEASE",
+            amount: split.sellerGross,
+            currency: order.currency || "INR",
+            status: "SUCCESS",
+            description: `Dispute Resolution: ${order.scopeBox?.title || order.id}`,
+            reference: dispute.id,
+            netAmount: split.sellerNet,
+            fee: split.sellerFee,
+            metadata: {
+              feeTier: `DISPUTE_${feeModelStatus}_SELLER`,
+              feePercentage: feeModelStatus === 'ESCALATED' ? 4.5 : (feeModelStatus === 'RESOLVED' ? 3.5 : 0), // 2.5% base + 1% or 2%
+              baseAmount: split.sellerGross,
+              feeDeducted: split.sellerFee
+            }
+          }
+        });
+      }
+
+      // --- End of Wallet updates ---
+
+      const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
+      const updateData = {
+        status: 'RESOLVED',
+        resolution,
+        resolvedBy: req.user.userId || req.user.id,
+        resolvedAt: new Date(),
+        timeline: [
+          ...currentTimeline,
+          {
+            event: 'DISPUTE_RESOLVED',
+            by: req.user.role,
+            timestamp: new Date().toISOString(),
+            description: `Admin resolved: ${resolution} (Buyer: ${finalBuyerPct}%)`,
+            notes: notes || '',
+            enhancedAnalysis: enhancedAnalysis || null,
+            scopeCompliance: scopeCompliance || null,
+          },
+        ],
+        lastActivity: new Date(),
+      };
+
+      if (enhancedAnalysis) updateData.enhancedAnalysis = enhancedAnalysis;
+      if (scopeCompliance) updateData.scopeCompliance = scopeCompliance;
+
+      await tx.orderDispute.update({ where: { id }, data: updateData });
+
+      const orderStatus = (resolution === 'REFUND_BUYER' || resolution.includes('REFUND'))
+        ? 'REFUNDED'
+        : 'COMPLETED';
+      await tx.order.update({
+        where: { id: dispute.orderId },
+        data: { status: orderStatus },
+      });
     });
+
+    // Re-fetch updated dispute for response
+    const updated = await prisma.orderDispute.findUnique({ where: { id } });
 
     return res.json({
       success: true,
@@ -612,7 +733,7 @@ const resolveDispute = async (req, res) => {
     });
   } catch (error) {
     console.error('Error resolving dispute:', error);
-    return res.status(500).json({ success: false, message: 'Failed to resolve dispute' });
+    return res.status(500).json({ success: false, message: 'Failed to resolve dispute: ' + error.message });
   }
 };
 
