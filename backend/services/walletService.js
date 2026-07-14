@@ -396,37 +396,37 @@ class WalletService {
 
       const monthlyStats = this.calculateMonthlyStats(successfulTransactions);
 
-      // Calculate role-specific states using Sequelize Order model
+      // Calculate role-specific states using Deed model (Order table is fully retired from this calculation)
       let lockedEscrowBalance = 0;
       let pendingRefundBalance = 0;
       let pendingEarnings = 0;
       let underDisputeAmount = 0;
       let withdrawnAmount = 0;
 
-      const activeStatuses = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'DISPUTED', 'CHANGES_REQUESTED'];
+      const activeBuyerDeedStatuses = ['PENDING_SELLER', 'PENDING_SIGNATURES', 'ACTIVE', 'SUBMITTED', 'CHANGES_REQUESTED', 'DISPUTED'];
+      // Sellers should only see earnings as 'pending' AFTER they have accepted the job.
+      const activeSellerDeedStatuses = ['ACTIVE', 'SUBMITTED', 'CHANGES_REQUESTED', 'DISPUTED'];
 
       if (wallet.userRole === 'buyer') {
-        const activeBuyerOrders = await prisma.order.findMany({
-          where: { buyerId: userId, status: { in: activeStatuses } },
+        const activeBuyerDeeds = await prisma.deed.findMany({
+          where: { buyerId: userId, status: { in: activeBuyerDeedStatuses } },
         });
-        activeBuyerOrders.forEach(order => {
-          const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
-          if (order.status === 'DISPUTED') {
-            pendingRefundBalance += parseInt(scopeBox.price || 0, 10);
+        activeBuyerDeeds.forEach(deed => {
+          if (deed.status === 'DISPUTED') {
+            pendingRefundBalance += parseInt(deed.amount || 0, 10);
           } else {
-            lockedEscrowBalance += parseInt(scopeBox.price || 0, 10);
+            lockedEscrowBalance += parseInt(deed.amount || 0, 10);
           }
         });
       } else if (wallet.userRole === 'seller') {
-        const activeSellerOrders = await prisma.order.findMany({
-          where: { sellerId: userId, status: { in: activeStatuses } },
+        const activeSellerDeeds = await prisma.deed.findMany({
+          where: { sellerId: userId, status: { in: activeSellerDeedStatuses } },
         });
-        activeSellerOrders.forEach(order => {
-          const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
-          if (order.status === 'DISPUTED') {
-            underDisputeAmount += parseInt(scopeBox.price || 0, 10);
+        activeSellerDeeds.forEach(deed => {
+          if (deed.status === 'DISPUTED') {
+            underDisputeAmount += parseInt(deed.amount || 0, 10);
           } else {
-            pendingEarnings += parseInt(scopeBox.price || 0, 10);
+            pendingEarnings += parseInt(deed.amount || 0, 10);
           }
         });
 
@@ -522,6 +522,15 @@ class WalletService {
 
   /**
    * Read-only reconciliation of locked balance against active Deeds.
+   * 
+   * ARCHITECTURE NOTE:
+   * Do not reconstruct a buyer's locked balance purely from WalletTransaction history
+   * (e.g. by summing ESCROW_LOCKs). When a deed is closed (via releasePayment or refundBuyer), 
+   * the buyer's `wallet.lockedBalance` is decremented directly, but no offsetting 
+   * WalletTransaction is created on the buyer's wallet (the ESCROW_RELEASE goes to the seller).
+   * Therefore, a simple sum of ESCROW_LOCK transactions will always overshoot the true 
+   * locked balance by the sum of all closed deeds. Always derive the true locked balance 
+   * by summing active Deeds, as done below.
    */
   async verifyLockedBalance(userId) {
     const wallet = await prisma.wallet.findUnique({ where: { userId } });
