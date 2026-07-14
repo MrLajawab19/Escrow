@@ -467,8 +467,24 @@ const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) =
               )}
             </div>
 
+            {/* Fee Warning */}
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mt-4">
+              <h4 className="flex items-center gap-2 text-sm font-bold text-amber-900 mb-2">
+                <span className="text-amber-600">⚠️</span>
+                Raising a dispute changes the fee structure for BOTH parties:
+              </h4>
+              <ul className="text-xs text-amber-800 space-y-1 list-disc pl-5">
+                <li>
+                  <strong className="font-semibold">If resolved between yourselves:</strong> 1% additional fee on your received portion.
+                </li>
+                <li>
+                  <strong className="font-semibold">If escalated to human arbitration:</strong> 2% additional fee on your received portion.
+                </li>
+              </ul>
+            </div>
+
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 pt-4">
+            <div className="flex justify-end space-x-3 pt-2">
               <button
                 type="button"
                 onClick={handleCancel}
@@ -484,15 +500,15 @@ const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) =
                 {loading ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Submitting...
                   </>
                 ) : (
                   <>
                     <span className="mr-1">🚨</span>
-                    Raise Dispute
+                    Yes, Raise Dispute
                   </>
                 )}
               </button>

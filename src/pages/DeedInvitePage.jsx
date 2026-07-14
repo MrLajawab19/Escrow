@@ -143,6 +143,22 @@ export default function DeedInvitePage() {
             </div>
           </div>
 
+          {/* Fee Transparency Block */}
+          <div className="mb-8 bg-white p-5 rounded-xl border border-neutral-200 shadow-sm">
+            <h4 className="flex items-center gap-2 text-sm font-bold text-navy-900 font-inter mb-3">
+              <span className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-xs">i</span>
+              Fee Transparency
+            </h4>
+            <ul className="space-y-2 text-sm text-neutral-600 font-inter list-disc pl-5">
+              <li>
+                <strong className="text-navy-900">Standard completion fee:</strong> 2.5% (₹{((deed.amount || 0) * 0.025 / 100).toFixed(2)} deducted upon success)
+              </li>
+              <li>
+                <strong className="text-navy-900">Dispute resolution:</strong> In case of a dispute, fee adjusts with an additional 1% or 2% on settled amounts.
+              </li>
+            </ul>
+          </div>
+
           <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-start gap-3 mb-8">
             <span className="text-xl">🔒</span>
             <div>
