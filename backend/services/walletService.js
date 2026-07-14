@@ -93,18 +93,11 @@ class WalletService {
         throw new Error('Wallet not found');
       }
 
-      // Calculate net amount (amount minus fees)
+      // Apply fees for certain transaction types
+      // Phase 1: Zero-fee top-up and withdrawal. 
+      // Fees are now handled manually at the deed resolution stage.
       let fee = 0;
       let netAmount = amount;
-
-      // Apply fees for certain transaction types
-      if (category === 'WITHDRAWAL') {
-        fee = Math.floor(amount * 0.02); // 2% withdrawal fee
-        netAmount = amount - fee;
-      } else if (category === 'TOP_UP') {
-        fee = Math.floor(amount * 0.01); // 1% payment processing fee
-        netAmount = amount - fee;
-      }
 
       const transaction = await prisma.walletTransaction.create({
         data: {
@@ -192,8 +185,9 @@ class WalletService {
         
         if (updateResult.count === 0) throw new Error('Concurrency conflict during top-up');
 
-        const fee = Math.floor(amount * 0.01);
-        const netAmount = amount - fee;
+        // Phase 1: Zero-fee top-ups
+        const fee = 0;
+        const netAmount = amount;
 
         let transaction;
         
@@ -274,8 +268,9 @@ class WalletService {
           throw new Error('Concurrency conflict or insufficient balance during withdrawal');
         }
 
-        const fee = Math.floor(amount * 0.02);
-        const netAmount = amount - fee;
+        // Phase 1: Zero-fee withdrawals (flat pass-through fee to be added later)
+        const fee = 0;
+        const netAmount = amount;
 
         let transaction = await tx.walletTransaction.create({
           data: {
