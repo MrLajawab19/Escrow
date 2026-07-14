@@ -179,11 +179,11 @@ class WalletService {
         if (!wallet) throw new Error('Wallet not found');
 
         const updateResult = await tx.wallet.updateMany({
-          where: { id: wallet.id, balance: wallet.balance },
+          where: { id: wallet.id },
           data: { balance: { increment: amount } }
         });
         
-        if (updateResult.count === 0) throw new Error('Concurrency conflict during top-up');
+        if (updateResult.count === 0) throw new Error('Wallet not found during top-up');
 
         // Phase 1: Zero-fee top-ups
         const fee = 0;

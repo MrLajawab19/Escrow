@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import OrderCard from '../components/OrderCard';
+import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
+import { ClipboardCheck, Clock, Flag, CheckCircle2 } from 'lucide-react';
+
+// Existing modal components (PRESERVED)
 import MyDisputesPage from '../components/MyDisputesPage';
 import ChangesReviewModal from '../components/ChangesReviewModal';
 import WalletDashboard from '../components/WalletDashboard';
-import WalletHeader from '../components/WalletHeader';
 import KYCModal from '../components/KYCModal';
-import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
-import NotificationDropdown from '../components/NotificationDropdown';
-import { toast } from 'react-hot-toast';
-import { useCurrency } from '../context/CurrencyContext';
+import TransactionHistory from '../components/TransactionHistory';
+
+// New dashboard layout components
+import DashboardSidebar from '../components/dashboard/DashboardSidebar';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
+import MetricCard from '../components/dashboard/MetricCard';
+import OrdersTable from '../components/dashboard/OrdersTable';
+import QuickActions from '../components/dashboard/QuickActions';
+import WalletOverviewCard from '../components/dashboard/WalletOverviewCard';
+import SpendingOverview from '../components/dashboard/SpendingOverview';
+import RecentTransactions from '../components/dashboard/RecentTransactions';
 
 const BuyerDashboard = () => {
   const navigate = useNavigate();
@@ -19,11 +30,14 @@ const BuyerDashboard = () => {
   const [showNewOrder, setShowNewOrder] = useState(false);
   const [showMyDisputes, setShowMyDisputes] = useState(false);
   const [showChangesReview, setShowChangesReview] = useState(false);
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [userId, setUserId] = useState(null);
   const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });
   const [showKycModal, setShowKycModal] = useState(false);
+  const [walletSummary, setWalletSummary] = useState(null);
+  const [walletLoading, setWalletLoading] = useState(true);
+  const [buyerData, setBuyerData] = useState(null);
   const { formatCurrency } = useCurrency();
 
   useEffect(() => {
@@ -40,8 +54,20 @@ const BuyerDashboard = () => {
         console.error('Failed to decode token:', err);
       }
     }
+
+    // Get buyer data from localStorage
+    const storedData = localStorage.getItem('buyerData');
+    if (storedData && storedData !== 'undefined') {
+      try {
+        setBuyerData(JSON.parse(storedData));
+      } catch {
+        // ignore
+      }
+    }
+
     fetchOrders();
     fetchKycStatus();
+    fetchWalletSummary();
   }, []);
 
   const fetchKycStatus = async () => {
@@ -59,7 +85,20 @@ const BuyerDashboard = () => {
     }
   };
 
-  const [deeds, setDeeds] = useState([]);
+  const fetchWalletSummary = async () => {
+    try {
+      const token = localStorage.getItem('buyerToken');
+      if (!token) return;
+      const response = await axios.get('/api/wallet/summary', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setWalletSummary(response.data.data);
+    } catch (err) {
+      // silent
+    } finally {
+      setWalletLoading(false);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -77,13 +116,20 @@ const BuyerDashboard = () => {
         axios.get('/api/deeds/buyer', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { success: false } }))
       ]);
 
-      if (ordersRes.data.success) {
-        setOrders(ordersRes.data.data);
+      let combined = [];
+
+      if (ordersRes.data.success && ordersRes.data.data) {
+        combined = [...combined, ...ordersRes.data.data];
       }
-      if (deedsRes.data.success) {
-        // Only show deeds that are funded but not yet accepted
-        setDeeds(deedsRes.data.data.filter(d => d.status === 'PENDING_SELLER'));
+      if (deedsRes.data.success && deedsRes.data.data) {
+        const activeDeeds = deedsRes.data.data.filter(d => d.status !== 'DRAFT');
+        combined = [...combined, ...activeDeeds];
       }
+
+      // Sort combined by creation date descending
+      combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      setOrders(combined);
     } catch (err) {
       console.error('Error fetching data:', err);
       if (err.response?.status === 401) {
@@ -122,33 +168,38 @@ const BuyerDashboard = () => {
     );
   };
 
+  // Metric computations
+  const totalOrders = orders.length;
+  const inProgress = orders.filter(o => ['IN_PROGRESS', 'ESCROW_FUNDED', 'ACCEPTED'].includes(o.status)).length;
+  const pendingReview = orders.filter(o => o.status === 'SUBMITTED').length;
+  const completed = orders.filter(o => o.status === 'RELEASED').length;
+
+  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-main flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-500 font-medium">Loading your orders...</p>
+          <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-neutral-500 font-medium text-sm">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-main flex items-center justify-center p-4">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="bg-white border border-neutral-200 shadow-sm rounded-xl p-8 max-w-md w-full">
+          <div className="bg-white border border-neutral-200 shadow-sm rounded-2xl p-8 max-w-md w-full">
             <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-navy-900 mb-2">Error Loading Orders</h3>
+            <h3 className="text-lg font-bold text-navy-900 mb-2">Error Loading Dashboard</h3>
             <p className="text-neutral-600 mb-6 text-sm leading-relaxed">{error}</p>
-            <button
-              onClick={fetchOrders}
-              className="btn btn-primary w-full"
-            >
+            <button onClick={fetchOrders} className="btn btn-primary w-full">
               Try Again
             </button>
           </div>
@@ -157,39 +208,123 @@ const BuyerDashboard = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-main">
-      {/* Header */}
-      <div className="bg-white border-b border-neutral-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-[72px]">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-navy-900 tracking-tight">Buyer Dashboard</h1>
+  // Render tab content
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'wallet':
+      case 'transactions':
+      case 'refunds':
+        return (
+          <div className="animate-fadeIn">
+            {userId && <WalletDashboard userId={userId} />}
+          </div>
+        );
+
+      case 'orders':
+        return (
+          <div className="animate-fadeIn">
+            <OrdersTable orders={orders} onViewAllOrders={() => {}} />
+          </div>
+        );
+
+      case 'dashboard':
+      default:
+        return (
+          <div className="animate-fadeIn">
+            {/* Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              <MetricCard
+                icon={<ClipboardCheck size={22} className="text-primary-500" />}
+                iconBg="bg-primary-50"
+                value={totalOrders}
+                label="Total Orders"
+                subtitle="All time orders"
+              />
+              <MetricCard
+                icon={<Clock size={22} className="text-blue-500" />}
+                iconBg="bg-blue-50"
+                value={inProgress}
+                label="In Progress"
+                subtitle="Active orders"
+              />
+              <MetricCard
+                icon={<Flag size={22} className="text-amber-500" />}
+                iconBg="bg-amber-50"
+                value={pendingReview}
+                label="Pending Review"
+                subtitle="Awaiting your action"
+              />
+              <MetricCard
+                icon={<CheckCircle2 size={22} className="text-emerald-500" />}
+                iconBg="bg-emerald-50"
+                value={completed}
+                label="Completed"
+                subtitle="Successfully done"
+              />
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-neutral-500 font-medium hidden sm:inline-block">Welcome back</span>
-              <NotificationDropdown userType="buyer" />
-              {userId && <WalletHeader userId={userId} onNavigateToWallet={() => setActiveTab('wallet')} />}
-              <button
-                onClick={() => setShowMyDisputes(true)}
-                className="btn btn-outline border-neutral-200 text-neutral-700 hover:bg-neutral-50"
-              >
-                Disputes
-              </button>
-              <button
-                onClick={() => {
-                  window.location.href = '/buyer/new-order';
-                }}
-                className="btn btn-primary shadow-sm hover:shadow"
-              >
-                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                New Order
-              </button>
+
+            {/* Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+              {/* Left Column */}
+              <div className="lg:col-span-8">
+                <OrdersTable
+                  orders={orders}
+                  onViewAllOrders={() => setActiveTab('orders')}
+                />
+                <QuickActions />
+              </div>
+
+              {/* Right Column */}
+              <div className="lg:col-span-4">
+                <WalletOverviewCard
+                  userId={userId}
+                  walletSummary={walletSummary}
+                  walletLoading={walletLoading}
+                  onNavigateToWallet={() => setActiveTab('wallet')}
+                  onRefreshWallet={fetchWalletSummary}
+                />
+                <SpendingOverview 
+                  userId={userId} 
+                  walletSummary={walletSummary}
+                  walletLoading={walletLoading}
+                />
+                <RecentTransactions
+                  userId={userId}
+                  onViewAll={() => setActiveTab('wallet')}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        );
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-neutral-50 overflow-hidden">
+      {/* Sidebar */}
+      <DashboardSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onNewOrder={() => navigate('/buyer/new-order')}
+        onDisputesClick={() => setShowMyDisputes(true)}
+        userId={buyerData?.id || userId}
+      />
+
+      {/* Main Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header */}
+        <DashboardHeader
+          buyerData={buyerData}
+          kycStatus={kycStatus}
+          walletBalance={walletSummary?.balance || 0}
+          walletLoading={walletLoading}
+          onKycClick={() => setShowKycModal(true)}
+        />
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-6">
+          {renderContent()}
+        </main>
       </div>
 
       {/* My Disputes Modal */}
@@ -199,222 +334,6 @@ const BuyerDashboard = () => {
           onClose={() => setShowMyDisputes(false)}
         />
       )}
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* KYC Banner */}
-        {!kycStatus.kycComplete && (
-          <div className="mb-6 bg-yellow-900/40 border border-yellow-700/50 rounded-lg p-4 flex items-center justify-between">
-            <div className="flex items-center text-yellow-500">
-              <svg className="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-              </svg>
-              <span>
-                <strong>Verify your identity</strong> to create deeds above ₹10,000. Current status: {kycStatus.reviewStatus}
-              </span>
-            </div>
-            <button 
-              onClick={() => setShowKycModal(true)}
-              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-md transition-colors"
-            >
-              Complete KYC
-            </button>
-          </div>
-        )}
-        {kycStatus.kycComplete && (
-          <div className="mb-6 bg-green-900/20 border border-green-800/50 rounded-lg p-4 flex items-center text-green-400">
-            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            KYC Verified
-          </div>
-        )}
-        
-        {/* Navigation Tabs */}
-        <div className="flex space-x-6 border-b border-neutral-200 mb-8">
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`pb-3 text-sm font-semibold transition-colors relative ${
-              activeTab === 'orders' ? 'text-indigo-600' : 'text-neutral-500 hover:text-neutral-800'
-            }`}
-          >
-            My Orders
-            {activeTab === 'orders' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('wallet')}
-            className={`pb-3 text-sm font-semibold transition-colors relative ${
-              activeTab === 'wallet' ? 'text-indigo-600' : 'text-neutral-500 hover:text-neutral-800'
-            }`}
-          >
-            Wallet & Ledger
-            {activeTab === 'wallet' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
-            )}
-          </button>
-        </div>
-
-        {activeTab === 'wallet' ? (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {userId && <WalletDashboard userId={userId} />}
-          </div>
-        ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Total Orders</p>
-                <p className="text-2xl font-bold text-navy-900 mt-1">{orders.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Pending Review</p>
-                <p className="text-2xl font-bold text-navy-900 mt-1">
-                  {orders.filter(order => order.status === 'SUBMITTED').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Disputes</p>
-                <p className="text-2xl font-bold text-navy-900 mt-1">
-                  {orders.filter(order => order.status === 'DISPUTED').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Completed</p>
-                <p className="text-2xl font-bold text-navy-900 mt-1">
-                  {orders.filter(order => order.status === 'RELEASED').length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Deeds Section */}
-        {deeds.length > 0 && (
-          <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden mt-6 mb-6">
-            <div className="px-6 py-5 border-b border-neutral-100 bg-amber-50/50 flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-bold text-navy-900">Pending Deeds</h2>
-                <p className="text-sm text-neutral-500 mt-1">Share the invite link with a seller to start the order.</p>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                {deeds.map(deed => (
-                  <div key={deed.id} className="border border-neutral-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white hover:border-amber-300 transition-colors">
-                    <div>
-                      <h3 className="font-bold text-navy-900">{deed.title || 'Untitled Deed'}</h3>
-                      <p className="text-sm text-neutral-500 mt-1">Amount: {formatCurrency(deed.amount, deed.currency)}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => {
-                          const inviteLink = `${window.location.origin}/invite/${deed.inviteToken}`;
-                          navigator.clipboard.writeText(inviteLink);
-                          toast.success('Invite link copied to clipboard!');
-                        }}
-                        className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                        </svg>
-                        Copy Invite Link
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Orders Section */}
-        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden mt-6">
-          <div className="px-6 py-5 border-b border-neutral-100 bg-neutral-50/50 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-navy-900">Your Orders</h2>
-          </div>
-          <div className="p-6 bg-neutral-50/30">
-            {orders.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-lg border border-neutral-100 border-dashed">
-                <div className="mx-auto w-16 h-16 bg-neutral-50 rounded-full flex items-center justify-center mb-5">
-                  <svg className="w-8 h-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-navy-900 mb-2">No orders yet</h3>
-                <p className="text-neutral-500 mb-8 max-w-sm mx-auto leading-relaxed">Start by creating your first order to begin transacting securely with sellers.</p>
-                <Link
-                  to="/buyer/new-order"
-                  className="btn btn-primary"
-                >
-                  Create Your First Order
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {orders.map(order => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    userType="buyer"
-                    onOrderUpdate={handleOrderUpdate}
-                    onReviewChanges={handleReviewChanges}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        </div>
-        )}
-      </main>
 
       {/* Changes Review Modal */}
       {showChangesReview && selectedOrder && (
@@ -426,7 +345,7 @@ const BuyerDashboard = () => {
       )}
 
       {/* KYC Modal */}
-      <KYCModal 
+      <KYCModal
         isOpen={showKycModal}
         onClose={() => setShowKycModal(false)}
         onComplete={fetchKycStatus}

@@ -299,7 +299,12 @@ const AppNav = ({
   );
 };
 
-// Home Page Component with Auto-Logout
+// Conditionally hide main nav on buyer dashboard (it has its own sidebar+header)
+const ConditionalNav = ({ children }) => {
+  const location = useLocation();
+  if (location.pathname === '/buyer/dashboard') return null;
+  return children;
+};
 
 // Home Page Component with Auto-Logout
 const HomePage = ({ onAuthClear }) => {
@@ -558,21 +563,23 @@ function App() {
       <Router>
         <ThemeProvider>
           <div className="App">
-          {/* Navigation */}
-        <AppNav
-          isBuyerAuthenticated={isBuyerAuthenticated}
-          isSellerAuthenticated={isSellerAuthenticated}
-          isAdminAuthenticated={isAdminAuthenticated}
-          buyerData={buyerData}
-          sellerData={sellerData}
-          adminData={adminData}
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-          handleHomeClick={handleHomeClick}
-          handleBuyerLogout={handleBuyerLogout}
-          handleSellerLogout={handleSellerLogout}
-          handleAdminLogout={handleAdminLogout}
-        />
+          {/* Navigation - hidden on buyer dashboard (has its own sidebar+header) */}
+        <ConditionalNav>
+          <AppNav
+            isBuyerAuthenticated={isBuyerAuthenticated}
+            isSellerAuthenticated={isSellerAuthenticated}
+            isAdminAuthenticated={isAdminAuthenticated}
+            buyerData={buyerData}
+            sellerData={sellerData}
+            adminData={adminData}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            handleHomeClick={handleHomeClick}
+            handleBuyerLogout={handleBuyerLogout}
+            handleSellerLogout={handleSellerLogout}
+            handleAdminLogout={handleAdminLogout}
+          />
+        </ConditionalNav>
 
         {/* Routes */}
         <RouteChangeHandler onAuthClear={clearAuthState} onCheckAuth={checkAuth}>
