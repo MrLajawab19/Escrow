@@ -339,10 +339,15 @@ class DeedService {
         });
       }
 
-      // Atomic increment of seller balance
+      // Phase 2: Happy-Path 2.5% Seller Fee
+      const sellerBaseRate = 0.025; // 2.5%
+      const platformFee = Math.floor(deed.amount * sellerBaseRate);
+      const sellerNet = deed.amount - platformFee;
+
+      // Atomic increment of seller balance (safe pattern: increment without exact-match balance guard)
       await tx.wallet.update({
         where: { userId: deed.sellerId },
-        data: { balance: { increment: deed.amount } },
+        data: { balance: { increment: sellerNet } },
       });
 
       await tx.walletTransaction.create({
@@ -355,7 +360,13 @@ class DeedService {
           status: "SUCCESS",
           description: `Payment released for deed: ${deed.title}`,
           reference: deedId,
-          netAmount: deed.amount,
+          netAmount: sellerNet,
+          metadata: {
+            feeTier: "HAPPY_PATH_SELLER_2_5",
+            feePercentage: 2.5,
+            baseAmount: deed.amount,
+            feeDeducted: platformFee
+          }
         },
       });
 
