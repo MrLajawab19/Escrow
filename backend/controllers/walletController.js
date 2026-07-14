@@ -159,54 +159,94 @@ exports.topUpWallet = async (req, res) => {
     const amountPaise = amount;
 
     const wallet = await walletService.getOrCreateWallet(userId, req.user.role);
-
-    // Phase 2: Double-Payment Prevention
-    // Check if there's a recent (15 min) INITIATED order for the same deed (or general top-up if no deed)
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-    const existingInitiatedTx = await prisma.walletTransaction.findFirst({
-      where: {
-        walletId: wallet.id,
-        category: 'TOP_UP',
-        status: 'INITIATED',
-        amount: amountPaise,
-        reference: targetDeedId || null,
-        createdAt: { gte: fifteenMinutesAgo }
-      },
-      orderBy: { createdAt: 'desc' }
+    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
+
+    // Phase 2 (Subphase A Fix): Atomic Double-Payment Prevention
+    // Use an atomic DB transaction to check and insert a placeholder, using the Wallet row as a lock
+    let placeholderTx = null;
+    let existingTx = null;
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Acquire row-level lock on the user's wallet
+      await tx.$queryRaw`SELECT id FROM "Wallet" WHERE id = ${wallet.id} FOR UPDATE`;
+
+      // 2. Check for an existing INITIATED transaction
+      const txCheck = await tx.walletTransaction.findFirst({
+        where: {
+          walletId: wallet.id,
+          category: 'TOP_UP',
+          status: 'INITIATED',
+          amount: amountPaise,
+          reference: targetDeedId || null,
+          createdAt: { gte: fifteenMinutesAgo }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (txCheck) {
+        if (txCheck.razorpayOrderId && txCheck.razorpayOrderId.startsWith('PENDING_CREATION_')) {
+           if (txCheck.createdAt > thirtySecondsAgo) {
+             throw new Error('CONCURRENT_CREATION');
+           }
+           // If it's older than 30s, the previous request probably crashed. We ignore it and create a new placeholder.
+        } else {
+           existingTx = txCheck;
+           return;
+        }
+      }
+
+      // 3. Create placeholder
+      placeholderTx = await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'CREDIT',
+          category: 'TOP_UP',
+          amount: amountPaise,
+          currency: 'INR',
+          status: 'INITIATED',
+          description: `Top-up for ${targetDeedId ? 'Deed ' + targetDeedId : 'Wallet'}`,
+          reference: targetDeedId || null,
+          razorpayOrderId: `PENDING_CREATION_${Date.now()}`,
+          fee: 0,
+          netAmount: amountPaise
+        }
+      });
     });
 
-    if (existingInitiatedTx && existingInitiatedTx.razorpayOrderId) {
+    if (existingTx && existingTx.razorpayOrderId) {
       return res.json({
         success: true,
         message: 'Reused existing pending Razorpay order',
         data: {
-          razorpayOrderId: existingInitiatedTx.razorpayOrderId,
-          amount: existingInitiatedTx.amount,
-          currency: existingInitiatedTx.currency,
+          razorpayOrderId: existingTx.razorpayOrderId,
+          amount: existingTx.amount,
+          currency: existingTx.currency,
           targetDeedId
         }
       });
     }
 
-    // Call PaymentService to create Razorpay Order
-    const transaction = await paymentService.createTopUpOrder(userId, amountPaise, targetDeedId);
-
-    // Save as INITIATED in DB
-    await prisma.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        type: 'CREDIT',
-        category: 'TOP_UP',
-        amount: amountPaise,
-        currency: transaction.currency,
-        status: 'INITIATED',
-        description: `Top-up for ${targetDeedId ? 'Deed ' + targetDeedId : 'Wallet'}`,
-        reference: targetDeedId || null,
-        razorpayOrderId: transaction.id,
-        fee: 0,
-        netAmount: amountPaise
+    // Now call Razorpay outside the DB transaction so we don't hold the lock over the network
+    let transaction;
+    try {
+      transaction = await paymentService.createTopUpOrder(userId, amountPaise, targetDeedId);
+      
+      // Update placeholder with actual Razorpay Order ID
+      await prisma.walletTransaction.update({
+        where: { id: placeholderTx.id },
+        data: {
+          razorpayOrderId: transaction.id,
+          currency: transaction.currency
+        }
+      });
+    } catch (error) {
+      // If Razorpay fails, clean up the placeholder
+      if (placeholderTx) {
+         await prisma.walletTransaction.delete({ where: { id: placeholderTx.id } }).catch(console.error);
       }
-    });
+      throw error;
+    }
 
     res.json({
       success: true,
