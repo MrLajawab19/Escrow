@@ -29,13 +29,13 @@ function formatTime(dateStr) {
  * OrderChat — real-time per-order chat between buyer and seller.
  *
  * Props:
- *   orderId      {string}  The order UUID
+ *   deedId       {string}  The deed UUID
  *   currentUser  {object}  { userId, role, firstName, lastName }
- *   orderStatus  {string}  Current order status
- *   inline       {boolean} If true, renders as embedded panel (inside OrderCard).
+ *   orderStatus  {string}  Current deed status
+ *   inline       {boolean} If true, renders as embedded panel (inside DeedCard).
  *                          If false/undefined, renders as fixed floating bubble.
  */
-const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
+const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
@@ -66,8 +66,8 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
     try {
       const token = localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken');
       const [roomRes, msgRes] = await Promise.all([
-        axios.get(`/api/chat/${orderId}`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`/api/chat/${orderId}/messages`, {
+        axios.get(`/api/chat/${deedId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`/api/chat/${deedId}/messages`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { page: pageNum, limit: 30 },
         }),
@@ -95,7 +95,7 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
 
   // ── Socket setup ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!orderId || !currentUser) return;
+    if (!deedId || !currentUser) return;
 
     const token = localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken');
     if (!token) return;
@@ -107,7 +107,7 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
     const socket = connectSocket(token);
     socketRef.current = socket;
 
-    socket.emit('join_order_room', { orderId });
+    socket.emit('join_deed_room', { deedId });
 
     // ── Incoming message ──────────────────────────────────────────────────
     const onReceive = (msg) => {
@@ -122,7 +122,7 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
       }
       // Mark as read if chat is open
       if (isOpen) {
-        socket.emit('mark_read', { orderId });
+        socket.emit('mark_read', { deedId });
       }
     };
 
@@ -165,7 +165,7 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
       socket.off('room_joined', onRoomJoined);
       socket.off('chat_error', onChatError);
     };
-  }, [orderId, currentUser, fetchMessages]);
+  }, [deedId, currentUser, fetchMessages]);
 
   // ── Auto-scroll to bottom on new messages ────────────────────────────────
   useEffect(() => {
@@ -179,9 +179,9 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
     if (isOpen) {
       setUnreadCount(0);
       const socket = getSocket();
-      if (socket) socket.emit('mark_read', { orderId });
+      if (socket) socket.emit('mark_read', { deedId });
     }
-  }, [isOpen, orderId]);
+  }, [isOpen, deedId]);
 
   // ── Send message ──────────────────────────────────────────────────────────
   const sendMessage = useCallback(async () => {
@@ -194,12 +194,12 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
     const socket = getSocket();
     if (socket && socket.connected) {
       // Prefer WebSocket
-      socket.emit('send_message', { orderId, content: trimmed });
+      socket.emit('send_message', { deedId, content: trimmed });
     } else {
       // HTTP fallback
       try {
         const token = localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken');
-        const res = await axios.post(`/api/chat/${orderId}/message`,
+        const res = await axios.post(`/api/chat/${deedId}/message`,
           { content: trimmed },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -214,7 +214,7 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
 
     setSending(false);
     inputRef.current?.focus();
-  }, [input, sending, isExpired, orderId]);
+  }, [input, sending, isExpired, deedId]);
 
   // ── Typing indicator emit ─────────────────────────────────────────────────
   const handleInputChange = useCallback((e) => {
@@ -222,12 +222,12 @@ const OrderChat = ({ orderId, currentUser, orderStatus, inline = false }) => {
     const socket = getSocket();
     if (!socket) return;
 
-    socket.emit('typing', { orderId });
+    socket.emit('typing', { deedId });
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('stop_typing', { orderId });
+      socket.emit('stop_typing', { deedId });
     }, 1500);
-  }, [orderId]);
+  }, [deedId]);
 
   // ── Load older messages ───────────────────────────────────────────────────
   const loadMore = async () => {

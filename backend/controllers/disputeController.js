@@ -663,7 +663,7 @@ const resolveDispute = async (req, res) => {
       finalBuyerPct = 0;
     }
 
-    const price = parseInt((order?.scopeBox?.price || deed?.scopeBox?.price) || 0, 10);
+    const price = parseInt((order?.scopeBox?.price || deed?.amount || deed?.scopeBox?.price) || 0, 10);
     const feeModelStatus = dispute.status === 'MEDIATION' ? 'ESCALATED' : 'RESOLVED';
     const split = calculateResolutionAmounts(price, finalBuyerPct, feeModelStatus);
 
@@ -770,18 +770,19 @@ const resolveDispute = async (req, res) => {
 
       await tx.orderDispute.update({ where: { id }, data: updateData });
 
-      const newStatus = (resolution === 'REFUND_BUYER' || resolution.includes('REFUND'))
-        ? 'REFUNDED'
-        : 'COMPLETED';
       if (dispute.orderId) {
+        const orderStatus = (resolution === 'REFUND_BUYER' || resolution.includes('REFUND'))
+          ? 'REFUNDED'
+          : 'COMPLETED';
         await tx.order.update({
           where: { id: dispute.orderId },
-          data: { status: newStatus },
+          data: { status: orderStatus },
         });
-      } else if (dispute.deedId) {
+      }
+      if (dispute.deedId) {
         await tx.deed.update({
           where: { id: dispute.deedId },
-          data: { status: newStatus },
+          data: { status: 'CLOSED' }, // Deed uses CLOSED instead of REFUNDED/COMPLETED
         });
       }
     });

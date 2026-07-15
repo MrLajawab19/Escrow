@@ -4,14 +4,14 @@ const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-async function isAuthorized(orderId, userId, role) {
+async function isAuthorized(deedId, userId, role) {
   if (role === 'admin') return true;
   try {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) return false;
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed) return false;
     return (
-      (role === 'buyer' && order.buyerId === userId) ||
-      (role === 'seller' && order.sellerId === userId)
+      (role === 'buyer' && deed.buyerId === userId) ||
+      (role === 'seller' && deed.sellerId === userId)
     );
   } catch {
     return true; // JWT already validated — allow on DB error
@@ -61,31 +61,31 @@ function registerChatSocket(io) {
     const { userId, role, firstName, lastName } = socket.user;
     console.log(`[Socket] Connected: ${role} ${firstName} (${userId}) — socket ${socket.id}`);
 
-    // ── Event: join_order_room ───────────────────────────────────────────────
+    // ── Event: join_deed_room ───────────────────────────────────────────────
     /**
-     * Client emits: socket.emit('join_order_room', { orderId })
-     * Server validates that the user is the buyer or seller of that order,
-     * then joins the Socket.IO room named after the orderId.
+     * Client emits: socket.emit('join_deed_room', { deedId })
+     * Server validates that the user is the buyer or seller of that deed,
+     * then joins the Socket.IO room named after the deedId.
      */
-    socket.on('join_order_room', async ({ orderId } = {}) => {
+    socket.on('join_deed_room', async ({ deedId } = {}) => {
       try {
-        if (!orderId) {
-          return socket.emit('chat_error', { message: 'orderId is required' });
+        if (!deedId) {
+          return socket.emit('chat_error', { message: 'deedId is required' });
         }
 
-        // Verify user is buyer or seller of this order
-        const authorized = await isAuthorized(orderId, userId, role);
+        // Verify user is buyer or seller of this deed
+        const authorized = await isAuthorized(deedId, userId, role);
         if (!authorized) {
-          return socket.emit('chat_error', { message: 'Access denied to this order chat' });
+          return socket.emit('chat_error', { message: 'Access denied to this deed chat' });
         }
 
         // Get or create room in Prisma
-        let room = await prisma.orderChatRoom.findUnique({ where: { orderId } });
+        let room = await prisma.deedChatRoom.findUnique({ where: { deedId } });
 
         if (!room) {
-          room = await prisma.orderChatRoom.create({
+          room = await prisma.deedChatRoom.create({
             data: {
-              orderId,
+              deedId,
               buyerId: '',
               sellerId: '',
               isActive: true,
@@ -98,43 +98,43 @@ function registerChatSocket(io) {
           return socket.emit('chat_error', { message: 'This chat has expired and is archived' });
         }
 
-        socket.join(orderId);
-        socket.currentOrderId = orderId;
+        socket.join(deedId);
+        socket.currentDeedId = deedId;
         socket.currentRoomId = room.id;
 
-        console.log(`[Socket] ${role} ${firstName} joined room: ${orderId}`);
+        console.log(`[Socket] ${role} ${firstName} joined room: ${deedId}`);
         socket.emit('room_joined', {
-          orderId,
+          deedId,
           roomId: room.id,
           isActive: room.isActive,
           expiresAt: room.expiresAt,
         });
 
       } catch (err) {
-        console.error('[Socket] join_order_room error:', err);
+        console.error('[Socket] join_deed_room error:', err);
         socket.emit('chat_error', { message: 'Failed to join chat room' });
       }
     });
 
     // ── Event: send_message ──────────────────────────────────────────────────
     /**
-     * Client emits: socket.emit('send_message', { orderId, content })
+     * Client emits: socket.emit('send_message', { deedId, content })
      * Server saves message to DB and broadcasts to the room.
      */
-    socket.on('send_message', async ({ orderId, content } = {}) => {
+    socket.on('send_message', async ({ deedId, content } = {}) => {
       try {
         const clean = sanitize(content);
         if (!clean) {
           return socket.emit('chat_error', { message: 'Message cannot be empty' });
         }
 
-        if (!orderId) {
-          return socket.emit('chat_error', { message: 'orderId is required' });
+        if (!deedId) {
+          return socket.emit('chat_error', { message: 'deedId is required' });
         }
 
         // Verify room
-        const room = await prisma.orderChatRoom.findUnique({
-          where: { orderId },
+        const room = await prisma.deedChatRoom.findUnique({
+          where: { deedId },
         });
 
         if (!room || room.isArchived || !room.isActive) {
@@ -142,7 +142,7 @@ function registerChatSocket(io) {
         }
 
         // Persist message in Prisma
-        const message = await prisma.orderChatMessage.create({
+        const message = await prisma.chatMessage.create({
           data: {
             roomId: room.id,
             senderId: userId,
@@ -153,7 +153,7 @@ function registerChatSocket(io) {
         });
 
         // Broadcast to everyone in the room (including sender, for confirmation)
-        io.to(orderId).emit('receive_message', message);
+        io.to(deedId).emit('receive_message', message);
 
       } catch (err) {
         console.error('[Socket] send_message error:', err);
@@ -163,12 +163,12 @@ function registerChatSocket(io) {
 
     // ── Event: typing ────────────────────────────────────────────────────────
     /**
-     * Client emits: socket.emit('typing', { orderId })
+     * Client emits: socket.emit('typing', { deedId })
      * Broadcasts typing indicator to the OTHER user in the room.
      */
-    socket.on('typing', ({ orderId } = {}) => {
-      if (!orderId) return;
-      socket.to(orderId).emit('user_typing', {
+    socket.on('typing', ({ deedId } = {}) => {
+      if (!deedId) return;
+      socket.to(deedId).emit('user_typing', {
         userId,
         name: firstName,
         role,
@@ -176,24 +176,24 @@ function registerChatSocket(io) {
     });
 
     // ── Event: stop_typing ───────────────────────────────────────────────────
-    socket.on('stop_typing', ({ orderId } = {}) => {
-      if (!orderId) return;
-      socket.to(orderId).emit('user_stop_typing', { userId, role });
+    socket.on('stop_typing', ({ deedId } = {}) => {
+      if (!deedId) return;
+      socket.to(deedId).emit('user_stop_typing', { userId, role });
     });
 
     // ── Event: mark_read ─────────────────────────────────────────────────────
     /**
      * Mark all messages in a room (sent by the OTHER party) as read.
-     * Client emits: socket.emit('mark_read', { orderId })
+     * Client emits: socket.emit('mark_read', { deedId })
      */
-    socket.on('mark_read', async ({ orderId } = {}) => {
+    socket.on('mark_read', async ({ deedId } = {}) => {
       try {
-        if (!orderId) return;
+        if (!deedId) return;
 
-        const room = await prisma.orderChatRoom.findUnique({ where: { orderId } });
+        const room = await prisma.deedChatRoom.findUnique({ where: { deedId } });
         if (!room) return;
 
-        await prisma.orderChatMessage.updateMany({
+        await prisma.chatMessage.updateMany({
           where: {
             roomId: room.id,
             senderId: { not: userId },
@@ -203,7 +203,7 @@ function registerChatSocket(io) {
         });
 
         // Notify room that messages were read
-        socket.to(orderId).emit('messages_read', { by: userId, role });
+        socket.to(deedId).emit('messages_read', { by: userId, role });
       } catch (err) {
         console.error('[Socket] mark_read error:', err);
       }

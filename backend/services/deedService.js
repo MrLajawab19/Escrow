@@ -157,46 +157,10 @@ class DeedService {
     const buyerEmail = buyer ? buyer.email : "buyer@example.com";
 
     // 1. Update Deed to ACTIVE
-    // 2. Create Order
-    // 3. Create OrderChatRoom
-    // 4. Update Wallet (Funds are already locked, but we keep them in lockedBalance until RELEASE or REFUND)
-    const [updatedDeed, order] = await prisma.$transaction([
-      prisma.deed.update({
-        where: { id: deed.id },
-        data: { sellerId, status: "ACTIVE", contentHash: hashDeedContent(deed) },
-      }),
-      prisma.order.create({
-        data: {
-          buyerId: deed.buyerId,
-          sellerId: sellerId,
-          buyerName: buyerName,
-          buyerEmail: buyerEmail,
-          platform: "ScrowX",
-          country: "Global",
-          currency: deed.currency,
-          sellerContact: seller.email,
-          scopeBox: {
-            title: deed.title,
-            description: deed.description,
-            price: deed.amount,
-            deadline: deed.deadline,
-            acceptanceCriteria: deed.acceptanceCriteria,
-            productType: deed.transactionType,
-            ...(deed.scopeBox && typeof deed.scopeBox === 'object' ? deed.scopeBox : {})
-          },
-          status: "ESCROW_FUNDED",
-          orderLogs: [{ action: "CREATED", timestamp: new Date(), by: "system" }]
-        }
-      })
-    ]);
-
-    // Create OrderChatRoom
-    await prisma.orderChatRoom.create({
-      data: {
-        orderId: order.id,
-        buyerId: deed.buyerId,
-        sellerId: sellerId
-      }
+    // 2. Update Wallet (Funds are already locked, but we keep them in lockedBalance until RELEASE or REFUND)
+    const updatedDeed = await prisma.deed.update({
+      where: { id: deed.id },
+      data: { sellerId, status: "ACTIVE", contentHash: hashDeedContent(deed) },
     });
 
     // Update Deed chat room with real sellerId
@@ -207,10 +171,10 @@ class DeedService {
       });
     }
 
-    await ledgerService.appendEvent(deed.id, "SELLER_JOINED", "seller", sellerId, { sellerId, orderId: order.id });
+    await ledgerService.appendEvent(deed.id, "SELLER_JOINED", "seller", sellerId, { sellerId });
     await ledgerService.appendEvent(deed.id, "DEED_LOCKED", "system", "system", { contentHash: updatedDeed.contentHash });
 
-    return { deed: updatedDeed, order };
+    return { deed: updatedDeed };
   }
 
   // ── SIGNING ───────────────────────────────────────────────────────────────
@@ -450,25 +414,8 @@ class DeedService {
     const dayNumber = computeDayNumber(deed.createdAt);
     const counterWindowEnds = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-    // Find the corresponding Order ID from the ledger
-    const ledgerEntry = await prisma.auditLedger.findFirst({
-      where: { deedId, eventType: "SELLER_JOINED" }
-    });
-    
-    let orderId = null;
-    if (ledgerEntry && ledgerEntry.payload) {
-      try {
-        const payloadData = JSON.parse(ledgerEntry.payload);
-        orderId = payloadData.orderId;
-      } catch (e) {
-        console.error("Failed to parse ledger payload for orderId:", e);
-      }
-    }
-    if (!orderId) throw new Error("LEGACY_ORDER_NOT_FOUND_FOR_DEED");
-
     const dispute = await prisma.orderDispute.create({
       data: {
-        orderId,
         deedId,
         buyerId: deed.buyerId,
         sellerId: deed.sellerId,
@@ -483,11 +430,6 @@ class DeedService {
     await prisma.deed.update({
       where: { id: deedId },
       data: { status: "DISPUTED" },
-    });
-
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: "DISPUTED" }
     });
 
     // TODO (Stage B): Trigger AI engine synchronously or asynchronously here

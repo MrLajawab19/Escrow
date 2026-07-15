@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const deedService = require('../services/deedService');
-const orderService = require('../services/orderService');
 
 // Stub req/res for disputeController
 const mockReq = (params, body, user) => ({ params, body, user });
@@ -47,18 +46,18 @@ async function runPhase3Test() {
   await deedService.fundDeed(deed.id, buyer.id);
   console.log("1. Deed Created & Funded");
 
-  // 2. Seller Joins -> Creates Order
-  const { order } = await deedService.sellerJoin(deed.inviteToken, seller.id);
-  console.log("2. Seller Joined, Order Created:", order.id);
+  // 2. Seller Joins -> Activates Deed
+  await deedService.sellerJoin(deed.inviteToken, seller.id);
+  console.log("2. Seller Joined, Deed Activated:", deed.id);
 
   // 3. Submit Delivery
-  await orderService.submitDelivery(order.id, seller.id, []);
+  await deedService.submitDelivery(deed.id, seller.id, { files: [] });
   console.log("3. Delivery Submitted");
 
   // 4. Create Dispute (via Controller)
   const reqCreate = mockReq(
     {}, 
-    { orderId: order.id, reason: 'QUALITY_ISSUE', description: 'Not good enough' },
+    { deedId: deed.id, reason: 'QUALITY_ISSUE', description: 'Not good enough' },
     { role: 'buyer', userId: buyer.id }
   );
   const resCreate = mockRes();
@@ -139,6 +138,16 @@ async function runPhase3Test() {
     console.log("✅ Exactly zero paisa lost!");
   } else {
     console.log("❌ Remainder check failed!");
+  }
+
+  console.log("\n--- Outcome Status Check ---");
+  const finalDeed = await prisma.deed.findUnique({ where: { id: deed.id } });
+  const finalDispute = await prisma.orderDispute.findUnique({ where: { id: dispute.id } });
+
+  if (finalDeed.status === 'CLOSED' && finalDispute.resolution === 'PARTIAL_REFUND') {
+    console.log("✅ Status exact match: Deed CLOSED and Dispute PARTIAL_REFUND");
+  } else {
+    console.log(`❌ Status mismatch! Deed: ${finalDeed?.status}, Dispute: ${finalDispute?.resolution}`);
   }
 }
 

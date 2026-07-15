@@ -428,7 +428,7 @@ const DeedDetails = () => {
                   </span>
                 </div>
                 <OrderChat
-                  orderId={id}
+                  deedId={id}
                   currentUser={currentUser}
                   orderStatus={deed.status}
                   inline={true}

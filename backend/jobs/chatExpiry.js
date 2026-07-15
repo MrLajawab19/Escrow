@@ -11,7 +11,7 @@ async function archiveExpiredChats() {
   try {
     const now = new Date();
 
-    const result = await prisma.orderChatRoom.updateMany({
+    const result = await prisma.deedChatRoom.updateMany({
       where: {
         isArchived: false,
         AND: [
@@ -34,23 +34,23 @@ async function archiveExpiredChats() {
 }
 
 /**
- * Called from orderController/orderService when an order reaches SUBMITTED status.
+ * Called from deedService when a deed reaches SUBMITTED status.
  * Sets expiresAt = now + 48 hours on the linked chat room.
  *
- * @param {string} orderId
+ * @param {string} deedId
  */
-async function scheduleRoomExpiry(orderId) {
+async function scheduleRoomExpiry(deedId) {
   try {
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // +48h
 
-    await prisma.orderChatRoom.updateMany({
-      where: { orderId, isArchived: false },
+    await prisma.deedChatRoom.updateMany({
+      where: { deedId, isArchived: false },
       data: { expiresAt },
     });
 
-    console.log(`[ChatExpiry] Set expiry for order ${orderId} chat room → ${expiresAt.toISOString()}`);
+    console.log(`[ChatExpiry] Set expiry for deed ${deedId} chat room → ${expiresAt.toISOString()}`);
   } catch (err) {
-    console.error(`[ChatExpiry] Failed to schedule expiry for order ${orderId}:`, err);
+    console.error(`[ChatExpiry] Failed to schedule expiry for deed ${deedId}:`, err);
   }
 }
 
