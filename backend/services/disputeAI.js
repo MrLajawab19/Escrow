@@ -2,24 +2,29 @@
  * disputeAI.js
  * AI engine for generating universal dispute recommendations across all products.
  */
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "dummy-key");
+const { GoogleGenAI } = require("@google/genai");
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "dummy-key" });
 
-const analyzeDisputeWithAI = async ({ order, dispute, ruleEngineResult, chatMessages }) => {
+const analyzeDisputeWithAI = async ({ deed, deliveryEvent, dispute, ruleEngineResult, chatMessages }) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     // Format chat history
     let formattedChat = "No chat history available.";
     if (chatMessages && Array.isArray(chatMessages) && chatMessages.length > 0) {
       formattedChat = chatMessages.map(m => {
-        const sender = m.senderId === order.buyerId ? 'Buyer' : (m.senderId === order.sellerId ? 'Seller' : 'System');
+        const sender = m.senderId === deed.buyerId ? 'Buyer' : (m.senderId === deed.sellerId ? 'Seller' : 'System');
         return `[${new Date(m.timestamp).toISOString()}] ${sender}: ${m.text}`;
       }).join("\n");
     }
 
     // Format delivery files
-    const delivery = (order.deliveryFiles || []).map(f => f.fileName || f.url || 'Unknown File').join(", ");
+    let deliveryPayload = {};
+    if (deliveryEvent && deliveryEvent.payload) {
+      try {
+        deliveryPayload = typeof deliveryEvent.payload === 'string' ? JSON.parse(deliveryEvent.payload) : deliveryEvent.payload;
+      } catch (e) {}
+    }
+    const delivery = (deliveryPayload.fileUrls || []).map(f => (typeof f === 'string' ? f : f.fileName || f.url || 'Unknown File')).join(", ");
     
     // Inject specific product category rules
     let categoryRules = '';
@@ -56,9 +61,9 @@ Analyze this dispute impartially. You must return your analysis as a strict JSON
 --- ORDER DETAILS ---
 Category: ${ruleEngineResult?.category || 'GENERAL'}
 Product/Service Type: ${ruleEngineResult?.productType || 'Unknown'}
-Scope/Description: ${order.scopeBox?.description || order.scopeBox?.title || 'None provided'}
-Deadline: ${order.scopeBox?.deadline || 'None'}
-Amount: ${order.currency} ${order.amount}
+Scope/Description: ${deed.description || deed.title || 'None provided'}
+Deadline: ${deed.deadline || 'None'}
+Amount: ${deed.currency} ${deed.amount}
 
 --- DELIVERY DETAILS ---
 Files Uploaded: ${delivery || 'None'}
@@ -87,8 +92,11 @@ EXPECTED JSON FORMAT:
 }
     `;
 
-    const result = await model.generateContent(prompt);
-    let text = result.response.text();
+    const result = await ai.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt
+    });
+    let text = result.text;
     text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
     
     return JSON.parse(text);

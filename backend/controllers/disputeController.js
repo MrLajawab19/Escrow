@@ -78,8 +78,15 @@ const createDispute = async (req, res) => {
     });
     
     let deedId = null;
+    let deliveryEvent = null;
+    let deed = null;
     if (ledgerEntry && ledgerEntry.deedId) {
       deedId = ledgerEntry.deedId;
+      deed = await prisma.deed.findUnique({ where: { id: deedId } });
+      deliveryEvent = await prisma.auditLedger.findFirst({
+        where: { deedId, eventType: "DELIVERY_CLAIMED" },
+        orderBy: { timestamp: 'desc' }
+      });
     }
 
     // Handle uploaded evidence files
@@ -97,8 +104,8 @@ const createDispute = async (req, res) => {
     try {
       const { extractProofData, runDisputeEngine } = require('../services/disputeEngine');
       const tempDispute = { description, reason, createdAt: new Date(), raisedBy };
-      const proofData = extractProofData(order);
-      ruleResult = runDisputeEngine(order, tempDispute, proofData);
+      const proofData = deed ? extractProofData(deed, deliveryEvent) : { category: 'GENERAL', productType: 'Unknown', hasDelivery: false, deliveryFileTypes: [] };
+      ruleResult = deed ? runDisputeEngine(deed, tempDispute, proofData) : ruleResult;
     } catch (e) {
       console.error("Failed to run universal dispute engine:", e);
     }
@@ -153,34 +160,38 @@ const createDispute = async (req, res) => {
       try {
         const { analyzeDisputeWithAI } = require('../services/disputeAI');
         const chatMessages = await getChatMessages(orderId);
-        const aiResult = await analyzeDisputeWithAI({
-          order,
-          dispute: { ...dispute, evidenceResponses: {} },
-          ruleEngineResult: ruleResult,
-          chatMessages,
-        });
-
-        const freshDispute = await prisma.orderDispute.findUnique({ where: { id: dispute.id } });
-        if (freshDispute) {
-          const currentTimeline = Array.isArray(freshDispute.timeline) ? freshDispute.timeline : [];
-          await prisma.orderDispute.update({
-            where: { id: dispute.id },
-            data: {
-              aiAnalysis: aiResult,
-              timeline: [
-                ...currentTimeline,
-                {
-                  event: 'AI_ANALYSIS_COMPLETE',
-                  by: 'ai',
-                  timestamp: new Date().toISOString(),
-                  description: `AI Analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidenceScore || 0)}% confidence)`,
-                  notes: aiResult.reasoning,
-                },
-              ],
-            },
+        
+        if (deed) {
+          const aiResult = await analyzeDisputeWithAI({
+            deed,
+            deliveryEvent,
+            dispute: { ...dispute, evidenceResponses: {} },
+            ruleEngineResult: ruleResult,
+            chatMessages,
           });
+
+          const freshDispute = await prisma.orderDispute.findUnique({ where: { id: dispute.id } });
+          if (freshDispute) {
+            const currentTimeline = Array.isArray(freshDispute.timeline) ? freshDispute.timeline : [];
+            await prisma.orderDispute.update({
+              where: { id: dispute.id },
+              data: {
+                aiAnalysis: aiResult,
+                timeline: [
+                  ...currentTimeline,
+                  {
+                    event: 'AI_ANALYSIS_COMPLETE',
+                    by: 'ai',
+                    timestamp: new Date().toISOString(),
+                    description: `AI Analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidenceScore || 0)}% confidence)`,
+                    notes: aiResult.reasoning,
+                  },
+                ],
+              },
+            });
+          }
+          console.log(`[Dispute ${dispute.id}] AI analysis complete: ${aiResult.recommendation}`);
         }
-        console.log(`[Dispute ${dispute.id}] AI analysis complete: ${aiResult.recommendation}`);
       } catch (aiErr) {
         console.error('[Dispute AI] Background analysis failed:', aiErr.message);
       }

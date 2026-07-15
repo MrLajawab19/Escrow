@@ -277,6 +277,7 @@ class DeedService {
     await ledgerService.appendEvent(deedId, "DELIVERY_CLAIMED", "seller", sellerId, {
       description: deliveryData.description,
       fileCount: (deliveryData.fileUrls || []).length,
+      fileUrls: deliveryData.fileUrls || [],
       externalLinks: deliveryData.externalLinks || [],
       disputeWindowEnds,
     });

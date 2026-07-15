@@ -59,41 +59,50 @@ const getCategory = (productType) => {
   return CATEGORY_MAP[productType] || 'GENERAL';
 };
 
-const extractProofData = (order) => {
-  const scope = order.scopeBox || {};
-  const productType = scope.productType || 'Unknown';
+const extractProofData = (deed, deliveryEvent) => {
+  // TODO: PRODUCT CATEGORY GAP - Deed.title is a fragile fallback. 
+  // The new schema lacks a strict subcategory enum like the old order.scopeBox.productType.
+  // See [Ticket: Add productCategory to Deed]
+  const productType = deed.title || deed.transactionType || 'Unknown';
   const category = getCategory(productType);
-  const delivery = order.deliveryFiles || [];
+  
+  let deliveryPayload = {};
+  if (deliveryEvent && deliveryEvent.payload) {
+    try {
+      deliveryPayload = typeof deliveryEvent.payload === 'string' ? JSON.parse(deliveryEvent.payload) : deliveryEvent.payload;
+    } catch(e) {}
+  }
+  
+  const deliveryFiles = deliveryPayload.fileUrls || [];
+  const externalLinks = deliveryPayload.externalLinks || [];
   
   const proof = {
     category,
     productType,
-    hasDelivery: delivery.length > 0,
-    deliveryFileTypes: delivery.map(f => (f.url || f.fileUrl || '').split('.').pop().toLowerCase()),
+    hasDelivery: deliveryFiles.length > 0 || externalLinks.length > 0,
+    deliveryFileTypes: deliveryFiles.map(f => (typeof f === 'string' ? f : (f.url || f.fileUrl || '')).split('.').pop().toLowerCase()),
     deadlineMissed: false
   };
 
   // Universal checks
-  if (scope.deadline) {
-    const deadlineDate = new Date(scope.deadline);
-    const completedLog = order.orderLogs?.find(l => l.event === 'DELIVERY_SUBMITTED');
-    const submissionDate = completedLog ? new Date(completedLog.timestamp) : new Date();
+  if (deed.deadline) {
+    const deadlineDate = new Date(deed.deadline);
+    const submissionDate = deliveryEvent ? new Date(deliveryEvent.timestamp) : new Date();
     if (submissionDate > deadlineDate) {
       proof.deadlineMissed = true;
     }
   }
 
-  // Category specific proofs
+  // Category specific proofs (migrated from Order to Deed where applicable)
   switch (category) {
     case 'CONTENT':
-      proof.promisedWordCount = scope.contentWritingSpecific?.wordCount || 0;
+      proof.promisedWordCount = (deed.scopeBox && deed.scopeBox.contentWritingSpecific && deed.scopeBox.contentWritingSpecific.wordCount) || 0;
       proof.isPdfOrDoc = proof.deliveryFileTypes.some(t => ['pdf', 'docx', 'txt', 'doc'].includes(t));
-      // Normally we'd count actual words if we parse the file, assuming it's available via an API/service.
       break;
     case 'DESIGN':
-      proof.expectedFormats = [];
-      if (scope.logoSpecific?.fileFormats) proof.expectedFormats.push(...scope.logoSpecific.fileFormats);
-      if (scope.uiuxSpecific?.sourceFileRequired) proof.expectedFormats.push('fig', 'xd', 'sketch');
+      proof.expectedFormats = (deed.deliverableFormats && deed.deliverableFormats.length > 0) 
+        ? deed.deliverableFormats 
+        : (deed.scopeBox && deed.scopeBox.logoSpecific && deed.scopeBox.logoSpecific.fileFormats) || [];
       proof.hasSourceFile = proof.deliveryFileTypes.some(t => ['fig', 'ai', 'psd', 'xd'].includes(t));
       break;
     case 'VIDEO':
@@ -102,13 +111,15 @@ const extractProofData = (order) => {
       break;
     case 'DEV':
       proof.hasZipOrRepo = proof.deliveryFileTypes.some(t => ['zip', 'rar', 'gz', 'tar'].includes(t));
-      proof.hasUrlDelivery = delivery.some(f => f.url && f.url.startsWith('http'));
+      proof.hasUrlDelivery = externalLinks.some(url => url.startsWith('http'));
       break;
     case 'SOCIAL':
       proof.hasScreenshots = proof.deliveryFileTypes.some(t => ['png', 'jpg', 'jpeg'].includes(t));
       break;
     case 'PHYSICAL':
-      proof.hasTrackingNumber = !!order.deliveryTrackingInfo; // assumes this structure exists
+      // TODO: PHYSICAL TRACKING GAP - No deliveryTrackingInfo on Deed or Ledger post-migration.
+      // String-matching is a weak placeholder. See [Ticket: Add tracking payload schema to Ledger]
+      proof.hasTrackingNumber = (deliveryPayload.description || '').toLowerCase().includes('tracking');
       break;
     case 'GAMING':
       proof.hasLoginScreenshots = proof.deliveryFileTypes.some(t => ['png', 'jpg', 'jpeg'].includes(t));
@@ -120,7 +131,7 @@ const extractProofData = (order) => {
   return proof;
 };
 
-const runDisputeEngine = (order, dispute, proofData) => {
+const runDisputeEngine = (deed, dispute, proofData) => {
   let riskScore = 0;
   let flags = [];
   let faultSide = 'UNKNOWN';
@@ -138,7 +149,7 @@ const runDisputeEngine = (order, dispute, proofData) => {
     if (faultSide === 'UNKNOWN') faultSide = 'SELLER';
   }
 
-  const raiseTimeDiff = new Date(dispute.createdAt) - new Date(order.updatedAt);
+  const raiseTimeDiff = new Date(dispute.createdAt) - new Date(deed.updatedAt);
   if (raiseTimeDiff < 1000 * 60 * 60) { // < 1 hour
     riskScore += 10;
     flags.push({ type: 'NOTICE', reason: 'Buyer raised dispute extremely quickly after delivery.' });
