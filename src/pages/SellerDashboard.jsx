@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import NotificationDropdown from '../components/NotificationDropdown';
-import OrderCard from '../components/OrderCard';
+import DeedCard from '../components/DeedCard';
 import MyDisputesPage from '../components/MyDisputesPage';
 import NotificationModal from '../components/NotificationModal';
 import OrderChat from '../components/order/OrderChat'; // ← Real-time order chat
@@ -92,7 +92,7 @@ const SellerDashboard = () => {
         return;
       }
 
-      const response = await axios.get('/api/orders/seller', {
+      const response = await axios.get('/api/deeds/seller', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -683,13 +683,12 @@ const SellerDashboard = () => {
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
-                {orders.map(order => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    userType="seller"
-                    onOrderUpdate={handleOrderUpdate}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {orders.map(deed => (
+                  <DeedCard
+                    key={deed.id}
+                    deed={deed}
+                    onClick={() => navigate(`/seller/deed/${deed.id}`)}
                   />
                 ))}
               </div>

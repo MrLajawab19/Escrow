@@ -69,8 +69,8 @@ const PageSkeleton = () => (
 );
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-const OrderDetails = () => {
-  const { orderId } = useParams();
+const DeedDetails = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { formatCurrency } = useCurrency();
@@ -99,15 +99,15 @@ const OrderDetails = () => {
     try {
       setLoading(true);
       setError(null);
-      const endpoint = userType === 'buyer' ? `/api/orders/${orderId}` : `/api/orders/${orderId}`;
+      const endpoint = `/api/deeds/${id}`;
       const res = await axios.get(endpoint, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
         const orderData = res.data.data;
-        if (typeof orderData.orderLogs === 'string') {
+        if (typeof orderData.ledgerEntries === 'string') {
           try {
-            orderData.orderLogs = JSON.parse(orderData.orderLogs);
+            orderData.ledgerEntries = JSON.parse(orderData.ledgerEntries);
           } catch(e) {
-            orderData.orderLogs = [];
+            orderData.ledgerEntries = [];
           }
         }
         setOrder(orderData);
@@ -119,7 +119,7 @@ const OrderDetails = () => {
     } finally {
       setLoading(false);
     }
-  }, [orderId, token, userType]);
+  }, [id, token, userType]);
 
   useEffect(() => { fetchOrder(); }, [fetchOrder]);
 
@@ -130,7 +130,7 @@ const OrderDetails = () => {
     if (!t0 || Date.now() - t0 >= BUYER_ACCEPTED_GRACE_MS) return;
     const iv = setInterval(() => setBuyerStatusTick((x) => x + 1), 30000);
     return () => clearInterval(iv);
-  }, [userType, order?.id, order?.status, order?.sellerAcceptedAt, order?.orderLogs]);
+  }, [userType, order?.id, order?.status, order?.sellerAcceptedAt, order?.ledgerEntries]);
 
   const handleOrderUpdate = (updated) => setOrder(prev => ({ ...prev, ...updated }));
 
@@ -370,18 +370,18 @@ const OrderDetails = () => {
                 </div>
                 <div className="p-5">
                   <DisputeResolutionFlow
-                    orderId={orderId}
-                    order={order}
+                    deedId={id}
+                    deed={order}
                     userType={userType}
                     token={token}
-                    onOrderUpdate={handleOrderUpdate}
+                    onDeedUpdate={handleOrderUpdate}
                   />
                 </div>
               </div>
             )}
 
-            {/* ── ORDER LOGS ──────────────────────────────────────────────── */}
-            {order.orderLogs?.length > 0 && (
+            {/* ── LEDGER ENTRIES ──────────────────────────────────────────────── */}
+            {order.ledgerEntries?.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center">
@@ -393,7 +393,7 @@ const OrderDetails = () => {
                   <h2 className="text-base font-bold text-[#0A2540] font-inter">Activity Log</h2>
                 </div>
                 <div className="space-y-3">
-                  {order.orderLogs.map((log, i) => (
+                  {order.ledgerEntries.map((log, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" />
                       <div>
@@ -428,7 +428,7 @@ const OrderDetails = () => {
                   </span>
                 </div>
                 <OrderChat
-                  orderId={orderId}
+                  orderId={id}
                   currentUser={currentUser}
                   orderStatus={order.status}
                   inline={true}
@@ -448,4 +448,4 @@ const OrderDetails = () => {
   );
 };
 
-export default OrderDetails;
+export default DeedDetails;

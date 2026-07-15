@@ -16,7 +16,7 @@ import TransactionHistory from '../components/TransactionHistory';
 import DashboardSidebar from '../components/dashboard/DashboardSidebar';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import MetricCard from '../components/dashboard/MetricCard';
-import OrdersTable from '../components/dashboard/OrdersTable';
+import DeedsTable from '../components/dashboard/DeedsTable';
 import QuickActions from '../components/dashboard/QuickActions';
 import WalletOverviewCard from '../components/dashboard/WalletOverviewCard';
 import SpendingOverview from '../components/dashboard/SpendingOverview';
@@ -111,19 +111,13 @@ const BuyerDashboard = () => {
         return;
       }
 
-      const [ordersRes, deedsRes] = await Promise.all([
-        axios.get('/api/orders/buyer', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { success: false } })),
-        axios.get('/api/deeds/buyer', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { success: false } }))
-      ]);
-
+      const deedsRes = await axios.get('/api/deeds/buyer', { headers: { Authorization: `Bearer ${token}` } });
+      
       let combined = [];
 
-      if (ordersRes.data.success && ordersRes.data.data) {
-        combined = [...combined, ...ordersRes.data.data];
-      }
       if (deedsRes.data.success && deedsRes.data.data) {
         const activeDeeds = deedsRes.data.data.filter(d => d.status !== 'DRAFT');
-        combined = [...combined, ...activeDeeds];
+        combined = activeDeeds;
       }
 
       // Sort combined by creation date descending
@@ -223,7 +217,7 @@ const BuyerDashboard = () => {
       case 'orders':
         return (
           <div className="animate-fadeIn">
-            <OrdersTable orders={orders} onViewAllOrders={() => {}} />
+            <DeedsTable deeds={orders} onViewAllDeeds={() => {}} />
           </div>
         );
 
@@ -267,9 +261,9 @@ const BuyerDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
               {/* Left Column */}
               <div className="lg:col-span-8">
-                <OrdersTable
-                  orders={orders}
-                  onViewAllOrders={() => setActiveTab('orders')}
+                <DeedsTable
+                  deeds={orders}
+                  onViewAllDeeds={() => setActiveTab('orders')}
                 />
                 <QuickActions />
               </div>

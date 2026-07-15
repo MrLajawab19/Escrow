@@ -97,19 +97,33 @@ router.get('/disputes', adminAuth, async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    const orderIds = [...new Set(disputes.map(d => d.orderId).filter(Boolean))];
-    const orders = await prisma.order.findMany({ where: { id: { in: orderIds } } });
-    const orderMap = orders.reduce((acc, o) => { acc[o.id] = o; return acc; }, {});
+    const deedIds = [...new Set(disputes.map(d => d.deedId).filter(Boolean))];
+    const deeds = await prisma.deed.findMany({ where: { id: { in: deedIds } } });
+    const deedMap = deeds.reduce((acc, d) => { acc[d.id] = d; return acc; }, {});
+
+    // For listing, we might need buyer names and seller contacts. 
+    const buyerIds = [...new Set(deeds.map(d => d.buyerId).filter(Boolean))];
+    const buyers = await prisma.buyer.findMany({ where: { id: { in: buyerIds } } });
+    const buyerMap = buyers.reduce((acc, b) => { acc[b.id] = b; return acc; }, {});
+
+    const sellerIds = [...new Set(deeds.map(d => d.sellerId).filter(Boolean))];
+    const sellers = await prisma.seller.findMany({ where: { id: { in: sellerIds } } });
+    const sellerMap = sellers.reduce((acc, s) => { acc[s.id] = s; return acc; }, {});
 
     const enriched = disputes.map(d => {
-      const order = orderMap[d.orderId] || null;
-      const { flag: autoFlag, riskScore, riskReason } = computeFlag(d, order);
+      const deed = deedMap[d.deedId] || null;
+      const buyer = deed ? buyerMap[deed.buyerId] : null;
+      const seller = deed ? sellerMap[deed.sellerId] : null;
+      // computeFlag is tightly coupled to order shape, we pass deed and mock what it needs
+      const { flag: autoFlag, riskScore, riskReason } = computeFlag(d, deed);
       return {
         ...d,
-        order: order ? {
-          id: order.id, status: order.status, scopeBox: order.scopeBox,
-          buyerName: order.buyerName, currency: order.currency,
-          sellerContact: order.sellerContact, createdAt: order.createdAt,
+        deed: deed ? {
+          id: deed.id, status: deed.status, scopeBox: deed.scopeBox,
+          buyerName: buyer ? `${buyer.firstName} ${buyer.lastName}` : 'Unknown', 
+          sellerContact: seller?.email || 'Unknown',
+          currency: deed.currency,
+          createdAt: deed.createdAt,
         } : null,
         autoFlag, riskScore, riskReason,
       };
@@ -118,7 +132,7 @@ router.get('/disputes', adminAuth, async (req, res) => {
     const filtered = flag ? enriched.filter(d => d.autoFlag === flag) : enriched;
     const searched = search
       ? filtered.filter(d =>
-          d.orderId?.toLowerCase().includes(search.toLowerCase()) ||
+          d.deedId?.toLowerCase().includes(search.toLowerCase()) ||
           d.reason?.toLowerCase().includes(search.toLowerCase()) ||
           d.description?.toLowerCase().includes(search.toLowerCase())
         )
@@ -152,33 +166,46 @@ const getDisputeFull = async (req, res) => {
     const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
-    const [order, buyer, seller] = await Promise.all([
-      prisma.order.findUnique({ where: { id: dispute.orderId } }).catch(() => null),
+    const [deed, buyer, seller] = await Promise.all([
+      prisma.deed.findUnique({ where: { id: dispute.deedId }, include: { ledgerEntries: true } }).catch(() => null),
       prisma.buyer.findUnique({ where: { id: dispute.buyerId } }).catch(() => null),
       dispute.sellerId ? prisma.seller.findUnique({ where: { id: dispute.sellerId } }).catch(() => null) : null,
     ]);
 
-    const { flag: autoFlag, riskScore, riskReason } = computeFlag(dispute, order);
+    const { flag: autoFlag, riskScore, riskReason } = computeFlag(dispute, deed);
 
-    const orderTimeline = (Array.isArray(order?.orderLogs) ? order.orderLogs : []).map(log => ({
-      event: log.event,
+    const deedTimeline = (Array.isArray(deed?.ledgerEntries) ? deed.ledgerEntries : []).map(log => ({
+      event: log.eventType,
       timestamp: log.timestamp,
-      by: log.byUserId,
-      description: (log.event || '').replace(/_/g, ' '),
+      by: log.actorRole,
+      description: (log.eventType || '').replace(/_/g, ' '),
     }));
+    
+    // Extract deliveryFiles from ledger
+    let deliveryFiles = [];
+    if (deed?.ledgerEntries) {
+      const deliveryLogs = deed.ledgerEntries.filter(e => e.eventType === 'DELIVERY_CLAIMED');
+      if (deliveryLogs.length > 0) {
+        try {
+           const payload = JSON.parse(deliveryLogs[deliveryLogs.length - 1].payload);
+           deliveryFiles = payload.fileUrls || [];
+        } catch(e){}
+      }
+    }
+
     const disputeTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-    const combinedTimeline = [...orderTimeline, ...disputeTimeline]
+    const combinedTimeline = [...deedTimeline, ...disputeTimeline]
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
     return res.json({
       success: true,
       data: {
         dispute,
-        order: order ? {
-          id: order.id, status: order.status, scopeBox: order.scopeBox,
-          buyerName: order.buyerName, buyerEmail: order.buyerEmail,
-          currency: order.currency, sellerContact: order.sellerContact,
-          deliveryFiles: order.deliveryFiles, createdAt: order.createdAt, updatedAt: order.updatedAt,
+        deed: deed ? {
+          id: deed.id, status: deed.status, scopeBox: deed.scopeBox,
+          buyerName: buyer ? `${buyer.firstName} ${buyer.lastName}` : 'Unknown', buyerEmail: buyer?.email,
+          currency: deed.currency, sellerContact: seller?.email,
+          deliveryFiles: deliveryFiles, createdAt: deed.createdAt, updatedAt: deed.updatedAt,
         } : null,
         buyer: buyer ? { id: buyer.id, firstName: buyer.firstName, lastName: buyer.lastName, email: buyer.email } : null,
         seller: seller ? { id: seller.id, firstName: seller.firstName, lastName: seller.lastName, email: seller.email, businessName: seller.businessName } : null,
@@ -230,10 +257,17 @@ router.post('/disputes/:id/resolve', adminAuth, async (req, res) => {
       },
     });
 
-    await prisma.order.update({
-      where: { id: dispute.orderId },
-      data: { status: orderStatus },
-    });
+    if (dispute.orderId) {
+      await prisma.order.update({
+        where: { id: dispute.orderId },
+        data: { status: orderStatus },
+      });
+    } else if (dispute.deedId) {
+      await prisma.deed.update({
+        where: { id: dispute.deedId },
+        data: { status: orderStatus },
+      });
+    }
 
     return res.json({ success: true, message: `Dispute resolved: ${action}`, data: updatedDispute });
   } catch (err) {
@@ -249,11 +283,12 @@ router.post('/disputes/:id/ai-analysis', adminAuth, async (req, res) => {
     const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     
-    const order = await prisma.order.findUnique({ where: { id: dispute.orderId } });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    const order = dispute.orderId ? await prisma.order.findUnique({ where: { id: dispute.orderId } }) : null;
+    const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
+    if (!order && !deed) return res.status(404).json({ success: false, message: 'Order/Deed not found' });
     
-    // Fetch chat messages
-    const room = await prisma.orderChatRoom.findUnique({ where: { orderId: order.id } });
+    // Fetch chat messages (legacy order chat only)
+    const room = order ? await prisma.orderChatRoom.findUnique({ where: { orderId: order.id } }) : null;
     let chatMessages = [];
     if (room) {
       chatMessages = await prisma.orderChatMessage.findMany({
@@ -266,9 +301,9 @@ router.post('/disputes/:id/ai-analysis', adminAuth, async (req, res) => {
     // Call AI
     const { analyzeDisputeWithAI } = require('../services/disputeAI');
     const aiResult = await analyzeDisputeWithAI({
-      order,
-      dispute: { ...dispute, evidenceResponses: {} }, // Mock evidence shape if needed
-      ruleEngineResult: { riskScore: 50, flags: [] }, // Mock fallback if missing
+      order: order || deed,
+      dispute,
+      ruleEngineResult: dispute.ruleFlags || {},
       chatMessages,
     });
     

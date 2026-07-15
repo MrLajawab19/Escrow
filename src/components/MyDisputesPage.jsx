@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import OrderCard from './OrderCard';
+import DeedCard from './DeedCard';
 import DisputeTracker from './DisputeTracker';
 import axios from 'axios';
 
@@ -27,21 +27,21 @@ const MyDisputesPage = ({ userType, onClose }) => {
         return;
       }
 
-      // Fetch all orders first, then filter for disputes
-      const response = await axios.get(`/api/orders/${userType}`, {
+      // Fetch all deeds first, then filter for disputes
+      const response = await axios.get(`/api/deeds/${userType}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.data.success) {
-        // Filter orders that have disputes
-        const orders = response.data.data;
-        const disputedOrders = orders.filter(order =>
-          order.status === 'DISPUTED' || order.disputeId
+        // Filter deeds that have disputes
+        const deeds = response.data.data;
+        const disputedDeeds = deeds.filter(deed =>
+          deed.status === 'DISPUTED' || deed.disputeId
         );
 
-        setDisputedOrders(disputedOrders);
+        setDisputedOrders(disputedDeeds);
       } else {
         setError(response.data.message || 'Failed to load disputed orders');
       }
@@ -166,10 +166,8 @@ const MyDisputesPage = ({ userType, onClose }) => {
                     </span>
                   </div>
                   <div className="bg-white rounded-b-lg">
-                    <OrderCard
-                      order={order}
-                      userType={userType}
-                      onOrderUpdate={handleOrderUpdate}
+                    <DeedCard
+                      deed={order}
                     />
                   </div>
                 </div>

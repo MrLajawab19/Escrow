@@ -93,16 +93,16 @@ function FlagCard({ flag }) {
 
 /**
  * DisputeResolutionFlow
- * Shows inside OrderDetails when order.status === 'DISPUTED'
+ * Shows inside DeedDetails when deed.status === 'DISPUTED'
  *
  * Props:
- *  - orderId: string
- *  - order: Order object
+ *  - deedId: string
+ *  - deed: Deed object
  *  - userType: 'buyer' | 'seller'
  *  - token: JWT string
- *  - onOrderUpdate: function
+ *  - onDeedUpdate: function
  */
-const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate }) => {
+const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) => {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -130,7 +130,7 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`/api/disputes/${order.disputeId}/full`, { headers });
+      const res = await axios.get(`/api/disputes/${deed.disputeId}/full`, { headers });
       if (res.data.success) {
         setDetail(res.data.data);
         if (res.data.data.dispute.status === 'MEDIATION') setEscalated(true);
@@ -141,11 +141,11 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
     } finally {
       setLoading(false);
     }
-  }, [order.disputeId, token]);
+  }, [deed.disputeId, token]);
 
   useEffect(() => {
-    if (order?.disputeId) fetchDetail();
-  }, [order?.disputeId, fetchDetail]);
+    if (deed?.disputeId) fetchDetail();
+  }, [deed?.disputeId, fetchDetail]);
 
   // Poll for AI analysis if not yet available
   useEffect(() => {
@@ -457,15 +457,15 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
           <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
             <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider font-inter mb-1">Requirements</p>
             <p className="text-lg font-black text-emerald-700 font-inter">
-              {detail.order?.scopeBox?.deliverables?.length || 0}
+              {detail.deed?.scopeBox?.deliverables?.length || 0}
             </p>
             <p className="text-xs text-emerald-600 font-inter">deliverables</p>
           </div>
           <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
             <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider font-inter mb-1">Deadline</p>
             <p className="text-lg font-black text-blue-700 font-inter">
-              {detail.order?.scopeBox?.deadline ? 
-                new Date(detail.order.scopeBox.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 
+              {detail.deed?.scopeBox?.deadline ? 
+                new Date(detail.deed.scopeBox.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 
                 'Not set'
               }
             </p>
@@ -474,27 +474,27 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
           <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
             <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider font-inter mb-1">Value</p>
             <p className="text-lg font-black text-amber-700 font-inter">
-              ${detail.order?.scopeBox?.price || '0'}
+              ${detail.deed?.scopeBox?.price || '0'}
             </p>
             <p className="text-xs text-amber-600 font-inter">order value</p>
           </div>
         </div>
 
         {/* Detailed Scope Box */}
-        {showScopeBoxDetails && detail.order?.scopeBox && (
+        {showScopeBoxDetails && detail.deed?.scopeBox && (
           <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 space-y-4">
             <div>
               <p className="text-sm font-semibold text-emerald-900 mb-2">📝 Description</p>
               <p className="text-sm text-emerald-800 leading-relaxed bg-white rounded-lg p-3 border border-emerald-200">
-                {detail.order.scopeBox.description || 'No description provided'}
+                {detail.deed.scopeBox.description || 'No description provided'}
               </p>
             </div>
 
-            {detail.order.scopeBox.deliverables && (
+            {detail.deed.scopeBox.deliverables && (
               <div>
                 <p className="text-sm font-semibold text-emerald-900 mb-2">✅ Deliverables Required</p>
                 <ul className="space-y-1">
-                  {detail.order.scopeBox.deliverables.map((item, i) => (
+                  {detail.deed.scopeBox.deliverables.map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-emerald-800">
                       <span className="text-emerald-600 mt-0.5">•</span>
                       <span>{item}</span>
@@ -505,11 +505,11 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {detail.order.scopeBox.deadline && (
+              {detail.deed.scopeBox.deadline && (
                 <div>
                   <p className="text-sm font-semibold text-emerald-900 mb-1">📅 Deadline</p>
                   <p className="text-sm text-emerald-800">
-                    {new Date(detail.order.scopeBox.deadline).toLocaleDateString('en-US', { 
+                    {new Date(detail.deed.scopeBox.deadline).toLocaleDateString('en-US', { 
                       weekday: 'short', 
                       year: 'numeric', 
                       month: 'short', 
@@ -517,27 +517,27 @@ const DisputeResolutionFlow = ({ orderId, order, userType, token, onOrderUpdate 
                     })}
                   </p>
                   <p className="text-xs text-emerald-600">
-                    {new Date(detail.order.scopeBox.deadline) < new Date() ? '⚠️ Overdue' : '⏱️ Pending'}
+                    {new Date(detail.deed.scopeBox.deadline) < new Date() ? '⚠️ Overdue' : '⏱️ Pending'}
                   </p>
                 </div>
               )}
               <div>
                 <p className="text-sm font-semibold text-emerald-900 mb-1">💰 Price</p>
                 <p className="text-sm text-emerald-800 font-semibold">
-                  ${detail.order.scopeBox.price?.toLocaleString() || '0'}
+                  ${detail.deed.scopeBox.price?.toLocaleString() || '0'}
                 </p>
                 <p className="text-xs text-emerald-600">Escrow amount</p>
               </div>
             </div>
 
             {/* Additional Scope Box Fields */}
-            {Object.keys(detail.order.scopeBox).filter(key => 
+            {Object.keys(detail.deed.scopeBox).filter(key => 
               !['description', 'deliverables', 'deadline', 'price'].includes(key)
             ).length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-emerald-900 mb-2">🔧 Additional Requirements</p>
                 <div className="bg-white rounded-lg p-3 border border-emerald-200">
-                  {Object.entries(detail.order.scopeBox)
+                  {Object.entries(detail.deed.scopeBox)
                     .filter(([key]) => !['description', 'deliverables', 'deadline', 'price'].includes(key))
                     .map(([key, value]) => (
                       <div key={key} className="mb-2 last:mb-0">

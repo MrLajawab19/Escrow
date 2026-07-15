@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) => {
+const DisputeModal = ({ isOpen, onClose, orderId, deedId, order, onSubmit, userType }) => {
   const [formData, setFormData] = useState({
-    reason: '',
+    reason: 'QUALITY_ISSUE',
     description: '',
     evidenceFiles: [],
-    requestedResolution: ''
+    requestedResolution: 'REVISION'
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -179,7 +179,8 @@ const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) =
       const buyerId = order?.buyerId || 'buyer-123';
       const sellerId = order?.sellerId || 'seller-456';
       
-      submitData.append('orderId', orderId);
+      if (deedId) submitData.append('deedId', deedId);
+      if (orderId) submitData.append('orderId', orderId);
       submitData.append('buyerId', buyerId);
       submitData.append('sellerId', sellerId);
       submitData.append('raisedBy', userType);
@@ -203,7 +204,7 @@ const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) =
         evidenceFiles: formData.evidenceFiles.length
       });
 
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/disputes`, submitData, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/disputes`, submitData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -217,10 +218,10 @@ const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) =
       
       // Reset form and close modal
       setFormData({
-        reason: '',
+        reason: 'QUALITY_ISSUE',
         description: '',
         evidenceFiles: [],
-        requestedResolution: ''
+        requestedResolution: 'REVISION'
       });
       setErrors({});
       onClose();
@@ -255,10 +256,10 @@ const DisputeModal = ({ isOpen, onClose, orderId, order, onSubmit, userType }) =
 
   const handleCancel = () => {
     setFormData({
-      reason: '',
+      reason: 'QUALITY_ISSUE',
       description: '',
       evidenceFiles: [],
-      requestedResolution: ''
+      requestedResolution: 'REVISION'
     });
     setErrors({});
     onClose();

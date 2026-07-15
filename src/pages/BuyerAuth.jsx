@@ -84,11 +84,17 @@ const BuyerAuth = () => {
         }
       }
     } catch (error) {
-      const msg = error.response?.data?.message
-        || (error.code === 'ERR_NETWORK' ? 'Cannot reach server. Is the backend running?' : null)
-        || error.message
-        || 'An error occurred. Please try again.';
-      setError(msg);
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        // Backend sent detailed validation errors
+        const errorMessages = error.response.data.errors.map(err => err.message).join(' | ');
+        setError(`Validation failed: ${errorMessages}`);
+      } else {
+        const msg = error.response?.data?.message
+          || (error.code === 'ERR_NETWORK' ? 'Cannot reach server. Is the backend running?' : null)
+          || error.message
+          || 'An error occurred. Please try again.';
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

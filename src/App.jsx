@@ -5,10 +5,11 @@ import LandingPage from './components/LandingPage'; // Keep eager
 const BuyerAuth = lazy(() => import('./pages/BuyerAuth'));
 const SellerAuth = lazy(() => import('./pages/SellerAuth'));
 const BuyerDashboard = lazy(() => import('./pages/BuyerDashboard'));
+
 const SellerDashboard = lazy(() => import('./pages/SellerDashboard'));
 const NewDeedPage = lazy(() => import('./pages/NewDeedPage'));
 const DeedInvitePage = lazy(() => import('./pages/DeedInvitePage'));
-const OrderDetails = lazy(() => import('./pages/OrderDetails'));
+const DeedDetails = lazy(() => import('./pages/DeedDetails'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const AdminDisputeDetails = lazy(() => import('./pages/AdminDisputeDetails'));
@@ -21,6 +22,12 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
+import { useParams } from 'react-router-dom';
+
+const RedirectLegacyOrder = ({ toPrefix }) => {
+  const { id, orderId } = useParams();
+  return <Navigate to={`${toPrefix}/${id || orderId}`} replace />;
+};
 
 // Route Change Handler Component
 const RouteChangeHandler = ({ children, onAuthClear, onCheckAuth }) => {
@@ -522,12 +529,12 @@ function App() {
     window.location.href = '/';
   };
 
-  const clearAuthState = useCallback(() => {
+  const handleAuthClear = useCallback(() => {
     setIsBuyerAuthenticated(false);
-    setIsSellerAuthenticated(false);
-    setIsAdminAuthenticated(false);
     setBuyerData(null);
+    setIsSellerAuthenticated(false);
     setSellerData(null);
+    setIsAdminAuthenticated(false);
     setAdminData(null);
     setIsMobileMenuOpen(false);
   }, []);
@@ -540,7 +547,7 @@ function App() {
     localStorage.removeItem('sellerData');
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminData');
-    clearAuthState();
+    handleAuthClear();
   };
 
   // Close mobile menu when clicking outside
@@ -582,26 +589,35 @@ function App() {
         </ConditionalNav>
 
         {/* Routes */}
-        <RouteChangeHandler onAuthClear={clearAuthState} onCheckAuth={checkAuth}>
+        <RouteChangeHandler onAuthClear={handleAuthClear} onCheckAuth={checkAuth}>
           <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>}>
             <Routes>
-              <Route path="/" element={<LandingPage onAuthClear={clearAuthState} />} />
+              <Route path="/" element={<LandingPage onAuthClear={handleAuthClear} />} />
               <Route path="/buyer/auth" element={<BuyerAuth />} />
               <Route path="/seller/auth" element={<SellerAuth />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
               <Route path="/admin/dispute/:id" element={<ProtectedAdminRoute><AdminDisputeDetails /></ProtectedAdminRoute>} />
-              <Route path="/buyer/dashboard" element={<ProtectedBuyerRoute><BuyerDashboard /></ProtectedBuyerRoute>} />
+
+            
+            <Route path="/buyer/dashboard" element={<ProtectedBuyerRoute><BuyerDashboard /></ProtectedBuyerRoute>} />
               {/* Unified Deed Flow */}
               <Route path="/buyer/new-deed" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
               <Route path="/buyer/new-order" element={<ProtectedBuyerRoute><NewDeedPage /></ProtectedBuyerRoute>} />
-              <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><OrderDetails /></ProtectedBuyerRoute>} />
+              {/* Legacy Order Redirects */}
+              <Route path="/buyer/order/:orderId" element={<ProtectedBuyerRoute><RedirectLegacyOrder toPrefix="/buyer/deed" /></ProtectedBuyerRoute>} />
+              <Route path="/buyer/deed/:id" element={<ProtectedBuyerRoute><DeedDetails userType="buyer" /></ProtectedBuyerRoute>} />
+              
               <Route path="/buyer/deed/:id/milestones" element={<ProtectedBuyerRoute><DeedMilestonePage /></ProtectedBuyerRoute>} />
               <Route path="/buyer/deed/:id/sign" element={<ProtectedBuyerRoute><DeedSigningPage /></ProtectedBuyerRoute>} />
               <Route path="/buyer/deed/:id/audit" element={<ProtectedBuyerRoute><AuditLedgerPage /></ProtectedBuyerRoute>} />
               <Route path="/buyer/profile/:id" element={<BuyerProfilePage />} />
+              
               <Route path="/seller/dashboard" element={<ProtectedSellerRoute><SellerDashboard /></ProtectedSellerRoute>} />
-              <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><OrderDetails /></ProtectedSellerRoute>} />
+              
+              {/* Legacy Order Redirects */}
+              <Route path="/seller/order/:orderId" element={<ProtectedSellerRoute><RedirectLegacyOrder toPrefix="/seller/deed" /></ProtectedSellerRoute>} />
+              <Route path="/seller/deed/:id" element={<ProtectedSellerRoute><DeedDetails userType="seller" /></ProtectedSellerRoute>} />
               <Route path="/seller/deed/:id/milestones" element={<ProtectedSellerRoute><DeedMilestonePage /></ProtectedSellerRoute>} />
               <Route path="/seller/deed/:id/sign" element={<ProtectedSellerRoute><DeedSigningPage /></ProtectedSellerRoute>} />
               <Route path="/seller/deed/:id/audit" element={<ProtectedSellerRoute><AuditLedgerPage /></ProtectedSellerRoute>} />

@@ -398,9 +398,9 @@ enum OrderDisputePriority {
 
 model OrderDispute {
   id                   String               @id @default(uuid())
-  orderId              String               @unique
+  orderId              String?              @unique
   deedId               String?              @unique
-  order                Order                @relation(fields: [orderId], references: [id])
+  order                Order?               @relation(fields: [orderId], references: [id])
   deed                 Deed?                @relation(fields: [deedId], references: [id])
   buyerId              String
   sellerId             String

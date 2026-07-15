@@ -54,37 +54,59 @@ async function getChatMessages(orderId) {
 
 const createDispute = async (req, res) => {
   try {
-    const { orderId, reason, description, requestedResolution, priority = 'MEDIUM' } = req.body;
+    let { orderId, deedId, reason, description, requestedResolution, priority = 'MEDIUM' } = req.body;
+    if (orderId === 'undefined' || orderId === 'null') orderId = null;
+    if (deedId === 'undefined' || deedId === 'null') deedId = null;
 
-    if (!orderId || !reason || !description) {
-      return res.status(400).json({ success: false, message: 'Order ID, reason, and description are required' });
+    const targetId = deedId || orderId;
+    if (!targetId || !reason || !description) {
+      return res.status(400).json({ success: false, message: 'Deed/Order ID, reason, and description are required' });
     }
 
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    let deed = null;
+    let order = null;
+    
+    if (deedId) {
+      deed = await prisma.deed.findUnique({ where: { id: deedId } });
+      if (!deed) return res.status(404).json({ success: false, message: 'Deed not found' });
+    } else if (orderId) {
+      order = await prisma.order.findUnique({ where: { id: orderId } });
+    }
 
-    const existingDispute = await prisma.orderDispute.findUnique({ where: { orderId } });
+    if (!order && !deed) return res.status(404).json({ success: false, message: 'Order/Deed not found' });
+
+    let existingDispute = null;
+    if (deedId) {
+      existingDispute = await prisma.orderDispute.findUnique({ where: { deedId } });
+    } else if (orderId) {
+      existingDispute = await prisma.orderDispute.findUnique({ where: { orderId } });
+    }
     if (existingDispute) {
       return res.status(400).json({ success: false, message: 'Dispute already exists for this order' });
     }
 
     const raisedBy = req.user.role;
-    const buyerId = order.buyerId;
-    const sellerId = order.sellerId || '';
+    const buyerId = deed ? deed.buyerId : order.buyerId;
+    const sellerId = deed ? deed.sellerId : (order.sellerId || '');
 
-    // Find the corresponding Deed ID from the ledger
-    const ledgerEntry = await prisma.auditLedger.findFirst({
-      where: { eventType: "SELLER_JOINED", payload: { contains: orderId } }
-    });
+    const ledgerEntry = (orderId || deedId) ? await prisma.auditLedger.findFirst({
+      where: { 
+        OR: [
+          { eventType: "SELLER_JOINED", payload: { contains: (orderId || deedId) } },
+          { deedId: deedId || undefined }
+        ]
+      }
+    }) : null;
     
-    let deedId = null;
     let deliveryEvent = null;
-    let deed = null;
+    
     if (ledgerEntry && ledgerEntry.deedId) {
-      deedId = ledgerEntry.deedId;
-      deed = await prisma.deed.findUnique({ where: { id: deedId } });
+      if (!deed) deed = await prisma.deed.findUnique({ where: { id: ledgerEntry.deedId } });
+    }
+    
+    if (deed) {
       deliveryEvent = await prisma.auditLedger.findFirst({
-        where: { deedId, eventType: "DELIVERY_CLAIMED" },
+        where: { deedId: deed.id, eventType: "DELIVERY_CLAIMED" },
         orderBy: { timestamp: 'desc' }
       });
     }
@@ -130,8 +152,8 @@ const createDispute = async (req, res) => {
     // ── Step 3: Create dispute record (Prisma) ─────────────────────────────────
     const dispute = await prisma.orderDispute.create({
       data: {
-        orderId,
-        deedId,
+        orderId: order ? order.id : null,
+        deedId: deed ? deed.id : null,
         buyerId,
         sellerId,
         raisedBy,
@@ -149,11 +171,18 @@ const createDispute = async (req, res) => {
       },
     });
 
-    // ── Step 4: Update order status + disputeId ────────────────────────────────
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: 'DISPUTED', disputeId: dispute.id },
-    });
+    // ── Step 4: Update order/deed status + disputeId ────────────────────────────────
+    if (orderId) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'DISPUTED', disputeId: dispute.id },
+      });
+    } else if (deedId) {
+      await prisma.deed.update({
+        where: { id: deedId },
+        data: { status: 'DISPUTED' },
+      });
+    }
 
     // ── Step 5: Trigger AI analysis asynchronously (non-blocking) ─────────────
     setImmediate(async () => {
@@ -269,9 +298,9 @@ const submitEvidence = async (req, res) => {
     setImmediate(async () => {
       try {
         const { analyzeDisputeWithAI } = require('../services/disputeAI');
-        const order = await prisma.order.findUnique({ where: { id: dispute.orderId } });
-        if (!order) return;
-        const chatMessages = await getChatMessages(dispute.orderId);
+        const order = dispute.orderId ? await prisma.order.findUnique({ where: { id: dispute.orderId } }) : null;
+        if (!order && !dispute.deedId) return;
+        const chatMessages = dispute.orderId ? await getChatMessages(dispute.orderId) : [];
         const freshDispute = await prisma.orderDispute.findUnique({ where: { id } });
         if (!freshDispute) return;
 
@@ -372,22 +401,25 @@ const getFullDisputeDetail = async (req, res) => {
     let dispute = await prisma.orderDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
-    const order = await prisma.order.findUnique({ where: { id: dispute.orderId } });
+    const deed = await prisma.deed.findUnique({ 
+      where: { id: dispute.deedId },
+      include: { ledgerEntries: true }
+    });
     const buyer = await prisma.buyer.findUnique({ where: { id: dispute.buyerId } }).catch(() => null);
     const seller = dispute.sellerId
       ? await prisma.seller.findUnique({ where: { id: dispute.sellerId } }).catch(() => null)
       : null;
-    let chatMessages = await getChatMessages(dispute.orderId);
+    let chatMessages = await getChatMessages(dispute.deedId);
 
     // Heal rows where background AI never persisted
-    if (!dispute.aiAnalysis && dispute.ruleFlags && typeof dispute.ruleFlags === 'object' && order) {
+    if (!dispute.aiAnalysis && dispute.ruleFlags && typeof dispute.ruleFlags === 'object' && deed) {
       const rf = dispute.ruleFlags;
       if ('riskScore' in rf || 'flags' in rf || 'autoRecommendation' in rf) {
         try {
           const { analyzeDisputeWithAI } = require('../services/disputeAI');
-          chatMessages = await getChatMessages(dispute.orderId);
+          chatMessages = await getChatMessages(dispute.deedId);
           const aiResult = await analyzeDisputeWithAI({
-            order,
+            order: deed, // passing deed as order for backward compatibility in AI params if needed
             dispute,
             ruleEngineResult: rf,
             chatMessages,
@@ -422,8 +454,8 @@ const getFullDisputeDetail = async (req, res) => {
       }
     }
 
-    const scopeBox = order?.scopeBox || {};
-    const price = parseInt(scopeBox.price || 0, 10);
+    const scopeBox = deed?.scopeBox || {};
+    const price = parseInt(deed?.amount ? deed.amount / 100 : scopeBox.price || 0, 10);
     
     const feeModelStatus = dispute.status === 'MEDIATION' ? 'ESCALATED' : 'RESOLVED';
     
@@ -435,7 +467,7 @@ const getFullDisputeDetail = async (req, res) => {
       platformFee: releaseSim.platformFee,
       netToSeller: releaseSim.sellerNet,
       netToBuyer: refundSim.buyerNet,
-      currency: order?.currency || 'INR',
+      currency: deed?.currency || 'INR',
       refundScenario: { buyerReceives: refundSim.buyerNet, sellerReceives: refundSim.sellerNet, platformReceives: refundSim.platformFee },
       releaseScenario: { buyerReceives: releaseSim.buyerNet, sellerReceives: releaseSim.sellerNet, platformReceives: releaseSim.platformFee },
       partialScenarios: [50, 70, 30].map(pct => {
@@ -453,19 +485,15 @@ const getFullDisputeDetail = async (req, res) => {
       success: true,
       data: {
         dispute,
-        order: order
+        deed: deed
           ? {
-              id: order.id,
-              status: order.status,
-              scopeBox: order.scopeBox,
-              buyerName: order.buyerName,
-              buyerEmail: order.buyerEmail,
-              sellerContact: order.sellerContact,
-              currency: order.currency,
-              deliveryFiles: order.deliveryFiles,
-              createdAt: order.createdAt,
-              updatedAt: order.updatedAt,
-              orderLogs: order.orderLogs,
+              id: deed.id,
+              status: deed.status,
+              scopeBox: deed.scopeBox,
+              currency: deed.currency,
+              createdAt: deed.createdAt,
+              updatedAt: deed.updatedAt,
+              ledgerEntries: deed.ledgerEntries,
             }
           : null,
         buyer: buyer
@@ -497,13 +525,16 @@ const triggerAIAnalysis = async (req, res) => {
     const dispute = await prisma.orderDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
-    const order = await prisma.order.findUnique({ where: { id: dispute.orderId } });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    const order = dispute.orderId ? await prisma.order.findUnique({ where: { id: dispute.orderId } }) : null;
+    const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
+    if (!order && !deed) {
+      return res.status(404).json({ success: false, message: 'Order/Deed not found' });
+    }
 
-    const chatMessages = await getChatMessages(dispute.orderId);
+    const chatMessages = dispute.orderId ? await getChatMessages(dispute.orderId) : [];
 
     const aiResult = await analyzeDisputeWithAI({
-      order,
+      order: order || deed,
       dispute,
       ruleEngineResult: dispute.ruleFlags || {},
       chatMessages,
@@ -615,8 +646,11 @@ const resolveDispute = async (req, res) => {
     const dispute = await prisma.orderDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     
-    const order = await prisma.order.findUnique({ where: { id: dispute.orderId } });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    const order = dispute.orderId ? await prisma.order.findUnique({ where: { id: dispute.orderId } }) : null;
+    const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
+    if (!order && !deed) {
+      return res.status(404).json({ success: false, message: 'Order/Deed not found' });
+    }
 
     const resolutionMap = { REFUND: 'REFUND_BUYER', RELEASE: 'RELEASE_TO_SELLER' };
     const resolution = resolutionMap[action] || action;
@@ -629,13 +663,14 @@ const resolveDispute = async (req, res) => {
       finalBuyerPct = 0;
     }
 
-    const price = parseInt(order.scopeBox?.price || 0, 10);
+    const price = parseInt((order?.scopeBox?.price || deed?.scopeBox?.price) || 0, 10);
     const feeModelStatus = dispute.status === 'MEDIATION' ? 'ESCALATED' : 'RESOLVED';
     const split = calculateResolutionAmounts(price, finalBuyerPct, feeModelStatus);
 
     await prisma.$transaction(async (tx) => {
       // 1. Un-lock Buyer's balance (gte guard ensures we don't underflow or double-spend)
-      const buyerWallet = await tx.wallet.findUnique({ where: { userId: order.buyerId } });
+      const buyerId = order ? order.buyerId : deed.buyerId;
+      const buyerWallet = await tx.wallet.findUnique({ where: { userId: buyerId } });
       if (!buyerWallet) throw new Error("BUYER_WALLET_NOT_FOUND");
 
       const updateLock = await tx.wallet.updateMany({
@@ -656,9 +691,9 @@ const resolveDispute = async (req, res) => {
             type: "CREDIT",
             category: "DISPUTE_REFUND",
             amount: split.buyerGross,
-            currency: order.currency || "INR",
+            currency: (order?.currency || deed?.currency) || "INR",
             status: "SUCCESS",
-            description: `Dispute Refund: ${order.scopeBox?.title || order.id}`,
+            description: `Dispute Refund: ${order?.scopeBox?.title || deed?.scopeBox?.title || dispute.id}`,
             reference: dispute.id,
             netAmount: split.buyerNet,
             fee: split.buyerFee,
@@ -673,11 +708,12 @@ const resolveDispute = async (req, res) => {
       }
 
       // 3. Credit Seller (increment)
-      if (split.sellerNet > 0 && order.sellerId) {
-        let sellerWallet = await tx.wallet.findUnique({ where: { userId: order.sellerId } });
+      const sellerId = order ? order.sellerId : deed.sellerId;
+      if (split.sellerNet > 0 && sellerId) {
+        let sellerWallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
         if (!sellerWallet) {
           sellerWallet = await tx.wallet.create({
-            data: { userId: order.sellerId, userRole: "seller", currency: order.currency || "INR" }
+            data: { userId: sellerId, userRole: "seller", currency: (order?.currency || deed?.currency) || "INR" }
           });
         }
         await tx.wallet.update({
@@ -690,9 +726,9 @@ const resolveDispute = async (req, res) => {
             type: "CREDIT",
             category: "DISPUTE_RELEASE",
             amount: split.sellerGross,
-            currency: order.currency || "INR",
+            currency: (order?.currency || deed?.currency) || "INR",
             status: "SUCCESS",
-            description: `Dispute Resolution: ${order.scopeBox?.title || order.id}`,
+            description: `Dispute Resolution: ${order?.scopeBox?.title || deed?.scopeBox?.title || dispute.id}`,
             reference: dispute.id,
             netAmount: split.sellerNet,
             fee: split.sellerFee,
@@ -734,13 +770,20 @@ const resolveDispute = async (req, res) => {
 
       await tx.orderDispute.update({ where: { id }, data: updateData });
 
-      const orderStatus = (resolution === 'REFUND_BUYER' || resolution.includes('REFUND'))
+      const newStatus = (resolution === 'REFUND_BUYER' || resolution.includes('REFUND'))
         ? 'REFUNDED'
         : 'COMPLETED';
-      await tx.order.update({
-        where: { id: dispute.orderId },
-        data: { status: orderStatus },
-      });
+      if (dispute.orderId) {
+        await tx.order.update({
+          where: { id: dispute.orderId },
+          data: { status: newStatus },
+        });
+      } else if (dispute.deedId) {
+        await tx.deed.update({
+          where: { id: dispute.deedId },
+          data: { status: newStatus },
+        });
+      }
     });
 
     // Re-fetch updated dispute for response
