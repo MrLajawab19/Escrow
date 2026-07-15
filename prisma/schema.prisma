@@ -163,7 +163,7 @@ model Deed {
   updatedAt           DateTime        @updatedAt
 
   milestones          Milestone[]
-  dispute             Dispute?
+  orderDispute        OrderDispute?
   chatRoom            DeedChatRoom?
   ledgerEntries       AuditLedger[]
   review              Review?
@@ -217,75 +217,7 @@ model AuditLedger {
   @@index([deedId])
 }
 
-// --------- DISPUTE ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-model Dispute {
-  id                  String          @id @default(uuid())
-  deedId              String          @unique
-  deed                Deed            @relation(fields: [deedId], references: [id])
-  milestoneId         String?
-
-  raisedById          String
-  raisedByRole        String
-  reason              DisputeReason
-  description         String
-  evidenceUrls        String[]
-  deedClauseCited     String[]
-
-  counterEvidenceUrls String[]        @default([])
-  counterDescription  String?
-  counterSubmittedAt  DateTime?
-  counterWindowEnds   DateTime?
-
-  dayNumber           Int
-  feePercentage       Float
-  feeAmount           Int
-  feeDeducted         Boolean         @default(false)
-
-  aiVerdict           String?
-  aiSellerPct         Int?
-  aiBuyerPct          Int?
-  aiConfidence        Float?
-  aiReasoning         String?
-  aiKeyFactors        String[]        @default([])
-  aiClauseAnalysis    Json?
-  aiFraudLevel        String?
-  aiPromptVersion     String?
-  aiFlaggedForReview  Boolean         @default(false)
-  aiRunAt             DateTime?
-
-  status              DisputeStatus   @default(OPEN)
-  resolvedAt          DateTime?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-
-  escalation          HumanEscalation?
-
-  @@index([deedId])
-  @@index([status])
-}
-
-// --------- HUMAN ESCALATION ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-model HumanEscalation {
-  id              String           @id @default(uuid())
-  disputeId       String           @unique
-  dispute         Dispute          @relation(fields: [disputeId], references: [id])
-  requestedById   String
-  requestedByRole String
-  escalationFee   Int
-  feeDeducted     Boolean          @default(false)
-  aiVerdictJson   String
-  status          EscalationStatus @default(PENDING)
-  adminId         String?
-  finalVerdict    String?
-  sellerPct       Int?
-  buyerPct        Int?
-  adminReasoning  String?
-  resolvedAt      DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-}
+// 
 
 // --------- KYC ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -467,8 +399,9 @@ enum OrderDisputePriority {
 model OrderDispute {
   id                   String               @id @default(uuid())
   orderId              String               @unique
+  deedId               String?              @unique
   order                Order                @relation(fields: [orderId], references: [id])
-
+  deed                 Deed?                @relation(fields: [deedId], references: [id])
   buyerId              String
   sellerId             String
   raisedBy             String               // "buyer" | "seller"

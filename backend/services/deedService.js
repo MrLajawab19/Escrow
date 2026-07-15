@@ -449,20 +449,33 @@ class DeedService {
     const dayNumber = computeDayNumber(deed.createdAt);
     const counterWindowEnds = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-    const dispute = await prisma.dispute.create({
+    // Find the corresponding Order ID from the ledger
+    const ledgerEntry = await prisma.auditLedger.findFirst({
+      where: { deedId, eventType: "SELLER_JOINED" }
+    });
+    
+    let orderId = null;
+    if (ledgerEntry && ledgerEntry.payload) {
+      try {
+        const payloadData = JSON.parse(ledgerEntry.payload);
+        orderId = payloadData.orderId;
+      } catch (e) {
+        console.error("Failed to parse ledger payload for orderId:", e);
+      }
+    }
+    if (!orderId) throw new Error("LEGACY_ORDER_NOT_FOUND_FOR_DEED");
+
+    const dispute = await prisma.orderDispute.create({
       data: {
+        orderId,
         deedId,
-        raisedById: userId,
-        raisedByRole: role,
+        buyerId: deed.buyerId,
+        sellerId: deed.sellerId,
+        raisedBy: role,
         reason: data.reason,
         description: data.description,
         evidenceUrls: data.evidenceUrls || [],
-        deedClauseCited: data.deedClauseCited || [],
-        dayNumber,
-        feePercentage: 0, // Legacy field, fee calculated at resolution
-        feeAmount: 0,     // Legacy field, fee calculated at resolution
-        counterWindowEnds,
-        status: "COUNTER_WINDOW",
+        status: "OPEN",
       },
     });
 
@@ -470,6 +483,13 @@ class DeedService {
       where: { id: deedId },
       data: { status: "DISPUTED" },
     });
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "DISPUTED" }
+    });
+
+    // TODO (Stage B): Trigger AI engine synchronously or asynchronously here
 
     await ledgerService.appendEvent(deedId, "DISPUTE_RAISED", role, userId, {
       reason: data.reason,
@@ -547,7 +567,7 @@ class DeedService {
       where: { id: deedId },
       include: {
         milestones: { orderBy: { milestoneNumber: "asc" } },
-        dispute: { include: { escalation: true } },
+        orderDispute: true,
         chatRoom: { include: { messages: { take: 1, orderBy: { createdAt: "desc" } } } },
       },
     });
@@ -557,7 +577,7 @@ class DeedService {
     return prisma.deed.findMany({
       where: { buyerId },
       orderBy: { createdAt: "desc" },
-      include: { dispute: true, milestones: true },
+      include: { orderDispute: true, milestones: true },
     });
   }
 
@@ -565,7 +585,7 @@ class DeedService {
     return prisma.deed.findMany({
       where: { sellerId },
       orderBy: { createdAt: "desc" },
-      include: { dispute: true, milestones: true },
+      include: { orderDispute: true, milestones: true },
     });
   }
 

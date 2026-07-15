@@ -72,6 +72,16 @@ const createDispute = async (req, res) => {
     const buyerId = order.buyerId;
     const sellerId = order.sellerId || '';
 
+    // Find the corresponding Deed ID from the ledger
+    const ledgerEntry = await prisma.auditLedger.findFirst({
+      where: { eventType: "SELLER_JOINED", payload: { contains: orderId } }
+    });
+    
+    let deedId = null;
+    if (ledgerEntry && ledgerEntry.deedId) {
+      deedId = ledgerEntry.deedId;
+    }
+
     // Handle uploaded evidence files
     const evidenceFiles = req.files ? req.files.map(file => ({
       filename: file.filename,
@@ -114,6 +124,7 @@ const createDispute = async (req, res) => {
     const dispute = await prisma.orderDispute.create({
       data: {
         orderId,
+        deedId,
         buyerId,
         sellerId,
         raisedBy,
