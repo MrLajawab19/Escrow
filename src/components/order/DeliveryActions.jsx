@@ -3,7 +3,10 @@ import axios from 'axios';
 import RevisionModal from './RevisionModal';
 import DisputeModal from '../DisputeModal';
 
-const DeliveryActions = ({ order, userType, onUpdate }) => {
+const DeliveryActions = ({ deed, userType, onUpdate }) => {
+  // Extract delivery files dynamically from the ledger
+  const deliveryEntry = deed?.ledgerEntries?.find(e => e.eventType === 'DELIVERY_CLAIMED');
+  const deliveryFiles = deliveryEntry?.payload?.fileUrls || [];
   const [showRevision, setShowRevision] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [loading, setLoading] = useState('');
@@ -20,11 +23,10 @@ const DeliveryActions = ({ order, userType, onUpdate }) => {
   const handleRelease = async () => {
     setLoading('release');
     try {
-      const targetId = order.scopeBox?.deedId || order.id;
-      const res = await axios.post(`/api/deeds/${targetId}/release`, {}, { headers });
+      const res = await axios.post(`/api/deeds/${deed.id}/release`, {}, { headers });
       if (res.data.success) {
         showNotice('Funds released! Order completed.');
-        onUpdate?.({ ...order, status: 'RELEASED' });
+        onUpdate?.({ ...deed, status: 'RELEASED' });
       } else {
         showNotice(res.data.message || 'Failed to release funds', 'error');
       }
@@ -35,9 +37,9 @@ const DeliveryActions = ({ order, userType, onUpdate }) => {
     }
   };
 
-  const isSubmitted = order.status === 'SUBMITTED';
+  const isSubmitted = deed.status === 'SUBMITTED';
   const canRequestRevision = isSubmitted &&
-    (order.revisionsAllowed ?? 2) > (order.revisionsUsed ?? 0);
+    (deed.revisionLimit ?? 3) > (deed.revisionCount ?? 0);
 
   if (!isSubmitted || userType !== 'buyer') return null;
 
@@ -58,13 +60,13 @@ const DeliveryActions = ({ order, userType, onUpdate }) => {
         </div>
 
         {/* Delivery Files */}
-        {order.deliveryFiles?.length > 0 && (
+        {deliveryFiles.length > 0 && (
           <div className="mb-5">
             <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 font-inter">
               Submitted Files
             </p>
             <div className="space-y-2">
-              {order.deliveryFiles.map((file, i) => (
+              {deliveryFiles.map((file, i) => (
                 <div key={i}
                   className="flex items-center gap-3 px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl">
                   <svg className="w-4 h-4 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +87,7 @@ const DeliveryActions = ({ order, userType, onUpdate }) => {
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           <p className="text-xs font-inter text-amber-700">
-            <span className="font-bold">{(order.revisionsAllowed ?? 2) - (order.revisionsUsed ?? 0)}</span> revision{(order.revisionsAllowed ?? 2) - (order.revisionsUsed ?? 0) !== 1 ? 's' : ''} remaining
+            <span className="font-bold">{(deed.revisionLimit ?? 3) - (deed.revisionCount ?? 0)}</span> revision{(deed.revisionLimit ?? 3) - (deed.revisionCount ?? 0) !== 1 ? 's' : ''} remaining
           </p>
         </div>
 
@@ -140,8 +142,7 @@ const DeliveryActions = ({ order, userType, onUpdate }) => {
       </div>
 
       <RevisionModal
-        orderId={order.id}
-        deedId={order.scopeBox?.deedId || order.id}
+        deedId={deed.id}
         isOpen={showRevision}
         onClose={() => setShowRevision(false)}
         onSuccess={() => showNotice('Revision request submitted!')}
@@ -150,12 +151,11 @@ const DeliveryActions = ({ order, userType, onUpdate }) => {
       <DisputeModal
         isOpen={showDisputeModal}
         onClose={() => setShowDisputeModal(false)}
-        deedId={order.id}
-        order={order}
+        deed={deed}
         userType={userType}
         onSubmit={() => {
           setShowDisputeModal(false);
-          onUpdate?.({ ...order, status: 'DISPUTED' });
+          onUpdate?.({ ...deed, status: 'DISPUTED' });
         }}
       />
     </>

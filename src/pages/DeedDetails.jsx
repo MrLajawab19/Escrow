@@ -43,10 +43,10 @@ function timeRemaining(deadline) {
 
 const BUYER_ACCEPTED_GRACE_MS = 60 * 60 * 1000;
 
-function sellerAcceptedAtMs(order) {
-  if (!order) return 0;
-  if (order.sellerAcceptedAt) return new Date(order.sellerAcceptedAt).getTime();
-  const log = [...(order.orderLogs || [])].reverse().find((l) => l.event === 'ORDER_ACCEPTED');
+function sellerAcceptedAtMs(deed) {
+  if (!deed) return 0;
+  if (deed.sellerAcceptedAt) return new Date(deed.sellerAcceptedAt).getTime();
+  const log = [...(deed.orderLogs || [])].reverse().find((l) => l.event === 'ORDER_ACCEPTED');
   return log?.timestamp ? new Date(log.timestamp).getTime() : 0;
 }
 
@@ -74,7 +74,7 @@ const DeedDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { formatCurrency } = useCurrency();
-  const [order, setOrder] = useState(null);
+  const [deed, setDeed] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -102,15 +102,15 @@ const DeedDetails = () => {
       const endpoint = `/api/deeds/${id}`;
       const res = await axios.get(endpoint, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
-        const orderData = res.data.data;
-        if (typeof orderData.ledgerEntries === 'string') {
+        const deedData = res.data.data;
+        if (typeof deedData.ledgerEntries === 'string') {
           try {
-            orderData.ledgerEntries = JSON.parse(orderData.ledgerEntries);
+            deedData.ledgerEntries = JSON.parse(deedData.ledgerEntries);
           } catch(e) {
-            orderData.ledgerEntries = [];
+            deedData.ledgerEntries = [];
           }
         }
-        setOrder(orderData);
+        setDeed(deedData);
       } else {
         setError(res.data.message || 'Order not found');
       }
@@ -125,28 +125,28 @@ const DeedDetails = () => {
 
   const [buyerStatusTick, setBuyerStatusTick] = useState(0);
   useEffect(() => {
-    if (userType !== 'buyer' || order?.status !== 'IN_PROGRESS') return;
-    const t0 = sellerAcceptedAtMs(order);
+    if (userType !== 'buyer' || deed?.status !== 'IN_PROGRESS') return;
+    const t0 = sellerAcceptedAtMs(deed);
     if (!t0 || Date.now() - t0 >= BUYER_ACCEPTED_GRACE_MS) return;
     const iv = setInterval(() => setBuyerStatusTick((x) => x + 1), 30000);
     return () => clearInterval(iv);
-  }, [userType, order?.id, order?.status, order?.sellerAcceptedAt, order?.ledgerEntries]);
+  }, [userType, deed?.id, deed?.status, deed?.sellerAcceptedAt, deed?.ledgerEntries]);
 
-  const handleOrderUpdate = (updated) => setOrder(prev => ({ ...prev, ...updated }));
+  const handleOrderUpdate = (updated) => setDeed(prev => ({ ...prev, ...updated }));
 
   const CHAT_ELIGIBLE = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
-  const showChat = CHAT_ELIGIBLE.includes(order?.status);
+  const showChat = CHAT_ELIGIBLE.includes(deed?.status);
 
   const buyerBadgeKey = useMemo(() => {
-    if (!order) return 'PLACED';
-    if (userType !== 'buyer' || order.status !== 'IN_PROGRESS') return order.status;
-    const at = sellerAcceptedAtMs(order);
+    if (!deed) return 'PLACED';
+    if (userType !== 'buyer' || deed.status !== 'IN_PROGRESS') return deed.status;
+    const at = sellerAcceptedAtMs(deed);
     if (at && Date.now() - at < BUYER_ACCEPTED_GRACE_MS) return 'ACCEPTED';
     return 'IN_PROGRESS';
-  }, [order, userType, buyerStatusTick]);
+  }, [deed, userType, buyerStatusTick]);
 
-  const statusCfg = STATUS_CONFIG[buyerBadgeKey] || STATUS_CONFIG[order?.status] || STATUS_CONFIG.PLACED;
-  const timeLeft = timeRemaining(order?.scopeBox?.deadline);
+  const statusCfg = STATUS_CONFIG[buyerBadgeKey] || STATUS_CONFIG[deed?.status] || STATUS_CONFIG.PLACED;
+  const timeLeft = timeRemaining(deed?.scopeBox?.deadline);
   const dashboardPath = userType === 'buyer' ? '/buyer/dashboard' : '/seller/dashboard';
 
   return (
@@ -182,7 +182,7 @@ const DeedDetails = () => {
           </div>
         )}
 
-        {!loading && !error && order && (
+        {!loading && !error && deed && (
           <>
             {/* ── ORDER HEADER ────────────────────────────────────────────── */}
             <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
@@ -204,15 +204,15 @@ const DeedDetails = () => {
                     )}
                   </div>
                   <h1 className="text-xl sm:text-2xl font-black text-[#0A2540] font-inter leading-tight">
-                    {order.scopeBox?.title || 'Untitled Order'}
+                    {deed.scopeBox?.title || 'Untitled Order'}
                   </h1>
                   <p className="text-xs text-neutral-400 font-inter mt-1 font-mono">
-                    Order ID: {order.id}
+                    Order ID: {deed.id}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-3xl font-black text-[#0A2540] font-inter">
-                    {formatCurrency(order.scopeBox?.price || 0, order.currency || 'INR')}
+                    {formatCurrency(deed.scopeBox?.price || 0, deed.currency || 'INR')}
                   </p>
                   <p className="text-xs text-neutral-400 font-inter mt-0.5">Escrow Amount</p>
                 </div>
@@ -222,21 +222,21 @@ const DeedDetails = () => {
             {/* ── DEED ACTIONS ──────────────────────────────────────────────── */}
             <div className="flex flex-wrap gap-3 mb-6">
               <Link 
-                to={`/${userType}/deed/${order.scopeBox?.deedId || order.id}/milestones`}
+                to={`/${userType}/deed/${deed.scopeBox?.deedId || deed.id}/milestones`}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-medium font-inter hover:bg-indigo-100 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 View Milestones
               </Link>
               <Link 
-                to={`/${userType}/deed/${order.scopeBox?.deedId || order.id}/sign`}
+                to={`/${userType}/deed/${deed.scopeBox?.deedId || deed.id}/sign`}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-medium font-inter hover:bg-purple-100 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 Digital Signature
               </Link>
               <Link 
-                to={`/${userType}/deed/${order.scopeBox?.deedId || order.id}/audit`}
+                to={`/${userType}/deed/${deed.scopeBox?.deedId || deed.id}/audit`}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium font-inter hover:bg-slate-200 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -245,10 +245,10 @@ const DeedDetails = () => {
             </div>
 
             {/* ── TIMELINE ────────────────────────────────────────────────── */}
-            <OrderTimeline status={order.status} />
+            <OrderTimeline status={deed.status} />
 
             {/* ── REVIEW BANNER ───────────────────────────────────────────── */}
-            {userType === 'buyer' && (order.status === 'RELEASED' || order.status === 'COMPLETED' || order.status === 'CLOSED') && (
+            {userType === 'buyer' && (deed.status === 'RELEASED' || deed.status === 'COMPLETED' || deed.status === 'CLOSED') && (
               <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div>
                   <h3 className="text-lg font-bold text-emerald-800 font-inter">How was your experience?</h3>
@@ -269,22 +269,22 @@ const DeedDetails = () => {
                 {
                   icon: '📅',
                   label: 'Order Placed',
-                  value: formatDate(order.createdAt),
+                  value: formatDate(deed.createdAt),
                   sub: null,
                   cls: 'border-neutral-200',
                 },
                 {
                   icon: '⏰',
                   label: 'Deadline',
-                  value: formatDate(order.scopeBox?.deadline),
+                  value: formatDate(deed.scopeBox?.deadline),
                   sub: timeLeft?.label,
                   cls: timeLeft?.urgent ? 'border-red-200 bg-red-50/30' : 'border-neutral-200',
                 },
                 {
                   icon: '💰',
                   label: 'Platform',
-                  value: order.platform || 'ScrowX',
-                  sub: order.currency || 'USD',
+                  value: deed.platform || 'ScrowX',
+                  sub: deed.currency || 'USD',
                   cls: 'border-neutral-200',
                 },
               ].map((card, i) => (
@@ -318,16 +318,16 @@ const DeedDetails = () => {
               </div>
 
               <p className="text-sm text-neutral-600 font-inter leading-relaxed bg-neutral-50 p-4 rounded-xl border border-neutral-100 mb-4">
-                {order.scopeBox?.description || 'No description provided.'}
+                {deed.scopeBox?.description || 'No description provided.'}
               </p>
 
-              {order.scopeBox?.deliverables?.length > 0 && (
+              {deed.scopeBox?.deliverables?.length > 0 && (
                 <>
                   <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-2">
                     Deliverables
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {order.scopeBox.deliverables.map((d, i) => (
+                    {deed.scopeBox.deliverables.map((d, i) => (
                       <span key={i}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-100 font-inter">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,28 +340,28 @@ const DeedDetails = () => {
                 </>
               )}
 
-              {order.scopeBox?.condition && (
+              {deed.scopeBox?.condition && (
                 <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
                   <p className="text-xs font-semibold text-amber-700 font-inter mb-1">Conditions</p>
-                  <p className="text-xs text-amber-600 font-inter">{order.scopeBox.condition}</p>
+                  <p className="text-xs text-amber-600 font-inter">{deed.scopeBox.condition}</p>
                 </div>
               )}
             </div>
 
             {/* ── MILESTONES ──────────────────────────────────────────────── */}
-            {order.milestones?.length > 0 && (
-              <MilestoneList milestones={order.milestones} />
+            {deed.milestones?.length > 0 && (
+              <MilestoneList milestones={deed.milestones} />
             )}
 
             {/* ── DELIVERY ACTIONS (buyer only when SUBMITTED) ─────────────── */}
             <DeliveryActions
-              order={order}
+              deed={deed}
               userType={userType}
               onUpdate={handleOrderUpdate}
             />
 
             {/* ── DISPUTE RESOLUTION FLOW (shown when order is DISPUTED) ─────── */}
-            {order.status === 'DISPUTED' && (
+            {deed.status === 'DISPUTED' && (
               <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-1">
                 <div className="px-5 pt-4 pb-2 flex items-center gap-2 border-b border-red-50">
                   <span className="text-lg">⚖️</span>
@@ -371,7 +371,7 @@ const DeedDetails = () => {
                 <div className="p-5">
                   <DisputeResolutionFlow
                     deedId={id}
-                    deed={order}
+                    deed={deed}
                     userType={userType}
                     token={token}
                     onDeedUpdate={handleOrderUpdate}
@@ -381,7 +381,7 @@ const DeedDetails = () => {
             )}
 
             {/* ── LEDGER ENTRIES ──────────────────────────────────────────────── */}
-            {order.ledgerEntries?.length > 0 && (
+            {deed.ledgerEntries?.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center">
@@ -393,12 +393,12 @@ const DeedDetails = () => {
                   <h2 className="text-base font-bold text-[#0A2540] font-inter">Activity Log</h2>
                 </div>
                 <div className="space-y-3">
-                  {order.ledgerEntries.map((log, i) => (
+                  {deed.ledgerEntries.map((log, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm text-[#0A2540] font-inter">
-                          {typeof log === 'string' ? log : log.message || JSON.stringify(log)}
+                          {typeof log === 'string' ? log : (log.eventType || log.message || JSON.stringify(log))}
                         </p>
                         {log.timestamp && (
                           <p className="text-[11px] text-neutral-400 font-inter mt-0.5">
@@ -430,7 +430,7 @@ const DeedDetails = () => {
                 <OrderChat
                   orderId={id}
                   currentUser={currentUser}
-                  orderStatus={order.status}
+                  orderStatus={deed.status}
                   inline={true}
                 />
               </div>
@@ -439,7 +439,7 @@ const DeedDetails = () => {
             <ReviewModal 
               isOpen={isReviewModalOpen} 
               onClose={() => setIsReviewModalOpen(false)} 
-              deedId={order.id}
+              deedId={deed.id}
             />
           </>
         )}

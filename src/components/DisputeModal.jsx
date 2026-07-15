@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const DisputeModal = ({ isOpen, onClose, orderId, deedId, order, onSubmit, userType }) => {
+const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
   const [formData, setFormData] = useState({
     reason: 'QUALITY_ISSUE',
     description: '',
@@ -175,14 +175,9 @@ const DisputeModal = ({ isOpen, onClose, orderId, deedId, order, onSubmit, userT
       // Create FormData for file upload
       const submitData = new FormData();
       
-      // Use order data to get correct IDs
-      const buyerId = order?.buyerId || 'buyer-123';
-      const sellerId = order?.sellerId || 'seller-456';
-      
-      if (deedId) submitData.append('deedId', deedId);
-      if (orderId) submitData.append('orderId', orderId);
-      submitData.append('buyerId', buyerId);
-      submitData.append('sellerId', sellerId);
+      submitData.append('deedId', deed.id);
+      submitData.append('buyerId', deed.buyerId);
+      submitData.append('sellerId', deed.sellerId);
       submitData.append('raisedBy', userType);
       submitData.append('reason', formData.reason);
       submitData.append('description', formData.description);
@@ -194,9 +189,9 @@ const DisputeModal = ({ isOpen, onClose, orderId, deedId, order, onSubmit, userT
       });
 
       console.log('Submitting dispute with data:', {
-        orderId,
-        buyerId,
-        sellerId,
+        deedId: deed.id,
+        buyerId: deed.buyerId,
+        sellerId: deed.sellerId,
         raisedBy: userType,
         reason: formData.reason,
         description: formData.description,

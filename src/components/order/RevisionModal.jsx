@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const RevisionModal = ({ orderId, deedId, isOpen, onClose, onSuccess }) => {
+const RevisionModal = ({ deedId, isOpen, onClose, onSuccess }) => {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -12,8 +12,7 @@ const RevisionModal = ({ orderId, deedId, isOpen, onClose, onSuccess }) => {
     setError('');
     try {
       const token = localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken');
-      const targetId = deedId || orderId;
-      await axios.post(`/api/deeds/${targetId}/request-changes`,
+      await axios.post(`/api/deeds/${deedId}/request-changes`,
         { description: message.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
