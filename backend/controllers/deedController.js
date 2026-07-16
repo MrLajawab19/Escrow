@@ -83,7 +83,7 @@ exports.getDeedById = async (req, res) => {
       include: {
         milestones: { orderBy: { milestoneNumber: 'asc' } },
         ledgerEntries: { orderBy: { createdAt: 'asc' } },
-        orderDispute: true
+        deedDispute: true
       }
     });
 

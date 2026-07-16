@@ -536,7 +536,7 @@ export default function AdminDashboard() {
                         <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-slate-700 truncate">
-                            Order <span className="font-mono text-slate-500">#{d.orderId?.slice(0, 8)}</span>
+                            Order <span className="font-mono text-slate-500">#{d.deedId?.slice(0, 8)}</span>
                           </p>
                           <p className="text-xs text-slate-500">{d.reason} · {d.riskReason}</p>
                         </div>
@@ -634,8 +634,8 @@ export default function AdminDashboard() {
                         {filteredDisputes.map(d => (
                           <tr key={d.id} className={`hover:bg-slate-50/70 transition-colors ${d.autoFlag === 'AUTO_FLAGGED' ? 'bg-red-50/20' : ''}`}>
                             <td className="px-5 py-4">
-                              <p className="font-mono text-xs text-slate-600">#{d.orderId?.slice(0, 8)}</p>
-                              <p className="text-xs text-slate-400 mt-0.5">${d.order?.scopeBox?.price || 0} {d.order?.currency || 'USD'}</p>
+                              <p className="font-mono text-xs text-slate-600">#{d.deedId?.slice(0, 8)}</p>
+                              <p className="text-xs text-slate-400 mt-0.5">${d.deed?.scopeBox?.price || 0} {d.deed?.currency || 'USD'}</p>
                             </td>
                             <td className="px-5 py-4">
                               <p className="text-slate-700 font-medium">{d.reason}</p>

@@ -142,7 +142,7 @@ async function runPhase3Test() {
 
   console.log("\n--- Outcome Status Check ---");
   const finalDeed = await prisma.deed.findUnique({ where: { id: deed.id } });
-  const finalDispute = await prisma.orderDispute.findUnique({ where: { id: dispute.id } });
+  const finalDispute = await prisma.deedDispute.findUnique({ where: { id: dispute.id } });
 
   if (finalDeed.status === 'CLOSED' && finalDispute.resolution === 'PARTIAL_REFUND') {
     console.log("✅ Status exact match: Deed CLOSED and Dispute PARTIAL_REFUND");

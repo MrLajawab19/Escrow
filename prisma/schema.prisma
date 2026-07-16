@@ -163,7 +163,7 @@ model Deed {
   updatedAt           DateTime        @updatedAt
 
   milestones          Milestone[]
-  orderDispute        OrderDispute?
+  deedDispute        DeedDispute?
   chatRoom            DeedChatRoom?
   ledgerEntries       AuditLedger[]
   review              Review?
@@ -328,60 +328,11 @@ model ChatMessage {
   createdAt  DateTime     @default(now())
 }
 
-// --------- ORDER ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-enum OrderStatus {
-  PLACED
-  ESCROW_FUNDED
-  ACCEPTED
-  IN_PROGRESS
-  SUBMITTED
-  APPROVED
-  COMPLETED
-  DISPUTED
-  CHANGES_REQUESTED
-  REJECTED
-  CANCELLED
-  REFUNDED
-  RELEASED
-}
-
-model Order {
-  id                 String        @id @default(uuid())
-  buyerId            String
-  sellerId           String?
-  buyerName          String
-  buyerEmail         String
-  platform           String
-  productLink        String?
-  country            String
-  currency           String        @default("INR")
-  sellerContact      String
-  escrowLink         String?
-  orderTrackingLink  String?
-  scopeBox           Json
-  status             OrderStatus   @default(PLACED)
-  deliveryFiles      String[]      @default([])
-  orderLogs          Json          @default("[]")
-  proposedScopeBox   Json?
-  sellerAcceptedAt   DateTime?
-  disputeId          String?
-  revisionCount      Int           @default(0)
-  formalNoticeCount  Int           @default(0)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-
-  dispute            OrderDispute?
-  chatRoom           OrderChatRoom?
-
-  @@index([buyerId])
-  @@index([sellerId])
-  @@index([status])
-}
 
 // --------- ORDER DISPUTE -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-enum OrderDisputeStatus {
+enum DeedDisputeStatus {
   OPEN
   RESPONDED
   UNDER_REVIEW
@@ -389,18 +340,16 @@ enum OrderDisputeStatus {
   RESOLVED
 }
 
-enum OrderDisputePriority {
+enum DeedDisputePriority {
   LOW
   MEDIUM
   HIGH
   CRITICAL
 }
 
-model OrderDispute {
+model DeedDispute {
   id                   String               @id @default(uuid())
-  orderId              String?              @unique
   deedId               String?              @unique
-  order                Order?               @relation(fields: [orderId], references: [id])
   deed                 Deed?                @relation(fields: [deedId], references: [id])
   buyerId              String
   sellerId             String
@@ -410,8 +359,8 @@ model OrderDispute {
   evidenceUrls         String[]             @default([])
   requestedResolution  String?
 
-  priority             OrderDisputePriority @default(MEDIUM)
-  status               OrderDisputeStatus   @default(OPEN)
+  priority             DeedDisputePriority @default(MEDIUM)
+  status               DeedDisputeStatus   @default(OPEN)
 
   ruleFlags            Json?                // output of runDisputeEngine
   aiAnalysis           Json?                // output of analyzeDisputeWithAI
@@ -431,43 +380,12 @@ model OrderDispute {
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
-  @@index([orderId])
   @@index([buyerId])
   @@index([sellerId])
   @@index([status])
 }
 
-// --------- ORDER CHAT ROOM -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-model OrderChatRoom {
-  id         String         @id @default(uuid())
-  orderId    String         @unique
-  order      Order          @relation(fields: [orderId], references: [id])
-  buyerId    String
-  sellerId   String
-  isActive   Boolean        @default(true)
-  isArchived Boolean        @default(false)
-  expiresAt  DateTime?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  messages   OrderChatMessage[]
-
-  @@index([orderId])
-}
-
-model OrderChatMessage {
-  id         String        @id @default(uuid())
-  roomId     String
-  room       OrderChatRoom @relation(fields: [roomId], references: [id])
-  senderId   String
-  senderRole String
-  senderName String
-  content    String
-  isRead     Boolean       @default(false)
-  createdAt  DateTime      @default(now())
-
-  @@index([roomId])
-}
 
 // --------- NOTIFICATIONS -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

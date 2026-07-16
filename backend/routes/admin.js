@@ -42,29 +42,29 @@ function computeFlag(dispute, order) {
 router.get('/stats', adminAuth, async (req, res) => {
   try {
     const activeStatuses = ['PLACED', 'ESCROW_FUNDED', 'IN_PROGRESS', 'SUBMITTED', 'CHANGES_REQUESTED', 'ACCEPTED', 'DISPUTED'];
-    const completedStatuses = ['COMPLETED', 'RELEASED', 'REFUNDED', 'CANCELLED'];
+    const completedStatuses = ['COMPLETED', 'RELEASED', 'REFUNDED', 'CLOSED'];
 
     const [
       totalOrders, activeOrders, completedOrders,
       totalDisputes, openDisputes, underReviewDisputes, resolvedDisputes,
       totalBuyers, totalSellers, recentDisputes,
     ] = await Promise.all([
-      prisma.order.count(),
-      prisma.order.count({ where: { status: { in: activeStatuses } } }),
-      prisma.order.count({ where: { status: { in: completedStatuses } } }),
-      prisma.orderDispute.count(),
-      prisma.orderDispute.count({ where: { status: 'OPEN' } }),
-      prisma.orderDispute.count({ where: { status: 'UNDER_REVIEW' } }),
-      prisma.orderDispute.count({ where: { status: 'RESOLVED' } }),
+      prisma.deed.count(),
+      prisma.deed.count({ where: { status: { in: activeStatuses } } }),
+      prisma.deed.count({ where: { status: { in: completedStatuses } } }),
+      prisma.deedDispute.count(),
+      prisma.deedDispute.count({ where: { status: 'OPEN' } }),
+      prisma.deedDispute.count({ where: { status: 'UNDER_REVIEW' } }),
+      prisma.deedDispute.count({ where: { status: 'RESOLVED' } }),
       prisma.buyer.count(),
       prisma.seller.count(),
-      prisma.orderDispute.count({
+      prisma.deedDispute.count({
         where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
       }),
     ]);
 
     // Status breakdown
-    const statusGroups = await prisma.order.groupBy({
+    const statusGroups = await prisma.deed.groupBy({
       by: ['status'],
       _count: { id: true },
     });
@@ -92,7 +92,7 @@ router.get('/disputes', adminAuth, async (req, res) => {
     const where = {};
     if (status) where.status = status;
 
-    const disputes = await prisma.orderDispute.findMany({
+    const disputes = await prisma.deedDispute.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     });
@@ -163,7 +163,7 @@ router.get('/disputes', adminAuth, async (req, res) => {
 
 const getDisputeFull = async (req, res) => {
   try {
-    const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
     const [deed, buyer, seller] = await Promise.all([
@@ -229,7 +229,7 @@ router.post('/disputes/:id/resolve', adminAuth, async (req, res) => {
     const { action, notes } = req.body;
     if (!action) return res.status(400).json({ success: false, message: 'action is required (REFUND or RELEASE)' });
 
-    const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     if (dispute.status === 'RESOLVED') return res.status(400).json({ success: false, message: 'Dispute already resolved' });
 
@@ -245,7 +245,7 @@ router.post('/disputes/:id/resolve', adminAuth, async (req, res) => {
       notes: notes || '',
     };
 
-    const updatedDispute = await prisma.orderDispute.update({
+    const updatedDispute = await prisma.deedDispute.update({
       where: { id: req.params.id },
       data: {
         status: 'RESOLVED',
@@ -258,7 +258,7 @@ router.post('/disputes/:id/resolve', adminAuth, async (req, res) => {
     });
 
     if (dispute.orderId) {
-      await prisma.order.update({
+      await prisma.deed.update({
         where: { id: dispute.orderId },
         data: { status: orderStatus },
       });
@@ -280,10 +280,10 @@ router.post('/disputes/:id/resolve', adminAuth, async (req, res) => {
 
 router.post('/disputes/:id/ai-analysis', adminAuth, async (req, res) => {
   try {
-    const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     
-    const order = dispute.orderId ? await prisma.order.findUnique({ where: { id: dispute.orderId } }) : null;
+    const order = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
     const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
     if (!order && !deed) return res.status(404).json({ success: false, message: 'Order/Deed not found' });
     
@@ -309,7 +309,7 @@ router.post('/disputes/:id/ai-analysis', adminAuth, async (req, res) => {
     
     const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
     
-    const updatedDispute = await prisma.orderDispute.update({
+    const updatedDispute = await prisma.deedDispute.update({
       where: { id: dispute.id },
       data: {
         aiAnalysis: aiResult,
@@ -333,34 +333,34 @@ router.post('/disputes/:id/ai-analysis', adminAuth, async (req, res) => {
   }
 });
 
-// ── GET /api/admin/orders ─────────────────────────────────────────────────────
+// ── GET /api/admin/deeds ─────────────────────────────────────────────────────
 
-router.get('/orders', adminAuth, async (req, res) => {
+router.get('/deeds', adminAuth, async (req, res) => {
   try {
     const { limit = 20, page = 1 } = req.query;
     const take = parseInt(limit, 10);
     const skip = (parseInt(page, 10) - 1) * take;
 
-    const orders = await prisma.order.findMany({
+    const deeds = await prisma.deed.findMany({
       orderBy: { createdAt: 'desc' },
       take,
       skip,
     });
     
-    const total = await prisma.order.count();
+    const total = await prisma.deed.count();
 
     return res.json({ 
       success: true, 
       data: {
-        orders,
+        deeds,
         total,
         page: parseInt(page, 10),
         limit: take
       } 
     });
   } catch (err) {
-    console.error('Admin orders error:', err);
-    return res.status(500).json({ success: false, message: 'Failed to fetch orders' });
+    console.error('Admin deeds error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch deeds' });
   }
 });
 

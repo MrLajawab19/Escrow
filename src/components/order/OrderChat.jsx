@@ -91,7 +91,7 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [deedId]);
 
   // ── Socket setup ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -286,7 +286,7 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
           <div>
             <p className="text-white font-semibold text-sm font-inter">Order Chat</p>
             <p className="text-indigo-200 text-xs font-inter truncate max-w-[200px]">
-              #{orderId.slice(0, 8)}…
+              #{deedId.slice(0, 8)}…
             </p>
           </div>
         </div>

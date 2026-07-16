@@ -130,7 +130,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
-      const disputeId = deed?.orderDispute?.id || deed?.disputeId;
+      const disputeId = deed?.deedDispute?.id || deed?.disputeId;
       const res = await axios.get(`/api/disputes/${disputeId}/full`, { headers });
       if (res.data.success) {
         setDetail(res.data.data);
@@ -142,12 +142,12 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
     } finally {
       setLoading(false);
     }
-  }, [deed?.orderDispute?.id, deed?.disputeId, token]);
+  }, [deed?.deedDispute?.id, deed?.disputeId, token]);
 
   useEffect(() => {
-    const disputeId = deed?.orderDispute?.id || deed?.disputeId;
+    const disputeId = deed?.deedDispute?.id || deed?.disputeId;
     if (disputeId) fetchDetail();
-  }, [deed?.orderDispute?.id, deed?.disputeId, fetchDetail]);
+  }, [deed?.deedDispute?.id, deed?.disputeId, fetchDetail]);
 
   // Poll for AI analysis if not yet available
   useEffect(() => {

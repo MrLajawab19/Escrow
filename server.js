@@ -7,7 +7,7 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
 const { Server } = require('socket.io');                        // ← NEW: Socket.IO server
-const orderRoutes = require('./backend/routes/orders');
+
 const authRoutes = require('./backend/routes/auth');
 const disputeRoutes = require('./backend/routes/disputes');
 const supportChatRoutes = require('./backend/routes/supportChat');
@@ -120,7 +120,7 @@ const { globalLimiter } = require('./backend/middleware/rateLimiter');
 app.use('/api', globalLimiter);
 
 // ── Routes (all originals unchanged + new chat route) ────────────────────────
-app.use('/api/orders', orderRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/disputes', disputeRoutes);
 app.use('/api/support-chat', supportChatRoutes);
@@ -134,35 +134,7 @@ app.use('/api/notifications', notificationsRoutes);
 const profilesRoutes = require('./backend/routes/profiles');
 app.use('/api/profiles', profilesRoutes);
 
-// ── Auto-release cron (checks orders hourly, releases approved ones) ───────────
-setInterval(async () => {
-  try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-    // Auto-release orders that have been in APPROVED status for over 72 hours
-    const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000);
-    const toRelease = await prisma.order.findMany({
-      where: { status: 'APPROVED', updatedAt: { lte: cutoff } },
-    });
-    for (const order of toRelease) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          status: 'COMPLETED',
-          orderLogs: [...(Array.isArray(order.orderLogs) ? order.orderLogs : []), {
-            event: 'AUTO_RELEASED',
-            byUserId: 'system',
-            timestamp: new Date().toISOString(),
-            description: 'Auto-released after 72h in APPROVED status',
-          }],
-        },
-      });
-      console.log(`[AutoRelease] Order ${order.id} auto-completed.`);
-    }
-  } catch (e) {
-    console.error('[AutoRelease] Error:', e.message);
-  }
-}, 60 * 60 * 1000);
+
 
 // ── Chat expiry cron (new) ────────────────────────────────────────────────────
 startChatExpiryCron();                                          // ← NEW

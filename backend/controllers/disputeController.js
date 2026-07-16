@@ -54,62 +54,29 @@ async function getChatMessages(orderId) {
 
 const createDispute = async (req, res) => {
   try {
-    let { orderId, deedId, reason, description, requestedResolution, priority = 'MEDIUM' } = req.body;
-    if (orderId === 'undefined' || orderId === 'null') orderId = null;
+    let { deedId, reason, description, requestedResolution, priority = 'MEDIUM' } = req.body;
     if (deedId === 'undefined' || deedId === 'null') deedId = null;
 
-    const targetId = deedId || orderId;
-    if (!targetId || !reason || !description) {
-      return res.status(400).json({ success: false, message: 'Deed/Order ID, reason, and description are required' });
+    if (!deedId || !reason || !description) {
+      return res.status(400).json({ success: false, message: 'Deed ID, reason, and description are required' });
     }
 
-    let deed = null;
-    let order = null;
-    
-    if (deedId) {
-      deed = await prisma.deed.findUnique({ where: { id: deedId } });
-      if (!deed) return res.status(404).json({ success: false, message: 'Deed not found' });
-    } else if (orderId) {
-      order = await prisma.order.findUnique({ where: { id: orderId } });
-    }
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed) return res.status(404).json({ success: false, message: 'Deed not found' });
 
-    if (!order && !deed) return res.status(404).json({ success: false, message: 'Order/Deed not found' });
-
-    let existingDispute = null;
-    if (deedId) {
-      existingDispute = await prisma.orderDispute.findUnique({ where: { deedId } });
-    } else if (orderId) {
-      existingDispute = await prisma.orderDispute.findUnique({ where: { orderId } });
-    }
+    const existingDispute = await prisma.deedDispute.findUnique({ where: { deedId } });
     if (existingDispute) {
-      return res.status(400).json({ success: false, message: 'Dispute already exists for this order' });
+      return res.status(400).json({ success: false, message: 'Dispute already exists for this deed' });
     }
 
     const raisedBy = req.user.role;
-    const buyerId = deed ? deed.buyerId : order.buyerId;
-    const sellerId = deed ? deed.sellerId : (order.sellerId || '');
+    const buyerId = deed.buyerId;
+    const sellerId = deed.sellerId;
 
-    const ledgerEntry = (orderId || deedId) ? await prisma.auditLedger.findFirst({
-      where: { 
-        OR: [
-          { eventType: "SELLER_JOINED", payload: { contains: (orderId || deedId) } },
-          { deedId: deedId || undefined }
-        ]
-      }
-    }) : null;
-    
-    let deliveryEvent = null;
-    
-    if (ledgerEntry && ledgerEntry.deedId) {
-      if (!deed) deed = await prisma.deed.findUnique({ where: { id: ledgerEntry.deedId } });
-    }
-    
-    if (deed) {
-      deliveryEvent = await prisma.auditLedger.findFirst({
-        where: { deedId: deed.id, eventType: "DELIVERY_CLAIMED" },
-        orderBy: { timestamp: 'desc' }
-      });
-    }
+    const deliveryEvent = await prisma.auditLedger.findFirst({
+      where: { deedId: deed.id, eventType: "DELIVERY_CLAIMED" },
+      orderBy: { timestamp: 'desc' }
+    });
 
     // Handle uploaded evidence files
     const evidenceFiles = req.files ? req.files.map(file => ({
@@ -126,8 +93,8 @@ const createDispute = async (req, res) => {
     try {
       const { extractProofData, runDisputeEngine } = require('../services/disputeEngine');
       const tempDispute = { description, reason, createdAt: new Date(), raisedBy };
-      const proofData = deed ? extractProofData(deed, deliveryEvent) : { category: 'GENERAL', productType: 'Unknown', hasDelivery: false, deliveryFileTypes: [] };
-      ruleResult = deed ? runDisputeEngine(deed, tempDispute, proofData) : ruleResult;
+      const proofData = extractProofData(deed, deliveryEvent);
+      ruleResult = runDisputeEngine(deed, tempDispute, proofData);
     } catch (e) {
       console.error("Failed to run universal dispute engine:", e);
     }
@@ -150,10 +117,9 @@ const createDispute = async (req, res) => {
     ];
 
     // ── Step 3: Create dispute record (Prisma) ─────────────────────────────────
-    const dispute = await prisma.orderDispute.create({
+    const dispute = await prisma.deedDispute.create({
       data: {
-        orderId: order ? order.id : null,
-        deedId: deed ? deed.id : null,
+        deedId: deed.id,
         buyerId,
         sellerId,
         raisedBy,
@@ -171,56 +137,47 @@ const createDispute = async (req, res) => {
       },
     });
 
-    // ── Step 4: Update order/deed status + disputeId ────────────────────────────────
-    if (orderId) {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { status: 'DISPUTED', disputeId: dispute.id },
-      });
-    } else if (deedId) {
-      await prisma.deed.update({
-        where: { id: deedId },
-        data: { status: 'DISPUTED' },
-      });
-    }
+    // ── Step 4: Update deed status ────────────────────────────────
+    await prisma.deed.update({
+      where: { id: deedId },
+      data: { status: 'DISPUTED' },
+    });
 
     // ── Step 5: Trigger AI analysis asynchronously (non-blocking) ─────────────
     setImmediate(async () => {
       try {
         const { analyzeDisputeWithAI } = require('../services/disputeAI');
-        const chatMessages = await getChatMessages(orderId);
+        const chatMessages = []; // Chat integration for deeds is handled differently
         
-        if (deed) {
-          const aiResult = await analyzeDisputeWithAI({
-            deed,
-            deliveryEvent,
-            dispute: { ...dispute, evidenceResponses: {} },
-            ruleEngineResult: ruleResult,
-            chatMessages,
-          });
+        const aiResult = await analyzeDisputeWithAI({
+          deed,
+          deliveryEvent,
+          dispute: { ...dispute, evidenceResponses: {} },
+          ruleEngineResult: ruleResult,
+          chatMessages,
+        });
 
-          const freshDispute = await prisma.orderDispute.findUnique({ where: { id: dispute.id } });
-          if (freshDispute) {
-            const currentTimeline = Array.isArray(freshDispute.timeline) ? freshDispute.timeline : [];
-            await prisma.orderDispute.update({
-              where: { id: dispute.id },
-              data: {
-                aiAnalysis: aiResult,
-                timeline: [
-                  ...currentTimeline,
-                  {
-                    event: 'AI_ANALYSIS_COMPLETE',
-                    by: 'ai',
-                    timestamp: new Date().toISOString(),
-                    description: `AI Analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidenceScore || 0)}% confidence)`,
-                    notes: aiResult.reasoning,
-                  },
-                ],
-              },
-            });
-          }
-          console.log(`[Dispute ${dispute.id}] AI analysis complete: ${aiResult.recommendation}`);
+        const freshDispute = await prisma.deedDispute.findUnique({ where: { id: dispute.id } });
+        if (freshDispute) {
+          const currentTimeline = Array.isArray(freshDispute.timeline) ? freshDispute.timeline : [];
+          await prisma.deedDispute.update({
+            where: { id: dispute.id },
+            data: {
+              aiAnalysis: aiResult,
+              timeline: [
+                ...currentTimeline,
+                {
+                  event: 'AI_ANALYSIS_COMPLETE',
+                  by: 'ai',
+                  timestamp: new Date().toISOString(),
+                  description: `AI Analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidenceScore || 0)}% confidence)`,
+                  notes: aiResult.reasoning,
+                },
+              ],
+            },
+          });
         }
+        console.log(`[Dispute ${dispute.id}] AI analysis complete: ${aiResult.recommendation}`);
       } catch (aiErr) {
         console.error('[Dispute AI] Background analysis failed:', aiErr.message);
       }
@@ -248,7 +205,7 @@ const submitEvidence = async (req, res) => {
     const { text } = req.body;
     const role = req.user.role;
 
-    const dispute = await prisma.orderDispute.findUnique({ where: { id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
     if (dispute.status === 'RESOLVED') {
@@ -274,7 +231,7 @@ const submitEvidence = async (req, res) => {
     const currentEvidence = Array.isArray(dispute.evidenceUrls) ? dispute.evidenceUrls : [];
     const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
 
-    const updated = await prisma.orderDispute.update({
+    const updated = await prisma.deedDispute.update({
       where: { id },
       data: {
         evidenceResponses: updatedResponses,
@@ -298,21 +255,20 @@ const submitEvidence = async (req, res) => {
     setImmediate(async () => {
       try {
         const { analyzeDisputeWithAI } = require('../services/disputeAI');
-        const order = dispute.orderId ? await prisma.order.findUnique({ where: { id: dispute.orderId } }) : null;
-        if (!order && !dispute.deedId) return;
-        const chatMessages = dispute.orderId ? await getChatMessages(dispute.orderId) : [];
-        const freshDispute = await prisma.orderDispute.findUnique({ where: { id } });
+        const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
+        if (!deed) return;
+        const freshDispute = await prisma.deedDispute.findUnique({ where: { id } });
         if (!freshDispute) return;
 
         const aiResult = await analyzeDisputeWithAI({
-          order,
+          deed,
           dispute: freshDispute,
           ruleEngineResult: freshDispute.ruleFlags || {},
-          chatMessages,
+          chatMessages: [],
         });
 
         const updatedTimeline = Array.isArray(freshDispute.timeline) ? freshDispute.timeline : [];
-        await prisma.orderDispute.update({
+        await prisma.deedDispute.update({
           where: { id },
           data: {
             aiAnalysis: aiResult,
@@ -353,7 +309,7 @@ const smartEscalate = async (req, res) => {
     const { reason } = req.body;
     const role = req.user.role;
 
-    const dispute = await prisma.orderDispute.findUnique({ where: { id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
     if (dispute.status === 'RESOLVED') {
@@ -362,7 +318,7 @@ const smartEscalate = async (req, res) => {
 
     const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
 
-    const updated = await prisma.orderDispute.update({
+    const updated = await prisma.deedDispute.update({
       where: { id },
       data: {
         status: 'MEDIATION',
@@ -398,7 +354,7 @@ const getFullDisputeDetail = async (req, res) => {
   try {
     const { id } = req.params;
 
-    let dispute = await prisma.orderDispute.findUnique({ where: { id } });
+    let dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
     const deed = await prisma.deed.findUnique({ 
@@ -409,7 +365,6 @@ const getFullDisputeDetail = async (req, res) => {
     const seller = dispute.sellerId
       ? await prisma.seller.findUnique({ where: { id: dispute.sellerId } }).catch(() => null)
       : null;
-    let chatMessages = await getChatMessages(dispute.deedId);
 
     // Heal rows where background AI never persisted
     if (!dispute.aiAnalysis && dispute.ruleFlags && typeof dispute.ruleFlags === 'object' && deed) {
@@ -417,19 +372,18 @@ const getFullDisputeDetail = async (req, res) => {
       if ('riskScore' in rf || 'flags' in rf || 'autoRecommendation' in rf) {
         try {
           const { analyzeDisputeWithAI } = require('../services/disputeAI');
-          chatMessages = await getChatMessages(dispute.deedId);
           const aiResult = await analyzeDisputeWithAI({
-            order: deed, // passing deed as order for backward compatibility in AI params if needed
+            deed,
             dispute,
             ruleEngineResult: rf,
-            chatMessages,
+            chatMessages: [],
           });
           const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
           const alreadyLogged = currentTimeline.some(
             e => e.event === 'AI_ANALYSIS_COMPLETE' || e.event === 'AI_REANALYZED'
           );
           const label = 'AI Analysis';
-          dispute = await prisma.orderDispute.update({
+          dispute = await prisma.deedDispute.update({
             where: { id },
             data: {
               aiAnalysis: aiResult,
@@ -503,7 +457,7 @@ const getFullDisputeDetail = async (req, res) => {
           ? { id: seller.id, firstName: seller.firstName, lastName: seller.lastName, email: seller.email, businessName: seller.businessName }
           : null,
         financial,
-        chatMessages: chatMessages.slice(-15),
+        chatMessages: [],
         ruleFlags: dispute.ruleFlags,
         aiAnalysis: dispute.aiAnalysis,
         evidenceResponses: dispute.evidenceResponses,
@@ -522,26 +476,23 @@ const triggerAIAnalysis = async (req, res) => {
     const { id } = req.params;
     const { analyzeDisputeWithAI } = require('../services/disputeAI');
 
-    const dispute = await prisma.orderDispute.findUnique({ where: { id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
-    const order = dispute.orderId ? await prisma.order.findUnique({ where: { id: dispute.orderId } }) : null;
     const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
-    if (!order && !deed) {
-      return res.status(404).json({ success: false, message: 'Order/Deed not found' });
+    if (!deed) {
+      return res.status(404).json({ success: false, message: 'Deed not found' });
     }
 
-    const chatMessages = dispute.orderId ? await getChatMessages(dispute.orderId) : [];
-
     const aiResult = await analyzeDisputeWithAI({
-      order: order || deed,
+      deed,
       dispute,
       ruleEngineResult: dispute.ruleFlags || {},
-      chatMessages,
+      chatMessages: [],
     });
 
     const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-    const updated = await prisma.orderDispute.update({
+    const updated = await prisma.deedDispute.update({
       where: { id },
       data: {
         aiAnalysis: aiResult,
@@ -570,7 +521,7 @@ const triggerAIAnalysis = async (req, res) => {
 
 const getAllDisputes = async (req, res) => {
   try {
-    const disputes = await prisma.orderDispute.findMany({
+    const disputes = await prisma.deedDispute.findMany({
       orderBy: { createdAt: 'desc' },
     });
     return res.json({ success: true, data: disputes });
@@ -582,7 +533,7 @@ const getAllDisputes = async (req, res) => {
 
 const getDisputeById = async (req, res) => {
   try {
-    const dispute = await prisma.orderDispute.findUnique({ where: { id: req.params.id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     return res.json({ success: true, data: dispute });
   } catch (error) {
@@ -595,7 +546,7 @@ const getDisputesByUser = async (req, res) => {
     const userId = req.user.userId || req.user.id;
     const userRole = req.user.role;
     const where = userRole === 'buyer' ? { buyerId: userId } : { sellerId: userId };
-    const disputes = await prisma.orderDispute.findMany({
+    const disputes = await prisma.deedDispute.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     });
@@ -610,11 +561,11 @@ const updateDisputeStatus = async (req, res) => {
     const { id } = req.params;
     const { status, notes } = req.body;
 
-    const dispute = await prisma.orderDispute.findUnique({ where: { id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
     const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-    const updated = await prisma.orderDispute.update({
+    const updated = await prisma.deedDispute.update({
       where: { id },
       data: {
         status,
@@ -643,13 +594,12 @@ const resolveDispute = async (req, res) => {
     const { id } = req.params;
     const { action, notes, enhancedAnalysis, scopeCompliance, buyerPct } = req.body;
 
-    const dispute = await prisma.orderDispute.findUnique({ where: { id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     
-    const order = dispute.orderId ? await prisma.order.findUnique({ where: { id: dispute.orderId } }) : null;
     const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
-    if (!order && !deed) {
-      return res.status(404).json({ success: false, message: 'Order/Deed not found' });
+    if (!deed) {
+      return res.status(404).json({ success: false, message: 'Deed not found' });
     }
 
     const resolutionMap = { REFUND: 'REFUND_BUYER', RELEASE: 'RELEASE_TO_SELLER' };
@@ -768,17 +718,8 @@ const resolveDispute = async (req, res) => {
       if (enhancedAnalysis) updateData.enhancedAnalysis = enhancedAnalysis;
       if (scopeCompliance) updateData.scopeCompliance = scopeCompliance;
 
-      await tx.orderDispute.update({ where: { id }, data: updateData });
+      await tx.deedDispute.update({ where: { id }, data: updateData });
 
-      if (dispute.orderId) {
-        const orderStatus = (resolution === 'REFUND_BUYER' || resolution.includes('REFUND'))
-          ? 'REFUNDED'
-          : 'COMPLETED';
-        await tx.order.update({
-          where: { id: dispute.orderId },
-          data: { status: orderStatus },
-        });
-      }
       if (dispute.deedId) {
         await tx.deed.update({
           where: { id: dispute.deedId },
@@ -788,7 +729,7 @@ const resolveDispute = async (req, res) => {
     });
 
     // Re-fetch updated dispute for response
-    const updated = await prisma.orderDispute.findUnique({ where: { id } });
+    const updated = await prisma.deedDispute.findUnique({ where: { id } });
 
     return res.json({
       success: true,
@@ -812,14 +753,14 @@ const addEvidence = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Evidence files are required' });
     }
 
-    const dispute = await prisma.orderDispute.findUnique({ where: { id } });
+    const dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
     const evidenceUrls = req.files.map(f => `/uploads/${f.filename}`);
     const currentEvidence = Array.isArray(dispute.evidenceUrls) ? dispute.evidenceUrls : [];
     const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
 
-    const updated = await prisma.orderDispute.update({
+    const updated = await prisma.deedDispute.update({
       where: { id },
       data: {
         evidenceUrls: [...currentEvidence, ...evidenceUrls],
@@ -846,11 +787,11 @@ const addEvidence = async (req, res) => {
 const getDisputeStats = async (req, res) => {
   try {
     const [total, open, underReview, resolved, mediation] = await Promise.all([
-      prisma.orderDispute.count(),
-      prisma.orderDispute.count({ where: { status: 'OPEN' } }),
-      prisma.orderDispute.count({ where: { status: 'UNDER_REVIEW' } }),
-      prisma.orderDispute.count({ where: { status: 'RESOLVED' } }),
-      prisma.orderDispute.count({ where: { status: 'MEDIATION' } }),
+      prisma.deedDispute.count(),
+      prisma.deedDispute.count({ where: { status: 'OPEN' } }),
+      prisma.deedDispute.count({ where: { status: 'UNDER_REVIEW' } }),
+      prisma.deedDispute.count({ where: { status: 'RESOLVED' } }),
+      prisma.deedDispute.count({ where: { status: 'MEDIATION' } }),
     ]);
     return res.json({ success: true, data: { total, open, underReview, resolved, mediation } });
   } catch (error) {

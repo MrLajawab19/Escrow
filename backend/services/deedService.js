@@ -414,7 +414,7 @@ class DeedService {
     const dayNumber = computeDayNumber(deed.createdAt);
     const counterWindowEnds = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-    const dispute = await prisma.orderDispute.create({
+    const dispute = await prisma.deedDispute.create({
       data: {
         deedId,
         buyerId: deed.buyerId,
@@ -510,7 +510,7 @@ class DeedService {
       where: { id: deedId },
       include: {
         milestones: { orderBy: { milestoneNumber: "asc" } },
-        orderDispute: true,
+        deedDispute: true,
         chatRoom: { include: { messages: { take: 1, orderBy: { createdAt: "desc" } } } },
       },
     });
@@ -520,7 +520,7 @@ class DeedService {
     return prisma.deed.findMany({
       where: { buyerId },
       orderBy: { createdAt: "desc" },
-      include: { orderDispute: true, milestones: true },
+      include: { deedDispute: true, milestones: true },
     });
   }
 
@@ -528,7 +528,7 @@ class DeedService {
     return prisma.deed.findMany({
       where: { sellerId },
       orderBy: { createdAt: "desc" },
-      include: { orderDispute: true, milestones: true },
+      include: { deedDispute: true, milestones: true },
     });
   }
 
