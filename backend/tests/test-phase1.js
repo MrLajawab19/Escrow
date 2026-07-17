@@ -1,16 +1,14 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const walletService = require('../services/walletService');
+const { setWalletBalance } = require('./testHelper');
 
 async function runTests() {
   console.log("Setting up Phase 1 Test...");
   const buyer = await prisma.buyer.findFirst();
   
   // Reset balance for clear testing
-  await prisma.wallet.update({
-    where: { userId: buyer.id },
-    data: { balance: 0 }
-  });
+  await setWalletBalance(buyer.id, 0);
 
   console.log("\n--- TEST 1: Top-Up Zero Fee ---");
   console.log("Topping up ₹10,000 (1000000 paise)...");

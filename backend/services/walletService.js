@@ -254,19 +254,33 @@ class WalletService {
         const wallet = await tx.wallet.findUnique({ where: { userId } });
         if (!wallet) throw new Error('Wallet not found');
         
-        if (wallet.balance < amount) throw new Error('Insufficient balance for withdrawal');
+        // 1. Acquire row-level lock on the user's wallet to prevent concurrent overdrafts
+        await tx.$queryRaw`SELECT id FROM "Wallet" WHERE id = ${wallet.id} FOR UPDATE`;
 
-        const updateResult = await tx.wallet.updateMany({
-          where: { 
-            id: wallet.id,
-            balance: { gte: amount }
+        // 2. Compute canonical ledger balance
+        const transactions = await tx.walletTransaction.findMany({
+          where: {
+            walletId: wallet.id,
+            status: 'SUCCESS',
           },
-          data: { balance: { decrement: amount } }
         });
-
-        if (updateResult.count === 0) {
-          throw new Error('Concurrency conflict or insufficient balance during withdrawal');
+        
+        // We use the shared logic for ledger sums
+        const ledgerBalance = transactions.reduce((acc, t) => {
+          if (t.type === 'CREDIT') return acc + t.netAmount;
+          if (t.type === 'DEBIT') return acc - t.netAmount;
+          return acc;
+        }, 0);
+        
+        if (ledgerBalance < amount) {
+          throw new Error('Insufficient balance for withdrawal');
         }
+
+        // 3. Keep the cache column updated, and auto-correct any prior drift
+        await tx.wallet.update({
+          where: { id: wallet.id },
+          data: { balance: ledgerBalance - amount }
+        });
 
         // Phase 1: Zero-fee withdrawals (flat pass-through fee to be added later)
         const fee = 0;

@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const deedService = require('../services/deedService');
+const { setWalletBalance } = require('./testHelper');
 
 // Stub req/res for disputeController
 const mockReq = (params, body, user) => ({ params, body, user });
@@ -33,13 +34,13 @@ async function runPhase3Test(buyerPct, testName, forceZeroBalance = false, actio
   // Handle forcing 0 balance for the loser to test negative capability
   if (forceZeroBalance) {
     if (buyerPct === 100) {
-       await prisma.wallet.update({ where: { userId: seller.id }, data: { balance: 0 } });
+       await setWalletBalance(seller.id, 0);
     } else if (buyerPct === 0) {
-       await prisma.wallet.update({ where: { userId: buyer.id }, data: { balance: 0 } });
+       await setWalletBalance(buyer.id, 0);
     }
   } else {
     // Standard setup
-    await prisma.wallet.update({ where: { userId: buyer.id }, data: { balance: 20000 } });
+    await setWalletBalance(buyer.id, 20000);
   }
 
   // Refresh wallets
@@ -52,7 +53,7 @@ async function runPhase3Test(buyerPct, testName, forceZeroBalance = false, actio
   // 1. Create & Fund Deed
   // We temporarily give buyer enough funds just to fund the deed if they were zeroed out
   if (initialBuyerBalance < oddDeedAmount) {
-     await prisma.wallet.update({ where: { userId: buyer.id }, data: { balance: { increment: oddDeedAmount } } });
+     await setWalletBalance(buyer.id, initialBuyerBalance + oddDeedAmount);
   }
   
   const deedData = {
@@ -66,7 +67,7 @@ async function runPhase3Test(buyerPct, testName, forceZeroBalance = false, actio
   
   // If we wanted their balance at 0 after funding, reset it.
   if (forceZeroBalance && buyerPct === 0) {
-    await prisma.wallet.update({ where: { userId: buyer.id }, data: { balance: 0 } });
+    await setWalletBalance(buyer.id, 0);
   }
 
   buyerWallet = await prisma.wallet.findUnique({ where: { userId: buyer.id } });

@@ -450,6 +450,7 @@ const SellerDashboard = () => {
           userData={sellerData}
           kycStatus={kycStatus}
           walletBalance={walletSummary?.balance || 0}
+          walletCurrency={walletSummary?.currency}
           walletLoading={walletLoading}
           onKycClick={() => setShowKycModal(true)}
           userType="seller"

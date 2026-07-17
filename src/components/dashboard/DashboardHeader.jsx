@@ -4,7 +4,7 @@ import NotificationDropdown from '../NotificationDropdown';
 import { useCurrency } from '../../context/CurrencyContext';
 import { Plus, ChevronDown, ShieldCheck, AlertTriangle, ArrowDownToLine } from 'lucide-react';
 
-const DashboardHeader = ({ userData, kycStatus, walletBalance, walletLoading, onKycClick, userType = 'buyer', onDisputesClick, onViewRequestsClick }) => {
+const DashboardHeader = ({ userData, kycStatus, walletBalance, walletCurrency, walletLoading, onKycClick, userType = 'buyer', onDisputesClick, onViewRequestsClick }) => {
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
   const firstName = userData?.firstName || 'User';
@@ -49,7 +49,7 @@ const DashboardHeader = ({ userData, kycStatus, walletBalance, walletLoading, on
             <div className="text-right">
               <p className="text-[10px] text-neutral-400 font-medium leading-tight">Wallet Balance</p>
               <p className="text-sm font-bold text-navy-900">
-                {walletLoading ? '...' : formatCurrency(walletBalance || 0, 'INR')}
+                {walletLoading ? '...' : formatCurrency(walletBalance || 0, walletCurrency || 'INR')}
               </p>
             </div>
           </div>

@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const walletService = require('../services/walletService');
 const deedService = require('../services/deedService');
+const { setWalletBalance } = require('./testHelper');
 
 async function runPhase2Test() {
   console.log("Setting up Phase 2 Happy Path Test...");
@@ -9,10 +10,7 @@ async function runPhase2Test() {
   const seller = await prisma.seller.findFirst();
   
   // Ensure buyer has enough funds
-  await prisma.wallet.update({
-    where: { userId: buyer.id },
-    data: { balance: 20000 } // Enough for our 10005 test
-  });
+  await setWalletBalance(buyer.id, 20000); // Enough for our 10005 test
 
   // Get initial seller balance
   let sellerWallet = await prisma.wallet.findUnique({ where: { userId: seller.id } });

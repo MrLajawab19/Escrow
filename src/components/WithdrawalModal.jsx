@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
 
-const WithdrawalModal = ({ isOpen, onClose, maxAmount = 0, onSuccess }) => {
-  const { formatCurrency, currencySymbol } = useCurrency();
+const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 'USD', onSuccess }) => {
+  const { formatCurrency, formatCurrencyRaw, currencySymbol, currency, exchangeRates } = useCurrency();
+  const maxAmount = Math.max(0, formatCurrencyRaw(walletBalance, walletCurrency));
+  const isNegative = walletBalance <= 0;
   const [amount, setAmount] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -48,9 +50,13 @@ const WithdrawalModal = ({ isOpen, onClose, maxAmount = 0, onSuccess }) => {
     };
 
     try {
+      // Convert local input amount back to wallet base currency
+      const rateToLocal = (exchangeRates[currency] || 1) / (exchangeRates[walletCurrency] || 1);
+      const amountInBaseCurrency = parseFloat(amount) / rateToLocal;
+      
       setLoading(true);
       const response = await axios.post('/api/wallet/withdraw', {
-        amount: Math.round(parseFloat(amount) * 100),
+        amount: Math.round(amountInBaseCurrency * 100),
         bankDetails,
       });
 
@@ -142,6 +148,11 @@ const WithdrawalModal = ({ isOpen, onClose, maxAmount = 0, onSuccess }) => {
                 {error}
               </div>
             )}
+            {isNegative && (
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg text-orange-800 text-sm">
+                Your balance is negative due to outstanding dispute penalties — no funds available to withdraw.
+              </div>
+            )}
 
             {/* Step 1: Amount */}
             {step === 1 && (
@@ -164,6 +175,8 @@ const WithdrawalModal = ({ isOpen, onClose, maxAmount = 0, onSuccess }) => {
                       type="number"
                       step="0.01"
                       min="0"
+                      max={maxAmount}
+                      disabled={isNegative}
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
@@ -335,7 +348,7 @@ const WithdrawalModal = ({ isOpen, onClose, maxAmount = 0, onSuccess }) => {
               </button>
               <button
                 type="submit"
-                disabled={loading || !amount}
+                disabled={loading || !amount || isNegative}
                 className="flex-1 px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
               >
                 {loading ? (

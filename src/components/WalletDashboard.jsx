@@ -197,7 +197,8 @@ const WalletDashboard = ({ userId }) => {
           isOpen={showWithdrawalModal}
           onClose={() => setShowWithdrawalModal(false)}
           onSuccess={() => { setShowWithdrawalModal(false); triggerRefresh(); }}
-          maxAmount={(walletSummary?.balance || 0) / 100}
+          walletBalance={walletSummary?.balance || 0}
+          walletCurrency={walletSummary?.currency || 'USD'}
           userType={isBuyer ? "buyer" : "seller"}
         />
       )}

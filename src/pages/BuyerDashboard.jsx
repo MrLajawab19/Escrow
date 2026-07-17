@@ -311,6 +311,7 @@ const BuyerDashboard = () => {
           userData={buyerData}
           kycStatus={kycStatus}
           walletBalance={walletSummary?.balance || 0}
+          walletCurrency={walletSummary?.currency}
           walletLoading={walletLoading}
           onKycClick={() => setShowKycModal(true)}
         />
