@@ -41,12 +41,12 @@ function computeFlag(dispute, order) {
 
 router.get('/stats', adminAuth, async (req, res) => {
   try {
-    const activeStatuses = ['PLACED', 'ESCROW_FUNDED', 'IN_PROGRESS', 'SUBMITTED', 'CHANGES_REQUESTED', 'ACCEPTED', 'DISPUTED'];
-    const completedStatuses = ['COMPLETED', 'RELEASED', 'REFUNDED', 'CLOSED'];
+    const activeStatuses = ['PENDING_SELLER', 'PENDING_SIGNATURES', 'ACTIVE', 'ESCROW_LOCKED', 'IN_PROGRESS', 'SUBMITTED', 'CHANGES_REQUESTED', 'DISPUTED', 'ARBITRATING', 'ARBITRATED', 'ESCALATED'];
+    const completedStatuses = ['CONFIRMED', 'CLOSED', 'CANCELLED'];
 
     const [
       totalOrders, activeOrders, completedOrders,
-      totalDisputes, openDisputes, underReviewDisputes, resolvedDisputes,
+      totalDisputes, openDisputes, challengeDisputes, escalatedDisputes, resolvedDisputes,
       totalBuyers, totalSellers, recentDisputes,
     ] = await Promise.all([
       prisma.deed.count(),
@@ -54,7 +54,8 @@ router.get('/stats', adminAuth, async (req, res) => {
       prisma.deed.count({ where: { status: { in: completedStatuses } } }),
       prisma.deedDispute.count(),
       prisma.deedDispute.count({ where: { status: 'OPEN' } }),
-      prisma.deedDispute.count({ where: { status: 'UNDER_REVIEW' } }),
+      prisma.deedDispute.count({ where: { status: 'CHALLENGE_PHASE' } }),
+      prisma.deedDispute.count({ where: { status: 'ESCALATED' } }),
       prisma.deedDispute.count({ where: { status: 'RESOLVED' } }),
       prisma.buyer.count(),
       prisma.seller.count(),
@@ -74,7 +75,7 @@ router.get('/stats', adminAuth, async (req, res) => {
       success: true,
       data: {
         totalOrders, activeOrders, completedOrders,
-        totalDisputes, openDisputes, underReviewDisputes, resolvedDisputes,
+        totalDisputes, openDisputes, challengeDisputes, escalatedDisputes, resolvedDisputes,
         totalBuyers, totalSellers, recentDisputes, ordersByStatus,
       },
     });
@@ -88,9 +89,20 @@ router.get('/stats', adminAuth, async (req, res) => {
 
 router.get('/disputes', adminAuth, async (req, res) => {
   try {
-    const { status, flag, search } = req.query;
+    const { status, flag, search, stale } = req.query;
     const where = {};
     if (status) where.status = status;
+
+    if (stale === 'true') {
+      const { EVIDENCE_LATE_WINDOW_HOURS, CHALLENGE_WINDOW_HOURS } = require('../config/disputeConfig');
+      const evidenceCutoff = new Date(Date.now() - EVIDENCE_LATE_WINDOW_HOURS * 60 * 60 * 1000);
+      const challengeCutoff = new Date(Date.now() - CHALLENGE_WINDOW_HOURS * 60 * 60 * 1000);
+
+      where.OR = [
+        { status: 'OPEN', lastActivity: { lt: evidenceCutoff } },
+        { status: 'CHALLENGE_PHASE', lastActivity: { lt: challengeCutoff } }
+      ];
+    }
 
     const disputes = await prisma.deedDispute.findMany({
       where,
@@ -283,50 +295,14 @@ router.post('/disputes/:id/ai-analysis', adminAuth, async (req, res) => {
     const dispute = await prisma.deedDispute.findUnique({ where: { id: req.params.id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
     
-    const order = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
-    const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
-    if (!order && !deed) return res.status(404).json({ success: false, message: 'Order/Deed not found' });
+    const { generateAIReport } = require('../services/disputeAI');
+    await generateAIReport(dispute.id);
     
-    // Fetch chat messages (legacy order chat only)
-    const room = order ? await prisma.orderChatRoom.findUnique({ where: { orderId: order.id } }) : null;
-    let chatMessages = [];
-    if (room) {
-      chatMessages = await prisma.orderChatMessage.findMany({
-        where: { roomId: room.id },
-        orderBy: { createdAt: 'asc' },
-        take: 20,
-      });
-    }
-
-    // Call AI
-    const { analyzeDisputeWithAI } = require('../services/disputeAI');
-    const aiResult = await analyzeDisputeWithAI({
-      order: order || deed,
-      dispute,
-      ruleEngineResult: dispute.ruleFlags || {},
-      chatMessages,
-    });
-    
-    const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-    
-    const updatedDispute = await prisma.deedDispute.update({
-      where: { id: dispute.id },
-      data: {
-        aiAnalysis: aiResult,
-        timeline: [
-          ...currentTimeline,
-          {
-            event: 'ADMIN_AI_ANALYSIS_TRIGGERED',
-            by: req.admin?.id || 'admin',
-            timestamp: new Date().toISOString(),
-            description: `Admin forced AI Analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidenceScore || 0)}% confidence)`,
-            notes: aiResult.reasoning,
-          },
-        ],
-      }
+    const updatedDispute = await prisma.deedDispute.findUnique({
+      where: { id: dispute.id }
     });
 
-    return res.json({ success: true, message: 'AI Analysis complete.', data: updatedDispute });
+    return res.json({ success: true, message: 'AI Analysis manually triggered.', data: updatedDispute });
   } catch (err) {
     console.error('Admin AI analysis error:', err);
     return res.status(500).json({ success: false, message: 'Failed to trigger AI analysis: ' + err.message });

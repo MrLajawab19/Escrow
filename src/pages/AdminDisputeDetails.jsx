@@ -271,7 +271,7 @@ export default function AdminDisputeDetails() {
           <div className="flex items-center gap-2">
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full border uppercase tracking-wider font-inter ${
               dispute?.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-              dispute?.status === 'MEDIATION' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+              dispute?.status === 'ESCALATED' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
               'bg-red-50 text-red-700 border-red-200'
             }`}>{dispute?.status}</span>
           </div>

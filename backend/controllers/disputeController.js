@@ -4,30 +4,34 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const disputeConfig = require('../config/disputeConfig');
+const { generateAIReport } = require('../services/disputeAI');
 
 function calculateResolutionAmounts(price, buyerPct, disputeStatus = 'NONE') {
-  if (buyerPct === 100) {
-    return { buyerGross: price, sellerGross: 0, buyerFee: 0, sellerFee: 0, buyerNet: price, sellerNet: 0, platformFee: 0 };
-  }
   let disputeRate = 0;
   if (disputeStatus === 'RESOLVED') disputeRate = 0.01;
   else if (disputeStatus === 'ESCALATED') disputeRate = 0.02;
 
   const sellerBaseRate = 0.025; // 2.5%
+  const disputePenalty = Math.floor(price * disputeRate);
 
   // 1. Exact Split (Seller floored, remainder to buyer)
   const sellerGross = Math.floor(price * ((100 - buyerPct) / 100));
   const buyerGross = price - sellerGross;
 
-  // 2. Individual floored fees
-  const buyerFee = Math.floor(buyerGross * disputeRate);
-  const sellerFee = Math.floor(sellerGross * (sellerBaseRate + disputeRate));
+  // 2. Individual proportional fees
+  let buyerFee = Math.floor(buyerGross * disputeRate);
+  let sellerFee = Math.floor(sellerGross * (sellerBaseRate + disputeRate));
 
-  // 3. Final Nets
+  // 3. Penalty for 100% loss (0% gross) - blindspot fix
+  if (buyerGross === 0 && disputeRate > 0) buyerFee = disputePenalty;
+  if (sellerGross === 0 && disputeRate > 0) sellerFee = disputePenalty;
+
+  // 4. Final Nets
   const buyerNet = buyerGross - buyerFee;
   const sellerNet = sellerGross - sellerFee;
 
-  // 4. Platform Fee aggregates both
+  // 5. Platform Fee aggregates both
   const platformFee = buyerFee + sellerFee;
   return { buyerGross, sellerGross, buyerFee, sellerFee, buyerNet, sellerNet, platformFee };
 }
@@ -143,45 +147,7 @@ const createDispute = async (req, res) => {
       data: { status: 'DISPUTED' },
     });
 
-    // ── Step 5: Trigger AI analysis asynchronously (non-blocking) ─────────────
-    setImmediate(async () => {
-      try {
-        const { analyzeDisputeWithAI } = require('../services/disputeAI');
-        const chatMessages = []; // Chat integration for deeds is handled differently
-        
-        const aiResult = await analyzeDisputeWithAI({
-          deed,
-          deliveryEvent,
-          dispute: { ...dispute, evidenceResponses: {} },
-          ruleEngineResult: ruleResult,
-          chatMessages,
-        });
-
-        const freshDispute = await prisma.deedDispute.findUnique({ where: { id: dispute.id } });
-        if (freshDispute) {
-          const currentTimeline = Array.isArray(freshDispute.timeline) ? freshDispute.timeline : [];
-          await prisma.deedDispute.update({
-            where: { id: dispute.id },
-            data: {
-              aiAnalysis: aiResult,
-              timeline: [
-                ...currentTimeline,
-                {
-                  event: 'AI_ANALYSIS_COMPLETE',
-                  by: 'ai',
-                  timestamp: new Date().toISOString(),
-                  description: `AI Analysis: ${aiResult.recommendation} (${Math.round(aiResult.confidenceScore || 0)}% confidence)`,
-                  notes: aiResult.reasoning,
-                },
-              ],
-            },
-          });
-        }
-        console.log(`[Dispute ${dispute.id}] AI analysis complete: ${aiResult.recommendation}`);
-      } catch (aiErr) {
-        console.error('[Dispute AI] Background analysis failed:', aiErr.message);
-      }
-    });
+    // ── Step 5: (Removed legacy inline AI trigger) ─────────────
 
     return res.status(201).json({
       success: true,
@@ -236,7 +202,7 @@ const submitEvidence = async (req, res) => {
       data: {
         evidenceResponses: updatedResponses,
         evidenceUrls: [...currentEvidence, ...newUrls],
-        status: 'RESPONDED',
+        status: 'CHALLENGE_PHASE',
         timeline: [
           ...currentTimeline,
           {
@@ -321,7 +287,7 @@ const smartEscalate = async (req, res) => {
     const updated = await prisma.deedDispute.update({
       where: { id },
       data: {
-        status: 'MEDIATION',
+        status: 'ESCALATED',
         escalatedAt: new Date(),
         timeline: [
           ...currentTimeline,
@@ -366,44 +332,88 @@ const getFullDisputeDetail = async (req, res) => {
       ? await prisma.seller.findUnique({ where: { id: dispute.sellerId } }).catch(() => null)
       : null;
 
-    // Heal rows where background AI never persisted
-    if (!dispute.aiAnalysis && dispute.ruleFlags && typeof dispute.ruleFlags === 'object' && deed) {
-      const rf = dispute.ruleFlags;
-      if ('riskScore' in rf || 'flags' in rf || 'autoRecommendation' in rf) {
-        try {
-          const { analyzeDisputeWithAI } = require('../services/disputeAI');
-          const aiResult = await analyzeDisputeWithAI({
-            deed,
-            dispute,
-            ruleEngineResult: rf,
-            chatMessages: [],
+    // ── Stage C1: Lazy-Eval Wrappers for Timeouts ──────────────────────────────
+    
+    // Wrapper 1: Evidence Phase Timeout (OPEN -> AI Trigger)
+    if (dispute.status === 'OPEN') {
+      const ageHours = (Date.now() - new Date(dispute.createdAt).getTime()) / (1000 * 60 * 60);
+      if (ageHours > disputeConfig.EVIDENCE_LATE_WINDOW_HOURS) {
+        // Atomic optimistic lock on lastActivity (60s debounce)
+        const lock = await prisma.deedDispute.updateMany({
+          where: { 
+            id: dispute.id, 
+            status: 'OPEN',
+            lastActivity: { lt: new Date(Date.now() - 60000) } 
+          },
+          data: { lastActivity: new Date() }
+        });
+        
+        if (lock.count === 1) {
+          // Guard against slow prior AI generation
+          const existingReport = await prisma.disputeEvent.count({
+            where: { deedDisputeId: dispute.id, type: 'AI_REPORT' }
           });
-          const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-          const alreadyLogged = currentTimeline.some(
-            e => e.event === 'AI_ANALYSIS_COMPLETE' || e.event === 'AI_REANALYZED'
-          );
-          const label = 'AI Analysis';
-          dispute = await prisma.deedDispute.update({
-            where: { id },
-            data: {
-              aiAnalysis: aiResult,
-              timeline: alreadyLogged
-                ? currentTimeline
-                : [
-                    ...currentTimeline,
-                    {
-                      event: 'AI_ANALYSIS_COMPLETE',
-                      by: 'system',
-                      timestamp: new Date().toISOString(),
-                      description: `${label}: ${aiResult.recommendation} (${Math.round((aiResult.confidenceScore || 0))}%)`,
-                      notes: aiResult.reasoning,
-                    },
-                  ],
-              lastActivity: new Date(),
-            },
+          
+          if (existingReport === 0) {
+            console.log(`[Lazy Wrapper] 48h elapsed in OPEN. Lock acquired. Triggering AI_REPORT...`);
+            generateAIReport(dispute.id).catch(err => console.error("AI Gen Error:", err));
+          }
+        }
+      }
+    }
+    
+    // Wrapper 2: Challenge Phase Timeout (CHALLENGE_PHASE -> RESOLVED)
+    if (dispute.status === 'CHALLENGE_PHASE') {
+      // Find the FIRST AI_REPORT to calculate the 48h window from start of challenge phase
+      const firstAiReportEvent = await prisma.disputeEvent.findFirst({
+        where: { deedDisputeId: dispute.id, type: 'AI_REPORT' },
+        orderBy: { createdAt: 'asc' }
+      });
+      
+      if (firstAiReportEvent) {
+        const reportAgeHours = (Date.now() - new Date(firstAiReportEvent.createdAt).getTime()) / (1000 * 60 * 60);
+        if (reportAgeHours > disputeConfig.CHALLENGE_WINDOW_HOURS) {
+          
+          const challengeCount = await prisma.disputeEvent.count({
+            where: { deedDisputeId: dispute.id, type: 'CHALLENGE' }
           });
-        } catch (backfillErr) {
-          console.error('[getFullDisputeDetail] AI backfill failed:', backfillErr.message);
+          
+          let readyToSettle = false;
+          if (challengeCount === 0) {
+            readyToSettle = true;
+          } else if (challengeCount === 1) {
+            // Wait for AI re-analysis (AI_REPORT #2) to finish before settling
+            const totalAiReports = await prisma.disputeEvent.count({
+              where: { deedDisputeId: dispute.id, type: 'AI_REPORT' }
+            });
+            if (totalAiReports >= 2) readyToSettle = true;
+          }
+          
+          if (readyToSettle) {
+            // Atomic update to flip status
+            const updated = await prisma.deedDispute.updateMany({
+              where: { id: dispute.id, status: 'CHALLENGE_PHASE' },
+              data: { status: 'RESOLVED', lastActivity: new Date() }
+            });
+            
+            if (updated.count === 1) {
+              console.log(`[Lazy Wrapper] 48h elapsed in CHALLENGE_PHASE. Auto-settling...`);
+              await prisma.disputeEvent.create({
+                data: {
+                  deedDisputeId: dispute.id,
+                  type: 'SETTLEMENT',
+                  actorRole: 'system',
+                  payload: { 
+                    reason: 'Timeout elapsed with 0 or 1 challenges. Auto-settled based on latest AI report.',
+                    autoSettled: true,
+                    fundsDisbursed: false // Stage D will handle actual ledger movement
+                  }
+                }
+              });
+              // Update in-memory object for response
+              dispute.status = 'RESOLVED';
+            }
+          }
         }
       }
     }
@@ -411,7 +421,7 @@ const getFullDisputeDetail = async (req, res) => {
     const scopeBox = deed?.scopeBox || {};
     const price = parseInt(deed?.amount ? deed.amount / 100 : scopeBox.price || 0, 10);
     
-    const feeModelStatus = dispute.status === 'MEDIATION' ? 'ESCALATED' : 'RESOLVED';
+    const feeModelStatus = dispute.status === 'ESCALATED' ? 'ESCALATED' : 'RESOLVED';
     
     const releaseSim = calculateResolutionAmounts(price, 0, feeModelStatus);
     const refundSim = calculateResolutionAmounts(price, 100, feeModelStatus);
@@ -596,13 +606,16 @@ const resolveDispute = async (req, res) => {
 
     const dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
+    if (dispute.status !== 'ESCALATED') {
+      return res.status(400).json({ success: false, message: 'Dispute must be in ESCALATED state for admin decision' });
+    }
     
     const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
     if (!deed) {
       return res.status(404).json({ success: false, message: 'Deed not found' });
     }
 
-    const resolutionMap = { REFUND: 'REFUND_BUYER', RELEASE: 'RELEASE_TO_SELLER' };
+    const resolutionMap = { REFUND: 'REFUND_BUYER', RELEASE: 'RELEASE_TO_SELLER', PARTIAL_REFUND: 'PARTIAL_REFUND' };
     const resolution = resolutionMap[action] || action;
 
     // --- Phase 3: Dual-sided fee split and Wallet Balance updates ---
@@ -613,13 +626,13 @@ const resolveDispute = async (req, res) => {
       finalBuyerPct = 0;
     }
 
-    const price = parseInt((order?.scopeBox?.price || deed?.amount || deed?.scopeBox?.price) || 0, 10);
-    const feeModelStatus = dispute.status === 'MEDIATION' ? 'ESCALATED' : 'RESOLVED';
+    const price = parseInt(deed?.amount || 0, 10);
+    const feeModelStatus = dispute.status === 'ESCALATED' ? 'ESCALATED' : 'RESOLVED';
     const split = calculateResolutionAmounts(price, finalBuyerPct, feeModelStatus);
 
     await prisma.$transaction(async (tx) => {
       // 1. Un-lock Buyer's balance (gte guard ensures we don't underflow or double-spend)
-      const buyerId = order ? order.buyerId : deed.buyerId;
+      const buyerId = deed.buyerId;
       const buyerWallet = await tx.wallet.findUnique({ where: { userId: buyerId } });
       if (!buyerWallet) throw new Error("BUYER_WALLET_NOT_FOUND");
 
@@ -629,8 +642,8 @@ const resolveDispute = async (req, res) => {
       });
       if (updateLock.count === 0) throw new Error("INSUFFICIENT_LOCKED_BALANCE");
 
-      // 2. Refund Buyer (increment)
-      if (split.buyerNet > 0) {
+      // 2. Refund/Penalty Buyer (increment/decrement)
+      if (split.buyerNet !== 0) {
         await tx.wallet.update({
           where: { id: buyerWallet.id },
           data: { balance: { increment: split.buyerNet } }
@@ -641,9 +654,9 @@ const resolveDispute = async (req, res) => {
             type: "CREDIT",
             category: "DISPUTE_REFUND",
             amount: split.buyerGross,
-            currency: (order?.currency || deed?.currency) || "INR",
+            currency: deed?.currency || "INR",
             status: "SUCCESS",
-            description: `Dispute Refund: ${order?.scopeBox?.title || deed?.scopeBox?.title || dispute.id}`,
+            description: `Dispute Refund: ${deed?.title || dispute.id}`,
             reference: dispute.id,
             netAmount: split.buyerNet,
             fee: split.buyerFee,
@@ -657,9 +670,9 @@ const resolveDispute = async (req, res) => {
         });
       }
 
-      // 3. Credit Seller (increment)
-      const sellerId = order ? order.sellerId : deed.sellerId;
-      if (split.sellerNet > 0 && sellerId) {
+      // 3. Credit/Penalty Seller (increment/decrement)
+      const sellerId = deed.sellerId;
+      if (split.sellerNet !== 0 && sellerId) {
         let sellerWallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
         if (!sellerWallet) {
           sellerWallet = await tx.wallet.create({
@@ -676,9 +689,9 @@ const resolveDispute = async (req, res) => {
             type: "CREDIT",
             category: "DISPUTE_RELEASE",
             amount: split.sellerGross,
-            currency: (order?.currency || deed?.currency) || "INR",
+            currency: deed?.currency || "INR",
             status: "SUCCESS",
-            description: `Dispute Resolution: ${order?.scopeBox?.title || deed?.scopeBox?.title || dispute.id}`,
+            description: `Dispute Release: ${deed?.title || dispute.id}`,
             reference: dispute.id,
             netAmount: split.sellerNet,
             fee: split.sellerFee,
@@ -694,17 +707,44 @@ const resolveDispute = async (req, res) => {
 
       // --- End of Wallet updates ---
 
+      // Write HUMAN_DECISION event
+      await tx.disputeEvent.create({
+        data: {
+          deedDisputeId: id,
+          eventType: undefined,
+          type: 'HUMAN_DECISION',
+          actorRole: 'admin',
+          actorId: req.user?.userId || req.user?.id || 'admin',
+          payload: JSON.stringify({ action: resolution, finalBuyerPct, notes: notes || '' })
+        }
+      });
+
+      // Write SETTLEMENT event
+      await tx.disputeEvent.create({
+        data: {
+          deedDisputeId: id,
+          eventType: undefined,
+          type: 'SETTLEMENT',
+          actorRole: 'system',
+          payload: JSON.stringify({ 
+            buyerNet: split.buyerNet, sellerNet: split.sellerNet, 
+            buyerFee: split.buyerFee, sellerFee: split.sellerFee, 
+            platformFee: split.platformFee 
+          })
+        }
+      });
+
       const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
       const updateData = {
         status: 'RESOLVED',
         resolution,
-        resolvedBy: req.user.userId || req.user.id,
+        resolvedBy: req.user?.userId || req.user?.id || 'admin',
         resolvedAt: new Date(),
         timeline: [
           ...currentTimeline,
           {
             event: 'DISPUTE_RESOLVED',
-            by: req.user.role,
+            by: req.user?.role || 'admin',
             timestamp: new Date().toISOString(),
             description: `Admin resolved: ${resolution} (Buyer: ${finalBuyerPct}%)`,
             notes: notes || '',
@@ -723,21 +763,13 @@ const resolveDispute = async (req, res) => {
       if (dispute.deedId) {
         await tx.deed.update({
           where: { id: dispute.deedId },
-          data: { status: 'CLOSED' }, // Deed uses CLOSED instead of REFUNDED/COMPLETED
+          data: { status: 'CLOSED' }, 
         });
       }
     });
 
-    // Re-fetch updated dispute for response
-    const updated = await prisma.deedDispute.findUnique({ where: { id } });
-
-    return res.json({
-      success: true,
-      data: updated,
-      message: 'Dispute resolved successfully',
-      enhancedAnalysis: enhancedAnalysis || null,
-      scopeCompliance: scopeCompliance || null,
-    });
+    const finalDispute = await prisma.deedDispute.findUnique({ where: { id } });
+    return res.json({ success: true, message: 'Dispute resolved successfully', data: finalDispute });
   } catch (error) {
     console.error('Error resolving dispute:', error);
     return res.status(500).json({ success: false, message: 'Failed to resolve dispute: ' + error.message });
@@ -789,13 +821,193 @@ const getDisputeStats = async (req, res) => {
     const [total, open, underReview, resolved, mediation] = await Promise.all([
       prisma.deedDispute.count(),
       prisma.deedDispute.count({ where: { status: 'OPEN' } }),
-      prisma.deedDispute.count({ where: { status: 'UNDER_REVIEW' } }),
+      prisma.deedDispute.count({ where: { status: 'CHALLENGE_PHASE' } }),
       prisma.deedDispute.count({ where: { status: 'RESOLVED' } }),
-      prisma.deedDispute.count({ where: { status: 'MEDIATION' } }),
+      prisma.deedDispute.count({ where: { status: 'ESCALATED' } }),
     ]);
     return res.json({ success: true, data: { total, open, underReview, resolved, mediation } });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to fetch dispute statistics' });
+  }
+};
+
+// ─── Stage B: Event Ingestion (Part 2 Target Architecture) ───────────────────
+
+const submitEvidenceEvent = async (req, res) => {
+  try {
+    const { id: deedId } = req.params;
+    const { rebuttal } = req.body;
+    
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed) return res.status(404).json({ success: false, message: 'Deed not found' });
+    
+    // 1. Authorization Guard
+    if (req.user.id !== deed.buyerId && req.user.id !== deed.sellerId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+    
+    const dispute = await prisma.deedDispute.findUnique({
+      where: { deedId },
+      include: { events: true }
+    });
+    if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
+    
+    if (dispute.status !== 'OPEN') {
+      return res.status(400).json({ success: false, message: 'Dispute is not in evidence collection phase' });
+    }
+    
+    const actorRole = req.user.id === deed.buyerId ? 'buyer' : 'seller';
+    
+    // 2. Limit 1 per side check
+    const existingSubmission = dispute.events.find(e => e.type === 'EVIDENCE_SUBMITTED' && e.actorRole === actorRole);
+    if (existingSubmission) {
+      return res.status(400).json({ success: false, message: 'Evidence already submitted for this party' });
+    }
+    
+    // 3. Timeout Logic
+    const disputeAgeHours = (new Date() - new Date(dispute.createdAt)) / (1000 * 60 * 60);
+    if (disputeAgeHours > disputeConfig.EVIDENCE_LATE_WINDOW_HOURS) {
+      return res.status(403).json({ success: false, message: 'Evidence window closed' });
+    }
+    
+    const isLate = disputeAgeHours > disputeConfig.EVIDENCE_WINDOW_HOURS;
+    
+    const evidenceFiles = req.files ? req.files.map(file => ({
+      filename: file.filename,
+      originalname: file.originalname,
+      path: file.path,
+      size: file.size,
+      mimetype: file.mimetype,
+    })) : [];
+    const evidenceUrls = evidenceFiles.map(file => `/uploads/${file.filename}`);
+    
+    // 4. Create DisputeEvent
+    const newEvent = await prisma.disputeEvent.create({
+      data: {
+        deedDisputeId: dispute.id,
+        type: 'EVIDENCE_SUBMITTED',
+        actorRole,
+        actorId: req.user.id,
+        payload: {
+          rebuttal: rebuttal || '',
+          evidenceUrls,
+          isLate
+        }
+      }
+    });
+    
+    // 5. Lazy Trigger: check if both submitted
+    const evidenceCount = await prisma.disputeEvent.count({
+      where: { deedDisputeId: dispute.id, type: 'EVIDENCE_SUBMITTED' }
+    });
+    
+    if (evidenceCount === 2) {
+      // Async trigger AI Report
+      setImmediate(() => {
+        console.log(`[Dispute ${dispute.id}] Both parties submitted evidence, triggering AI report...`);
+        generateAIReport(dispute.id).catch(err => console.error("AI Gen Error:", err));
+      });
+    }
+    
+    return res.json({ success: true, message: 'Evidence submitted successfully', data: newEvent });
+  } catch (e) {
+    console.error("submitEvidenceEvent Error:", e);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+const submitChallengeEvent = async (req, res) => {
+  try {
+    const { id: deedId } = req.params;
+    const { rebuttal } = req.body;
+    
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed) return res.status(404).json({ success: false, message: 'Deed not found' });
+    
+    // 1. Authorization Guard
+    if (req.user.id !== deed.buyerId && req.user.id !== deed.sellerId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+    
+    const dispute = await prisma.deedDispute.findUnique({
+      where: { deedId },
+      include: { events: { orderBy: { createdAt: 'desc' } } }
+    });
+    if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
+    
+    if (dispute.status !== 'CHALLENGE_PHASE') {
+      return res.status(400).json({ success: false, message: 'Dispute is not in challenge phase' });
+    }
+    
+    const actorRole = req.user.id === deed.buyerId ? 'buyer' : 'seller';
+    
+    // 2. Limit 1 per side check
+    const existingChallenge = dispute.events.find(e => e.type === 'CHALLENGE' && e.actorRole === actorRole);
+    if (existingChallenge) {
+      return res.status(400).json({ success: false, message: 'Challenge already submitted for this party' });
+    }
+    
+    // 3. Timeout Logic: find most recent AI_REPORT
+    const aiReportEvent = dispute.events.find(e => e.type === 'AI_REPORT');
+    if (!aiReportEvent) {
+      return res.status(400).json({ success: false, message: 'No AI Report exists yet' });
+    }
+    const reportAgeHours = (new Date() - new Date(aiReportEvent.createdAt)) / (1000 * 60 * 60);
+    if (reportAgeHours > disputeConfig.CHALLENGE_WINDOW_HOURS) {
+      return res.status(403).json({ success: false, message: 'Challenge window closed' });
+    }
+    
+    if (!rebuttal) {
+       return res.status(400).json({ success: false, message: 'Rebuttal is required for a challenge' });
+    }
+    
+    const evidenceFiles = req.files ? req.files.map(file => ({
+      filename: file.filename,
+      originalname: file.originalname,
+      path: file.path,
+      size: file.size,
+      mimetype: file.mimetype,
+    })) : [];
+    const evidenceUrls = evidenceFiles.map(file => `/uploads/${file.filename}`);
+    
+    // 4. Create DisputeEvent
+    const newEvent = await prisma.disputeEvent.create({
+      data: {
+        deedDisputeId: dispute.id,
+        type: 'CHALLENGE',
+        actorRole,
+        actorId: req.user.id,
+        payload: {
+          rebuttal,
+          evidenceUrls
+        }
+      }
+    });
+    
+    // 5. Active Triggers
+    const challengeCount = await prisma.disputeEvent.count({
+      where: { deedDisputeId: dispute.id, type: 'CHALLENGE' }
+    });
+    
+    if (challengeCount === 1) {
+      // Trigger AI re-analysis on the first challenge immediately
+      setImmediate(() => {
+        console.log(`[Dispute ${dispute.id}] 1 challenge submitted, triggering AI re-analysis...`);
+        generateAIReport(dispute.id).catch(err => console.error("AI Re-Analysis Error:", err));
+      });
+    } else if (challengeCount === 2) {
+      // Both challenged, instantly escalate (human review overrides any pending or completed re-analysis)
+      await prisma.deedDispute.update({
+        where: { id: dispute.id },
+        data: { status: 'ESCALATED' }
+      });
+      console.log(`[Dispute ${dispute.id}] Both parties challenged, escalated to human review.`);
+    }
+    
+    return res.json({ success: true, message: 'Challenge submitted successfully', data: newEvent });
+  } catch (e) {
+    console.error("submitChallengeEvent Error:", e);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -812,4 +1024,6 @@ module.exports = {
   smartEscalate,
   getFullDisputeDetail,
   triggerAIAnalysis,
+  submitEvidenceEvent,
+  submitChallengeEvent,
 };

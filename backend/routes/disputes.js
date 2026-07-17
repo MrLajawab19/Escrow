@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const disputeController = require('../controllers/disputeController');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authenticateAdmin } = require('../middleware/auth');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -60,6 +60,10 @@ router.post('/', upload.array('evidence', 5), disputeController.createDispute);
 
 // ── Dynamic routes (/:id) ─────────────────────────────────────────────────────
 
+// Stage B: Event Ingestion Endpoints (Append-Only Architecture)
+router.post('/deed/:id/evidence', upload.array('files', 5), disputeController.submitEvidenceEvent);
+router.post('/deed/:id/challenge', upload.array('files', 5), disputeController.submitChallengeEvent);
+
 // Get full dispute detail (includes ruleFlags, aiAnalysis, evidenceResponses)
 router.get('/:id/full', disputeController.getFullDisputeDetail);
 
@@ -81,7 +85,10 @@ router.post('/:id/ai-analysis', disputeController.triggerAIAnalysis);
 // Update dispute status
 router.patch('/:id/status', disputeController.updateDisputeStatus);
 
-// Resolve dispute
+// Admin decision endpoint
+router.post('/admin/:id/decision', authenticateAdmin, disputeController.resolveDispute);
+
+// Resolve dispute (legacy / user-facing wrapper if needed)
 router.patch('/:id/resolve', disputeController.resolveDispute);
 
 module.exports = router;

@@ -54,9 +54,8 @@ const DisputeTracker = ({ userId, userRole }) => {
   const getStatusColor = (status) => {
     const colors = {
       'OPEN': 'bg-red-100 text-red-800',
-      'UNDER_REVIEW': 'bg-yellow-100 text-yellow-800',
-      'RESPONDED': 'bg-blue-100 text-blue-800',
-      'MEDIATION': 'bg-purple-100 text-purple-800',
+      'CHALLENGE_PHASE': 'bg-yellow-100 text-yellow-800',
+      'ESCALATED': 'bg-purple-100 text-purple-800',
       'RESOLVED': 'bg-green-100 text-green-800',
       'CLOSED': 'bg-gray-100 text-gray-800'
     };
@@ -130,9 +129,8 @@ const DisputeTracker = ({ userId, userRole }) => {
             >
               <option value="">All Statuses</option>
               <option value="OPEN">Open</option>
-              <option value="UNDER_REVIEW">Under Review</option>
-              <option value="RESPONDED">Responded</option>
-              <option value="MEDIATION">Mediation</option>
+              <option value="CHALLENGE_PHASE">Under Review</option>
+              <option value="ESCALATED">Mediation</option>
               <option value="RESOLVED">Resolved</option>
               <option value="CLOSED">Closed</option>
             </select>

@@ -306,10 +306,15 @@ const AppNav = ({
   );
 };
 
-// Conditionally hide main nav on buyer dashboard (it has its own sidebar+header)
+// Conditionally hide main nav on dashboards that have their own sidebar+header
 const ConditionalNav = ({ children }) => {
   const location = useLocation();
-  if (location.pathname === '/buyer/dashboard') return null;
+  if (
+    location.pathname === '/buyer/dashboard' || 
+    location.pathname === '/seller/dashboard' ||
+    location.pathname.startsWith('/admin/dashboard') ||
+    location.pathname.startsWith('/admin/dispute')
+  ) return null;
   return children;
 };
 

@@ -334,9 +334,8 @@ model ChatMessage {
 
 enum DeedDisputeStatus {
   OPEN
-  RESPONDED
-  UNDER_REVIEW
-  MEDIATION
+  CHALLENGE_PHASE
+  ESCALATED
   RESOLVED
 }
 
@@ -362,27 +361,65 @@ model DeedDispute {
   priority             DeedDisputePriority @default(MEDIUM)
   status               DeedDisputeStatus   @default(OPEN)
 
-  ruleFlags            Json?                // output of runDisputeEngine
-  aiAnalysis           Json?                // output of analyzeDisputeWithAI
+  // @deprecated - replaced by DisputeEvent
+  ruleFlags            Json?                
+  // @deprecated - replaced by DisputeEvent
+  aiAnalysis           Json?                
+  // @deprecated - replaced by DisputeEvent
   evidenceResponses    Json                 @default("{}")
+  // @deprecated - replaced by DisputeEvent
   timeline             Json                 @default("[]")
 
   resolution           String?              // "REFUND_BUYER" | "RELEASE_TO_SELLER"
+  // @deprecated - tracked via DisputeEvent
   resolvedBy           String?
+  // @deprecated - tracked via DisputeEvent
   resolvedAt           DateTime?
+  // @deprecated - tracked via DisputeEvent
   escalatedAt          DateTime?
   autoFlaggedAt        DateTime?
+  // @deprecated - tracked via DisputeEvent
   lastActivity         DateTime?
 
+  // @deprecated - replaced by DisputeEvent
   enhancedAnalysis     Json?
+  // @deprecated - replaced by DisputeEvent
   scopeCompliance      Json?
 
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
+  events               DisputeEvent[]
+
   @@index([buyerId])
   @@index([sellerId])
   @@index([status])
+}
+
+enum DisputeEventType {
+  EVIDENCE_SUBMITTED
+  AI_REPORT
+  CHALLENGE
+  ESCALATED
+  HUMAN_DECISION
+  SETTLEMENT
+}
+
+model DisputeEvent {
+  id              String           @id @default(uuid())
+  deedDisputeId   String
+  deedDispute     DeedDispute      @relation(fields: [deedDisputeId], references: [id], onDelete: Cascade)
+  
+  type            DisputeEventType
+  actorRole       String           // "buyer" | "seller" | "ai" | "admin" | "system"
+  actorId         String?          
+  
+  payload         Json             
+  
+  createdAt       DateTime         @default(now())
+
+  @@index([deedDisputeId])
+  @@index([type])
 }
 
 

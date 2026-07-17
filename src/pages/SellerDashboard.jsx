@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import NotificationDropdown from '../components/NotificationDropdown';
-import DeedCard from '../components/DeedCard';
 import MyDisputesPage from '../components/MyDisputesPage';
 import NotificationModal from '../components/NotificationModal';
 import OrderChat from '../components/order/OrderChat'; // ← Real-time order chat
 import WalletDashboard from '../components/WalletDashboard';
-import WalletHeader from '../components/WalletHeader';
 import KYCModal from '../components/KYCModal';
 import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
 import { useNavigate } from 'react-router-dom';
 
-const inputClass = "w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm shadow-sm";
-const labelClass = "block text-sm font-medium mb-1.5 text-[#0A2540] font-inter";
+// New dashboard layout components
+import DashboardSidebar from '../components/dashboard/DashboardSidebar';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
+import MetricCard from '../components/dashboard/MetricCard';
+import DeedsTable from '../components/dashboard/DeedsTable';
+import WalletOverviewCard from '../components/dashboard/WalletOverviewCard';
+import SpendingOverview from '../components/dashboard/SpendingOverview';
+import RecentTransactions from '../components/dashboard/RecentTransactions';
+import { ClipboardCheck, Clock, Flag, AlertTriangle } from 'lucide-react';
+
+const inputClass = "w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter text-sm shadow-sm";
+const labelClass = "block text-sm font-medium mb-1.5 text-navy-900 font-inter";
 
 const SellerDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -31,6 +38,9 @@ const SellerDashboard = () => {
   const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });
   const [showKycModal, setShowKycModal] = useState(false);
   const [inviteLinkInput, setInviteLinkInput] = useState('');
+  const [walletSummary, setWalletSummary] = useState(null);
+  const [walletLoading, setWalletLoading] = useState(true);
+  const [sellerData, setSellerData] = useState(null);
   const navigate = useNavigate();
 
   const { formatCurrency, currency } = useCurrency();
@@ -44,7 +54,7 @@ const SellerDashboard = () => {
       if (parts.length !== 3) return null;
       const payload = JSON.parse(atob(parts[1]));
       const id = payload.userId || payload.id;
-      return { userId: id, role: 'seller', firstName: payload.firstName, lastName: payload.lastName };
+      return { userId: id, role: 'seller', firstName: payload.firstName, lastName: payload.lastName, profileImage: payload.profileImage };
     } catch { return null; }
   };
   const sellerUser = getSellerUser();
@@ -63,9 +73,38 @@ const SellerDashboard = () => {
         console.error('Failed to decode token:', err);
       }
     }
+
+    // Get seller data from localStorage
+    const storedData = localStorage.getItem('sellerData');
+    if (storedData && storedData !== 'undefined') {
+      try {
+        setSellerData(JSON.parse(storedData));
+      } catch {
+        // ignore
+      }
+    } else if (sellerUser) {
+        setSellerData(sellerUser);
+    }
+
     fetchOrders();
     fetchKycStatus();
+    fetchWalletSummary();
   }, []);
+
+  const fetchWalletSummary = async () => {
+    try {
+      const token = localStorage.getItem('sellerToken');
+      if (!token) return;
+      const response = await axios.get('/api/wallet/summary', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setWalletSummary(response.data.data);
+    } catch (err) {
+      // silent
+    } finally {
+      setWalletLoading(false);
+    }
+  };
 
   const fetchKycStatus = async () => {
     try {
@@ -240,7 +279,7 @@ const SellerDashboard = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h3 className="text-lg font-bold text-[#0A2540] mb-2 font-inter">Error Loading Orders</h3>
+          <h3 className="text-lg font-bold text-navy-900 mb-2 font-inter">Error Loading Orders</h3>
           <p className="text-neutral-600 mb-6 text-sm font-inter">{error}</p>
           <button onClick={fetchOrders} className="w-full py-3 px-4 rounded-xl font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all duration-200 shadow-md font-inter text-sm">
             Try Again
@@ -250,35 +289,181 @@ const SellerDashboard = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#F6F9FC]">
-      {/* Dashboard Sub-header */}
-      <div className="bg-white border-b border-neutral-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-[72px]">
-            <h1 className="text-xl font-bold text-[#0A2540] tracking-tight font-inter">Seller Dashboard</h1>
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-neutral-500 font-medium font-inter hidden sm:inline-block">Welcome, Seller</span>
-              <NotificationDropdown userType="seller" />
-              {userId && <WalletHeader userId={userId} onNavigateToWallet={() => setActiveTab('wallet')} />}
-              <button
-                onClick={() => setShowMyDisputes(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-colors font-inter"
-              >
-                <span>⚠️</span> My Disputes
-              </button>
-              <button
-                onClick={() => setShowRequests(true)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-md font-inter"
-              >
-                View Requests
-              </button>
+  // Metric computations
+  const totalOrders = orders.length;
+  const inProgress = orders.filter(o => ['IN_PROGRESS', 'ACCEPTED'].includes(o.status)).length;
+  const pendingReview = orders.filter(o => o.status === 'SUBMITTED').length;
+  const totalEarnings = orders.filter(o => !['REJECTED', 'CANCELLED', 'REFUNDED', 'PLACED'].includes(o.status)).reduce((sum, o) => sum + (o.scopeBox?.price || 0), 0);
+
+  // Render tab content
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'wallet':
+      case 'transactions':
+      case 'refunds':
+        return (
+          <div className="animate-fadeIn">
+            {userId && <WalletDashboard userId={userId} />}
+          </div>
+        );
+
+      case 'orders':
+        return (
+          <div className="animate-fadeIn">
+            <DeedsTable deeds={orders} onViewAllDeeds={() => {}} userType="seller" />
+          </div>
+        );
+
+      case 'dashboard':
+      default:
+        return (
+          <div className="animate-fadeIn">
+            {/* Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              <MetricCard
+                icon={<ClipboardCheck size={22} className="text-primary-500" />}
+                iconBg="bg-primary-50"
+                value={totalOrders}
+                label="Total Orders"
+                subtitle="All time orders"
+              />
+              <MetricCard
+                icon={<Clock size={22} className="text-blue-500" />}
+                iconBg="bg-blue-50"
+                value={inProgress}
+                label="In Progress"
+                subtitle="Active orders"
+              />
+              <MetricCard
+                icon={<Flag size={22} className="text-amber-500" />}
+                iconBg="bg-amber-50"
+                value={pendingReview}
+                label="Pending Review"
+                subtitle="Awaiting your action"
+              />
+              <MetricCard
+                icon={<span className="text-lg font-bold text-emerald-500">₹</span>}
+                iconBg="bg-emerald-50"
+                value={formatCurrency(totalEarnings, 'INR')}
+                label="Earnings"
+                subtitle="Total revenue"
+                valueClass="text-xl"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+              {/* Left Column: Orders & Quick Actions */}
+              <div className="lg:col-span-8 space-y-6">
+                
+                {/* Pending Requests Banner */}
+                {orders.filter(o => o.status === 'ESCROW_FUNDED').length > 0 && (
+                  <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
+                        <AlertTriangle size={24} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-navy-900">You have new order requests</h3>
+                        <p className="text-sm text-neutral-600">Review and accept to start working.</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowRequests(true)}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
+                    >
+                      View Requests
+                    </button>
+                  </div>
+                )}
+                
+                <DeedsTable deeds={orders} onViewAllDeeds={() => setActiveTab('orders')} userType="seller" />
+                
+                {/* Invite Link Form */}
+                <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm p-6">
+                  <h3 className="text-base font-bold text-navy-900 mb-2">Have an invite code?</h3>
+                  <p className="text-sm text-neutral-500 mb-4">Paste the link or code below to accept an order directly.</p>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!inviteLinkInput.trim()) return;
+                    const token = inviteLinkInput.trim().split('/').pop();
+                    if (token) navigate(`/deed/invite/${token}`);
+                  }} className="flex items-center gap-3 w-full">
+                    <input 
+                      type="text" 
+                      value={inviteLinkInput}
+                      onChange={(e) => setInviteLinkInput(e.target.value)}
+                      placeholder="Paste Invite Link or Token..." 
+                      className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-xl text-sm bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    />
+                    <button 
+                      type="submit"
+                      className="px-5 py-2.5 bg-navy-900 hover:bg-navy-800 text-white text-sm font-semibold rounded-xl transition-all shadow-sm whitespace-nowrap"
+                    >
+                      Open Invite
+                    </button>
+                  </form>
+                </div>
+                
+              </div>
+
+              {/* Right Column: Wallet & Recent */}
+              <div className="lg:col-span-4 space-y-6">
+                <WalletOverviewCard
+                  userId={userId}
+                  walletSummary={walletSummary}
+                  walletLoading={walletLoading}
+                  onNavigateToWallet={() => setActiveTab('wallet')}
+                  onRefreshWallet={fetchWalletSummary}
+                  userType="seller"
+                />
+                <SpendingOverview
+                  transactions={walletSummary?.recentTransactions || []}
+                  loading={walletLoading}
+                  userType="seller"
+                />
+                <RecentTransactions
+                  transactions={walletSummary?.recentTransactions || []}
+                  loading={walletLoading}
+                  onViewAll={() => setActiveTab('transactions')}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        );
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-neutral-50 overflow-hidden font-inter">
+      {/* Sidebar */}
+      <DashboardSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onNewOrder={() => setShowRequests(true)}
+        userType="seller"
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header */}
+        <DashboardHeader
+          userData={sellerData}
+          kycStatus={kycStatus}
+          walletBalance={walletSummary?.balance || 0}
+          walletLoading={walletLoading}
+          onKycClick={() => setShowKycModal(true)}
+          userType="seller"
+          onDisputesClick={() => setShowMyDisputes(true)}
+          onViewRequestsClick={() => setShowRequests(true)}
+        />
+
+        {/* Main Scrollable Content */}
+        <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-6">
+          {renderContent()}
+        </main>
       </div>
 
-      {/* My Disputes Modal */}
+      {/* Existing Modals */}
       {showMyDisputes && (
         <MyDisputesPage userType="seller" onClose={() => setShowMyDisputes(false)} />
       )}
@@ -288,7 +473,7 @@ const SellerDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative max-h-[85vh] overflow-y-auto mx-4">
             <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setShowRequests(false)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-[#0A2540] font-inter">Order Requests</h2>
+            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Order Requests</h2>
             {orders.filter(o => o.status === 'ESCROW_FUNDED').length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-5xl mb-4">📭</div>
@@ -301,12 +486,12 @@ const SellerDashboard = () => {
                   <div key={order.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-5 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all duration-200">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                       <div className="flex-1">
-                        <div className="font-semibold text-[#0A2540] font-inter mb-1">{order.scopeBox?.title || 'Untitled Order'}</div>
+                        <div className="font-semibold text-navy-900 font-inter mb-1">{order.scopeBox?.title || 'Untitled Order'}</div>
                         <div className="text-sm text-neutral-500 font-inter mb-2">From: {order.buyerName || 'Unknown Buyer'}</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                          <div><span className="text-neutral-400 font-inter">Deadline: </span><span className="font-medium text-[#0A2540] font-inter">{order.scopeBox?.deadline ? new Date(order.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
-                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-[#0A2540] font-inter">{formatCurrency(order.scopeBox?.price || 0, order.currency || 'INR')}</span></div>
-                          <div><span className="text-neutral-400 font-inter">Platform: </span><span className="font-medium text-[#0A2540] font-inter">{order.platform || 'N/A'}</span></div>
+                          <div><span className="text-neutral-400 font-inter">Deadline: </span><span className="font-medium text-navy-900 font-inter">{order.scopeBox?.deadline ? new Date(order.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
+                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-navy-900 font-inter">{formatCurrency(order.scopeBox?.price || 0, order.currency || 'INR')}</span></div>
+                          <div><span className="text-neutral-400 font-inter">Platform: </span><span className="font-medium text-navy-900 font-inter">{order.platform || 'N/A'}</span></div>
                         </div>
                         {order.scopeBox?.description && (
                           <p className="text-sm text-neutral-500 font-inter mt-2 line-clamp-2">{order.scopeBox.description.substring(0, 100)}...</p>
@@ -332,29 +517,29 @@ const SellerDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-lg w-full p-8 relative mx-4">
             <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setScopeBoxOrder(null)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-[#0A2540] font-inter">Scope Box Details</h2>
+            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Scope Box Details</h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter">Title</span>
-                <span className="font-semibold text-[#0A2540] font-inter text-right">{scopeBoxOrder.scopeBox?.title}</span>
+                <span className="font-semibold text-navy-900 font-inter text-right">{scopeBoxOrder.scopeBox?.title}</span>
               </div>
               <div className="py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter block mb-1">Description</span>
-                <p className="text-[#0A2540] font-inter">{scopeBoxOrder.scopeBox?.description}</p>
+                <p className="text-navy-900 font-inter">{scopeBoxOrder.scopeBox?.description}</p>
               </div>
               <div className="py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter block mb-1">Deliverables</span>
-                <ul className="list-disc ml-4 text-[#0A2540] font-inter space-y-1">
+                <ul className="list-disc ml-4 text-navy-900 font-inter space-y-1">
                   {(scopeBoxOrder.scopeBox?.deliverables || []).map((d, i) => <li key={i}>{d}</li>)}
                 </ul>
               </div>
               <div className="flex justify-between py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter">Deadline</span>
-                <span className="font-semibold text-[#0A2540] font-inter">{scopeBoxOrder.scopeBox?.deadline ? new Date(scopeBoxOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span>
+                <span className="font-semibold text-navy-900 font-inter">{scopeBoxOrder.scopeBox?.deadline ? new Date(scopeBoxOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter">Price</span>
-                <span className="font-bold text-[#0A2540] font-inter">{formatCurrency(scopeBoxOrder.scopeBox?.price || 0, scopeBoxOrder.currency || 'INR')}</span>
+                <span className="font-bold text-navy-900 font-inter">{formatCurrency(scopeBoxOrder.scopeBox?.price || 0, scopeBoxOrder.currency || 'INR')}</span>
               </div>
               {scopeBoxOrder.scopeBox?.attachments?.length > 0 && (
                 <div className="py-2">
@@ -377,7 +562,7 @@ const SellerDashboard = () => {
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-100">
               {(!scopeBoxOrder.status || scopeBoxOrder.status === 'PLACED' || scopeBoxOrder.status === 'ESCROW_FUNDED') && (
                 <>
-                  <button className="px-5 py-2.5 bg-[#16C784] hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleAcceptOrder(scopeBoxOrder)}>✓ Accept</button>
+                  <button className="px-5 py-2.5 bg-emerald-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleAcceptOrder(scopeBoxOrder)}>✓ Accept</button>
                   <button className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleRejectOrder(scopeBoxOrder)}>✕ Reject</button>
                   <button className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleRequestChanges(scopeBoxOrder)}>✎ Request Changes</button>
                 </>
@@ -392,12 +577,12 @@ const SellerDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative mx-4">
             <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setSelectedOrder(null)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-[#0A2540] font-inter">Order Details — {selectedOrder.scopeBox?.title}</h2>
+            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Order Details — {selectedOrder.scopeBox?.title}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-base font-semibold mb-3 text-[#0A2540] font-inter">Order Information</h3>
+                <h3 className="text-base font-semibold mb-3 text-navy-900 font-inter">Order Information</h3>
                 <div className="space-y-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl p-4">
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Order ID</span><span className="font-medium text-[#0A2540] font-inter">{selectedOrder.id}</span></div>
+                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Order ID</span><span className="font-medium text-navy-900 font-inter">{selectedOrder.id}</span></div>
                   <div className="flex justify-between py-1.5 border-b border-neutral-100">
                     <span className="text-neutral-500 font-inter">Status</span>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold font-inter ${selectedOrder.status === 'IN_PROGRESS' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
@@ -406,20 +591,20 @@ const SellerDashboard = () => {
                             'bg-neutral-100 text-neutral-600 border border-neutral-200'
                       }`}>{selectedOrder.status.replace(/_/g, ' ')}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-[#0A2540] font-inter">{formatCurrency(selectedOrder.scopeBox?.price || 0, selectedOrder.currency || 'INR')}</span></div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Deadline</span><span className="font-medium text-[#0A2540] font-inter">{selectedOrder.scopeBox?.deadline ? new Date(selectedOrder.scopeBox.deadline).toLocaleDateString() : 'No deadline'}</span></div>
-                  <div className="flex justify-between py-1.5"><span className="text-neutral-500 font-inter">Updated</span><span className="font-medium text-[#0A2540] font-inter">{new Date(selectedOrder.updatedAt).toLocaleString()}</span></div>
+                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-navy-900 font-inter">{formatCurrency(selectedOrder.scopeBox?.price || 0, selectedOrder.currency || 'INR')}</span></div>
+                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Deadline</span><span className="font-medium text-navy-900 font-inter">{selectedOrder.scopeBox?.deadline ? new Date(selectedOrder.scopeBox.deadline).toLocaleDateString() : 'No deadline'}</span></div>
+                  <div className="flex justify-between py-1.5"><span className="text-neutral-500 font-inter">Updated</span><span className="font-medium text-navy-900 font-inter">{new Date(selectedOrder.updatedAt).toLocaleString()}</span></div>
                 </div>
               </div>
               <div>
-                <h3 className="text-base font-semibold mb-3 text-[#0A2540] font-inter">Scope Details</h3>
+                <h3 className="text-base font-semibold mb-3 text-navy-900 font-inter">Scope Details</h3>
                 <div className="space-y-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl p-4">
-                  <div className="py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Description</span><p className="mt-1 text-[#0A2540] font-inter leading-relaxed">{selectedOrder.scopeBox?.description}</p></div>
+                  <div className="py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Description</span><p className="mt-1 text-navy-900 font-inter leading-relaxed">{selectedOrder.scopeBox?.description}</p></div>
                   <div className="py-1.5">
                     <span className="text-neutral-500 font-inter">Deliverables</span>
                     <ul className="mt-1 space-y-1">
                       {selectedOrder.scopeBox?.deliverables?.map((item, i) => (
-                        <li key={i} className="text-sm text-[#0A2540] font-inter flex items-start gap-1.5"><span className="text-indigo-600 mt-0.5">•</span>{item}</li>
+                        <li key={i} className="text-sm text-navy-900 font-inter flex items-start gap-1.5"><span className="text-indigo-600 mt-0.5">•</span>{item}</li>
                       ))}
                     </ul>
                   </div>
@@ -427,7 +612,7 @@ const SellerDashboard = () => {
               </div>
             </div>
             <div className="mt-6 flex justify-between items-center pt-4 border-t border-neutral-100">
-              <button onClick={() => setSelectedOrder(null)} className="px-5 py-2.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-[#0A2540] rounded-xl text-sm font-semibold transition-colors font-inter">
+              <button onClick={() => setSelectedOrder(null)} className="px-5 py-2.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-navy-900 rounded-xl text-sm font-semibold transition-colors font-inter">
                 ← Back to Orders
               </button>
               <div className={`text-sm font-inter font-medium px-3 py-1.5 rounded-full ${selectedOrder.status === 'IN_PROGRESS' ? 'text-indigo-700 bg-indigo-50' :
@@ -450,22 +635,22 @@ const SellerDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative max-h-[90vh] overflow-y-auto mx-4">
             <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setShowRequestChanges(false)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-[#0A2540] font-inter">Request Changes to Scope Box</h2>
+            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Request Changes to Scope Box</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Original */}
               <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-5">
-                <h3 className="font-semibold text-[#0A2540] mb-4 font-inter text-sm uppercase tracking-wide">Original Scope Box</h3>
+                <h3 className="font-semibold text-navy-900 mb-4 font-inter text-sm uppercase tracking-wide">Original Scope Box</h3>
                 <div className="space-y-2 text-sm">
-                  <div><span className="font-medium text-neutral-500 font-inter">Title: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.title}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Description: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.description}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Product Type: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.productType}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Price: </span><span className="text-[#0A2540] font-inter font-bold">{formatCurrency(requestChangesOrder.scopeBox?.price || 0, requestChangesOrder.currency || 'INR')}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Deadline: </span><span className="text-[#0A2540] font-inter">{requestChangesOrder.scopeBox?.deadline ? new Date(requestChangesOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Title: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.title}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Description: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.description}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Product Type: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.productType}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Price: </span><span className="text-navy-900 font-inter font-bold">{formatCurrency(requestChangesOrder.scopeBox?.price || 0, requestChangesOrder.currency || 'INR')}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Deadline: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.deadline ? new Date(requestChangesOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
                   <div>
                     <span className="font-medium text-neutral-500 font-inter">Deliverables:</span>
                     <ul className="list-disc ml-4 mt-1 space-y-1">
-                      {(requestChangesOrder.scopeBox?.deliverables || []).map((d, i) => <li key={i} className="text-[#0A2540] font-inter">{d}</li>)}
+                      {(requestChangesOrder.scopeBox?.deliverables || []).map((d, i) => <li key={i} className="text-navy-900 font-inter">{d}</li>)}
                     </ul>
                   </div>
                 </div>
@@ -510,238 +695,12 @@ const SellerDashboard = () => {
             </div>
 
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-100">
-              <button className="px-5 py-2.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-[#0A2540] rounded-xl text-sm font-semibold transition-colors font-inter" onClick={() => setShowRequestChanges(false)}>Cancel</button>
+              <button className="px-5 py-2.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-navy-900 rounded-xl text-sm font-semibold transition-colors font-inter" onClick={() => setShowRequestChanges(false)}>Cancel</button>
               <button className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={handleSubmitChanges}>Submit Changes Request</button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* KYC Banner */}
-        {!kycStatus.kycComplete && (
-          <div className="mb-6 bg-yellow-900/40 border border-yellow-700/50 rounded-lg p-4 flex items-center justify-between">
-            <div className="flex items-center text-yellow-500">
-              <svg className="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-              </svg>
-              <span>
-                <strong>Verify your identity</strong> to create deeds above ₹10,000. Current status: {kycStatus.reviewStatus}
-              </span>
-            </div>
-            <button 
-              onClick={() => setShowKycModal(true)}
-              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-md transition-colors"
-            >
-              Complete KYC
-            </button>
-          </div>
-        )}
-        {kycStatus.kycComplete && (
-          <div className="mb-6 bg-green-900/20 border border-green-800/50 rounded-lg p-4 flex items-center text-green-400">
-            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            KYC Verified
-          </div>
-        )}
-
-        {/* Navigation Tabs */}
-        <div className="flex space-x-6 border-b border-neutral-200 mb-8 font-inter">
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`pb-3 text-sm font-semibold transition-colors relative ${
-              activeTab === 'orders' ? 'text-indigo-600' : 'text-neutral-500 hover:text-neutral-800'
-            }`}
-          >
-            My Orders
-            {activeTab === 'orders' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('wallet')}
-            className={`pb-3 text-sm font-semibold transition-colors relative ${
-              activeTab === 'wallet' ? 'text-indigo-600' : 'text-neutral-500 hover:text-neutral-800'
-            }`}
-          >
-            Wallet & Ledger
-            {activeTab === 'wallet' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
-            )}
-          </button>
-        </div>
-
-        {activeTab === 'wallet' ? (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {userId && <WalletDashboard userId={userId} />}
-          </div>
-        ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Total Orders</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{orders.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">In Progress</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{orders.filter(o => ['IN_PROGRESS', 'ACCEPTED'].includes(o.status)).length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Pending Review</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">{orders.filter(o => o.status === 'SUBMITTED').length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">Earnings</p>
-                <p className="text-2xl font-bold text-[#0A2540] mt-1 font-inter">
-                  {formatCurrency(orders.filter(o => !['REJECTED', 'CANCELLED', 'REFUNDED', 'PLACED'].includes(o.status)).reduce((sum, o) => sum + (o.scopeBox?.price || 0), 0), 'INR')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Orders Section */}
-        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-neutral-100 bg-neutral-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h2 className="text-lg font-bold text-[#0A2540] font-inter">Your Orders</h2>
-            
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (!inviteLinkInput.trim()) return;
-              // Extract the token from the end of the URL or use it directly
-              const token = inviteLinkInput.trim().split('/').pop();
-              if (token) navigate(`/deed/invite/${token}`);
-            }} className="flex items-center gap-2 w-full sm:w-auto">
-              <input 
-                type="text" 
-                value={inviteLinkInput}
-                onChange={(e) => setInviteLinkInput(e.target.value)}
-                placeholder="Paste Invite Link or Token..." 
-                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:border-indigo-500 min-w-[250px]"
-              />
-              <button 
-                type="submit"
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
-              >
-                Open Invite
-              </button>
-            </form>
-          </div>
-          <div className="p-6 bg-neutral-50/30">
-            {orders.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-lg border border-neutral-100 border-dashed">
-                <div className="mx-auto w-16 h-16 bg-neutral-50 rounded-full flex items-center justify-center mb-5">
-                  <svg className="w-8 h-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-[#0A2540] mb-2 font-inter">No orders yet</h3>
-                <p className="text-neutral-500 mb-8 max-w-sm mx-auto leading-relaxed font-inter">Accept order requests to start working with buyers.</p>
-                <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors shadow-md font-inter text-sm" onClick={() => setShowRequests(true)}>
-                  View Requests
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {orders.map(deed => (
-                  <DeedCard
-                    key={deed.id}
-                    deed={deed}
-                    onClick={() => navigate(`/seller/deed/${deed.id}`)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-6 bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-neutral-100 bg-neutral-50/50">
-            <h2 className="text-base font-bold text-[#0A2540] font-inter">Quick Actions</h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button className="p-5 bg-neutral-50 border border-neutral-200 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/30 text-left transition-all duration-200 group">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 transition-colors flex-shrink-0">
-                    <span className="text-lg">📤</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[#0A2540] font-inter text-sm">Submit Delivery</h3>
-                    <p className="text-xs text-neutral-500 font-inter mt-0.5">Upload completed work</p>
-                  </div>
-                </div>
-              </button>
-              <button className="p-5 bg-neutral-50 border border-neutral-200 rounded-xl hover:border-red-200 hover:bg-red-50/30 text-left transition-all duration-200 group">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center group-hover:bg-red-100 transition-colors flex-shrink-0">
-                    <span className="text-lg">⚠️</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[#0A2540] font-inter text-sm">Raise Dispute</h3>
-                    <p className="text-xs text-neutral-500 font-inter mt-0.5">Report issues with buyer</p>
-                  </div>
-                </div>
-              </button>
-              <button className="p-5 bg-neutral-50 border border-neutral-200 rounded-xl hover:border-emerald-200 hover:bg-emerald-50/30 text-left transition-all duration-200 group">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center group-hover:bg-emerald-100 transition-colors flex-shrink-0">
-                    <span className="text-lg">📊</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[#0A2540] font-inter text-sm">View Analytics</h3>
-                    <p className="text-xs text-neutral-500 font-inter mt-0.5">Track your performance</p>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-          </div>
-          </div>
-        )}
-      </main>
 
       {/* Notification Modal */}
       <NotificationModal
@@ -752,7 +711,7 @@ const SellerDashboard = () => {
         type={notification.type}
       />
 
-      {/* ── Order Chat (floating bubble for selected order) ──────────────────── */}
+      {/* Order Chat (floating bubble for selected order) */}
       {selectedOrder && sellerUser && (
         <OrderChat
           orderId={selectedOrder.id}

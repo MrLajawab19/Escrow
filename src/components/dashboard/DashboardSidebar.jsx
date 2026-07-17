@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -16,9 +16,13 @@ import {
   Menu,
   X,
   ChevronRight,
+  BarChart3,
+  Users,
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 
-const navSections = [
+const buyerNavSections = [
   {
     label: '',
     items: [
@@ -53,17 +57,69 @@ const navSections = [
   },
 ];
 
-const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick, userId }) => {
+const sellerNavSections = [
+  {
+    label: '',
+    items: [
+      { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'BUSINESS',
+    items: [
+      { key: 'orders', label: 'My Orders', icon: ShoppingBag },
+      { key: 'disputes', label: 'Disputes', icon: AlertTriangle },
+    ],
+  },
+  {
+    label: 'FINANCE & DATA',
+    items: [
+      { key: 'wallet', label: 'Wallet & Ledger', icon: Wallet },
+      { key: 'analytics', label: 'Analytics', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'GROWTH',
+    items: [
+      { key: 'invites', label: 'Invites & Referrals', icon: Users },
+    ],
+  },
+  {
+    label: 'ACCOUNT',
+    items: [
+      { key: 'profile', label: 'Profile Settings', icon: Settings },
+    ],
+  },
+];
+
+const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick, userId, userType = 'buyer' }) => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navSections = useMemo(() => userType === 'seller' ? sellerNavSections : buyerNavSections, [userType]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('buyerToken');
+    localStorage.removeItem('buyerData');
+    localStorage.removeItem('sellerToken');
+    localStorage.removeItem('sellerData');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminData');
+    window.location.href = '/';
+  };
 
   const handleItemClick = (item) => {
     if (item.route) {
       navigate(item.route);
     } else if (item.key === 'disputes') {
       onDisputesClick?.();
+      setActiveTab('disputes');
     } else if (item.key === 'profile') {
-      if (userId) navigate(`/buyer/profile/${userId}`);
+      if (userId) {
+        navigate(`/${userType}/profile/${userId}`);
+      } else {
+        setActiveTab('profile');
+      }
     } else {
       setActiveTab(item.key);
     }
@@ -130,23 +186,51 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
 
       {/* Bottom CTA Card */}
       <div className="px-3 pb-4">
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100/60 border border-primary-200/50 rounded-2xl p-4">
-          <h4 className="text-sm font-bold text-navy-900 mb-1 leading-tight">
-            Secure every deal with ScrowX
-          </h4>
-          <p className="text-xs text-neutral-500 mb-3 leading-relaxed">
-            Your trust is protected with escrow.
-          </p>
-          <button
-            onClick={() => {
-              onNewOrder?.();
-              navigate('/buyer/new-order');
-            }}
-            className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 shadow-sm shadow-emerald-500/20"
-          >
-            Start New Order
-          </button>
-        </div>
+        {userType === 'seller' ? (
+          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/60 border border-indigo-200/50 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles size={16} className="text-indigo-500" />
+              <h4 className="text-sm font-bold text-navy-900 leading-tight">
+                Upgrade to Pro Seller
+              </h4>
+            </div>
+            <p className="text-xs text-neutral-500 mb-3 leading-relaxed">
+              Get priority support, lower fees & more benefits.
+            </p>
+            <button
+              className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 shadow-sm shadow-indigo-500/20"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-br from-primary-50 to-primary-100/60 border border-primary-200/50 rounded-2xl p-4">
+            <h4 className="text-sm font-bold text-navy-900 mb-1 leading-tight">
+              Secure every deal with ScrowX
+            </h4>
+            <p className="text-xs text-neutral-500 mb-3 leading-relaxed">
+              Your trust is protected with escrow.
+            </p>
+            <button
+              onClick={() => {
+                onNewOrder?.();
+                navigate('/buyer/new-order');
+              }}
+              className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 shadow-sm shadow-emerald-500/20"
+            >
+              Start New Order
+            </button>
+          </div>
+        )}
+        
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm"
+        >
+          <LogOut size={16} strokeWidth={2} />
+          Logout
+        </button>
       </div>
     </div>
   );
@@ -183,4 +267,5 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
   );
 };
 
-export default DashboardSidebar;
+export default React.memo(DashboardSidebar);
+

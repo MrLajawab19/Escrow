@@ -134,7 +134,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
       const res = await axios.get(`/api/disputes/${disputeId}/full`, { headers });
       if (res.data.success) {
         setDetail(res.data.data);
-        if (res.data.data.dispute.status === 'MEDIATION') setEscalated(true);
+        if (res.data.data.dispute.status === 'ESCALATED') setEscalated(true);
         if (res.data.data.dispute.evidenceResponses?.[userType]?.submittedAt) setSubmitted(true);
       }
     } catch (e) {
@@ -271,12 +271,12 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                 Status:&nbsp;
                 <span className={`font-bold ${
                   disputeStatus === 'RESOLVED' ? 'text-emerald-600' :
-                  disputeStatus === 'MEDIATION' ? 'text-indigo-600' :
+                  disputeStatus === 'ESCALATED' ? 'text-indigo-600' :
                   'text-red-600'
                 }`}>
                   {disputeStatus === 'OPEN' ? 'Under Investigation' :
-                   disputeStatus === 'RESPONDED' ? 'Evidence Collected' :
-                   disputeStatus === 'MEDIATION' ? 'Human Review Requested' :
+                   disputeStatus === 'CHALLENGE_PHASE' ? 'Evidence Collected' :
+                   disputeStatus === 'ESCALATED' ? 'Human Review Requested' :
                    disputeStatus === 'RESOLVED' ? 'Resolved' : disputeStatus}
                 </span>
               </p>

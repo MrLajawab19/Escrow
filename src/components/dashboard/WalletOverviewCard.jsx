@@ -5,7 +5,7 @@ import TopUpModal from '../TopUpModal';
 import WithdrawalModal from '../WithdrawalModal';
 import { Wallet, ArrowUpRight, ArrowLeftRight, MoreHorizontal, ChevronDown } from 'lucide-react';
 
-const WalletOverviewCard = ({ userId, walletSummary, walletLoading, onNavigateToWallet, onRefreshWallet }) => {
+const WalletOverviewCard = ({ userId, walletSummary, walletLoading, onNavigateToWallet, onRefreshWallet, userType = 'buyer' }) => {
   const { formatCurrency, currency, changeCurrency, availableCurrencies, currencySymbol, loadingRates } = useCurrency();
   const [showTopUp, setShowTopUp] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -120,11 +120,11 @@ const WalletOverviewCard = ({ userId, walletSummary, walletLoading, onNavigateTo
           onClose={() => setShowWithdraw(false)}
           onSuccess={() => { setShowWithdraw(false); if(onRefreshWallet) onRefreshWallet(); }}
           maxAmount={(balance || 0) / 100}
-          userType="buyer"
+          userType={userType}
         />
       )}
     </>
   );
 };
 
-export default WalletOverviewCard;
+export default React.memo(WalletOverviewCard);
