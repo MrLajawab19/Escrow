@@ -36,23 +36,6 @@ function calculateResolutionAmounts(price, buyerPct, disputeStatus = 'NONE') {
   return { buyerGross, sellerGross, buyerFee, sellerFee, buyerNet, sellerNet, platformFee };
 }
 
-/**
- * Fetch the most recent chat messages for an order (for AI context).
- * Uses OrderChatRoom → OrderChatMessage (Prisma models).
- */
-async function getChatMessages(orderId) {
-  try {
-    const room = await prisma.orderChatRoom.findUnique({ where: { orderId } });
-    if (!room) return [];
-    return await prisma.orderChatMessage.findMany({
-      where: { roomId: room.id },
-      orderBy: { createdAt: 'asc' },
-      take: 20,
-    });
-  } catch {
-    return [];
-  }
-}
 
 // ─── Create Dispute ────────────────────────────────────────────────────────────
 
@@ -676,7 +659,7 @@ const resolveDispute = async (req, res) => {
         let sellerWallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
         if (!sellerWallet) {
           sellerWallet = await tx.wallet.create({
-            data: { userId: sellerId, userRole: "seller", currency: (order?.currency || deed?.currency) || "INR" }
+            data: { userId: sellerId, userRole: "seller", currency: deed?.currency || "INR" }
           });
         }
         await tx.wallet.update({
