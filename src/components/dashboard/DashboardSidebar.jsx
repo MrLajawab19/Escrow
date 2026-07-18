@@ -33,7 +33,6 @@ const buyerNavSections = [
     label: 'ORDERS',
     items: [
       { key: 'orders', label: 'My Orders', icon: ShoppingBag },
-      { key: 'new-order', label: 'New Order', icon: FilePlus2, route: '/buyer/new-order' },
       { key: 'scopebox', label: 'ScopeBox Requests', icon: Box },
       { key: 'disputes', label: 'Disputes', icon: AlertTriangle },
     ],
