@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import KYCModal from '../components/KYCModal';
-import { RefreshCcw, ArrowRight, Check, AlertTriangle, CheckCircle2, ChevronRight, Save } from 'lucide-react';
+import { RefreshCcw, ArrowRight, Check, AlertTriangle, CheckCircle2, ChevronRight, Save, Lock } from 'lucide-react';
 
 export default function NewDeedPage() {
   const navigate = useNavigate();
@@ -115,7 +115,8 @@ export default function NewDeedPage() {
     return base && form.milestones.length > 0 && form.milestones.every(m => m.title && m.amount && m.deadline);
   };
   
-  const validateStage3 = () => validateStage1() && validateStage2();
+  // Stage 3 (Review - now requires explicit user acknowledgment)
+  const validateStage3 = () => validateStage1() && validateStage2() && form.isReviewed;
   
   // The critical milestone math check moves to Stage 4 (Payment validation)
   const isMilestoneMathValid = () => !form.isMilestone || Math.abs(getTotalMilestoneAmount() - parseFloat(form.amount || 0)) <= 0.01;
@@ -124,15 +125,14 @@ export default function NewDeedPage() {
   // 3. Exact ScopeBox Completion Formula
   const calculateScopeBoxCompletion = () => {
     let points = 0;
-    const total = 5;
+    let total = 4;
     if (form.acceptanceCriteria?.length >= 50) points++;
     if (form.deadline) points++;
     if (form.deliverableFormats) points++;
     if (form.revisionLimit) points++;
     if (form.isMilestone) {
+      total = 5;
       if (form.milestones.length > 0 && form.milestones.every(m => m.title && m.amount && m.deadline)) points++;
-    } else {
-      points++; // Non-milestone defaults this 5th point to true
     }
     return Math.round((points / total) * 100);
   };
@@ -482,6 +482,21 @@ export default function NewDeedPage() {
                         <p className="text-neutral-700 text-sm leading-relaxed bg-neutral-50 p-4 rounded-xl border border-neutral-100">{form.acceptanceCriteria}</p>
                       </div>
                     </div>
+                  </div>
+                  
+                  
+                  <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-5 mb-8 flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="isReviewed"
+                      name="isReviewed"
+                      checked={!!form.isReviewed}
+                      onChange={handleInput}
+                      className="mt-1 w-5 h-5 text-indigo-600 border-neutral-300 rounded focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <label htmlFor="isReviewed" className="text-sm font-medium text-navy-900 cursor-pointer select-none">
+                      I have reviewed the project details and acceptance criteria. I confirm they accurately represent the agreement.
+                    </label>
                   </div>
                   
                   {getMissingFields().length > 0 && (
