@@ -195,7 +195,6 @@ export default function NewDeedPage() {
     }
   };
 
-  // Unchanged Razorpay integration
   const handleFundingSubmit = async (e) => {
     if (e) e.preventDefault();
     setFundingLoading(true);
@@ -206,33 +205,91 @@ export default function NewDeedPage() {
       if (fundResponse.data.success && fundResponse.data.data.razorpayOrderId) {
         const { razorpayOrderId, amount, currency } = fundResponse.data.data;
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TAVbIcT7jdp31E', 
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TAVbIcT7jdp31E',
           amount: amount, currency: currency, name: 'ScrowX',
           description: `Fund Escrow for Deed: ${deedData.title}`,
           order_id: razorpayOrderId,
           handler: async function (response) {
             try {
-              toast.loading('Payment received! Finishing setup...', { id: 'verify-payment' });
+              toast.loading('Payment received! Verifying...', { id: 'verify-payment' });
+
+              // ── Primary Path: Synchronous server-side verification ───────────
+              // Sends the Razorpay-signed payload to the backend for HMAC verification,
+              // wallet credit, and escrow lock in a single round-trip. This is the
+              // fast-path that works in both dev (no webhook) and production.
+              try {
+                const verifyRes = await axios.post(
+                  `/api/deeds/${deedData.id}/verify-payment`,
+                  {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                  },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                if (verifyRes.data.success) {
+                  toast.success('Payment successful! Escrow funded.', { id: 'verify-payment' });
+                  setShowFundingModal(false);
+                  setShowSuccess(true);
+                  return; // Done — no polling needed.
+                }
+              } catch (verifyErr) {
+                // verify-payment failed (network error, 500, etc.) — fall through to
+                // webhook polling. The payment is still captured; the webhook may still
+                // credit the wallet and fund the deed asynchronously.
+                console.warn('Direct verify-payment failed, falling back to webhook polling:', verifyErr.message);
+                toast.loading('Payment received! Finishing setup...', { id: 'verify-payment' });
+              }
+
+              // ── Fallback Path: Webhook polling ───────────────────────────────
+              // Polls the deed status every 3s for up to 60s waiting for the Razorpay
+              // webhook to arrive and advance the deed from DRAFT → PENDING_SELLER.
+              // IMPORTANT: on timeout, shows an honest error — NEVER shows success.
               let attempts = 0;
+              const MAX_ATTEMPTS = 20;
               const pollInterval = setInterval(async () => {
                 attempts++;
                 try {
                   const checkRes = await axios.get(`/api/deeds/${deedData.id}`, { headers: { Authorization: `Bearer ${token}` } });
-                  if (checkRes.data.data?.status && checkRes.data.data?.status !== 'DRAFT' || attempts >= 20) {
+                  const status = checkRes.data.data?.status;
+
+                  if (status && status !== 'DRAFT') {
+                    // ✅ Backend confirmed — deed was actually funded by the webhook.
                     clearInterval(pollInterval);
                     toast.success('Payment successful! Escrow funded.', { id: 'verify-payment' });
                     setShowFundingModal(false);
                     setShowSuccess(true);
+                  } else if (attempts >= MAX_ATTEMPTS) {
+                    // ⏱️ Timeout — do NOT show "Deed Secured!". The deed is still DRAFT.
+                    // Show an honest pending state and let the user check their dashboard.
+                    clearInterval(pollInterval);
+                    toast.error(
+                      'Payment received but escrow setup is taking longer than expected. Check your dashboard — your deed will appear once confirmed.',
+                      { id: 'verify-payment', duration: 8000 }
+                    );
+                    setShowFundingModal(false);
+                    navigate('/buyer/dashboard');
                   }
                 } catch (pollErr) {
-                  if (attempts >= 20) {
+                  console.error('Polling error:', pollErr);
+                  if (attempts >= MAX_ATTEMPTS) {
                     clearInterval(pollInterval);
+                    toast.error(
+                      'Payment received but we could not confirm deed status. Please check your dashboard.',
+                      { id: 'verify-payment', duration: 8000 }
+                    );
                     setShowFundingModal(false);
-                    setShowSuccess(true);
+                    navigate('/buyer/dashboard');
                   }
                 }
               }, 3000);
-            } catch (err) { toast.error('Verification failed.', { id: 'verify-payment' }); }
+            } catch (err) {
+              toast.error(
+                err.response?.data?.message || 'Payment verification failed. Your payment is safe — please check your dashboard.',
+                { id: 'verify-payment' }
+              );
+            }
           },
           prefill: { name: buyerData?.firstName ? `${buyerData.firstName} ${buyerData.lastName}` : '', email: buyerData?.email || '', contact: buyerData?.phone || '' },
           theme: { color: '#4f46e5' }
@@ -241,8 +298,11 @@ export default function NewDeedPage() {
         rzp.on('payment.failed', function (res) { toast.error('Payment failed: ' + res.error.description); });
         rzp.open();
       }
-    } catch (error) { toast.error(error.response?.data?.message || 'Payment initialization failed.'); } 
-    finally { setFundingLoading(false); }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Payment initialization failed.');
+    } finally {
+      setFundingLoading(false);
+    }
   };
 
   const timeAgo = (date) => {

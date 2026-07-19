@@ -89,15 +89,32 @@ class DeedService {
   // ── FUND DEED ─────────────────────────────────────────────────────────────
 
   async fundDeed(deedId, buyerId) {
-    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
-    if (!deed || deed.buyerId !== buyerId) throw new Error("DEED_NOT_FOUND");
-    if (deed.status !== "DRAFT") throw new Error("DEED_NOT_IN_DRAFT_STATE");
+    // Pre-flight: verify existence before acquiring the lock.
+    // These checks run outside the transaction for a fast-fail path.
+    const deedPre = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deedPre || deedPre.buyerId !== buyerId) throw new Error("DEED_NOT_FOUND");
 
     const wallet = await prisma.wallet.findUnique({ where: { userId: buyerId } });
     if (!wallet) throw new Error("WALLET_NOT_FOUND");
 
     await prisma.$transaction(async (tx) => {
-      // Subphase A: Atomic decrement with guard condition
+      // ── Concurrency Lock ────────────────────────────────────────────────────
+      // Lock the wallet row before re-reading the deed status. This serialises
+      // concurrent fundDeed calls (e.g. verify-payment + webhook arriving within
+      // the same millisecond) so only one can proceed to the balance decrement.
+      await tx.$queryRaw`SELECT id FROM "Wallet" WHERE id = ${wallet.id} FOR UPDATE`;
+
+      // ── Re-read Deed Status Inside the Lock ─────────────────────────────────
+      // TOCTOU fix: the deed status check outside the transaction is a fast-fail
+      // optimisation only. The authoritative check must happen inside the lock so
+      // a concurrent caller that already set the deed to PENDING_SELLER is visible
+      // to us. Without this, both callers could pass the outside check (both see
+      // DRAFT), then both lock escrow and double-debit the wallet.
+      const deed = await tx.deed.findUnique({ where: { id: deedId } });
+      if (!deed || deed.buyerId !== buyerId) throw new Error("DEED_NOT_FOUND");
+      if (deed.status !== "DRAFT") throw new Error("DEED_NOT_IN_DRAFT_STATE");
+
+      // ── Atomic Balance Decrement with Sufficiency Guard ──────────────────────
       const updateResult = await tx.wallet.updateMany({
         where: {
           id: wallet.id,

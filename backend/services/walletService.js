@@ -177,47 +177,33 @@ class WalletService {
       return await prisma.$transaction(async (tx) => {
         const wallet = await tx.wallet.findUnique({ where: { userId } });
         if (!wallet) throw new Error('Wallet not found');
-
-        const updateResult = await tx.wallet.updateMany({
-          where: { id: wallet.id },
-          data: { balance: { increment: amount } }
-        });
         
-        if (updateResult.count === 0) throw new Error('Wallet not found during top-up');
+        // 1. Acquire row-level lock on the wallet
+        await tx.$queryRaw`SELECT id FROM "Wallet" WHERE id = ${wallet.id} FOR UPDATE`;
 
-        // Phase 1: Zero-fee top-ups
-        const fee = 0;
-        const netAmount = amount;
+        // 2. Check for existing successful transaction
+        if (razorpayOrderId) {
+          const existingSuccess = await tx.walletTransaction.findFirst({
+            where: { walletId: wallet.id, razorpayOrderId, status: 'SUCCESS' }
+          });
+          if (existingSuccess) return existingSuccess;
+        }
 
+        // 3. Handle INITIATED -> SUCCESS upgrade or create new
         let transaction;
-        
-        // If a razorpayOrderId is provided, check if we have an INITIATED transaction to upgrade
         if (razorpayOrderId) {
           const existingInitiated = await tx.walletTransaction.findFirst({
-            where: {
-              walletId: wallet.id,
-              category: 'TOP_UP',
-              status: 'INITIATED',
-              razorpayOrderId: razorpayOrderId
-            }
+            where: { walletId: wallet.id, category: 'TOP_UP', status: 'INITIATED', razorpayOrderId }
           });
-          
+
           if (existingInitiated) {
             transaction = await tx.walletTransaction.update({
               where: { id: existingInitiated.id },
-              data: {
-                status: 'SUCCESS',
-                metadata: { paymentMethod, topUpDate: new Date() },
-                // Just in case amount changed or was unrecorded
-                amount,
-                fee,
-                netAmount
-              }
+              data: { status: 'SUCCESS', metadata: { paymentMethod, topUpDate: new Date() } }
             });
           }
         }
-        
-        // If no INITIATED transaction was found, create a new SUCCESS one
+
         if (!transaction) {
           transaction = await tx.walletTransaction.create({
             data: {
@@ -229,14 +215,20 @@ class WalletService {
               description: `Top-up via ${paymentMethod}`,
               reference,
               razorpayOrderId,
-              fee,
-              netAmount,
+              fee: 0,
+              netAmount: amount,
               status: 'SUCCESS',
               metadata: { paymentMethod, topUpDate: new Date() }
             }
           });
         }
-        
+
+        // 4. Update balance
+        await tx.wallet.update({
+          where: { id: wallet.id },
+          data: { balance: { increment: amount } }
+        });
+
         return transaction;
       });
     } catch (error) {

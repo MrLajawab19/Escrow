@@ -1,6 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const deedService = require("../services/deedService");
+const walletService = require("../services/walletService");
+
 exports.createDeed = async (req, res) => {
   try {
     const deed = await deedService.createDeed(req.user.id, req.body);
@@ -18,11 +20,72 @@ exports.fundDeed = async (req, res) => {
 };
 
 exports.verifyPayment = async (req, res) => {
-  return res.status(400).json({ 
-    success: false, 
-    message: "Direct payment verification is disabled. Payments are processed asynchronously via webhooks." 
-  });
+  try {
+    const deedId = req.params.id;
+    const buyerId = req.user.id;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+      return res.status(400).json({ success: false, message: "Missing payment verification fields." });
+    }
+
+    const deed = await prisma.deed.findUnique({ where: { id: deedId } });
+    if (!deed || deed.buyerId !== buyerId) {
+      return res.status(403).json({ success: false, message: "Unauthorized." });
+    }
+
+    // ── Idempotency Guard ────────────────────────────────────────────────────
+    // If the deed is already funded (webhook may have beaten the client call),
+    // return success immediately without re-processing the payment.
+    if (deed.status !== "DRAFT") {
+      return res.status(200).json({
+        success: true,
+        message: "Payment already confirmed.",
+        data: deed
+      });
+    }
+
+    // ── Server-Side HMAC Verification ────────────────────────────────────────
+    // Standard Razorpay client-side payment verification:
+    // HMAC-SHA256(razorpay_order_id + "|" + razorpay_payment_id, RAZORPAY_KEY_SECRET)
+    // Note: uses RAZORPAY_KEY_SECRET (the API secret), NOT the RAZORPAY_WEBHOOK_SECRET —
+    // these are intentionally different keys serving different verification paths.
+    const crypto = require("crypto");
+    const generated_signature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest("hex");
+
+    if (generated_signature !== razorpay_signature) {
+      // No debug fields — do not expose signatures or internal values to the caller.
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification failed: invalid signature."
+      });
+    }
+
+    // ── Synchronous Wallet Credit + Escrow Lock ──────────────────────────────
+    // Both operations are idempotent (topUpWallet has a SUCCESS-tx guard;
+    // fundDeed has a DRAFT-status guard re-checked inside the lock).
+    await walletService.topUpWallet(buyerId, deed.amount, 'Razorpay', deedId, razorpay_order_id);
+    await deedService.fundDeed(deedId, buyerId);
+
+    const updatedDeed = await prisma.deed.findUnique({ where: { id: deedId } });
+    return res.status(200).json({
+      success: true,
+      message: "Payment verified and escrow funded.",
+      data: updatedDeed
+    });
+  } catch (error) {
+    // No stack trace in response — log server-side only.
+    console.error("verifyPayment error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Payment verification failed. Your payment is safe — please check your dashboard."
+    });
+  }
 };
+
 
 exports.acceptDeed = async (req, res) => {
   try {

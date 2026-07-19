@@ -99,18 +99,26 @@ const handleRazorpayWebhook = async (req, res) => {
              await deedService.fundDeed(targetDeedId, userId);
              console.log(`JIT Funding Successful: Deed ${targetDeedId} locked.`);
           } catch (fundError) {
-             console.error(`JIT Funding Failed for Deed ${targetDeedId}, but money is safe in wallet. Error:`, fundError.message);
-             // Notify the buyer so they aren't left in the dark
-             const notificationService = require('../services/notificationService');
-             await notificationService.createNotification({
-                userId,
-                userRole: 'buyer',
-                type: 'WALLET_UPDATE',
-                title: 'Wallet Topped Up, but Deed Funding Failed',
-                message: `Your wallet was successfully topped up with ₹${amountPaise / 100}, but we couldn't automatically fund your deed. You can fund it manually from your dashboard. Reason: ${fundError.message}`,
-                link: '/buyer-dashboard'
-             }).catch(err => console.error('Failed to send notification:', err.message));
-          }
+             // DEED_NOT_IN_DRAFT_STATE means verify-payment already funded this deed — the
+             // race resolved cleanly. The user's deed IS funded. Log it but do NOT send a
+             // failure notification; the user already saw "Deed Secured!" from the primary path.
+             if (fundError.message === 'DEED_NOT_IN_DRAFT_STATE') {
+               console.log(`JIT Funding: Deed ${targetDeedId} already funded (verify-payment won the race). Webhook no-op — correct.`);
+             } else {
+               // Genuine failure: wallet was credited but deed funding itself failed.
+               // Money is safe in wallet; user needs to know to fund manually.
+               console.error(`JIT Funding Failed for Deed ${targetDeedId}, but money is safe in wallet. Error:`, fundError.message);
+               const notificationService = require('../services/notificationService');
+               await notificationService.createNotification({
+                  userId,
+                  userRole: 'buyer',
+                  type: 'WALLET_UPDATE',
+                  title: 'Wallet Topped Up, but Deed Funding Failed',
+                  message: `Your wallet was successfully topped up with ₹${amountPaise / 100}, but we couldn't automatically fund your deed. You can fund it manually from your dashboard.`,
+                  link: '/buyer-dashboard'
+               }).catch(err => console.error('Failed to send notification:', err.message));
+             }
+
         }
       }
     } else if (eventName === 'payout.processed') {
