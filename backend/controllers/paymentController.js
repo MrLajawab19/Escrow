@@ -117,8 +117,8 @@ const handleRazorpayWebhook = async (req, res) => {
                   message: `Your wallet was successfully topped up with ₹${amountPaise / 100}, but we couldn't automatically fund your deed. You can fund it manually from your dashboard.`,
                   link: '/buyer-dashboard'
                }).catch(err => console.error('Failed to send notification:', err.message));
-             }
-
+              }
+           }
         }
       }
     } else if (eventName === 'payout.processed') {
