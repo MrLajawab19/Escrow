@@ -70,7 +70,7 @@ class EmailService {
   static async sendOrderFundedEmail(user, order) {
     return this.sendEmail({
       to: user.email,
-      subject: `Order Funded: ${order.scopeBox?.title || 'Your Order'}`,
+      subject: `Order Funded: ${order.title || order.scopeBox?.title || 'Your Order'}`,
       title: 'Funds Secured in Escrow! 🎉',
       content: `
         <p>Great news! The buyer has funded the escrow for the order <strong>#${order.id}</strong>.</p>
@@ -84,7 +84,7 @@ class EmailService {
   static async sendDeliverySubmittedEmail(user, order) {
     return this.sendEmail({
       to: user.email,
-      subject: `Delivery Received: ${order.scopeBox?.title || 'Your Order'}`,
+      subject: `Delivery Received: ${order.title || order.scopeBox?.title || 'Your Order'}`,
       title: 'Your Delivery is Ready! 📦',
       content: `
         <p>The seller has submitted the final deliverables for order <strong>#${order.id}</strong>.</p>

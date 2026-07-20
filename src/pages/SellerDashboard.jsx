@@ -293,7 +293,7 @@ const SellerDashboard = () => {
   const totalOrders = orders.length;
   const inProgress = orders.filter(o => ['IN_PROGRESS', 'ACCEPTED'].includes(o.status)).length;
   const pendingReview = orders.filter(o => o.status === 'SUBMITTED').length;
-  const totalEarnings = orders.filter(o => !['REJECTED', 'CANCELLED', 'REFUNDED', 'PLACED'].includes(o.status)).reduce((sum, o) => sum + (o.scopeBox?.price || 0), 0);
+  const totalEarnings = orders.filter(o => !['REJECTED', 'CANCELLED', 'REFUNDED', 'PLACED'].includes(o.status)).reduce((sum, o) => sum + (o.amount || o.scopeBox?.price || 0), 0);
 
   // Render tab content
   const renderContent = () => {
@@ -487,15 +487,15 @@ const SellerDashboard = () => {
                   <div key={order.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-5 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all duration-200">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                       <div className="flex-1">
-                        <div className="font-semibold text-navy-900 font-inter mb-1">{order.scopeBox?.title || 'Untitled Order'}</div>
+                        <div className="font-semibold text-navy-900 font-inter mb-1">{order.title || order.scopeBox?.title || 'Untitled Order'}</div>
                         <div className="text-sm text-neutral-500 font-inter mb-2">From: {order.buyerName || 'Unknown Buyer'}</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                          <div><span className="text-neutral-400 font-inter">Deadline: </span><span className="font-medium text-navy-900 font-inter">{order.scopeBox?.deadline ? new Date(order.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
-                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-navy-900 font-inter">{formatCurrency(order.scopeBox?.price || 0, order.currency || 'INR')}</span></div>
+                          <div><span className="text-neutral-400 font-inter">Deadline: </span><span className="font-medium text-navy-900 font-inter">{(order.deadline || order.scopeBox?.deadline) ? new Date(order.deadline || order.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
+                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-navy-900 font-inter">{formatCurrency(order.amount || order.scopeBox?.price || 0, order.currency || 'INR')}</span></div>
                           <div><span className="text-neutral-400 font-inter">Platform: </span><span className="font-medium text-navy-900 font-inter">{order.platform || 'N/A'}</span></div>
                         </div>
-                        {order.scopeBox?.description && (
-                          <p className="text-sm text-neutral-500 font-inter mt-2 line-clamp-2">{order.scopeBox.description.substring(0, 100)}...</p>
+                        {(order.description || order.scopeBox?.description) && (
+                          <p className="text-sm text-neutral-500 font-inter mt-2 line-clamp-2">{(order.description || order.scopeBox?.description).substring(0, 100)}...</p>
                         )}
                       </div>
                       <button
@@ -522,25 +522,25 @@ const SellerDashboard = () => {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter">Title</span>
-                <span className="font-semibold text-navy-900 font-inter text-right">{scopeBoxOrder.scopeBox?.title}</span>
+                <span className="font-semibold text-navy-900 font-inter text-right">{scopeBoxOrder.title || scopeBoxOrder.scopeBox?.title}</span>
               </div>
               <div className="py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter block mb-1">Description</span>
-                <p className="text-navy-900 font-inter">{scopeBoxOrder.scopeBox?.description}</p>
+                <p className="text-navy-900 font-inter">{scopeBoxOrder.description || scopeBoxOrder.scopeBox?.description}</p>
               </div>
               <div className="py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter block mb-1">Deliverables</span>
                 <ul className="list-disc ml-4 text-navy-900 font-inter space-y-1">
-                  {(scopeBoxOrder.scopeBox?.deliverables || []).map((d, i) => <li key={i}>{d}</li>)}
+                  {(scopeBoxOrder.deliverableFormats?.length > 0 ? scopeBoxOrder.deliverableFormats : scopeBoxOrder.scopeBox?.deliverables || []).map((d, i) => <li key={i}>{d}</li>)}
                 </ul>
               </div>
               <div className="flex justify-between py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter">Deadline</span>
-                <span className="font-semibold text-navy-900 font-inter">{scopeBoxOrder.scopeBox?.deadline ? new Date(scopeBoxOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span>
+                <span className="font-semibold text-navy-900 font-inter">{(scopeBoxOrder.deadline || scopeBoxOrder.scopeBox?.deadline) ? new Date(scopeBoxOrder.deadline || scopeBoxOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-neutral-100">
                 <span className="font-medium text-neutral-500 font-inter">Price</span>
-                <span className="font-bold text-navy-900 font-inter">{formatCurrency(scopeBoxOrder.scopeBox?.price || 0, scopeBoxOrder.currency || 'INR')}</span>
+                <span className="font-bold text-navy-900 font-inter">{formatCurrency(scopeBoxOrder.amount || scopeBoxOrder.scopeBox?.price || 0, scopeBoxOrder.currency || 'INR')}</span>
               </div>
               {scopeBoxOrder.scopeBox?.attachments?.length > 0 && (
                 <div className="py-2">
@@ -578,7 +578,7 @@ const SellerDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative mx-4">
             <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setSelectedOrder(null)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Order Details — {selectedOrder.scopeBox?.title}</h2>
+            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Order Details — {selectedOrder.title || selectedOrder.scopeBox?.title}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-base font-semibold mb-3 text-navy-900 font-inter">Order Information</h3>
@@ -592,19 +592,19 @@ const SellerDashboard = () => {
                             'bg-neutral-100 text-neutral-600 border border-neutral-200'
                       }`}>{selectedOrder.status.replace(/_/g, ' ')}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-navy-900 font-inter">{formatCurrency(selectedOrder.scopeBox?.price || 0, selectedOrder.currency || 'INR')}</span></div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Deadline</span><span className="font-medium text-navy-900 font-inter">{selectedOrder.scopeBox?.deadline ? new Date(selectedOrder.scopeBox.deadline).toLocaleDateString() : 'No deadline'}</span></div>
+                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-navy-900 font-inter">{formatCurrency(selectedOrder.amount || selectedOrder.scopeBox?.price || 0, selectedOrder.currency || 'INR')}</span></div>
+                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Deadline</span><span className="font-medium text-navy-900 font-inter">{(selectedOrder.deadline || selectedOrder.scopeBox?.deadline) ? new Date(selectedOrder.deadline || selectedOrder.scopeBox.deadline).toLocaleDateString() : 'No deadline'}</span></div>
                   <div className="flex justify-between py-1.5"><span className="text-neutral-500 font-inter">Updated</span><span className="font-medium text-navy-900 font-inter">{new Date(selectedOrder.updatedAt).toLocaleString()}</span></div>
                 </div>
               </div>
               <div>
                 <h3 className="text-base font-semibold mb-3 text-navy-900 font-inter">Scope Details</h3>
                 <div className="space-y-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl p-4">
-                  <div className="py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Description</span><p className="mt-1 text-navy-900 font-inter leading-relaxed">{selectedOrder.scopeBox?.description}</p></div>
+                  <div className="py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Description</span><p className="mt-1 text-navy-900 font-inter leading-relaxed">{selectedOrder.description || selectedOrder.scopeBox?.description}</p></div>
                   <div className="py-1.5">
                     <span className="text-neutral-500 font-inter">Deliverables</span>
                     <ul className="mt-1 space-y-1">
-                      {selectedOrder.scopeBox?.deliverables?.map((item, i) => (
+                      {(selectedOrder.deliverableFormats?.length > 0 ? selectedOrder.deliverableFormats : selectedOrder.scopeBox?.deliverables || []).map((item, i) => (
                         <li key={i} className="text-sm text-navy-900 font-inter flex items-start gap-1.5"><span className="text-indigo-600 mt-0.5">•</span>{item}</li>
                       ))}
                     </ul>
@@ -643,8 +643,8 @@ const SellerDashboard = () => {
               <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-5">
                 <h3 className="font-semibold text-navy-900 mb-4 font-inter text-sm uppercase tracking-wide">Original Scope Box</h3>
                 <div className="space-y-2 text-sm">
-                  <div><span className="font-medium text-neutral-500 font-inter">Title: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.title}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Description: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.description}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Title: </span><span className="text-navy-900 font-inter">{requestChangesOrder.title || requestChangesOrder.scopeBox?.title}</span></div>
+                  <div><span className="font-medium text-neutral-500 font-inter">Description: </span><span className="text-navy-900 font-inter">{requestChangesOrder.description || requestChangesOrder.scopeBox?.description}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Product Type: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.productType}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Price: </span><span className="text-navy-900 font-inter font-bold">{formatCurrency(requestChangesOrder.scopeBox?.price || 0, requestChangesOrder.currency || 'INR')}</span></div>
                   <div><span className="font-medium text-neutral-500 font-inter">Deadline: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.deadline ? new Date(requestChangesOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>

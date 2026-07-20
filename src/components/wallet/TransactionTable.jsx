@@ -21,10 +21,15 @@ const TransactionRow = ({ transaction, formatCurrency }) => {
     switch(status) {
       case 'SUCCESS': return <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-100">Success</span>;
       case 'PENDING': return <span className="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-lg border border-amber-100">Pending</span>;
+      // INITIATED = placeholder created when a Razorpay order was opened but payment
+      // has not yet been confirmed by either verify-payment or webhook. Distinct from
+      // PENDING (which is used for withdrawals awaiting admin action).
+      case 'INITIATED': return <span className="px-2.5 py-1 bg-sky-50 text-sky-700 text-xs font-bold rounded-lg border border-sky-100">Processing…</span>;
       case 'FAILED': return <span className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-lg border border-red-100">Failed</span>;
       default: return <span className="px-2.5 py-1 bg-neutral-100 text-neutral-700 text-xs font-bold rounded-lg border border-neutral-200">{status}</span>;
     }
   };
+
 
   return (
     <tr className="border-b border-neutral-100 last:border-none hover:bg-neutral-50/50 transition-colors group">
@@ -65,7 +70,7 @@ const TransactionRow = ({ transaction, formatCurrency }) => {
 
       {/* Amount & Fee */}
       <td className="py-4 px-4 text-right">
-        <p className={`text-sm font-black ${isCredit ? 'text-emerald-600' : 'text-navy-900'}`}>
+        <p className={`text-sm font-black ${isCredit && transaction.status === 'SUCCESS' ? 'text-emerald-600' : 'text-neutral-500'}`}>
           {isCredit ? '+' : '-'}{formatCurrency(transaction.netAmount || 0, transaction.currency || 'INR')}
         </p>
         {transaction.fee > 0 && (
@@ -74,6 +79,7 @@ const TransactionRow = ({ transaction, formatCurrency }) => {
           </p>
         )}
       </td>
+
 
       {/* Status */}
       <td className="py-4 pr-6 text-right">

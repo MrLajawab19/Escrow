@@ -17,7 +17,12 @@ const RecentTransactions = ({ userId, onViewAll }) => {
       const token = localStorage.getItem('buyerToken');
       if (!token) return;
       const res = await axios.get('/api/wallet/transactions', {
-        params: { limit: 3, offset: 0 },
+        // Only show settled transactions in the dashboard summary widget.
+        // INITIATED transactions (payment started but not confirmed) are not
+        // "real" activity — showing them as credits is a trust-breaking display
+        // bug. The full Wallet & Ledger page fetches without this filter so
+        // INITIATED items appear there with a clear status badge.
+        params: { limit: 3, offset: 0, status: 'SUCCESS' },
         headers: { Authorization: `Bearer ${token}` },
       });
       setTransactions(res.data.data?.transactions || []);
@@ -27,6 +32,7 @@ const RecentTransactions = ({ userId, onViewAll }) => {
       setLoading(false);
     }
   };
+
 
   const getIcon = (type) => {
     if (type === 'CREDIT') {

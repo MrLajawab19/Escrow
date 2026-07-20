@@ -27,7 +27,8 @@ function adminAuth(req, res, next) {
 function computeFlag(dispute, order) {
   if (!order) return { flag: 'MANUAL', riskScore: 30, riskReason: 'Standard dispute' };
   const scopeBox = order.scopeBox && typeof order.scopeBox === 'object' ? order.scopeBox : {};
-  const price = parseInt(scopeBox.price || 0, 10);
+  // order.amount is in paise (first-class column for new-flow deeds); scopeBox.price is legacy.
+  const price = order.amount ? Math.round(order.amount / 100) : parseInt(scopeBox.price || 0, 10);
   const isAfterDelivery = order.status === 'SUBMITTED' || order.status === 'APPROVED';
   const isHighValue = price > 30000;
 

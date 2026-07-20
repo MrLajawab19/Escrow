@@ -68,6 +68,60 @@ const PageSkeleton = () => (
   </div>
 );
 
+// ─── Invite Link Banner (Bug 3 fix) ───────────────────────────────────────────
+// Shown only to the buyer while status === PENDING_SELLER. Once the seller joins
+// and the status advances, this banner is never rendered — the conditional in
+// DeedDetails ensures it. Extracting to its own component is required so that
+// useState is called unconditionally at the top level of a proper component.
+const InviteLinkBanner = ({ deed }) => {
+  const [copied, setCopied] = React.useState(false);
+  const inviteUrl = `${window.location.origin}/invite/${deed.inviteToken}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center">
+          <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        </div>
+        <h3 className="text-sm font-bold text-indigo-900 font-inter">Awaiting Seller — Share this Invite Link</h3>
+        <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full border border-amber-200 uppercase tracking-wider font-inter">Pending Seller</span>
+      </div>
+      <p className="text-xs text-indigo-700 font-inter mb-3">
+        Send this link to your seller to join the escrow. The link expires on{' '}
+        {new Date(deed.inviteExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.
+      </p>
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0 bg-white border border-indigo-200 rounded-xl px-3 py-2">
+          <p className="text-xs font-mono text-indigo-800 truncate">{inviteUrl}</p>
+        </div>
+        <button
+          onClick={handleCopy}
+          className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold font-inter transition-all ${
+            copied
+              ? 'bg-emerald-500 text-white border border-emerald-500'
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-600'
+          }`}
+        >
+          {copied ? (
+            <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Copied!</>
+          ) : (
+            <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy Link</>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const DeedDetails = () => {
   const { id } = useParams();
@@ -146,7 +200,17 @@ const DeedDetails = () => {
   }, [deed, userType, buyerStatusTick]);
 
   const statusCfg = STATUS_CONFIG[buyerBadgeKey] || STATUS_CONFIG[deed?.status] || STATUS_CONFIG.PLACED;
-  const timeLeft = timeRemaining(deed?.scopeBox?.deadline);
+  // Field resolution: first-class Deed columns are authoritative for all deeds created via
+  // the 4-stage NewDeedPage flow. scopeBox fallback preserves legacy deed compatibility.
+  const deedTitle       = deed?.title       || deed?.scopeBox?.title;
+  const deedAmount      = deed?.amount      ?? deed?.scopeBox?.price ?? 0;
+  const deedDescription = deed?.description || deed?.scopeBox?.description;
+  const deedDeadline    = deed?.deadline    || deed?.scopeBox?.deadline;
+  const deedDeliverables = deed?.deliverableFormats?.length > 0
+    ? deed.deliverableFormats
+    : deed?.scopeBox?.deliverables || [];
+
+  const timeLeft = timeRemaining(deedDeadline);
   const dashboardPath = userType === 'buyer' ? '/buyer/dashboard' : '/seller/dashboard';
 
   return (
@@ -204,7 +268,7 @@ const DeedDetails = () => {
                     )}
                   </div>
                   <h1 className="text-xl sm:text-2xl font-black text-[#0A2540] font-inter leading-tight">
-                    {deed.scopeBox?.title || 'Untitled Order'}
+                    {deedTitle || 'Untitled Order'}
                   </h1>
                   <p className="text-xs text-neutral-400 font-inter mt-1 font-mono">
                     Order ID: {deed.id}
@@ -212,31 +276,36 @@ const DeedDetails = () => {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-3xl font-black text-[#0A2540] font-inter">
-                    {formatCurrency(deed.scopeBox?.price || 0, deed.currency || 'INR')}
+                    {formatCurrency(deedAmount, deed.currency || 'INR')}
                   </p>
                   <p className="text-xs text-neutral-400 font-inter mt-0.5">Escrow Amount</p>
                 </div>
               </div>
             </div>
 
+            {/* ── INVITE LINK BANNER (Bug 3) ─ buyer only, PENDING_SELLER only ── */}
+            {userType === 'buyer' && deed.status === 'PENDING_SELLER' && deed.inviteToken && (
+              <InviteLinkBanner deed={deed} />
+            )}
+
             {/* ── DEED ACTIONS ──────────────────────────────────────────────── */}
             <div className="flex flex-wrap gap-3 mb-6">
               <Link 
-                to={`/${userType}/deed/${deed.scopeBox?.deedId || deed.id}/milestones`}
+                to={`/${userType}/deed/${deed.id}/milestones`}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-medium font-inter hover:bg-indigo-100 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 View Milestones
               </Link>
               <Link 
-                to={`/${userType}/deed/${deed.scopeBox?.deedId || deed.id}/sign`}
+                to={`/${userType}/deed/${deed.id}/sign`}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-medium font-inter hover:bg-purple-100 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 Digital Signature
               </Link>
               <Link 
-                to={`/${userType}/deed/${deed.scopeBox?.deedId || deed.id}/audit`}
+                to={`/${userType}/deed/${deed.id}/audit`}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium font-inter hover:bg-slate-200 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -276,7 +345,7 @@ const DeedDetails = () => {
                 {
                   icon: '⏰',
                   label: 'Deadline',
-                  value: formatDate(deed.scopeBox?.deadline),
+                  value: formatDate(deedDeadline),
                   sub: timeLeft?.label,
                   cls: timeLeft?.urgent ? 'border-red-200 bg-red-50/30' : 'border-neutral-200',
                 },
@@ -318,16 +387,16 @@ const DeedDetails = () => {
               </div>
 
               <p className="text-sm text-neutral-600 font-inter leading-relaxed bg-neutral-50 p-4 rounded-xl border border-neutral-100 mb-4">
-                {deed.scopeBox?.description || 'No description provided.'}
+                {deedDescription || 'No description provided.'}
               </p>
 
-              {deed.scopeBox?.deliverables?.length > 0 && (
+              {deedDeliverables.length > 0 && (
                 <>
                   <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-2">
                     Deliverables
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {deed.scopeBox.deliverables.map((d, i) => (
+                    {deedDeliverables.map((d, i) => (
                       <span key={i}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-100 font-inter">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
