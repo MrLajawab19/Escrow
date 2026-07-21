@@ -62,7 +62,7 @@ function DisputesTab({
           >
             <option value="">All Statuses</option>
             <option value="OPEN">Open</option>
-            <option value="CHALLENGE">Challenge</option>
+            <option value="CHALLENGE_PHASE">Challenge</option>
             <option value="ESCALATED">Escalated</option>
             <option value="RESOLVED">Resolved</option>
           </select>
@@ -105,18 +105,18 @@ function DisputesTab({
             return (
               <tr key={d.id} className="hover:bg-slate-50/80 transition-colors group">
                 <td className="px-6 py-4">
-                  <p className="text-sm font-bold text-slate-800 font-mono">#{d.order?.id?.slice(0,8) || 'N/A'}</p>
+                  <p className="text-sm font-bold text-slate-800 font-mono">#{d.deed?.id?.slice(0,8) || 'N/A'}</p>
                   <p className="text-xs text-slate-400 mt-1 font-medium">{fmtDate(d.createdAt)}</p>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col gap-1">
                     <p className="text-sm text-slate-700 flex items-center gap-2">
                       <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-11 text-center">BUYER</span>
-                      <span className="font-medium truncate max-w-[120px]">{d.order?.buyer?.firstName || 'Unknown'}</span>
+                      <span className="font-medium truncate max-w-[120px]">{d.deed?.buyerName || 'Unknown'}</span>
                     </p>
                     <p className="text-sm text-slate-700 flex items-center gap-2">
                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded w-11 text-center">SELLER</span>
-                      <span className="font-medium truncate max-w-[120px]">{d.order?.seller?.firstName || 'Unknown'}</span>
+                      <span className="font-medium truncate max-w-[120px]">{d.deed?.sellerContact || 'Unknown'}</span>
                     </p>
                   </div>
                 </td>
