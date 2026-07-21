@@ -75,7 +75,7 @@ const PageSkeleton = () => (
 // useState is called unconditionally at the top level of a proper component.
 const InviteLinkBanner = ({ deed }) => {
   const [copied, setCopied] = React.useState(false);
-  const inviteUrl = `${window.location.origin}/invite/${deed.inviteToken}`;
+  const inviteUrl = `${window.location.origin}/deed/invite/${deed.inviteToken}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(inviteUrl).then(() => {

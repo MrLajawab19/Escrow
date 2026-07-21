@@ -50,10 +50,10 @@ export default function DeedInvitePage() {
       });
 
       if (response.data.success) {
-        toast.success('Deed accepted successfully! Order created.');
-        // Redirect to order tracking or seller dashboard
-        const orderId = response.data.data.order.id;
-        navigate(`/seller/order/${orderId}`);
+        toast.success('Deed accepted successfully! You are now a party to this deed.');
+        const deedId = response.data.data.deed.id;
+        navigate(`/seller/deed/${deedId}`);
+
       } else {
         toast.error(response.data.message || 'Failed to accept deed.');
       }
