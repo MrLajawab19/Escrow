@@ -32,7 +32,7 @@ const SellerDashboard = () => {
   const [requestChangesOrder, setRequestChangesOrder] = useState(null);
   const [modifiedScopeBox, setModifiedScopeBox] = useState(null);
   const [showMyDisputes, setShowMyDisputes] = useState(false);
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [notification, setNotification] = useState({ isOpen: false, title: '', message: '', type: 'success' });
   const [userId, setUserId] = useState(null);
   const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });
