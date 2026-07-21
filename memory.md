@@ -8,7 +8,7 @@
 
 ## Last Updated
 
-2026-07-21 (session: 7ce56008 — context recovery + verification pass)
+2026-07-21 (session: 7ce56008 — context recovery, task.md/memory.md establishment, KG-9 admin bug fixes)
 
 ---
 
@@ -84,7 +84,9 @@ No secret/signature/stack leakage in HTTP responses.
 ## What Was Actually Fixed (with commit refs)
 
 | Commit | What it fixed |
-|--------|--------------|
+|--------|---------------|
+| `6030b4f` | KG-9: `DisputesTab.jsx` — `CHALLENGE` → `CHALLENGE_PHASE` enum fix (filter was silently broken); `d.order?.` → `d.deed?.` refs fixed (buyer/seller showed N/A); field paths confirmed from `admin.js` L134–140 before writing |
+| `97540fc` | `task.md` + `memory.md` added to project root; 3 investigation script stragglers deleted |
 | `9e444e6` | Missing closing brace in `paymentController.js` catch block — server startup crash |
 | `32cf79f` | Deed detail page reading wrong fields (legacy `scopeBox` JSON vs first-class columns) |
 | `7764b43` | False-success UI bug, TOCTOU race conditions in `topUpWallet`/`fundDeed`, `verifyPayment` endpoint restored + hardened |
@@ -99,21 +101,20 @@ No secret/signature/stack leakage in HTTP responses.
 
 ## Known Gaps / Open Work (see task.md for detail)
 
-1. **`disputeEngine.js` — `scopeBox` subcategory fields** (medium risk):
-   For content-writing and logo-design deeds created via the 4-stage flow, the dispute
-   engine reads `deed.scopeBox.contentWritingSpecific.wordCount` and
-   `deed.scopeBox.logoSpecific.fileFormats` which are never populated by the new flow.
-   Result: disputes on these deed types evaluate with 0 words / [] formats — incorrectly
-   lenient. Needs schema design decision before fixing. See `task.md` for detail.
+See `task.md` KG-1 through KG-10 for full detail. Summary of open items:
 
-2. **Regression test suite** — Tests in `tests/` cover wallet/fee logic but do NOT cover
-   the `NewDeedPage` 4-stage flow, `fundDeed`, or `verifyPayment` end-to-end.
-   The idempotency test (`test-idempotency.js`) passed as of 2026-07-20 but is the only
-   coverage for the TOCTOU fixes.
-
-3. **Webhook unreachability in local dev** — By design. Use `verifyPayment` endpoint
-   for local testing. For staging/prod, configure Razorpay dashboard to point to the
-   Render URL.
+| ID | Risk | Summary |
+|----|------|---------|
+| KG-1 | Medium | `disputeEngine.js` reads `scopeBox.contentWritingSpecific.wordCount`/`logoSpecific.fileFormats` — never populated by 4-stage flow. Schema decision needed. |
+| KG-2 | Low-Med | No E2E tests for `NewDeedPage` 4-stage flow, `fundDeed`, or `verifyPayment`. |
+| KG-3 | Low | `productCategory` field missing on `Deed` schema — dispute engine category branching affected. |
+| KG-4 | — | Physical-goods tracking schema not started (`trackingNumber`, `carrier`, `deliveryConfirmedAt`). |
+| KG-5 | Low | Gemini model version not pinned in `disputeAI.js` — silent upgrade risk. |
+| KG-6 | Medium | No debt collection mechanism for negative wallet balances from dispute penalties. Product decision needed. |
+| KG-7 | — | Deed auto-release cron not implemented. Cron flag stub exists (`2891648`) but no scheduler logic. |
+| KG-8 | — | Per-flag fault UI in admin dispute detail not built. |
+| KG-9 | ✅ | RESOLVED 2026-07-21: stale filter working; enum mismatch + legacy `d.order` refs fixed in `DisputesTab.jsx`. |
+| KG-10 | Low | Wallet UI responsive patterns in code but formal breakpoint verification never done. |
 
 ---
 
