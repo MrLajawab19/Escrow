@@ -5,8 +5,8 @@ const requireKYC = async (req, res, next) => {
   try {
     const amount = req.body.amount;
     
-    // If amount is <= 10000 INR (10,00,000 paise), KYC is not strictly required to proceed
-    if (!amount || amount <= 1000000) {
+    // If amount is <= 10000, KYC is not strictly required to proceed
+    if (!amount || amount <= 10000) {
       return next();
     }
 
