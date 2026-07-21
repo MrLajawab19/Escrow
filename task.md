@@ -376,7 +376,22 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
 
 ---
 
-## Open / Known Gaps
+## Invite Flow Bug Fixes (2026-07-21)
+> Commit `8796dcd`.
+
+- [x] **Bug A — `InviteLinkBanner` wrong URL path** (`DeedDetails.jsx` L78):
+  Generated `/invite/:token` (404) instead of `/deed/invite/:token` (correct route).
+  Every invite link copied from the deed detail page has been broken since the banner
+  was added. `NewDeedPage.jsx` already had the correct path — `DeedDetails.jsx` now matches.
+- [x] **Bug B — Post-accept redirect to `/seller/order/undefined`** (`DeedInvitePage.jsx` L55–56):
+  Used `response.data.data.order.id` but `deedService.sellerJoin` returns `{ deed: updatedDeed }`
+  (no `order` key). Fixed to `response.data.data.deed.id` → navigate to `/seller/deed/:id`
+  (confirmed route `App.jsx` L625).
+- [x] E2E verified manually (2026-07-21): invite banner shows correct URL, invite page loads,
+  post-accept lands at `/seller/deed/:id`, deed shows ACTIVE on both buyer and seller sides.
+
+---
+
 
 - [ ] **KG-1 — `disputeEngine.js` scopeBox subcategory fields (MEDIUM RISK)**
   - `disputeEngine.js` reads `deed.scopeBox.contentWritingSpecific.wordCount` (L99) and

@@ -85,7 +85,8 @@ No secret/signature/stack leakage in HTTP responses.
 
 | Commit | What it fixed |
 |--------|---------------|
-| `6030b4f` | KG-9: `DisputesTab.jsx` — `CHALLENGE` → `CHALLENGE_PHASE` enum fix (filter was silently broken); `d.order?.` → `d.deed?.` refs fixed (buyer/seller showed N/A); field paths confirmed from `admin.js` L134–140 before writing |
+| `8796dcd` | Invite flow Bug A + B: `InviteLinkBanner` `/invite/` → `/deed/invite/` (was 404); post-accept redirect `order.id` → `deed.id`, `/seller/order/undefined` → `/seller/deed/:id`. E2E verified. |
+| `6030b4f` | KG-9: `DisputesTab.jsx` — `CHALLENGE` → `CHALLENGE_PHASE` enum fix; `d.order?.` → `d.deed?.` refs fixed |
 | `97540fc` | `task.md` + `memory.md` added to project root; 3 investigation script stragglers deleted |
 | `9e444e6` | Missing closing brace in `paymentController.js` catch block — server startup crash |
 | `32cf79f` | Deed detail page reading wrong fields (legacy `scopeBox` JSON vs first-class columns) |
