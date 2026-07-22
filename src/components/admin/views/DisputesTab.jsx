@@ -127,7 +127,7 @@ function DisputesTab({
                   <AdminStatusBadge status={d.status} />
                 </td>
                 <td className="px-6 py-4">
-                  <AdminRiskBadge score={d.aiRiskScore} flag={d.flagReason} />
+                  <AdminRiskBadge score={d.riskScore} flag={d.autoFlag} />
                 </td>
                 <td className="px-6 py-4">
                   <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold ${isStale ? 'bg-red-50 text-red-600' : 'text-slate-600'}`}>

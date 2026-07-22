@@ -65,25 +65,26 @@ function ConfidenceBar({ confidence }) {
   );
 }
 
-function FlagCard({ flag }) {
-  const sev = SEV_CONFIG[flag.severity] || SEV_CONFIG.LOW;
+function FlagCard({ flag, rootFaultSide }) {
+  const sev = SEV_CONFIG[flag.type] || SEV_CONFIG.LOW;
+  const label = flag.type || 'Notice';
+  
   return (
     <div className={`flex items-start gap-3 p-3 rounded-xl border ${sev.bg} ${sev.border}`}>
       <span className="text-lg flex-shrink-0">{sev.icon}</span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap mb-0.5">
-          <p className="text-sm font-bold text-neutral-800 font-inter">{flag.label}</p>
+          <p className="text-sm font-bold text-neutral-800 font-inter capitalize">{label.toLowerCase().replace('_', ' ')}</p>
           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border font-inter ${sev.badge}`}>
             {sev.label}
           </span>
-          <span className="text-[10px] font-semibold text-neutral-400 font-inter ml-auto">
-            +{flag.riskPoints} pts
-          </span>
+          {rootFaultSide && (
+            <span className="text-[10px] font-semibold text-neutral-400 font-inter ml-auto">
+              Fault side: <span className="capitalize">{rootFaultSide.toLowerCase()}</span>
+            </span>
+          )}
         </div>
-        <p className="text-xs text-neutral-600 font-inter leading-relaxed">{flag.description}</p>
-        <p className="text-[10px] text-neutral-400 font-inter mt-1">
-          Fault: <span className="font-semibold capitalize">{flag.fault}</span>
-        </p>
+        <p className="text-xs text-neutral-600 font-inter leading-relaxed mt-1">{flag.reason}</p>
       </div>
     </div>
   );
@@ -327,7 +328,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             </div>
           </div>
           <div className="space-y-2">
-            {rf.flags.map((flag, i) => <FlagCard key={i} flag={flag} />)}
+            {rf.flags.map((flag, i) => <FlagCard key={i} flag={flag} rootFaultSide={rf.faultSide} />)}
           </div>
         </div>
       )}
@@ -623,21 +624,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
           </div>
           
           <div className="space-y-2">
-            {rf.flags.map((flag, i) => (
-              <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${SEV_CONFIG[flag.severity]?.bg || 'bg-neutral-50'} ${SEV_CONFIG[flag.severity]?.border || 'border-neutral-200'}`}>
-                <span>{SEV_CONFIG[flag.severity]?.icon || 'ℹ️'}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-bold font-inter">{flag.label}</p>
-                    <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border font-inter ${SEV_CONFIG[flag.severity]?.badge}`}>
-                      {flag.severity}
-                    </span>
-                    <span className="text-[10px] text-neutral-400 font-inter ml-auto">+{flag.riskPoints}pts · {flag.fault}</span>
-                  </div>
-                  <p className="text-xs font-inter leading-relaxed mt-1 opacity-80">{flag.description}</p>
-                </div>
-              </div>
-            ))}
+            {rf.flags.map((flag, i) => <FlagCard key={i} flag={flag} rootFaultSide={rf.faultSide} />)}
           </div>
         </div>
       )}
@@ -653,7 +640,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#0A2540] font-inter">AI Analysis & Recommendation</h3>
-              <p className="text-xs text-neutral-400 font-inter">Powered by xAI Grok</p>
+              <p className="text-xs text-neutral-400 font-inter">Powered by Google Gemini</p>
             </div>
           </div>
           {ai && (
@@ -676,7 +663,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
             </svg>
             <div>
-              <p className="text-sm font-semibold text-neutral-600 font-inter">Grok AI is analyzing the dispute…</p>
+              <p className="text-sm font-semibold text-neutral-600 font-inter">Google Gemini is analyzing the dispute…</p>
               <p className="text-xs text-neutral-400 font-inter">Reviewing order scope, chat logs, delivery, and evidence</p>
             </div>
           </div>
