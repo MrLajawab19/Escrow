@@ -38,6 +38,24 @@ function computeFlag(dispute, order) {
   return { flag: 'MANUAL', riskScore: 25, riskReason: 'Standard dispute' };
 }
 
+function calculateResolutionAmounts(price, buyerPct, disputeStatus = 'NONE') {
+  let disputeRate = 0;
+  if (disputeStatus === 'RESOLVED') disputeRate = 0.01;
+  else if (disputeStatus === 'ESCALATED') disputeRate = 0.02;
+  const sellerBaseRate = 0.025; // 2.5%
+  const disputePenalty = Math.floor(price * disputeRate);
+  const sellerGross = Math.floor(price * ((100 - buyerPct) / 100));
+  const buyerGross = price - sellerGross;
+  let buyerFee = Math.floor(buyerGross * disputeRate);
+  let sellerFee = Math.floor(sellerGross * (sellerBaseRate + disputeRate));
+  if (buyerGross === 0 && disputeRate > 0) buyerFee = disputePenalty;
+  if (sellerGross === 0 && disputeRate > 0) sellerFee = disputePenalty;
+  const buyerNet = buyerGross - buyerFee;
+  const sellerNet = sellerGross - sellerFee;
+  const platformFee = buyerFee + sellerFee;
+  return { buyerGross, sellerGross, buyerFee, sellerFee, buyerNet, sellerNet, platformFee };
+}
+
 // ── GET /api/admin/stats ───────────────────────────────────────────────────────
 
 router.get('/stats', adminAuth, async (req, res) => {
@@ -210,6 +228,31 @@ const getDisputeFull = async (req, res) => {
     const combinedTimeline = [...deedTimeline, ...disputeTimeline]
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
+    const scopeBox = deed?.scopeBox || {};
+    const price = parseInt(deed?.amount ? deed.amount / 100 : scopeBox.price || 0, 10);
+    const feeModelStatus = dispute.status === 'ESCALATED' ? 'ESCALATED' : 'RESOLVED';
+    const releaseSim = calculateResolutionAmounts(price, 0, feeModelStatus);
+    const refundSim = calculateResolutionAmounts(price, 100, feeModelStatus);
+
+    const financial = {
+      escrowAmount: price,
+      platformFee: releaseSim.platformFee,
+      netToSeller: releaseSim.sellerNet,
+      netToBuyer: refundSim.buyerNet,
+      currency: deed?.currency || 'INR',
+      refundScenario: { buyerReceives: refundSim.buyerNet, sellerReceives: refundSim.sellerNet, platformReceives: refundSim.platformFee },
+      releaseScenario: { buyerReceives: releaseSim.buyerNet, sellerReceives: releaseSim.sellerNet, platformReceives: releaseSim.platformFee },
+      partialScenarios: [50, 70, 30].map(pct => {
+        const sim = calculateResolutionAmounts(price, pct, feeModelStatus);
+        return {
+          label: `${pct}% refund to buyer`,
+          buyerReceives: sim.buyerNet,
+          sellerReceives: sim.sellerNet,
+          platformReceives: sim.platformFee,
+        };
+      }),
+    };
+
     return res.json({
       success: true,
       data: {
@@ -224,6 +267,11 @@ const getDisputeFull = async (req, res) => {
         seller: seller ? { id: seller.id, firstName: seller.firstName, lastName: seller.lastName, email: seller.email, businessName: seller.businessName } : null,
         autoFlag, riskScore, riskReason,
         timeline: combinedTimeline,
+        financial,
+        ruleFlags: dispute.ruleFlags,
+        aiAnalysis: dispute.aiAnalysis,
+        evidenceResponses: dispute.evidenceResponses,
+        chatMessages: [],
       },
     });
   } catch (err) {

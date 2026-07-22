@@ -252,7 +252,7 @@ export default function AdminDisputeDetails() {
     );
   }
 
-  const { dispute, order, buyer, seller, financial, ruleFlags: rf, aiAnalysis: ai, evidenceResponses, chatMessages } = data || {};
+  const { dispute, deed: order, buyer, seller, financial, ruleFlags: rf, aiAnalysis: ai, evidenceResponses, chatMessages } = data || {};
   const recCfg = REC_CFG[ai?.recommendation || rf?.autoRecommendation] || REC_CFG.ESCALATE;
 
   return (
