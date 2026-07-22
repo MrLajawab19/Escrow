@@ -46,8 +46,8 @@ function DeedsTab({
                   <p className="text-sm font-bold text-slate-700 leading-snug">{d.title}</p>
                 </div>
               </td>
-              <td className="px-6 py-4 font-mono text-sm font-bold text-slate-600">{d.orderId ? `#${d.orderId.slice(0,8)}` : 'N/A'}</td>
-              <td className="px-6 py-4 text-sm font-black text-slate-800">{fmtCurrency(d.escrowAmount)}</td>
+              <td className="px-6 py-4 font-mono text-sm font-bold text-slate-600">{d.id ? `#${d.id.slice(0,8)}` : 'N/A'}</td>
+              <td className="px-6 py-4 text-sm font-black text-slate-800">{fmtCurrency(d.amount)}</td>
               <td className="px-6 py-4"><AdminStatusBadge status={d.status} /></td>
               <td className="px-6 py-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg w-max">
