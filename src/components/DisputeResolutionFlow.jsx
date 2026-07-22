@@ -170,11 +170,11 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
     setSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append('text', evidenceText);
+      formData.append('rebuttal', evidenceText);
       evidenceFiles.forEach(f => formData.append('files', f));
 
       await axios.post(
-        `/api/disputes/${detail.dispute.id}/submit-evidence`,
+        `/api/disputes/deed/${deedId}/evidence`,
         formData,
         { headers: { ...headers, 'Content-Type': 'multipart/form-data' } }
       );
