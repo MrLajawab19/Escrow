@@ -3,6 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { authenticateAdmin } = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
+const { calculateResolutionAmounts } = require('../controllers/disputeController');
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -36,24 +37,6 @@ function computeFlag(dispute, order) {
   if (isAfterDelivery) return { flag: 'AUTO_FLAGGED', riskScore: 65, riskReason: 'Dispute raised after delivery submitted' };
   if (isHighValue) return { flag: 'AUTO_FLAGGED', riskScore: 55, riskReason: `High-value order (₹${price / 100})` };
   return { flag: 'MANUAL', riskScore: 25, riskReason: 'Standard dispute' };
-}
-
-function calculateResolutionAmounts(price, buyerPct, disputeStatus = 'NONE') {
-  let disputeRate = 0;
-  if (disputeStatus === 'RESOLVED') disputeRate = 0.01;
-  else if (disputeStatus === 'ESCALATED') disputeRate = 0.02;
-  const sellerBaseRate = 0.025; // 2.5%
-  const disputePenalty = Math.floor(price * disputeRate);
-  const sellerGross = Math.floor(price * ((100 - buyerPct) / 100));
-  const buyerGross = price - sellerGross;
-  let buyerFee = Math.floor(buyerGross * disputeRate);
-  let sellerFee = Math.floor(sellerGross * (sellerBaseRate + disputeRate));
-  if (buyerGross === 0 && disputeRate > 0) buyerFee = disputePenalty;
-  if (sellerGross === 0 && disputeRate > 0) sellerFee = disputePenalty;
-  const buyerNet = buyerGross - buyerFee;
-  const sellerNet = sellerGross - sellerFee;
-  const platformFee = buyerFee + sellerFee;
-  return { buyerGross, sellerGross, buyerFee, sellerFee, buyerNet, sellerNet, platformFee };
 }
 
 // ── GET /api/admin/stats ───────────────────────────────────────────────────────

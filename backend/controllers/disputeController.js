@@ -965,4 +965,5 @@ module.exports = {
   triggerAIAnalysis,
   submitEvidenceEvent,
   submitChallengeEvent,
+  calculateResolutionAmounts,
 };
