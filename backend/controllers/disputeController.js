@@ -820,7 +820,6 @@ const submitEvidenceEvent = async (req, res) => {
     })) : [];
     const evidenceUrls = evidenceFiles.map(file => `/uploads/${file.filename}`);
     
-    // 4. Create DisputeEvent
     const newEvent = await prisma.disputeEvent.create({
       data: {
         deedDisputeId: dispute.id,
@@ -831,6 +830,22 @@ const submitEvidenceEvent = async (req, res) => {
           rebuttal: rebuttal || '',
           evidenceUrls,
           isLate
+        }
+      }
+    });
+    
+    // 4.5. Backwards Compatibility: Update the legacy JSON column so the UI recognizes the submission
+    const currentResponses = dispute.evidenceResponses && typeof dispute.evidenceResponses === 'object' ? dispute.evidenceResponses : {};
+    await prisma.deedDispute.update({
+      where: { id: dispute.id },
+      data: {
+        evidenceResponses: {
+          ...currentResponses,
+          [actorRole]: {
+            submittedAt: new Date().toISOString(),
+            rebuttal: rebuttal || '',
+            evidenceUrls
+          }
         }
       }
     });
