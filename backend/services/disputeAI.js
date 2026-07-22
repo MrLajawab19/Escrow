@@ -129,6 +129,11 @@ EXPECTED JSON FORMAT:
         payload
       }
     });
+
+    await prisma.deedDispute.update({
+      where: { id: deedDisputeId },
+      data: { aiAnalysis: payload }
+    });
     
     console.log(`[AI] Successfully generated ${isReAnalysis ? 're-analysis' : 'first-pass'} AI_REPORT for ${deedDisputeId}`);
 

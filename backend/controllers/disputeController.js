@@ -130,7 +130,19 @@ const createDispute = async (req, res) => {
       data: { status: 'DISPUTED' },
     });
 
-    // ── Step 5: (Removed legacy inline AI trigger) ─────────────
+    // ── Step 5: Trigger Notification ─────────────
+    const notificationService = require('../services/notificationService');
+    const targetUserId = raisedBy === 'buyer' ? sellerId : buyerId;
+    const targetRole = raisedBy === 'buyer' ? 'seller' : 'buyer';
+    
+    await notificationService.createNotification({
+      userId: targetUserId,
+      userRole: targetRole,
+      type: 'DISPUTE_RAISED',
+      title: 'Dispute Raised',
+      message: `A dispute was raised against you for order #${deed.id.slice(0, 8)}. You have 48 hours to submit evidence.`,
+      link: `/${targetRole}/deed/${deed.id}`
+    }).catch(err => console.error('Failed to send dispute notification:', err.message));
 
     return res.status(201).json({
       success: true,
@@ -203,37 +215,8 @@ const submitEvidence = async (req, res) => {
     // Re-run AI analysis in background with fresh evidence
     setImmediate(async () => {
       try {
-        const { analyzeDisputeWithAI } = require('../services/disputeAI');
-        const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
-        if (!deed) return;
-        const freshDispute = await prisma.deedDispute.findUnique({ where: { id } });
-        if (!freshDispute) return;
-
-        const aiResult = await analyzeDisputeWithAI({
-          deed,
-          dispute: freshDispute,
-          ruleEngineResult: freshDispute.ruleFlags || {},
-          chatMessages: [],
-        });
-
-        const updatedTimeline = Array.isArray(freshDispute.timeline) ? freshDispute.timeline : [];
-        await prisma.deedDispute.update({
-          where: { id },
-          data: {
-            aiAnalysis: aiResult,
-            timeline: [
-              ...updatedTimeline,
-              {
-                event: 'AI_REANALYZED',
-                by: 'ai',
-                timestamp: new Date().toISOString(),
-                description: `AI re-analysis after ${role} evidence: ${aiResult.recommendation}`,
-                notes: aiResult.reasoning,
-              },
-            ],
-          },
-        });
-        console.log(`[Dispute ${id}] AI re-analysis complete after ${role} evidence`);
+        const { generateAIReport } = require('../services/disputeAI');
+        await generateAIReport(id);
       } catch (e) {
         console.error('[Dispute AI] Re-analysis failed:', e.message);
       }
@@ -467,43 +450,16 @@ const getFullDisputeDetail = async (req, res) => {
 const triggerAIAnalysis = async (req, res) => {
   try {
     const { id } = req.params;
-    const { analyzeDisputeWithAI } = require('../services/disputeAI');
+    const { generateAIReport } = require('../services/disputeAI');
 
     const dispute = await prisma.deedDispute.findUnique({ where: { id } });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
-    const deed = dispute.deedId ? await prisma.deed.findUnique({ where: { id: dispute.deedId } }) : null;
-    if (!deed) {
-      return res.status(404).json({ success: false, message: 'Deed not found' });
-    }
-
-    const aiResult = await analyzeDisputeWithAI({
-      deed,
-      dispute,
-      ruleEngineResult: dispute.ruleFlags || {},
-      chatMessages: [],
-    });
-
-    const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-    const updated = await prisma.deedDispute.update({
-      where: { id },
-      data: {
-        aiAnalysis: aiResult,
-        timeline: [
-          ...currentTimeline,
-          {
-            event: 'AI_REANALYZED',
-            by: req.user?.role || 'admin',
-            timestamp: new Date().toISOString(),
-            description: `AI re-analysis: ${aiResult.recommendation} (${Math.round((aiResult.confidenceScore || 0))} confidence)`,
-            notes: aiResult.reasoning,
-          },
-        ],
-        lastActivity: new Date(),
-      },
-    });
-
-    return res.json({ success: true, data: aiResult, message: 'AI analysis complete' });
+    await generateAIReport(id);
+    
+    // Fetch updated dispute to return the aiAnalysis
+    const updatedDispute = await prisma.deedDispute.findUnique({ where: { id } });
+    return res.json({ success: true, data: updatedDispute.aiAnalysis, message: 'AI analysis complete' });
   } catch (error) {
     console.error('Error triggering AI analysis:', error);
     return res.status(500).json({ success: false, message: 'Failed to run AI analysis' });

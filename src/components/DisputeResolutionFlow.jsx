@@ -343,8 +343,8 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
         </div>
       )}
 
-      {/* ── EVIDENCE SUBMISSION (for flagged party) ──────────────────────────── */}
-      {iAmFlagged && !myEvidenceSubmitted && disputeStatus !== 'RESOLVED' && (
+      {/* ── EVIDENCE SUBMISSION ──────────────────────────── */}
+      {disputeStatus === 'OPEN' && !myEvidenceSubmitted && (
         <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
@@ -354,10 +354,12 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#0A2540] font-inter">
-                {myRole === 'seller' ? 'Your Response Required' : 'Clarification Required'}
+                Your Statement
               </h3>
-              <p className="text-xs text-red-500 font-inter font-semibold">
-                The system has flagged issues on your side. Please provide your counter-evidence.
+              <p className="text-xs text-neutral-500 font-inter font-semibold">
+                {rf.faultSide && rf.faultSide.toLowerCase() === myRole
+                  ? "The system has flagged issues on your side. Please provide your counter-evidence."
+                  : "Please provide any evidence or clarification for your side."}
               </p>
             </div>
           </div>
