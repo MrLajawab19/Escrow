@@ -594,4 +594,6 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
 
 - [x] **Regression Fix (Pre-Audit)**
   - Restored missing `Link` import from `react-router-dom` in `src/pages/DeedDetails.jsx`.
+  - Restored missing `activeTab` and `showMyDisputes` state variables in `src/pages/SellerDashboard.jsx`.
+  - Audited full project for missing imports and `ReferenceError` equivalents from the cleanup phase.
   - Re-verified build and other cleaned files.

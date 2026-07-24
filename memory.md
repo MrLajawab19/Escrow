@@ -103,6 +103,7 @@ The backend (`chatController.js`, `chatSocket.js`) authorizes chat access purely
 | `f93e2b2` | KG-31B & KG-31C: Wallet UI Semantic Reconciliation. Forked `WalletHeroCard` and `WalletInsights` semantics based on `isBuyer`. Removed hardcoded zero values. Preserved API performance by avoiding premature buyer analytics. |
 | `b049d52` | Repository Cleanup. Deleted orphaned wallet components and root scratch scripts. Cleaned dead imports and variables from heavily modified lifecycle components (`DeedDetails.jsx`, `SellerDashboard.jsx`, etc.). 100% build verified. |
 | `d6d5661` | Regression fix. Restored `Link` import in `DeedDetails.jsx` that was accidentally removed during cleanup. |
+| `59cc60d` | Regression fix. Restored `activeTab` and `showMyDisputes` variables in `SellerDashboard.jsx` that were accidentally removed during cleanup. |
 | `6030b4f` | KG-9: `DisputesTab.jsx` — `CHALLENGE` → `CHALLENGE_PHASE` enum fix; `d.order?.` → `d.deed?.` refs fixed |
 | `97540fc` | `task.md` + `memory.md` added to project root; 3 investigation script stragglers deleted |
 | `9e444e6` | Missing closing brace in `paymentController.js` catch block — server startup crash |
