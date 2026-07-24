@@ -245,7 +245,7 @@ class DeedService {
   async submitDelivery(deedId, sellerId, deliveryData) {
     const deed = await prisma.deed.findUnique({ where: { id: deedId } });
     if (!deed || deed.sellerId !== sellerId) throw new Error("DEED_NOT_FOUND");
-    if (!["ESCROW_LOCKED", "IN_PROGRESS", "ACTIVE"].includes(deed.status)) {
+    if (!["ESCROW_LOCKED", "IN_PROGRESS", "ACTIVE", "CHANGES_REQUESTED"].includes(deed.status)) {
       throw new Error("DEED_NOT_IN_PROGRESS");
     }
 

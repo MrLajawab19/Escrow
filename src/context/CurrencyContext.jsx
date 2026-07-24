@@ -39,7 +39,18 @@ export const CurrencyProvider = ({ children }) => {
     fetchRates();
     // Optional: Refresh rates every hour
     const interval = setInterval(fetchRates, 3600000);
-    return () => clearInterval(interval);
+    
+    const handleStorageChange = (e) => {
+      if (e.key === 'preferredCurrency' && e.newValue) {
+        setCurrency(e.newValue);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const changeCurrency = (newCurrency) => {

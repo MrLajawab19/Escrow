@@ -64,10 +64,16 @@ const BuyerDashboard = () => {
         // ignore
       }
     }
-
     fetchOrders();
     fetchKycStatus();
     fetchWalletSummary();
+
+    const onFocus = () => {
+      fetchOrders();
+      fetchWalletSummary();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, []);
 
   const fetchKycStatus = async () => {

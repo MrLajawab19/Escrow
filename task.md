@@ -484,3 +484,9 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
     with eyes on the actual rendered output at each breakpoint.
   - Final pixel-perfect polish pass also not done.
   - Low priority while backend architecture is in flux.
+
+- [ ] **KG-11 — AI phrasing conflates 'late' with 'absent' (LOW, prompt quality)**
+  - When evidence is submitted past the 48-hour window, `isLate: true` triggers `[Submitted LATE]` in the Gemini prompt.
+  - Gemini interprets this as missing the deadline entirely and outputs misleading reasoning like "Both parties failed to submit evidence".
+  - Action: Refine the prompt in `disputeAI.js` to explicitly distinguish between "submitted late" and "never submitted" so the generated text doesn't confuse users.
+  - Identified: 2026-07-24.

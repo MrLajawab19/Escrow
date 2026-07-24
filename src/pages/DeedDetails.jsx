@@ -5,6 +5,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import OrderTimeline from '../components/order/OrderTimeline';
 import MilestoneList from '../components/order/MilestoneList';
 import DeliveryActions from '../components/order/DeliveryActions';
+import SellerDeliverySubmit from '../components/order/SellerDeliverySubmit';
 import OrderChat from '../components/order/OrderChat';
 import DisputeResolutionFlow from '../components/DisputeResolutionFlow';
 import ReviewModal from '../components/ReviewModal';
@@ -12,15 +13,26 @@ import ReviewModal from '../components/ReviewModal';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
+  DRAFT:             { label: 'Draft',             cls: 'bg-neutral-100 text-neutral-700 border-neutral-300', dot: 'bg-neutral-400' },
   PLACED:            { label: 'Placed',            cls: 'bg-neutral-100 text-neutral-700 border-neutral-300', dot: 'bg-neutral-400' },
+  PENDING_SELLER:    { label: 'Pending Seller',    cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
+  PENDING_SIGNATURES:{ label: 'Pending Signatures',cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
   ESCROW_FUNDED:     { label: 'Escrow Funded',     cls: 'bg-indigo-50 text-indigo-700 border-indigo-200',    dot: 'bg-indigo-500' },
+  ESCROW_LOCKED:     { label: 'Escrow Locked',     cls: 'bg-indigo-50 text-indigo-700 border-indigo-200',    dot: 'bg-indigo-500' },
   ACCEPTED:          { label: 'Accepted',           cls: 'bg-blue-50 text-blue-700 border-blue-200',          dot: 'bg-blue-500' },
+  ACTIVE:            { label: 'Active',            cls: 'bg-amber-50 text-amber-700 border-amber-200',       dot: 'bg-amber-500' },
   IN_PROGRESS:       { label: 'In Progress',        cls: 'bg-amber-50 text-amber-700 border-amber-200',       dot: 'bg-amber-500' },
   CHANGES_REQUESTED: { label: 'Changes Requested',  cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
   SUBMITTED:         { label: 'Delivered',          cls: 'bg-purple-50 text-purple-700 border-purple-200',    dot: 'bg-purple-500' },
   APPROVED:          { label: 'Approved',           cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  CONFIRMED:         { label: 'Confirmed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   RELEASED:          { label: 'Completed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  COMPLETED:         { label: 'Completed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  CLOSED:            { label: 'Completed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   DISPUTED:          { label: 'Disputed',           cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
+  ARBITRATING:       { label: 'Arbitrating',        cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
+  ARBITRATED:        { label: 'Arbitrated',         cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  ESCALATED:         { label: 'Escalated',          cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
   REJECTED:          { label: 'Rejected',           cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
   REFUNDED:          { label: 'Refunded',           cls: 'bg-neutral-100 text-neutral-600 border-neutral-200', dot: 'bg-neutral-400' },
   CANCELLED:         { label: 'Cancelled',          cls: 'bg-neutral-100 text-neutral-600 border-neutral-200', dot: 'bg-neutral-400' },
@@ -193,10 +205,10 @@ const DeedDetails = () => {
 
   const buyerBadgeKey = useMemo(() => {
     if (!deed) return 'PLACED';
-    if (userType !== 'buyer' || deed.status !== 'IN_PROGRESS') return deed.status;
+    if (userType !== 'buyer' || (deed.status !== 'IN_PROGRESS' && deed.status !== 'ACTIVE')) return deed.status;
     const at = sellerAcceptedAtMs(deed);
     if (at && Date.now() - at < BUYER_ACCEPTED_GRACE_MS) return 'ACCEPTED';
-    return 'IN_PROGRESS';
+    return deed.status;
   }, [deed, userType, buyerStatusTick]);
 
   const statusCfg = STATUS_CONFIG[buyerBadgeKey] || STATUS_CONFIG[deed?.status] || STATUS_CONFIG.PLACED;
@@ -429,6 +441,13 @@ const DeedDetails = () => {
               onUpdate={handleOrderUpdate}
             />
 
+            {/* ── SELLER SUBMIT UI (seller only when ACTIVE) ─────────────── */}
+            <SellerDeliverySubmit
+              deed={deed}
+              userType={userType}
+              onUpdate={handleOrderUpdate}
+            />
+
             {/* ── DISPUTE RESOLUTION FLOW (shown when order is DISPUTED) ─────── */}
             {deed.status === 'DISPUTED' && (
               <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-1">
@@ -462,21 +481,53 @@ const DeedDetails = () => {
                   <h2 className="text-base font-bold text-[#0A2540] font-inter">Activity Log</h2>
                 </div>
                 <div className="space-y-3">
-                  {deed.ledgerEntries.map((log, i) => (
+                  {deed.ledgerEntries.map((log, i) => {
+                    let payloadObj = null;
+                    try {
+                      if (log.payload) payloadObj = typeof log.payload === 'string' ? JSON.parse(log.payload) : log.payload;
+                    } catch(e) {}
+                    
+                    let eventTitle = typeof log === 'string' ? log : (log.eventType || log.message || JSON.stringify(log));
+                    if (typeof eventTitle === 'string' && log.eventType) {
+                      eventTitle = eventTitle.replace(/_/g, ' ').replace(/\\w\\S*/g, w => (w.replace(/^\\w/, c => c.toUpperCase())));
+                    }
+
+                    return (
                     <div key={i} className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm text-[#0A2540] font-inter">
-                          {typeof log === 'string' ? log : (log.eventType || log.message || JSON.stringify(log))}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#0A2540] font-inter font-medium">
+                          {eventTitle}
                         </p>
+                        
+                        {payloadObj && log.eventType === 'CHANGES_REQUESTED' && (
+                          <div className="mt-1.5 p-2.5 bg-orange-50 border border-orange-100 rounded-lg text-xs text-orange-800 font-inter">
+                            <span className="font-bold block mb-0.5">Feedback: {payloadObj.reason}</span>
+                            {payloadObj.description && <span className="block text-orange-700">{payloadObj.description}</span>}
+                          </div>
+                        )}
+                        
+                        {payloadObj && log.eventType === 'DELIVERY_CLAIMED' && (
+                          <div className="mt-1.5 p-2.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-800 font-inter">
+                            {payloadObj.description && <span className="italic block mb-0.5">"{payloadObj.description}"</span>}
+                            {payloadObj.fileCount > 0 && <span className="font-semibold block">{payloadObj.fileCount} file(s) attached</span>}
+                          </div>
+                        )}
+
+                        {payloadObj && log.eventType === 'DISPUTE_RAISED' && (
+                          <div className="mt-1.5 p-2.5 bg-red-50 border border-red-100 rounded-lg text-xs text-red-800 font-inter">
+                            <span className="font-bold block">Reason: {payloadObj.reason}</span>
+                          </div>
+                        )}
+
                         {log.timestamp && (
-                          <p className="text-[11px] text-neutral-400 font-inter mt-0.5">
+                          <p className="text-[11px] text-neutral-400 font-inter mt-1">
                             {formatDate(log.timestamp)}
                           </p>
                         )}
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             )}

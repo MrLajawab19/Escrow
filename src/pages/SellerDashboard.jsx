@@ -85,10 +85,16 @@ const SellerDashboard = () => {
     } else if (sellerUser) {
         setSellerData(sellerUser);
     }
-
     fetchOrders();
     fetchKycStatus();
     fetchWalletSummary();
+
+    const onFocus = () => {
+      fetchOrders();
+      fetchWalletSummary();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, []);
 
   const fetchWalletSummary = async () => {

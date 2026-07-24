@@ -116,6 +116,7 @@ See `task.md` KG-1 through KG-10 for full detail. Summary of open items:
 | KG-8 | — | Per-flag fault UI in admin dispute detail not built. |
 | KG-9 | ✅ | RESOLVED 2026-07-21: stale filter working; enum mismatch + legacy `d.order` refs fixed in `DisputesTab.jsx`. |
 | KG-10 | Low | Wallet UI responsive patterns in code but formal breakpoint verification never done. |
+| KG-11 | Low | AI prompt phrasing conflates 'late' with 'absent' when `isLate` is true, causing confusing reasoning text. |
 
 ---
 

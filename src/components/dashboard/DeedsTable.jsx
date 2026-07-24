@@ -211,7 +211,7 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
                 {/* Status */}
                 <div className="min-w-[100px] text-right">
                   <p className="text-[10px] text-neutral-400 mb-0.5 hidden sm:block">Status</p>
-                  <StatusBadge status={displayStatus} />
+                  <StatusBadge status={displayStatus} userType={userType} />
                 </div>
 
                 {/* Arrow */}

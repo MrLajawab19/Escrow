@@ -145,7 +145,10 @@ const DeliveryActions = ({ deed, userType, onUpdate }) => {
         deedId={deed.id}
         isOpen={showRevision}
         onClose={() => setShowRevision(false)}
-        onSuccess={() => showNotice('Revision request submitted!')}
+        onSuccess={() => {
+          showNotice('Revision request submitted!');
+          onUpdate?.({ ...deed, status: 'CHANGES_REQUESTED' });
+        }}
       />
 
       <DisputeModal
