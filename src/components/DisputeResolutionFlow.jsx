@@ -769,7 +769,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
       )}
 
       {/* ── CHALLENGE PHASE ──────────────────────────────────────────────────── */}
-      {disputeStatus === 'CHALLENGE_PHASE' && ai && (
+      {disputeStatus === 'CHALLENGE_PHASE' && ai && !detail?.dispute?.events?.some(e => e.type === 'CHALLENGE' && e.actorRole === userType) && (
         <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
           <div className="flex items-start gap-4 flex-wrap">
             <div className="flex-1 min-w-48">
@@ -784,6 +784,20 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             >
               Submit Challenge
             </button>
+          </div>
+        </div>
+      )}
+
+      {disputeStatus === 'CHALLENGE_PHASE' && ai && detail?.dispute?.events?.some(e => e.type === 'CHALLENGE' && e.actorRole === userType) && (
+        <div className="bg-indigo-50 rounded-2xl shadow-sm border border-indigo-200 p-6">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">⏳</span>
+            <div>
+              <h3 className="text-sm font-bold text-indigo-900 font-inter">Challenge Submitted</h3>
+              <p className="text-xs text-indigo-700 font-inter mt-1">
+                Your challenge has been submitted successfully. Waiting for the other party to respond or for the challenge window to close.
+              </p>
+            </div>
           </div>
         </div>
       )}

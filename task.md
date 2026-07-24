@@ -526,3 +526,15 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
   - It also double-divides by 100 (`financial?.escrowAmount / 100`) even though the backend already parsed the value correctly, turning a ₹100 deed into `$1.00`.
   - Action: Replace hardcoded `$` with proper currency formatter and remove the secondary `/ 100`.
   - Identified: 2026-07-24.
+
+- [x] **KG-18 — KYC Gate threshold bug (HIGH, API)**
+  - `kycGate.js` compares the deed amount directly against `10,000` (paise) instead of `1,000,000` (paise).
+  - This creates an effective ₹100 threshold for mandatory KYC instead of the intended ₹10,000.
+  - Action: Update the comparison from `10000` to `1000000`.
+  - Identified: 2026-07-24.
+
+- [x] **KG-19 — Challenge UI missing submission state (LOW, UI)**
+  - The Challenge UI allows a user to submit a challenge, but then the UI fails to update and still displays the "Submit Challenge" button.
+  - Clicking it again results in a 400 error from the backend (`Challenge already submitted for this party`).
+  - Action: Hide the challenge form and display a "Challenge Submitted" state if `events` contain a `CHALLENGE` event for the current `actorRole`.
+  - Identified: 2026-07-24.

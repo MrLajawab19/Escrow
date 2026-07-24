@@ -123,6 +123,8 @@ See `task.md` KG-1 through KG-10 for full detail. Summary of open items:
 | KG-15 | Low | Admin UI Platform Fee is hardcoded to 5% instead of the 2% defined in the Fee Engine. *(Incomplete - top header missed)* |
 | KG-16 | Low | Admin Order Snapshot looks for legacy `scopeBox` fields instead of native `deed` fields, causing 'Unknown' displays. |
 | KG-17 | Low | Admin UI hardcodes `$` and double-divides financial values by 100, turning ₹100 into $1.00. |
+| KG-18 | High | KYC Gate threshold compares deed amount in paise against `10,000` (₹100) instead of `1,000,000` (₹10,000). |
+| KG-19 | Low | Challenge UI doesn't visually update after submission, leading to duplicate submissions and 400 errors. |
 
 ---
 
