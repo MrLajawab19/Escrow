@@ -68,12 +68,11 @@ const BuyerDashboard = () => {
     fetchKycStatus();
     fetchWalletSummary();
 
-    const onFocus = () => {
-      fetchOrders();
-      fetchWalletSummary();
-    };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    const intervalId = setInterval(() => {
+      fetchOrders(true);
+      fetchWalletSummary(true);
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchKycStatus = async () => {
@@ -91,7 +90,7 @@ const BuyerDashboard = () => {
     }
   };
 
-  const fetchWalletSummary = async () => {
+  const fetchWalletSummary = async (silent = false) => {
     try {
       const token = localStorage.getItem('buyerToken');
       if (!token) return;
@@ -102,13 +101,13 @@ const BuyerDashboard = () => {
     } catch (err) {
       // silent
     } finally {
-      setWalletLoading(false);
+      if (!silent) setWalletLoading(false);
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
 
       const token = localStorage.getItem('buyerToken');
@@ -134,11 +133,11 @@ const BuyerDashboard = () => {
       console.error('Error fetching data:', err);
       if (err.response?.status === 401) {
         setError('Authentication required. Please login again.');
-      } else {
+      } else if (!silent) {
         setError(err.response?.data?.message || 'Failed to load dashboard data');
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
