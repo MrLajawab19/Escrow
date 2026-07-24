@@ -276,7 +276,8 @@ const EnhancedDisputeResolution = ({
       onClose();
     } catch (error) {
       console.error('Error resolving dispute:', error);
-      toast.error('Failed to resolve dispute. Please try again.');
+      const errorMsg = error.response?.data?.message || 'Failed to resolve dispute. Please try again.';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
