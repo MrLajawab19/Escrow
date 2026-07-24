@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Helmet } from 'react-helmet-async';
+import { useCurrency } from '../context/CurrencyContext';
 
 export default function DeedInvitePage() {
   const { token } = useParams();
@@ -12,6 +13,7 @@ export default function DeedInvitePage() {
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState('');
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     const fetchDeed = async () => {
@@ -117,7 +119,7 @@ export default function DeedInvitePage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center pb-4 border-b border-neutral-200">
                 <span className="text-neutral-500 font-inter">Amount</span>
-                <span className="text-xl font-bold text-green-600 font-inter">{deed.currency} {deed.amount}</span>
+                <span className="text-xl font-bold text-green-600 font-inter">{formatCurrency(deed.amount, deed.currency)}</span>
               </div>
               
               <div className="flex justify-between items-center pb-4 border-b border-neutral-200">
