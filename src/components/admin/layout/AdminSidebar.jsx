@@ -2,7 +2,6 @@ import React, { memo } from 'react';
 import { 
   LayoutDashboard, 
   AlertTriangle, 
-  ShoppingBag, 
   FileText, 
   Wallet, 
   Landmark, 
@@ -20,7 +19,6 @@ import {
 const navItems = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'disputes', label: 'Disputes', icon: AlertTriangle },
-  { id: 'orders', label: 'Orders', icon: ShoppingBag },
   { id: 'deeds', label: 'Deeds', icon: FileText },
   { id: 'financials', label: 'Financials', icon: Wallet },
   { id: 'settlements', label: 'Settlements', icon: Landmark },

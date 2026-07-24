@@ -4,7 +4,6 @@ import AdminLayout from './admin/layout/AdminLayout';
 
 const OverviewTab = lazy(() => import('./admin/views/OverviewTab'));
 const DisputesTab = lazy(() => import('./admin/views/DisputesTab'));
-const OrdersTab = lazy(() => import('./admin/views/OrdersTab'));
 const DeedsTab = lazy(() => import('./admin/views/DeedsTab'));
 const FinancialsTab = lazy(() => import('./admin/views/FinancialsTab'));
 const SettlementsTab = lazy(() => import('./admin/views/SettlementsTab'));
@@ -27,7 +26,6 @@ const adminHeaders = () => ({
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [disputes, setDisputes] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [deeds, setDeeds] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
   const [withdrawalsPage, setWithdrawalsPage] = useState(1);
@@ -36,9 +34,6 @@ export default function AdminDashboard() {
   const [disputesPage, setDisputesPage] = useState(1);
   const [totalDisputes, setTotalDisputes] = useState(0);
   const [disputesLoading, setDisputesLoading] = useState(false);
-  const [ordersPage, setOrdersPage] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const [ordersLoading, setOrdersLoading] = useState(false);
   const [deedsPage, setDeedsPage] = useState(1);
   const [totalDeeds, setTotalDeeds] = useState(0);
   const [deedsLoading, setDeedsLoading] = useState(false);
@@ -56,7 +51,7 @@ export default function AdminDashboard() {
   const [sellersLoading, setSellersLoading] = useState(false);
   const [financials, setFinancials] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('overview'); // 'overview' | 'disputes' | 'orders' | 'settlements'
+  const [tab, setTab] = useState('overview'); // 'overview' | 'disputes' | 'settlements'
   const [statusFilter, setStatusFilter] = useState('');
   const [flagFilter, setFlagFilter] = useState('');
   const [staleFilter, setStaleFilter] = useState(false);
@@ -125,20 +120,6 @@ export default function AdminDashboard() {
     setDisputesPage(1);
   }, [search, statusFilter, flagFilter, staleFilter]);
 
-  const fetchOrders = useCallback(async () => {
-    setOrdersLoading(true);
-    try {
-      const res = await axios.get(`/api/admin/orders?page=${ordersPage}&limit=20`, { headers: adminHeaders() });
-      setOrders(res.data.data.orders || []);
-      setTotalOrders(res.data.data.total || 0);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setOrdersLoading(false);
-    }
-  }, [ordersPage]);
-
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const fetchDeeds = useCallback(async () => {
     setDeedsLoading(true);
@@ -320,9 +301,8 @@ export default function AdminDashboard() {
 
   const renderTabContent = () => {
     switch(tab) {
-      case 'overview': return <OverviewTab stats={stats} orders={orders} disputes={disputes} setTab={setTab} />;
+      case 'overview': return <OverviewTab stats={stats} disputes={disputes} setTab={setTab} />;
       case 'disputes': return <DisputesTab disputes={disputes} disputesLoading={disputesLoading} search={search} setSearch={setSearch} statusFilter={statusFilter} setStatusFilter={setStatusFilter} flagFilter={flagFilter} setFlagFilter={setFlagFilter} staleFilter={staleFilter} setStaleFilter={setStaleFilter} disputesPage={disputesPage} setDisputesPage={setDisputesPage} totalDisputes={totalDisputes} setResolving={setResolving} />;
-      case 'orders': return <OrdersTab orders={orders} ordersLoading={ordersLoading} ordersPage={ordersPage} setOrdersPage={setOrdersPage} totalOrders={totalOrders} />;
       case 'deeds': return <DeedsTab deeds={deeds} deedsLoading={deedsLoading} deedsPage={deedsPage} setDeedsPage={setDeedsPage} totalDeeds={totalDeeds} />;
       case 'financials': return <FinancialsTab financials={financials} />;
       case 'settlements': return <SettlementsTab withdrawals={withdrawals} withdrawalsLoading={withdrawalsLoading} withdrawalsPage={withdrawalsPage} setWithdrawalsPage={setWithdrawalsPage} totalWithdrawals={totalWithdrawals} />;
