@@ -586,3 +586,8 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
   - [x] **KG-31B — WalletHeroCard Refactor**: Implement role-based semantic fork. Map buyer metrics to the newly exposed API fields. Delete the hardcoded monthly stats cards entirely.
   - [x] **KG-31C — WalletInsights Refactor**: Pass `isBuyer` from `WalletDashboard`. Implement role-based semantic fork for "Earnings" vs "Deposits" and "Net Retained" vs "Total Spent".
   - [ ] **KG-31A (Optional Future Task)**: Decide whether buyer analytics (totalDeposited/Spent) justify expanding `/api/wallet/summary` or if they need a separate endpoint.
+
+- [x] **Repository Cleanup (Pre-Audit)**
+  - Safely deleted orphaned `WalletEmptyState.jsx`, `WalletSkeleton.jsx` and 5 root-level backend scratch scripts.
+  - Removed unused local variables, imports, and lucide icons from `SellerDashboard`, `BuyerDashboard`, `DeedDetails`, and `WalletHeroCard`.
+  - Verified 100% build success via `vite build`.

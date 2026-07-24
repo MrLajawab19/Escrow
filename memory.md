@@ -101,6 +101,7 @@ The backend (`chatController.js`, `chatSocket.js`) authorizes chat access purely
 | `6ab1c3d` | KG-30B: Frontend Wiring. Replaced `SellerDashboard.jsx` manual array reduce calculation for `totalEarnings` with `walletSummary.lifetimeEarnings`. Removed all frontend financial derivations. |
 | `8b209d1` | KG-30C: Dashboard Cleanup & Final Certification. Replaced deprecated fields in `WalletInsights.jsx` and `WalletHeroCard.jsx` with strict ledger values. Verified 0 occurrences of `.reduce()` and deed-amount financial derivations remaining project-wide. |
 | `f93e2b2` | KG-31B & KG-31C: Wallet UI Semantic Reconciliation. Forked `WalletHeroCard` and `WalletInsights` semantics based on `isBuyer`. Removed hardcoded zero values. Preserved API performance by avoiding premature buyer analytics. |
+| `b049d52` | Repository Cleanup. Deleted orphaned wallet components and root scratch scripts. Cleaned dead imports and variables from heavily modified lifecycle components (`DeedDetails.jsx`, `SellerDashboard.jsx`, etc.). 100% build verified. |
 | `6030b4f` | KG-9: `DisputesTab.jsx` — `CHALLENGE` → `CHALLENGE_PHASE` enum fix; `d.order?.` → `d.deed?.` refs fixed |
 | `97540fc` | `task.md` + `memory.md` added to project root; 3 investigation script stragglers deleted |
 | `9e444e6` | Missing closing brace in `paymentController.js` catch block — server startup crash |
