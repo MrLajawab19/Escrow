@@ -152,7 +152,11 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
   // Poll for AI analysis if not yet available
   useEffect(() => {
-    if (!detail?.dispute?.aiAnalysis && !loading) {
+    const buyerSubmitted = detail?.dispute?.evidenceResponses?.buyer?.submittedAt;
+    const sellerSubmitted = detail?.dispute?.evidenceResponses?.seller?.submittedAt;
+    const isProcessing = (buyerSubmitted && sellerSubmitted) || (detail?.dispute?.status && detail.dispute.status !== 'OPEN');
+
+    if (!detail?.dispute?.aiAnalysis && !loading && isProcessing) {
       const interval = setInterval(() => {
         fetchDetail();
       }, 4000);
@@ -161,7 +165,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
     } else {
       setAiPolling(false);
     }
-  }, [detail?.dispute?.aiAnalysis, loading]);
+  }, [detail?.dispute?.aiAnalysis, detail?.dispute?.status, detail?.dispute?.evidenceResponses, loading]);
 
   const handleEvidenceSubmit = async (e) => {
     e.preventDefault();
@@ -658,7 +662,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
           )}
         </div>
 
-        {!ai && (
+        {!ai && aiPolling && (
           <div className="flex items-center gap-3 py-4">
             <svg className="animate-spin w-5 h-5 text-violet-400" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.3" />
@@ -667,6 +671,18 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             <div>
               <p className="text-sm font-semibold text-neutral-600 font-inter">Google Gemini is analyzing the dispute…</p>
               <p className="text-xs text-neutral-400 font-inter">Reviewing order scope, chat logs, delivery, and evidence</p>
+            </div>
+          </div>
+        )}
+
+        {!ai && !aiPolling && (
+          <div className="flex items-center gap-3 py-4">
+            <div className="w-5 h-5 flex items-center justify-center text-violet-400">
+              <span className="text-lg">⏳</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-neutral-600 font-inter">Waiting for evidence</p>
+              <p className="text-xs text-neutral-400 font-inter">The AI will begin analysis once both parties submit their evidence.</p>
             </div>
           </div>
         )}
