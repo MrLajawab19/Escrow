@@ -20,10 +20,10 @@ function SystemHealth({ stats }) {
         <div>
           <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Order Distribution</h4>
           <div className="space-y-3">
-            <StatusBar label="PLACED" count={stats?.ordersByStatus?.find(s => s.status === 'PLACED')?._count || 0} total={stats?.totalOrders} color="bg-slate-400" />
-            <StatusBar label="ESCROW FUNDED" count={stats?.ordersByStatus?.find(s => s.status === 'ESCROW_FUNDED')?._count || 0} total={stats?.totalOrders} color="bg-blue-500" />
+            <StatusBar label="PENDING SELLER" count={stats?.ordersByStatus?.find(s => s.status === 'PENDING_SELLER')?._count || 0} total={stats?.totalOrders} color="bg-orange-500" />
+            <StatusBar label="ACTIVE" count={stats?.ordersByStatus?.find(s => s.status === 'ACTIVE')?._count || 0} total={stats?.totalOrders} color="bg-amber-500" />
             <StatusBar label="IN PROGRESS" count={stats?.ordersByStatus?.find(s => s.status === 'IN_PROGRESS')?._count || 0} total={stats?.totalOrders} color="bg-indigo-500" />
-            <StatusBar label="COMPLETED" count={stats?.ordersByStatus?.find(s => s.status === 'COMPLETED')?._count || 0} total={stats?.totalOrders} color="bg-emerald-500" />
+            <StatusBar label="CLOSED" count={stats?.ordersByStatus?.find(s => s.status === 'CLOSED')?._count || 0} total={stats?.totalOrders} color="bg-emerald-500" />
           </div>
         </div>
 

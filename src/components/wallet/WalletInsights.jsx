@@ -17,14 +17,14 @@ const InsightCard = ({ icon: Icon, label, value, colorClass, subtitle }) => (
   </div>
 );
 
-const WalletInsights = ({ walletSummary, walletLoading }) => {
+const WalletInsights = ({ walletSummary, walletLoading, isBuyer }) => {
   const { formatCurrency, currencySymbol } = useCurrency();
 
-  const totalCredit = walletSummary?.totalCredit || 0;
-  const totalDeposited = walletSummary?.totalDeposited || 0;
-  const netFlow = totalCredit - totalDeposited;
-  const totalTransactions = walletSummary?.totalTransactions || 0;
-  const pendingFunds = walletSummary?.pendingRefundBalance || walletSummary?.pendingEarnings || 0;
+  const totalEarnings = walletSummary?.lifetimeEarnings || 0;
+  const totalWithdrawn = walletSummary?.totalWithdrawn || 0;
+  const netFlow = totalEarnings - totalWithdrawn;
+  const activeOrders = walletSummary?.activeOrders || 0;
+  const completedOrders = walletSummary?.completedOrders || 0;
 
   if (walletLoading) {
     return (
@@ -36,35 +36,63 @@ const WalletInsights = ({ walletSummary, walletLoading }) => {
     );
   }
 
+  if (isBuyer) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <InsightCard
+          icon={ArrowUpRight}
+          label="Total Withdrawn"
+          value={formatCurrency(totalWithdrawn, walletSummary?.currency || 'INR')}
+          colorClass="bg-amber-50 text-amber-600"
+          subtitle="Refunds withdrawn to bank"
+        />
+        <InsightCard
+          icon={Activity}
+          label="Active Purchases"
+          value={activeOrders.toLocaleString()}
+          colorClass="bg-primary-50 text-primary-600"
+          subtitle="Orders currently in progress"
+        />
+        <InsightCard
+          icon={Clock}
+          label="Completed Purchases"
+          value={completedOrders.toLocaleString()}
+          colorClass="bg-blue-50 text-blue-600"
+          subtitle="Total successful purchases"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <InsightCard
         icon={ArrowDownLeft}
-        label="Total Deposits"
-        value={formatCurrency(totalCredit, walletSummary?.currency || 'INR')}
+        label="Lifetime Earnings"
+        value={formatCurrency(totalEarnings, walletSummary?.currency || 'INR')}
         colorClass="bg-emerald-50 text-emerald-600"
-        subtitle="All-time funds added"
+        subtitle="All-time earnings"
       />
       <InsightCard
         icon={ArrowUpRight}
         label="Total Withdrawn"
-        value={formatCurrency(totalDeposited, walletSummary?.currency || 'INR')}
+        value={formatCurrency(totalWithdrawn, walletSummary?.currency || 'INR')}
         colorClass="bg-amber-50 text-amber-600"
         subtitle="All-time funds withdrawn"
       />
       <InsightCard
         icon={Activity}
-        label="Net Flow"
+        label="Net Retained"
         value={formatCurrency(Math.abs(netFlow), walletSummary?.currency || 'INR')}
         colorClass="bg-primary-50 text-primary-600"
-        subtitle={netFlow >= 0 ? "Positive cash flow" : "Negative cash flow"}
+        subtitle={netFlow >= 0 ? "Currently held in wallet" : ""}
       />
       <InsightCard
         icon={Clock}
-        label="Total Transactions"
-        value={totalTransactions.toLocaleString()}
+        label="Completed Orders"
+        value={completedOrders.toLocaleString()}
         colorClass="bg-blue-50 text-blue-600"
-        subtitle="Lifetime activities"
+        subtitle="Total successful deeds"
       />
     </div>
   );

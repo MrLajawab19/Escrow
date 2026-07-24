@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MyDisputesPage from '../components/MyDisputesPage';
-import NotificationModal from '../components/NotificationModal';
-import OrderChat from '../components/order/OrderChat'; // ← Real-time order chat
+
 import WalletDashboard from '../components/WalletDashboard';
 import KYCModal from '../components/KYCModal';
 import axios from 'axios';
@@ -16,24 +15,13 @@ import DeedsTable from '../components/dashboard/DeedsTable';
 import WalletOverviewCard from '../components/dashboard/WalletOverviewCard';
 import SpendingOverview from '../components/dashboard/SpendingOverview';
 import RecentTransactions from '../components/dashboard/RecentTransactions';
-import { ClipboardCheck, Clock, Flag, AlertTriangle } from 'lucide-react';
-
-const inputClass = "w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-navy-900 placeholder-neutral-400 font-inter text-sm shadow-sm";
-const labelClass = "block text-sm font-medium mb-1.5 text-navy-900 font-inter";
+import { ClipboardCheck, Clock, Flag } from 'lucide-react';
 
 const SellerDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showRequests, setShowRequests] = useState(false);
-  const [scopeBoxOrder, setScopeBoxOrder] = useState(null);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showRequestChanges, setShowRequestChanges] = useState(false);
-  const [requestChangesOrder, setRequestChangesOrder] = useState(null);
-  const [modifiedScopeBox, setModifiedScopeBox] = useState(null);
-  const [showMyDisputes, setShowMyDisputes] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [notification, setNotification] = useState({ isOpen: false, title: '', message: '', type: 'success' });
+
   const [userId, setUserId] = useState(null);
   const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });
   const [showKycModal, setShowKycModal] = useState(false);
@@ -158,112 +146,7 @@ const SellerDashboard = () => {
     }
   };
 
-  const handleOrderUpdate = (updatedOrder) => {
-    setOrders(prevOrders => prevOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
-    if (selectedOrder?.id === updatedOrder.id) {
-      setSelectedOrder(updatedOrder);
-    }
-  };
 
-  const handleAcceptOrder = async (order) => {
-    try {
-      const token = localStorage.getItem('sellerToken');
-      if (!token) { setNotification({ isOpen: true, title: 'Auth Required', message: 'Please login.', type: 'error' }); return; }
-      
-      const response = await axios.patch(`/api/orders/${order.id}/accept`, {}, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        const updatedOrder = { ...order, status: 'ACCEPTED' };
-        setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
-        setScopeBoxOrder(null);
-        setShowRequests(false);
-        setSelectedOrder(updatedOrder);
-        setNotification({ isOpen: true, title: 'Success', message: 'Order accepted!', type: 'success' });
-      } else {
-        setNotification({ isOpen: true, title: 'Error', message: 'Failed: ' + response.data.message, type: 'error' });
-      }
-    } catch (error) {
-      setNotification({ isOpen: true, title: 'Error', message: 'Error accepting order.', type: 'error' });
-    }
-  };
-
-  const handleRejectOrder = async (order) => {
-    try {
-      const token = localStorage.getItem('sellerToken');
-      if (!token) { setNotification({ isOpen: true, title: 'Auth Required', message: 'Please login.', type: 'error' }); return; }
-      
-      if (order.status === 'ACTIVE' || order.status === 'IN_PROGRESS') {
-        setNotification({ isOpen: true, title: 'Not Allowed', message: 'Order is active. Please use Dispute flow to walk away.', type: 'error' });
-        return;
-      }
-
-      const targetId = order.scopeBox?.deedId || order.id;
-      const response = await axios.post(`/api/deeds/${targetId}/reject`, {}, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        const updatedOrder = { ...order, status: 'REJECTED' };
-        setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
-        setScopeBoxOrder(null);
-        setShowRequests(false);
-        setSelectedOrder(updatedOrder);
-        setNotification({ isOpen: true, title: 'Success', message: 'Order rejected.', type: 'success' });
-      } else {
-        setNotification({ isOpen: true, title: 'Error', message: 'Failed: ' + response.data.message, type: 'error' });
-      }
-    } catch (error) {
-      setNotification({ isOpen: true, title: 'Error', message: 'Error rejecting order.', type: 'error' });
-    }
-  };
-
-  const handleRequestChanges = (order) => {
-    setRequestChangesOrder(order);
-    setModifiedScopeBox({
-      ...order.scopeBox,
-      price: (order.scopeBox?.price || 0) / 100,
-      changesRequested: true,
-      requestedBy: 'seller',
-      requestedAt: new Date().toISOString()
-    });
-    setShowRequestChanges(true);
-  };
-
-  const handleScopeBoxChange = (field, value) => {
-    setModifiedScopeBox(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmitChanges = async () => {
-    try {
-      const token = localStorage.getItem('sellerToken');
-      if (!token) { setNotification({ isOpen: true, title: 'Auth Required', message: 'Please login.', type: 'error' }); return; }
-      const payloadScopeBox = {
-        ...modifiedScopeBox,
-        price: Math.round(parseFloat(modifiedScopeBox.price || 0) * 100)
-      };
-      const response = await axios.patch(`/api/orders/${requestChangesOrder.id}/request-changes`, {
-        scopeBox: payloadScopeBox,
-        changesRequested: true
-      }, { headers: { 'Authorization': `Bearer ${token}` } });
-      if (response.data.success) {
-        const updatedOrder = { ...requestChangesOrder, scopeBox: modifiedScopeBox, status: 'CHANGES_REQUESTED', updatedAt: new Date().toISOString() };
-        setOrders(prev => prev.map(o => o.id === requestChangesOrder.id ? updatedOrder : o));
-        setShowRequestChanges(false);
-        setRequestChangesOrder(null);
-        setModifiedScopeBox(null);
-        setScopeBoxOrder(null);
-        setShowRequests(false);
-        setSelectedOrder(updatedOrder);
-        setNotification({ isOpen: true, title: 'Success', message: 'Changes requested successfully!', type: 'success' });
-      } else {
-        setNotification({ isOpen: true, title: 'Error', message: 'Failed: ' + response.data.message, type: 'error' });
-      }
-    } catch (error) {
-      setNotification({ isOpen: true, title: 'Error', message: 'Error requesting changes.', type: 'error' });
-    }
-  };
 
   if (loading) {
     return (
@@ -297,9 +180,9 @@ const SellerDashboard = () => {
 
   // Metric computations
   const totalOrders = orders.length;
-  const inProgress = orders.filter(o => ['IN_PROGRESS', 'ACCEPTED'].includes(o.status)).length;
+  const inProgress = orders.filter(o => ['PENDING_SELLER', 'ACTIVE', 'IN_PROGRESS'].includes(o.status)).length;
   const pendingReview = orders.filter(o => o.status === 'SUBMITTED').length;
-  const totalEarnings = orders.filter(o => !['REJECTED', 'CANCELLED', 'REFUNDED', 'PLACED'].includes(o.status)).reduce((sum, o) => sum + (o.amount || o.scopeBox?.price || 0), 0);
+  const totalEarnings = walletSummary?.lifetimeEarnings || 0;
 
   // Render tab content
   const renderContent = () => {
@@ -361,27 +244,7 @@ const SellerDashboard = () => {
               {/* Left Column: Orders & Quick Actions */}
               <div className="lg:col-span-8 space-y-6">
                 
-                {/* Pending Requests Banner */}
-                {orders.filter(o => o.status === 'ESCROW_FUNDED').length > 0 && (
-                  <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
-                        <AlertTriangle size={24} />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-navy-900">You have new order requests</h3>
-                        <p className="text-sm text-neutral-600">Review and accept to start working.</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setShowRequests(true)}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
-                    >
-                      View Requests
-                    </button>
-                  </div>
-                )}
-                
+
                 <DeedsTable deeds={orders} onViewAllDeeds={() => setActiveTab('orders')} userType="seller" />
                 
                 {/* Invite Link Form */}
@@ -445,7 +308,7 @@ const SellerDashboard = () => {
       <DashboardSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onNewOrder={() => setShowRequests(true)}
+
         userType="seller"
       />
 
@@ -461,7 +324,7 @@ const SellerDashboard = () => {
           onKycClick={() => setShowKycModal(true)}
           userType="seller"
           onDisputesClick={() => setShowMyDisputes(true)}
-          onViewRequestsClick={() => setShowRequests(true)}
+
         />
 
         {/* Main Scrollable Content */}
@@ -475,257 +338,7 @@ const SellerDashboard = () => {
         <MyDisputesPage userType="seller" onClose={() => setShowMyDisputes(false)} />
       )}
 
-      {/* Requests Modal */}
-      {showRequests && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative max-h-[85vh] overflow-y-auto mx-4">
-            <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setShowRequests(false)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Order Requests</h2>
-            {orders.filter(o => o.status === 'ESCROW_FUNDED').length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-5xl mb-4">📭</div>
-                <p className="text-neutral-600 font-inter font-medium mb-1">No pending order requests</p>
-                <p className="text-sm text-neutral-400 font-inter">New orders from buyers will appear here.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {orders.filter(o => o.status === 'ESCROW_FUNDED').map(order => (
-                  <div key={order.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-5 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all duration-200">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="font-semibold text-navy-900 font-inter mb-1">{order.title || order.scopeBox?.title || 'Untitled Order'}</div>
-                        <div className="text-sm text-neutral-500 font-inter mb-2">From: {order.buyerName || 'Unknown Buyer'}</div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                          <div><span className="text-neutral-400 font-inter">Deadline: </span><span className="font-medium text-navy-900 font-inter">{(order.deadline || order.scopeBox?.deadline) ? new Date(order.deadline || order.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
-                          <div><span className="text-neutral-400 font-inter">Price: </span><span className="font-medium text-navy-900 font-inter">{formatCurrency(order.amount || order.scopeBox?.price || 0, order.currency || 'INR')}</span></div>
-                          <div><span className="text-neutral-400 font-inter">Platform: </span><span className="font-medium text-navy-900 font-inter">{order.platform || 'N/A'}</span></div>
-                        </div>
-                        {(order.description || order.scopeBox?.description) && (
-                          <p className="text-sm text-neutral-500 font-inter mt-2 line-clamp-2">{(order.description || order.scopeBox?.description).substring(0, 100)}...</p>
-                        )}
-                      </div>
-                      <button
-                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter whitespace-nowrap"
-                        onClick={() => setScopeBoxOrder(order)}
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* Scope Box Modal */}
-      {scopeBoxOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-lg w-full p-8 relative mx-4">
-            <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setScopeBoxOrder(null)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Scope Box Details</h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between py-2 border-b border-neutral-100">
-                <span className="font-medium text-neutral-500 font-inter">Title</span>
-                <span className="font-semibold text-navy-900 font-inter text-right">{scopeBoxOrder.title || scopeBoxOrder.scopeBox?.title}</span>
-              </div>
-              <div className="py-2 border-b border-neutral-100">
-                <span className="font-medium text-neutral-500 font-inter block mb-1">Description</span>
-                <p className="text-navy-900 font-inter">{scopeBoxOrder.description || scopeBoxOrder.scopeBox?.description}</p>
-              </div>
-              <div className="py-2 border-b border-neutral-100">
-                <span className="font-medium text-neutral-500 font-inter block mb-1">Deliverables</span>
-                <ul className="list-disc ml-4 text-navy-900 font-inter space-y-1">
-                  {(scopeBoxOrder.deliverableFormats?.length > 0 ? scopeBoxOrder.deliverableFormats : scopeBoxOrder.scopeBox?.deliverables || []).map((d, i) => <li key={i}>{d}</li>)}
-                </ul>
-              </div>
-              <div className="flex justify-between py-2 border-b border-neutral-100">
-                <span className="font-medium text-neutral-500 font-inter">Deadline</span>
-                <span className="font-semibold text-navy-900 font-inter">{(scopeBoxOrder.deadline || scopeBoxOrder.scopeBox?.deadline) ? new Date(scopeBoxOrder.deadline || scopeBoxOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-neutral-100">
-                <span className="font-medium text-neutral-500 font-inter">Price</span>
-                <span className="font-bold text-navy-900 font-inter">{formatCurrency(scopeBoxOrder.amount || scopeBoxOrder.scopeBox?.price || 0, scopeBoxOrder.currency || 'INR')}</span>
-              </div>
-              {scopeBoxOrder.scopeBox?.attachments?.length > 0 && (
-                <div className="py-2">
-                  <span className="font-medium text-neutral-500 font-inter block mb-2">Attachments</span>
-                  <div className="flex flex-wrap gap-2">
-                    {scopeBoxOrder.scopeBox.attachments.map((file, idx) => {
-                      const ext = file.split('.').pop().toLowerCase();
-                      if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) {
-                        return <img key={idx} src={file} alt="attachment" className="w-16 h-16 object-cover rounded-lg border border-neutral-200" />;
-                      } else if (["mp4", "webm", "ogg"].includes(ext)) {
-                        return <video key={idx} src={file} controls className="w-24 h-16 rounded-lg border border-neutral-200" />;
-                      } else {
-                        return <a key={idx} href={file} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 underline text-sm font-inter">{file.split('/').pop()}</a>;
-                      }
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-100">
-              {(!scopeBoxOrder.status || scopeBoxOrder.status === 'PLACED' || scopeBoxOrder.status === 'ESCROW_FUNDED') && (
-                <>
-                  <button className="px-5 py-2.5 bg-emerald-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleAcceptOrder(scopeBoxOrder)}>✓ Accept</button>
-                  <button className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleRejectOrder(scopeBoxOrder)}>✕ Reject</button>
-                  <button className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={() => handleRequestChanges(scopeBoxOrder)}>✎ Request Changes</button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Selected Order Details Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative mx-4">
-            <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setSelectedOrder(null)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Order Details — {selectedOrder.title || selectedOrder.scopeBox?.title}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-base font-semibold mb-3 text-navy-900 font-inter">Order Information</h3>
-                <div className="space-y-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl p-4">
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Order ID</span><span className="font-medium text-navy-900 font-inter">{selectedOrder.id}</span></div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100">
-                    <span className="text-neutral-500 font-inter">Status</span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold font-inter ${selectedOrder.status === 'IN_PROGRESS' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
-                        selectedOrder.status === 'REJECTED' ? 'bg-red-50 text-red-700 border border-red-200' :
-                          selectedOrder.status === 'CHANGES_REQUESTED' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                            'bg-neutral-100 text-neutral-600 border border-neutral-200'
-                      }`}>{selectedOrder.status.replace(/_/g, ' ')}</span>
-                  </div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Price</span><span className="font-bold text-navy-900 font-inter">{formatCurrency(selectedOrder.amount || selectedOrder.scopeBox?.price || 0, selectedOrder.currency || 'INR')}</span></div>
-                  <div className="flex justify-between py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Deadline</span><span className="font-medium text-navy-900 font-inter">{(selectedOrder.deadline || selectedOrder.scopeBox?.deadline) ? new Date(selectedOrder.deadline || selectedOrder.scopeBox.deadline).toLocaleDateString() : 'No deadline'}</span></div>
-                  <div className="flex justify-between py-1.5"><span className="text-neutral-500 font-inter">Updated</span><span className="font-medium text-navy-900 font-inter">{new Date(selectedOrder.updatedAt).toLocaleString()}</span></div>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-base font-semibold mb-3 text-navy-900 font-inter">Scope Details</h3>
-                <div className="space-y-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl p-4">
-                  <div className="py-1.5 border-b border-neutral-100"><span className="text-neutral-500 font-inter">Description</span><p className="mt-1 text-navy-900 font-inter leading-relaxed">{selectedOrder.description || selectedOrder.scopeBox?.description}</p></div>
-                  <div className="py-1.5">
-                    <span className="text-neutral-500 font-inter">Deliverables</span>
-                    <ul className="mt-1 space-y-1">
-                      {(selectedOrder.deliverableFormats?.length > 0 ? selectedOrder.deliverableFormats : selectedOrder.scopeBox?.deliverables || []).map((item, i) => (
-                        <li key={i} className="text-sm text-navy-900 font-inter flex items-start gap-1.5"><span className="text-indigo-600 mt-0.5">•</span>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-6 flex justify-between items-center pt-4 border-t border-neutral-100">
-              <button onClick={() => setSelectedOrder(null)} className="px-5 py-2.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-navy-900 rounded-xl text-sm font-semibold transition-colors font-inter">
-                ← Back to Orders
-              </button>
-              <div className={`text-sm font-inter font-medium px-3 py-1.5 rounded-full ${selectedOrder.status === 'IN_PROGRESS' ? 'text-indigo-700 bg-indigo-50' :
-                  selectedOrder.status === 'REJECTED' ? 'text-red-700 bg-red-50' :
-                    selectedOrder.status === 'CHANGES_REQUESTED' ? 'text-amber-700 bg-amber-50' :
-                      'text-neutral-600 bg-neutral-100'
-                }`}>
-                {selectedOrder.status === 'IN_PROGRESS' ? '✅ Order in progress — use Mark as Delivered on the order card when work is ready.' :
-                  selectedOrder.status === 'REJECTED' ? '❌ Order rejected' :
-                    selectedOrder.status === 'CHANGES_REQUESTED' ? '✎ Changes requested — awaiting buyer' :
-                      'Order updated'}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Request Changes Modal */}
-      {showRequestChanges && requestChangesOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative max-h-[90vh] overflow-y-auto mx-4">
-            <button className="absolute top-4 right-5 text-neutral-400 hover:text-neutral-700 text-2xl transition-colors" onClick={() => setShowRequestChanges(false)}>×</button>
-            <h2 className="text-xl font-bold mb-6 text-navy-900 font-inter">Request Changes to Scope Box</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Original */}
-              <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-5">
-                <h3 className="font-semibold text-navy-900 mb-4 font-inter text-sm uppercase tracking-wide">Original Scope Box</h3>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium text-neutral-500 font-inter">Title: </span><span className="text-navy-900 font-inter">{requestChangesOrder.title || requestChangesOrder.scopeBox?.title}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Description: </span><span className="text-navy-900 font-inter">{requestChangesOrder.description || requestChangesOrder.scopeBox?.description}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Product Type: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.productType}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Price: </span><span className="text-navy-900 font-inter font-bold">{formatCurrency(requestChangesOrder.scopeBox?.price || 0, requestChangesOrder.currency || 'INR')}</span></div>
-                  <div><span className="font-medium text-neutral-500 font-inter">Deadline: </span><span className="text-navy-900 font-inter">{requestChangesOrder.scopeBox?.deadline ? new Date(requestChangesOrder.scopeBox.deadline).toLocaleDateString() : 'N/A'}</span></div>
-                  <div>
-                    <span className="font-medium text-neutral-500 font-inter">Deliverables:</span>
-                    <ul className="list-disc ml-4 mt-1 space-y-1">
-                      {(requestChangesOrder.scopeBox?.deliverables || []).map((d, i) => <li key={i} className="text-navy-900 font-inter">{d}</li>)}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Proposed Changes */}
-              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5">
-                <h3 className="font-semibold text-indigo-700 mb-4 font-inter text-sm uppercase tracking-wide">Proposed Changes</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className={labelClass}>Title</label>
-                    <input type="text" value={modifiedScopeBox?.title || ''} onChange={e => handleScopeBoxChange('title', e.target.value)} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Description</label>
-                    <textarea value={modifiedScopeBox?.description || ''} onChange={e => handleScopeBoxChange('description', e.target.value)} rows={3} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Product Type</label>
-                    <input type="text" value={modifiedScopeBox?.productType || ''} onChange={e => handleScopeBoxChange('productType', e.target.value)} className={inputClass} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className={labelClass}>Price ({currency})</label>
-                      <input type="number" value={modifiedScopeBox?.price || ''} onChange={e => handleScopeBoxChange('price', parseFloat(e.target.value))} className={inputClass} />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Deadline</label>
-                      <input type="date" value={modifiedScopeBox?.deadline ? new Date(modifiedScopeBox.deadline).toISOString().split('T')[0] : ''} onChange={e => handleScopeBoxChange('deadline', e.target.value)} className={inputClass} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Deliverables (comma-separated)</label>
-                    <input type="text" value={modifiedScopeBox?.deliverables?.join(', ') || ''} onChange={e => handleScopeBoxChange('deliverables', e.target.value.split(',').map(d => d.trim()))} className={inputClass} placeholder="Logo PNG, Logo SVG, Brand guidelines" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Reason for Changes</label>
-                    <textarea value={modifiedScopeBox?.changeReason || ''} onChange={e => handleScopeBoxChange('changeReason', e.target.value)} rows={2} className={inputClass} placeholder="Explain why these changes are needed..." />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-100">
-              <button className="px-5 py-2.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-navy-900 rounded-xl text-sm font-semibold transition-colors font-inter" onClick={() => setShowRequestChanges(false)}>Cancel</button>
-              <button className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm font-inter" onClick={handleSubmitChanges}>Submit Changes Request</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notification Modal */}
-      <NotificationModal
-        isOpen={notification.isOpen}
-        onClose={() => setNotification({ ...notification, isOpen: false })}
-        title={notification.title}
-        message={notification.message}
-        type={notification.type}
-      />
-
-      {/* Order Chat (floating bubble for selected order) */}
-      {selectedOrder && sellerUser && (
-        <OrderChat
-          orderId={selectedOrder.id}
-          currentUser={sellerUser}
-          orderStatus={selectedOrder.status}
-        />
-      )}
 
       {/* KYC Modal */}
       <KYCModal 

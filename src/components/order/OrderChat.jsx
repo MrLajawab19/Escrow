@@ -56,9 +56,7 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
   const messagesEndRef = useRef(null);
 
   // ── Determine if chat should be shown ────────────────────────────────────
-  const CHAT_ELIGIBLE_STATUSES = [
-    'ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'
-  ];
+  const CHAT_ELIGIBLE_STATUSES = ['PENDING_SELLER', 'ACTIVE', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
   const isEligible = CHAT_ELIGIBLE_STATUSES.includes(orderStatus);
 
   // ── Fetch initial messages via REST ──────────────────────────────────────

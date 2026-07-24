@@ -175,7 +175,7 @@ export default function AdminDisputeDetails() {
     try {
       // admin.js expects action: "REFUND" | "RELEASE"
       const action = resolution === 'REFUND_BUYER' ? 'REFUND' : 'RELEASE';
-      await axios.patch(`/api/admin/disputes/${id}/resolve`,
+      await axios.post(`/api/admin/disputes/${id}/resolve`,
         { action, notes: resolutionNotes },
         { headers: { Authorization: `Bearer ${token}` } }
       );

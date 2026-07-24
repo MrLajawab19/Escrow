@@ -214,7 +214,8 @@ and deleted `Order` from the schema entirely.
 
 ### Stage D — Schema Unification
 > Commits `28defc9`, `e00b87c`, `34af4a4`.
-- [x] D1: `deedService.js`, chat, dispute resolution decoupled from `Order`
+- [x] **KG-22 (Medium):** Fix error toast in `EnhancedDisputeResolution` to show real backend message.
+- [ ] **KG-23 (Medium):** Deed lifecycle socket events missing; implement silent polling fallback for dashboards.
 - [x] D2: Legacy `Order` model fully dropped from Prisma schema; admin + UI references cleaned
 - [x] Dead `Order`-era leftovers removed from codebase
 
@@ -538,3 +539,50 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
   - Clicking it again results in a 400 error from the backend (`Challenge already submitted for this party`).
   - Action: Hide the challenge form and display a "Challenge Submitted" state if `events` contain a `CHALLENGE` event for the current `actorRole`.
   - Identified: 2026-07-24.
+
+- [x] **KG-24 — Dead Order Acceptance Flow Removal (SellerDashboard.jsx)**
+  - Removed completely unreachable legacy flow (`handleAcceptOrder`, `handleRejectOrder`, modals, banner).
+  - Why: `sellerId` is only attached to a deed *after* the seller accepts an invite via `DeedInvitePage`. Therefore, `/api/deeds/seller` will never return a deed in the "pending acceptance" state (`ESCROW_FUNDED`/`PENDING_SELLER`). The dashboard flow was mathematically unreachable dead code.
+
+---
+
+## Phase 11 — Legacy Status Elimination (In Progress)
+> Plan approved 2026-07-24. See `legacy_status_inventory.md` for full categorization.
+
+- [x] **KG-25 (High) — Chat Blackout on ACTIVE deeds**
+  - Frontend `CHAT_ELIGIBLE` whitelist in `DeedDetails.jsx` and `OrderChat.jsx` drops `ACTIVE`, hiding chat immediately after acceptance. Backend investigation confirmed chat is fully authorized for all participants regardless of status.
+- [x] **KG-26 (Medium) — Dashboard Metric Undercounting**
+  - `BuyerDashboard.jsx` and `SellerDashboard.jsx` filter `inProgress` stats by legacy strings (`ACCEPTED`, `ESCROW_FUNDED`) instead of `ACTIVE` and `PENDING_SELLER`, causing live deeds to vanish from metrics.
+- [x] **KG-27 (Low) — Cosmetic Legacy Status Purge**
+  - Remove ghost strings (`PLACED`, `ACCEPTED`, `REJECTED`, `ESCROW_FUNDED`, `REFUNDED`) from dictionaries, UI hacks (`BUYER_ACCEPTED_GRACE_MS`), and `OrderTimeline` steps.
+
+---
+
+## Phase 12: Post-Migration Fixes (New Discoveries)
+
+- [x] **KG-28A (Medium) — Dashboard Metrics Correction**
+  - `BuyerDashboard.jsx` completed metric checks `RELEASED` instead of `CLOSED`.
+  - SellerDashboard earnings logic explicitly deferred to KG-30.
+- [x] **KG-28B (Low) — DeliveryActions Optimistic Update**
+  - `DeliveryActions.jsx` optimistic update pushes local state to legacy `RELEASED` instead of `CLOSED`.
+- [x] **KG-29 (Low) — DeedsTable Logic Duplication (Cleanup)**
+  - `DeedsTable.jsx` duplicates the `BUYER_ACCEPTED_GRACE_MS` hack and `sellerAcceptedAtMs()` logic, which currently causes a visual bug showing the fallback "Pending" badge for 1 hour. Will remove this dead code and the unreachable `RELEASED` string from the filter array.
+- [x] **KG-29.1 (Low) — Final Legacy Deed Status Removal**
+  - Removed dead `RELEASED` and `COMPLETED` strings from `DeedDetails.jsx` review banner condition. Checked project-wide for legacy identifiers. Frontend Deed Status Migration is officially complete.
+
+---
+
+## Phase 13: Architectural Debt
+
+- [x] **KG-30A (High) — Backend Engine Refactor**
+  - Rewrite `walletService.getWalletSummary` to use Prisma aggregates instead of fetching thousands of rows into JS memory.
+  - Compute `lifetimeEarnings` securely from `WalletTransaction` (`category = 'ESCROW_RELEASE'`).
+- [x] **KG-30B (Medium) — Frontend Wiring**
+  - Update `SellerDashboard.jsx` and `BuyerDashboard.jsx` to consume `lifetimeEarnings` from the `/api/wallet/summary` response instead of doing array math.
+- [x] **KG-30C (Low) — Dashboard Cleanup**
+  - Delete the legacy array filter `.reduce()` functions from the dashboard components.
+
+- [ ] **KG-31 (Medium) — Wallet UI Semantic Reconciliation**
+  - [x] **KG-31B — WalletHeroCard Refactor**: Implement role-based semantic fork. Map buyer metrics to the newly exposed API fields. Delete the hardcoded monthly stats cards entirely.
+  - [x] **KG-31C — WalletInsights Refactor**: Pass `isBuyer` from `WalletDashboard`. Implement role-based semantic fork for "Earnings" vs "Deposits" and "Net Retained" vs "Total Spent".
+  - [ ] **KG-31A (Optional Future Task)**: Decide whether buyer analytics (totalDeposited/Spent) justify expanding `/api/wallet/summary` or if they need a separate endpoint.

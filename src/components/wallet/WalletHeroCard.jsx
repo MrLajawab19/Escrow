@@ -1,18 +1,16 @@
 import React from 'react';
 import { useCurrency } from '../../context/CurrencyContext';
-import { Wallet, ShieldCheck, ArrowUpRight, ArrowDownRight, Clock, Activity } from 'lucide-react';
+import { Wallet, ShieldCheck, Clock, Activity } from 'lucide-react';
 
 const WalletHeroCard = ({ walletSummary, isBuyer }) => {
   const { formatCurrency, currencySymbol } = useCurrency();
 
   const balance = walletSummary?.balance || 0;
-  const lockedBalance = walletSummary?.lockedEscrowBalance || 0;
-  const pendingBalance = isBuyer ? (walletSummary?.pendingRefundBalance || 0) : (walletSummary?.pendingEarnings || 0);
+  const lockedBalance = walletSummary?.lockedBalance || 0;
+  const pendingBalance = walletSummary?.pendingWithdrawalAmount || 0;
   const totalBalance = balance + lockedBalance + pendingBalance;
 
-  const monthlyDeposits = Number(walletSummary?.monthlyStats?.monthlyIncome || 0);
-  const monthlyWithdrawals = Number(walletSummary?.monthlyStats?.monthlyExpense || 0);
-  const lifetimeVolume = walletSummary?.totalTransactions > 0 ? (walletSummary?.totalCredit || 0) : 0; // Approximate
+  const lifetimeEarnings = walletSummary?.lifetimeEarnings || 0;
 
   return (
     <div className="bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-2xl p-6 md:p-8 text-white shadow-lg shadow-primary-500/20 relative overflow-hidden">
@@ -52,7 +50,7 @@ const WalletHeroCard = ({ walletSummary, isBuyer }) => {
             <div>
               <div className="flex items-center gap-1.5 text-primary-200 mb-1">
                 <Clock size={14} />
-                <span className="text-xs font-medium uppercase tracking-wider">Pending Release</span>
+                <span className="text-xs font-medium uppercase tracking-wider">Pending Withdrawals</span>
               </div>
               <p className="text-lg font-bold">
                 {formatCurrency(pendingBalance, walletSummary?.currency || 'INR')}
@@ -71,34 +69,20 @@ const WalletHeroCard = ({ walletSummary, isBuyer }) => {
           </div>
         </div>
 
-        {/* Right Side: Secondary Metrics */}
-        <div className="lg:w-72 flex flex-col justify-between bg-white/10 rounded-2xl p-5 backdrop-blur-sm border border-white/10">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2 text-primary-100">
-                <Activity size={16} />
-                <span className="text-sm font-medium">Lifetime Volume</span>
+        {/* Right Side: Secondary Metrics (Seller Only) */}
+        {!isBuyer && (
+          <div className="lg:w-72 flex flex-col justify-center bg-white/10 rounded-2xl p-5 backdrop-blur-sm border border-white/10">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2 text-primary-100">
+                  <Activity size={16} />
+                  <span className="text-sm font-medium">Lifetime Earnings</span>
+                </div>
+                <span className="font-bold">{formatCurrency(lifetimeEarnings, walletSummary?.currency || 'INR')}</span>
               </div>
-              <span className="font-bold">{formatCurrency(lifetimeVolume, walletSummary?.currency || 'INR')}</span>
-            </div>
-            
-            <div className="flex justify-between items-center pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2 text-emerald-300">
-                <ArrowDownRight size={16} />
-                <span className="text-sm font-medium text-primary-100">Monthly Deposits</span>
-              </div>
-              <span className="font-bold">{formatCurrency(monthlyDeposits, walletSummary?.currency || 'INR')}</span>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 text-red-300">
-                <ArrowUpRight size={16} />
-                <span className="text-sm font-medium text-primary-100">Monthly Withdrawals</span>
-              </div>
-              <span className="font-bold">{formatCurrency(monthlyWithdrawals, walletSummary?.currency || 'INR')}</span>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

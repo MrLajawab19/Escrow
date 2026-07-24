@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
 import OrderTimeline from '../components/order/OrderTimeline';
@@ -14,27 +14,19 @@ import ReviewModal from '../components/ReviewModal';
 
 const STATUS_CONFIG = {
   DRAFT:             { label: 'Draft',             cls: 'bg-neutral-100 text-neutral-700 border-neutral-300', dot: 'bg-neutral-400' },
-  PLACED:            { label: 'Placed',            cls: 'bg-neutral-100 text-neutral-700 border-neutral-300', dot: 'bg-neutral-400' },
   PENDING_SELLER:    { label: 'Pending Seller',    cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
   PENDING_SIGNATURES:{ label: 'Pending Signatures',cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
-  ESCROW_FUNDED:     { label: 'Escrow Funded',     cls: 'bg-indigo-50 text-indigo-700 border-indigo-200',    dot: 'bg-indigo-500' },
   ESCROW_LOCKED:     { label: 'Escrow Locked',     cls: 'bg-indigo-50 text-indigo-700 border-indigo-200',    dot: 'bg-indigo-500' },
-  ACCEPTED:          { label: 'Accepted',           cls: 'bg-blue-50 text-blue-700 border-blue-200',          dot: 'bg-blue-500' },
   ACTIVE:            { label: 'Active',            cls: 'bg-amber-50 text-amber-700 border-amber-200',       dot: 'bg-amber-500' },
   IN_PROGRESS:       { label: 'In Progress',        cls: 'bg-amber-50 text-amber-700 border-amber-200',       dot: 'bg-amber-500' },
   CHANGES_REQUESTED: { label: 'Changes Requested',  cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
   SUBMITTED:         { label: 'Delivered',          cls: 'bg-purple-50 text-purple-700 border-purple-200',    dot: 'bg-purple-500' },
-  APPROVED:          { label: 'Approved',           cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   CONFIRMED:         { label: 'Confirmed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-  RELEASED:          { label: 'Completed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-  COMPLETED:         { label: 'Completed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   CLOSED:            { label: 'Completed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   DISPUTED:          { label: 'Disputed',           cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
   ARBITRATING:       { label: 'Arbitrating',        cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
   ARBITRATED:        { label: 'Arbitrated',         cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   ESCALATED:         { label: 'Escalated',          cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
-  REJECTED:          { label: 'Rejected',           cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
-  REFUNDED:          { label: 'Refunded',           cls: 'bg-neutral-100 text-neutral-600 border-neutral-200', dot: 'bg-neutral-400' },
   CANCELLED:         { label: 'Cancelled',          cls: 'bg-neutral-100 text-neutral-600 border-neutral-200', dot: 'bg-neutral-400' },
 };
 
@@ -51,15 +43,6 @@ function timeRemaining(deadline) {
   const hours = Math.floor((diff % 86400000) / 3600000);
   if (days > 0) return { label: `${days}d ${hours}h remaining`, urgent: days <= 2 };
   return { label: `${hours}h remaining`, urgent: true };
-}
-
-const BUYER_ACCEPTED_GRACE_MS = 60 * 60 * 1000;
-
-function sellerAcceptedAtMs(deed) {
-  if (!deed) return 0;
-  if (deed.sellerAcceptedAt) return new Date(deed.sellerAcceptedAt).getTime();
-  const log = [...(deed.orderLogs || [])].reverse().find((l) => l.event === 'ORDER_ACCEPTED');
-  return log?.timestamp ? new Date(log.timestamp).getTime() : 0;
 }
 
 // ─── Skeleton loader ──────────────────────────────────────────────────────────
@@ -189,29 +172,12 @@ const DeedDetails = () => {
 
   useEffect(() => { fetchOrder(); }, [fetchOrder]);
 
-  const [buyerStatusTick, setBuyerStatusTick] = useState(0);
-  useEffect(() => {
-    if (userType !== 'buyer' || deed?.status !== 'IN_PROGRESS') return;
-    const t0 = sellerAcceptedAtMs(deed);
-    if (!t0 || Date.now() - t0 >= BUYER_ACCEPTED_GRACE_MS) return;
-    const iv = setInterval(() => setBuyerStatusTick((x) => x + 1), 30000);
-    return () => clearInterval(iv);
-  }, [userType, deed?.id, deed?.status, deed?.sellerAcceptedAt, deed?.ledgerEntries]);
-
   const handleOrderUpdate = (updated) => setDeed(prev => ({ ...prev, ...updated }));
 
-  const CHAT_ELIGIBLE = ['ESCROW_FUNDED', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
+  const CHAT_ELIGIBLE = ['PENDING_SELLER', 'ACTIVE', 'IN_PROGRESS', 'SUBMITTED', 'DISPUTED'];
   const showChat = CHAT_ELIGIBLE.includes(deed?.status);
 
-  const buyerBadgeKey = useMemo(() => {
-    if (!deed) return 'PLACED';
-    if (userType !== 'buyer' || (deed.status !== 'IN_PROGRESS' && deed.status !== 'ACTIVE')) return deed.status;
-    const at = sellerAcceptedAtMs(deed);
-    if (at && Date.now() - at < BUYER_ACCEPTED_GRACE_MS) return 'ACCEPTED';
-    return deed.status;
-  }, [deed, userType, buyerStatusTick]);
-
-  const statusCfg = STATUS_CONFIG[buyerBadgeKey] || STATUS_CONFIG[deed?.status] || STATUS_CONFIG.PLACED;
+  const statusCfg = STATUS_CONFIG[deed?.status] || STATUS_CONFIG.DRAFT;
   // Field resolution: first-class Deed columns are authoritative for all deeds created via
   // the 4-stage NewDeedPage flow. scopeBox fallback preserves legacy deed compatibility.
   const deedTitle       = deed?.title       || deed?.scopeBox?.title;
@@ -329,7 +295,7 @@ const DeedDetails = () => {
             <OrderTimeline status={deed.status} />
 
             {/* ── REVIEW BANNER ───────────────────────────────────────────── */}
-            {userType === 'buyer' && (deed.status === 'RELEASED' || deed.status === 'COMPLETED' || deed.status === 'CLOSED') && (
+            {userType === 'buyer' && deed.status === 'CLOSED' && (
               <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div>
                   <h3 className="text-lg font-bold text-emerald-800 font-inter">How was your experience?</h3>

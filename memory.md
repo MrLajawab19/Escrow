@@ -68,6 +68,9 @@ User pays via Razorpay →
 The `verifyPayment` endpoint is **enabled** (was previously disabled stub, restored 2026-07-20).
 No secret/signature/stack leakage in HTTP responses.
 
+### 7. Chat Authorization is Status-Agnostic
+The backend (`chatController.js`, `chatSocket.js`) authorizes chat access purely by participant identity (`buyerId` / `sellerId`), NOT by `deed.status`. The backend perfectly permits chat at any state (e.g. `PENDING_SELLER`, `ACTIVE`, `IN_PROGRESS`). Any status-based chat restrictions (like `CHAT_ELIGIBLE`) exist entirely in the frontend and are considered UI bugs if they block live deeds.
+
 ---
 
 ## Development Environment Notes
@@ -86,6 +89,18 @@ No secret/signature/stack leakage in HTTP responses.
 | Commit | What it fixed |
 |--------|---------------|
 | `8796dcd` | Invite flow Bug A + B: `InviteLinkBanner` `/invite/` → `/deed/invite/` (was 404); post-accept redirect `order.id` → `deed.id`, `/seller/order/undefined` → `/seller/deed/:id`. E2E verified. |
+| Pending | KG-25: Restored Chat functionality on `ACTIVE` deeds by removing dual-layer frontend status blacklist in `DeedDetails.jsx` and `OrderChat.jsx`. |
+| Pending | KG-26: Fixed `inProgress` dashboard metric undercounting by switching filters to `['PENDING_SELLER', 'ACTIVE', 'IN_PROGRESS']`. |
+| Pending | KG-27: Cosmetic Legacy Status Purge. Removed dead status strings from all dictionaries, removed unused timeline steps, removed unreachable grace-period hack in DeedDetails. |
+| Pending | KG-24: Removed dead Order acceptance flow from SellerDashboard.jsx. Flow was mathematically unreachable because `sellerId` is only assigned after invite acceptance. |
+| `fb83f5e` | KG-28A: Dashboard metrics correction. Fixed `BuyerDashboard.jsx` using `CLOSED` instead of `RELEASED` for completed metric. Seller earnings explicitly deferred. |
+| `4b1a8d9` | KG-28B: `DeliveryActions.jsx` optimistic update aligned to backend. Pushes local state to `CLOSED` instead of `RELEASED`. |
+| `c0adbe9` | KG-29: `DeedsTable.jsx` logic duplication cleanup. Fixed the visual bug (fallback "Pending" badge) by removing dead grace-period hack. Removed unreachable `RELEASED` string from filter. |
+| `1b3e945` | KG-29.1: Final Legacy Deed Status Removal. Cleaned up dead `RELEASED`/`COMPLETED` strings from `DeedDetails.jsx` review banner. Verified 100% legacy status eradication. |
+| `a47f920` | KG-30A: Backend Financial Summary Engine Refactor. Rewrote `walletService.getWalletSummary` to use O(1) memory Prisma SQL aggregates instead of O(N) JS array processing. Solved architectural domain leak by deriving finances from `WalletTransaction`. |
+| `6ab1c3d` | KG-30B: Frontend Wiring. Replaced `SellerDashboard.jsx` manual array reduce calculation for `totalEarnings` with `walletSummary.lifetimeEarnings`. Removed all frontend financial derivations. |
+| `8b209d1` | KG-30C: Dashboard Cleanup & Final Certification. Replaced deprecated fields in `WalletInsights.jsx` and `WalletHeroCard.jsx` with strict ledger values. Verified 0 occurrences of `.reduce()` and deed-amount financial derivations remaining project-wide. |
+| `f93e2b2` | KG-31B & KG-31C: Wallet UI Semantic Reconciliation. Forked `WalletHeroCard` and `WalletInsights` semantics based on `isBuyer`. Removed hardcoded zero values. Preserved API performance by avoiding premature buyer analytics. |
 | `6030b4f` | KG-9: `DisputesTab.jsx` — `CHALLENGE` → `CHALLENGE_PHASE` enum fix; `d.order?.` → `d.deed?.` refs fixed |
 | `97540fc` | `task.md` + `memory.md` added to project root; 3 investigation script stragglers deleted |
 | `9e444e6` | Missing closing brace in `paymentController.js` catch block — server startup crash |
@@ -127,7 +142,8 @@ See `task.md` KG-1 through KG-10 for full detail. Summary of open items:
 | KG-19 | Low | Challenge UI doesn't visually update after submission, leading to duplicate submissions and 400 errors. |
 | KG-20 | High | `submitChallengeEvent` escalates the dispute without emitting an observable `DisputeEvent` or updating the timeline. |
 | KG-21 | High | Backend data-integrity bug: old resolution route successfully updated `deedDispute` but crashed before updating `deed` status, causing silent desync. (Fixed via transactional rewrite). |
-| KG-22 | Low | Frontend UI obscuring backend errors: `EnhancedDisputeResolution.jsx` hardcodes generic "Failed to resolve dispute" toasts instead of surfacing the 400 backend error reason. |
+| KG-22 | Medium | `EnhancedDisputeResolution` toast error messages are generic ("Failed to resolve dispute"); they now correctly surface the detailed backend 400 error messages (e.g., "Cannot refund a deed that has not been funded yet"). |
+| KG-23 | Medium | The architecture doc states "Socket.IO for chat and deed lifecycle events", but actual backend implementation ONLY wires up chat. Deed lifecycle events (e.g., `acceptDeed`) do not emit global socket events. This means real-time dashboard updates currently require polling rather than listening for socket emissions. |
 
 ---
 

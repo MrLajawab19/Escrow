@@ -281,14 +281,6 @@ export default function AdminDashboard() {
   const autoFlagged = disputes.filter(d => d.autoFlag === 'AUTO_FLAGGED');
   const openDisputes = disputes.filter(d => d.status === 'OPEN');
 
-  // Status bar colors
-  const BAR_COLORS = {
-    PLACED: 'bg-slate-400', ESCROW_FUNDED: 'bg-blue-500', ACCEPTED: 'bg-cyan-500',
-    IN_PROGRESS: 'bg-indigo-500', SUBMITTED: 'bg-violet-500', APPROVED: 'bg-teal-500',
-    COMPLETED: 'bg-emerald-500', RELEASED: 'bg-green-500', DISPUTED: 'bg-red-500',
-    REFUNDED: 'bg-orange-500', CANCELLED: 'bg-gray-400', CHANGES_REQUESTED: 'bg-amber-500',
-    REJECTED: 'bg-rose-500'
-  };
 
   if (loading) return (
     <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center">

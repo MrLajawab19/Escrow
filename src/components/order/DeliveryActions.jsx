@@ -26,7 +26,7 @@ const DeliveryActions = ({ deed, userType, onUpdate }) => {
       const res = await axios.post(`/api/deeds/${deed.id}/release`, {}, { headers });
       if (res.data.success) {
         showNotice('Funds released! Order completed.');
-        onUpdate?.({ ...deed, status: 'RELEASED' });
+        onUpdate?.({ ...deed, status: 'CLOSED' });
       } else {
         showNotice(res.data.message || 'Failed to release funds', 'error');
       }

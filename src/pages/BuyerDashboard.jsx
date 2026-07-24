@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { ClipboardCheck, Clock, Flag, CheckCircle2 } from 'lucide-react';
@@ -10,7 +10,6 @@ import MyDisputesPage from '../components/MyDisputesPage';
 import ChangesReviewModal from '../components/ChangesReviewModal';
 import WalletDashboard from '../components/WalletDashboard';
 import KYCModal from '../components/KYCModal';
-import TransactionHistory from '../components/TransactionHistory';
 
 // New dashboard layout components
 import DashboardSidebar from '../components/dashboard/DashboardSidebar';
@@ -169,9 +168,9 @@ const BuyerDashboard = () => {
 
   // Metric computations
   const totalOrders = orders.length;
-  const inProgress = orders.filter(o => ['IN_PROGRESS', 'ESCROW_FUNDED', 'ACCEPTED'].includes(o.status)).length;
+  const inProgress = orders.filter(o => ['PENDING_SELLER', 'ACTIVE', 'IN_PROGRESS'].includes(o.status)).length;
   const pendingReview = orders.filter(o => o.status === 'SUBMITTED').length;
-  const completed = orders.filter(o => o.status === 'RELEASED').length;
+  const completed = orders.filter(o => o.status === 'CLOSED').length;
 
   // Loading state
   if (loading) {

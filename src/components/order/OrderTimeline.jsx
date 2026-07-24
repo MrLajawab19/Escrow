@@ -2,7 +2,7 @@ import React from 'react';
 
 const STEPS = [
   {
-    key: 'PLACED',
+    key: 'DRAFT',
     label: 'Order Placed',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -12,7 +12,7 @@ const STEPS = [
     ),
   },
   {
-    key: 'ESCROW_FUNDED',
+    key: 'PENDING_SELLER',
     label: 'Payment Secured',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,7 +22,7 @@ const STEPS = [
     ),
   },
   {
-    key: 'IN_PROGRESS',
+    key: 'ACTIVE',
     label: 'Work In Progress',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@ const STEPS = [
     ),
   },
   {
-    key: 'RELEASED',
+    key: 'CLOSED',
     label: 'Completed',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,12 +56,9 @@ const STEPS = [
 // Maps any status to the step index it represents
 const STATUS_STEP_MAP = {
   DRAFT: 0,
-  PLACED: 0,
-  ESCROW_FUNDED: 1,
+  PENDING_SELLER: 1,
   ESCROW_LOCKED: 1,
   PENDING_SIGNATURES: 1,
-  ACCEPTED: 1,
-  PENDING_SELLER: 1,
   ACTIVE: 2,
   IN_PROGRESS: 2,
   CHANGES_REQUESTED: 2,
@@ -69,13 +66,9 @@ const STATUS_STEP_MAP = {
   DISPUTED: 3,
   ARBITRATING: 3,
   ESCALATED: 3,
-  APPROVED: 4,
   CONFIRMED: 4,
   ARBITRATED: 4,
-  RELEASED: 4,
-  COMPLETED: 4,
   CLOSED: 4,
-  REFUNDED: 4,
   CANCELLED: 0,
 };
 
@@ -203,16 +196,14 @@ const OrderTimeline = ({ status }) => {
       </div>
 
       {/* Disputed/Cancelled special notice */}
-      {(status === 'DISPUTED' || status === 'CANCELLED' || status === 'REFUNDED') && (
+      {(status === 'DISPUTED' || status === 'CANCELLED') && (
         <div className={`mt-4 px-4 py-3 rounded-xl text-sm font-inter flex items-center gap-2
           ${status === 'DISPUTED' ? 'bg-red-50 text-red-700 border border-red-100'
-          : status === 'REFUNDED' ? 'bg-amber-50 text-amber-700 border border-amber-100'
           : 'bg-neutral-50 text-neutral-600 border border-neutral-200'}`}>
-          <span>{status === 'DISPUTED' ? '⚠️' : status === 'REFUNDED' ? '↩️' : '❌'}</span>
+          <span>{status === 'DISPUTED' ? '⚠️' : '❌'}</span>
           <span>
             {status === 'DISPUTED' && 'This order has an active dispute under review.'}
             {status === 'CANCELLED' && 'This order was cancelled.'}
-            {status === 'REFUNDED' && 'This order was refunded.'}
           </span>
         </div>
       )}

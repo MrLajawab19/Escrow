@@ -295,55 +295,10 @@ router.get('/disputes/:id/full', adminAuth, getDisputeFull);
 // ── POST /api/admin/disputes/:id/resolve ──────────────────────────────────────
 
 router.post('/disputes/:id/resolve', adminAuth, async (req, res) => {
-  try {
-    const { action, notes } = req.body;
-    if (!action) return res.status(400).json({ success: false, message: 'action is required (REFUND or RELEASE)' });
-
-    const dispute = await prisma.deedDispute.findUnique({ where: { id: req.params.id } });
-    if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
-    if (dispute.status === 'RESOLVED') return res.status(400).json({ success: false, message: 'Dispute already resolved' });
-
-    const resolution = action === 'REFUND' ? 'REFUND_BUYER' : 'RELEASE_TO_SELLER';
-    const orderStatus = action === 'REFUND' ? 'REFUNDED' : 'COMPLETED';
-
-    const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-    const resolutionEntry = {
-      event: 'DISPUTE_RESOLVED',
-      by: 'admin',
-      timestamp: new Date().toISOString(),
-      description: `Admin resolved: ${action === 'REFUND' ? 'Refunded buyer' : 'Released payment to seller'}`,
-      notes: notes || '',
-    };
-
-    const updatedDispute = await prisma.deedDispute.update({
-      where: { id: req.params.id },
-      data: {
-        status: 'RESOLVED',
-        resolution,
-        resolvedBy: req.admin?.id || 'admin',
-        resolvedAt: new Date(),
-        timeline: [...currentTimeline, resolutionEntry],
-        lastActivity: new Date(),
-      },
-    });
-
-    if (dispute.orderId) {
-      await prisma.deed.update({
-        where: { id: dispute.orderId },
-        data: { status: orderStatus },
-      });
-    } else if (dispute.deedId) {
-      await prisma.deed.update({
-        where: { id: dispute.deedId },
-        data: { status: orderStatus },
-      });
-    }
-
-    return res.json({ success: true, message: `Dispute resolved: ${action}`, data: updatedDispute });
-  } catch (err) {
-    console.error('Admin resolve error:', err);
-    return res.status(500).json({ success: false, message: 'Failed to resolve dispute' });
-  }
+  // Delegate to the shared disputeController logic which handles wallet transactions and accurate statuses
+  const { resolveDispute } = require('../controllers/disputeController');
+  req.user = req.admin; // Map admin to user for the controller
+  return resolveDispute(req, res);
 });
 
 // ── POST /api/admin/disputes/:id/ai-analysis ──────────────────────────────────

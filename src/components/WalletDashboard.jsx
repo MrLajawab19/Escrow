@@ -155,6 +155,7 @@ const WalletDashboard = ({ userId }) => {
         <WalletInsights 
           walletSummary={walletSummary} 
           walletLoading={walletLoading} 
+          isBuyer={isBuyer}
         />
 
         {/* Bottom Fold: Tables & Secondary Panels */}

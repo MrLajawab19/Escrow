@@ -4,24 +4,6 @@ import StatusBadge from './StatusBadge';
 import { useCurrency } from '../../context/CurrencyContext';
 import { ChevronRight } from 'lucide-react';
 
-const BUYER_ACCEPTED_GRACE_MS = 60 * 60 * 1000;
-
-function sellerAcceptedAtMs(deed) {
-  if (deed.sellerSignedAt) return new Date(deed.sellerSignedAt).getTime();
-  const log = [...(deed.ledgerEntries || [])].reverse().find((l) => l.eventType === 'SELLER_JOINED');
-  return log?.timestamp ? new Date(log.timestamp).getTime() : 0;
-}
-
-function getDisplayStatus(deed, userType) {
-  const st = deed.status;
-  if (userType === 'seller') return st;
-  
-  if (st !== 'ACTIVE') return st;
-  const at = sellerAcceptedAtMs(deed);
-  if (at && Date.now() - at < BUYER_ACCEPTED_GRACE_MS) return 'ACCEPTED';
-  return 'ACTIVE';
-}
-
 const filterTabs = [
   { key: 'all', label: 'All' },
   { key: 'in_progress', label: 'In Progress' },
@@ -53,7 +35,7 @@ function filterDeeds(deeds, filterKey) {
     case 'pending_review':
       return deeds.filter(d => d.status === 'SUBMITTED');
     case 'completed':
-      return deeds.filter(d => ['CONFIRMED', 'CLOSED', 'RELEASED'].includes(d.status));
+      return deeds.filter(d => ['CONFIRMED', 'CLOSED'].includes(d.status));
     case 'disputed':
       return deeds.filter(d => ['DISPUTED', 'ARBITRATING', 'ARBITRATED', 'ESCALATED'].includes(d.status));
     case 'cancelled':
@@ -156,7 +138,7 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
         ) : (
           filteredDeeds.slice(0, 10).map((deed, index) => {
             const icon = getServiceIcon(index);
-            const displayStatus = getDisplayStatus(deed, userType);
+            const displayStatus = deed.status;
             const title = deed.title || deed.scopeBox?.title || 'Untitled Order';
             const amount = deed.amount || deed.scopeBox?.price || 0;
             const counterpartyName = getCounterpartyName(deed);

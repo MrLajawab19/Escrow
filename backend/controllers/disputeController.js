@@ -951,10 +951,35 @@ const submitChallengeEvent = async (req, res) => {
       });
     } else if (challengeCount === 2) {
       // Both challenged, instantly escalate (human review overrides any pending or completed re-analysis)
+      const escalationEntry = {
+        event: 'ESCALATED',
+        by: 'system',
+        timestamp: new Date().toISOString(),
+        description: 'Auto-escalated: Both parties challenged the AI decision.',
+        notes: 'Awaiting human moderator review.'
+      };
+
+      const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
+
       await prisma.deedDispute.update({
         where: { id: dispute.id },
-        data: { status: 'ESCALATED' }
+        data: { 
+          status: 'ESCALATED',
+          escalatedAt: new Date(),
+          lastActivity: new Date(),
+          timeline: [...currentTimeline, escalationEntry]
+        }
       });
+
+      await prisma.disputeEvent.create({
+        data: {
+          deedDisputeId: dispute.id,
+          type: 'ESCALATED',
+          actorRole: 'system',
+          payload: { reason: 'Both parties challenged the decision.' }
+        }
+      });
+
       console.log(`[Dispute ${dispute.id}] Both parties challenged, escalated to human review.`);
     }
     

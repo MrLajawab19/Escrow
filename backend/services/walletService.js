@@ -396,12 +396,7 @@ class WalletService {
   async getWalletSummary(userId, userRole = 'unknown') {
     try {
       let wallet = await prisma.wallet.findUnique({
-        where: { userId },
-        include: {
-          transactions: {
-            orderBy: { createdAt: 'desc' },
-          },
-        },
+        where: { userId }
       });
 
       if (!wallet) {
@@ -409,81 +404,80 @@ class WalletService {
           data: {
             userId,
             userRole,
-            currency: 'USD',
+            currency: 'INR',
             balance: 0,
-          },
-          include: {
-            transactions: true,
+            lockedBalance: 0
           }
         });
       }
 
-      const balance = this.calculateBalanceFromTransactions(wallet.transactions);
-      const pendingBalance = this.calculatePendingBalance(wallet.transactions);
+      // Aggregate: Lifetime Earnings
+      const lifetimeEarningsAgg = await prisma.walletTransaction.aggregate({
+        _sum: { amount: true },
+        where: { 
+          walletId: wallet.id, 
+          type: 'CREDIT', 
+          category: 'ESCROW_RELEASE', 
+          status: 'SUCCESS' 
+        }
+      });
 
-      const successfulTransactions = wallet.transactions.filter(t => t.status === 'SUCCESS');
-      const creditTransactions = successfulTransactions.filter(t => t.type === 'CREDIT');
-      const debitTransactions = successfulTransactions.filter(t => t.type === 'DEBIT');
+      // Aggregate: Total Withdrawn
+      const totalWithdrawnAgg = await prisma.walletTransaction.aggregate({
+        _sum: { amount: true },
+        where: { 
+          walletId: wallet.id, 
+          category: 'WITHDRAWAL', 
+          status: 'SUCCESS' 
+        }
+      });
 
-      const totalCredit = creditTransactions.reduce((sum, t) => sum + t.amount, 0);
-      const totalDebit = debitTransactions.reduce((sum, t) => sum + t.amount, 0);
+      // Aggregate: Pending Withdrawals
+      const pendingWithdrawalsAgg = await prisma.walletTransaction.aggregate({
+        _sum: { amount: true },
+        where: { 
+          walletId: wallet.id, 
+          category: 'WITHDRAWAL', 
+          status: 'PENDING' 
+        }
+      });
 
-      const monthlyStats = this.calculateMonthlyStats(successfulTransactions);
-
-      // Calculate role-specific states using Deed model (Order table is fully retired from this calculation)
-      let lockedEscrowBalance = 0;
-      let pendingRefundBalance = 0;
-      let pendingEarnings = 0;
-      let underDisputeAmount = 0;
-      let withdrawnAmount = 0;
-
-      const activeBuyerDeedStatuses = ['PENDING_SELLER', 'PENDING_SIGNATURES', 'ACTIVE', 'SUBMITTED', 'CHANGES_REQUESTED', 'DISPUTED'];
-      // Sellers should only see earnings as 'pending' AFTER they have accepted the job.
-      const activeSellerDeedStatuses = ['ACTIVE', 'SUBMITTED', 'CHANGES_REQUESTED', 'DISPUTED'];
+      // Aggregate: Order counts
+      let activeOrders = 0;
+      let completedOrders = 0;
 
       if (wallet.userRole === 'buyer') {
-        const activeBuyerDeeds = await prisma.deed.findMany({
-          where: { buyerId: userId, status: { in: activeBuyerDeedStatuses } },
-        });
-        activeBuyerDeeds.forEach(deed => {
-          if (deed.status === 'DISPUTED') {
-            pendingRefundBalance += parseInt(deed.amount || 0, 10);
-          } else {
-            lockedEscrowBalance += parseInt(deed.amount || 0, 10);
+        activeOrders = await prisma.deed.count({
+          where: { 
+            buyerId: userId, 
+            status: { in: ['PENDING_SELLER', 'PENDING_SIGNATURES', 'ACTIVE', 'SUBMITTED', 'CHANGES_REQUESTED', 'DISPUTED'] } 
           }
+        });
+        completedOrders = await prisma.deed.count({
+          where: { buyerId: userId, status: 'CLOSED' }
         });
       } else if (wallet.userRole === 'seller') {
-        const activeSellerDeeds = await prisma.deed.findMany({
-          where: { sellerId: userId, status: { in: activeSellerDeedStatuses } },
-        });
-        activeSellerDeeds.forEach(deed => {
-          if (deed.status === 'DISPUTED') {
-            underDisputeAmount += parseInt(deed.amount || 0, 10);
-          } else {
-            pendingEarnings += parseInt(deed.amount || 0, 10);
+        activeOrders = await prisma.deed.count({
+          where: { 
+            sellerId: userId, 
+            status: { in: ['ACTIVE', 'SUBMITTED', 'CHANGES_REQUESTED', 'DISPUTED'] } 
           }
         });
-
-        withdrawnAmount = debitTransactions
-          .filter(t => t.category === 'WITHDRAWAL')
-          .reduce((sum, t) => sum + t.amount, 0);
+        completedOrders = await prisma.deed.count({
+          where: { sellerId: userId, status: 'CLOSED' }
+        });
       }
 
       return {
-        balance,
-        pendingBalance,
-        lockedEscrowBalance,
-        pendingRefundBalance,
-        pendingEarnings,
-        underDisputeAmount,
-        withdrawnAmount,
+        balance: wallet.balance || 0,
+        lockedBalance: wallet.lockedBalance || 0,
+        lifetimeEarnings: lifetimeEarningsAgg._sum.amount || 0,
+        totalWithdrawn: totalWithdrawnAgg._sum.amount || 0,
+        pendingWithdrawalAmount: pendingWithdrawalsAgg._sum.amount || 0,
+        activeOrders,
+        completedOrders,
         userRole: wallet.userRole,
-        currency: wallet.currency,
-        totalCredit,
-        totalDebit,
-        totalTransactions: wallet.transactions.length,
-        monthlyStats,
-        lastTransaction: wallet.transactions[0] || null,
+        currency: wallet.currency
       };
     } catch (error) {
       throw new Error(`Failed to get wallet summary: ${error.message}`);
