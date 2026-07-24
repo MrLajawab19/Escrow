@@ -117,6 +117,10 @@ See `task.md` KG-1 through KG-10 for full detail. Summary of open items:
 | KG-9 | ✅ | RESOLVED 2026-07-21: stale filter working; enum mismatch + legacy `d.order` refs fixed in `DisputesTab.jsx`. |
 | KG-10 | Low | Wallet UI responsive patterns in code but formal breakpoint verification never done. |
 | KG-11 | Low | AI prompt phrasing conflates 'late' with 'absent' when `isLate` is true, causing confusing reasoning text. |
+| KG-12 | High | Admin Timeline reads from legacy `dispute.timeline` JSON column instead of the new `DisputeEvent` ledger. |
+| KG-13 | High | Missing Challenge UI. Frontend uses legacy `Smart Escalate` button that bypasses the challenge round. |
+| KG-14 | Low | Admin UI confidence score multiplies by 100 incorrectly (`Math.round(value * 100)`). |
+| KG-15 | Low | Admin UI Platform Fee is hardcoded to 5% instead of the 2% defined in the Fee Engine. |
 
 ---
 

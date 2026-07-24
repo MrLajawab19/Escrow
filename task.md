@@ -490,3 +490,25 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
   - Gemini interprets this as missing the deadline entirely and outputs misleading reasoning like "Both parties failed to submit evidence".
   - Action: Refine the prompt in `disputeAI.js` to explicitly distinguish between "submitted late" and "never submitted" so the generated text doesn't confuse users.
   - Identified: 2026-07-24.
+
+- [ ] **KG-12 — Admin Timeline reads from legacy JSON column (HIGH, architecture gap)**
+  - `admin.js` `/api/admin/disputes/:id/full` builds the timeline using `dispute.timeline` (legacy JSON column) instead of the `DisputeEvent` ledger.
+  - This causes the admin view to be completely blind to new evidence submissions, showing stale dual-source-of-truth data.
+  - Action: Update `admin.js` to fetch and parse `DisputeEvent` rows for the timeline. Mark `dispute.timeline` for eventual deletion.
+  - Identified: 2026-07-24.
+
+- [ ] **KG-13 — Missing Challenge UI in frontend (HIGH, missing feature)**
+  - `DisputeResolutionFlow.jsx` has no handling for `status === 'CHALLENGE_PHASE'`.
+  - Instead, it renders an old "Smart Escalate" button that hits the legacy `/smart-escalate` endpoint, bypassing the challenge round entirely and jumping straight to `ESCALATED`.
+  - Action: Build the proper Challenge UI and wire it to `/api/disputes/deed/:id/challenge`.
+  - Identified: 2026-07-24.
+
+- [ ] **KG-14 — Admin UI confidence score formatting bug (LOW, UI)**
+  - `ConfBar` in `AdminDisputeDetails.jsx` multiplies the score by 100 (`Math.round(value * 100)`), causing a score of 95 to display as 9500%.
+  - Action: Remove the `* 100` multiplication.
+  - Identified: 2026-07-24.
+
+- [ ] **KG-15 — Admin UI platform fee hardcoded mismatch (LOW, UI)**
+  - `AdminDisputeDetails.jsx` hardcodes the label "Platform Fee (5%)", but the backend Fee Engine (Phases 1-3) charges 2% to both parties.
+  - Action: Update the label to match the actual 2% fee engine logic.
+  - Identified: 2026-07-24.
