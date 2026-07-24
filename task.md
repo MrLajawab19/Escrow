@@ -508,7 +508,21 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
   - Action: Remove the `* 100` multiplication.
   - Identified: 2026-07-24.
 
-- [ ] **KG-15 — Admin UI platform fee hardcoded mismatch (LOW, UI)**
-  - `AdminDisputeDetails.jsx` hardcodes the label "Platform Fee (5%)", but the backend Fee Engine (Phases 1-3) charges 2% to both parties.
-  - Action: Update the label to match the actual 2% fee engine logic.
+- [ ] **KG-15 (Follow-up) — Incomplete platform fee fix (LOW, UI)**
+  - The first pass of KG-15 only fixed the "Financial Analysis" panel.
+  - The top summary strip (`AdminDisputeDetails.jsx` line 296) still hardcodes `Platform Fee (5%)`.
+  - Action: Update the second label to `2%`.
+  - Identified: 2026-07-24.
+
+- [ ] **KG-16 — Admin Order Snapshot field mapping bug (LOW, UI)**
+  - The admin dashboard looks for `order.scopeBox.productType`, `order.scopeBox.title`, and `order.scopeBox.deadline`.
+  - In the current schema, `deed` stores these natively (`deed.title`, `deed.deadline`, `ruleFlags.productType`).
+  - This causes the snapshot to display "Unknown", "—", and "N/A" for perfectly valid deeds.
+  - Action: Remap the frontend to use the correct fields on `deed`.
+  - Identified: 2026-07-24.
+
+- [ ] **KG-17 — Admin currency formatting & math bug (LOW, UI)**
+  - The admin dashboard hardcodes `$` everywhere instead of respecting the app's `₹` standard or `financial.currency`.
+  - It also double-divides by 100 (`financial?.escrowAmount / 100`) even though the backend already parsed the value correctly, turning a ₹100 deed into `$1.00`.
+  - Action: Replace hardcoded `$` with proper currency formatter and remove the secondary `/ 100`.
   - Identified: 2026-07-24.
