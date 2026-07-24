@@ -207,7 +207,33 @@ const getDisputeFull = async (req, res) => {
       }
     }
 
-    const disputeTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
+    const disputeEvents = await prisma.disputeEvent.findMany({
+      where: { deedDisputeId: req.params.id },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    const disputeTimeline = disputeEvents.map(e => {
+      let desc = e.type.replace(/_/g, ' ');
+      if (e.type === 'EVIDENCE_SUBMITTED') desc = `${e.actorRole === 'buyer' ? 'Buyer' : 'Seller'} submitted evidence`;
+      if (e.type === 'CHALLENGE') desc = `${e.actorRole === 'buyer' ? 'Buyer' : 'Seller'} submitted challenge`;
+      if (e.type === 'AI_REPORT') desc = `AI completed analysis`;
+      if (e.type === 'SMART_ESCALATED') desc = `${e.actorRole === 'buyer' ? 'Buyer' : 'Seller'} escalated to human moderator`;
+      if (e.type === 'HUMAN_DECISION') desc = `Admin provided final resolution`;
+      
+      let notes = '';
+      if (e.payload && typeof e.payload === 'object') {
+        notes = e.payload.rebuttal || e.payload.reasoning || e.payload.notes || '';
+      }
+
+      return {
+        event: e.type,
+        timestamp: e.createdAt,
+        by: e.actorRole || 'system',
+        description: desc,
+        notes
+      };
+    });
+
     const combinedTimeline = [...deedTimeline, ...disputeTimeline]
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 

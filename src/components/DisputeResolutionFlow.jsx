@@ -114,10 +114,11 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Escalation state
-  const [escalating, setEscalating] = useState(false);
-  const [escalateReason, setEscalateReason] = useState('');
-  const [showEscalateModal, setShowEscalateModal] = useState(false);
+  // Challenge state
+  const [challenging, setChallenging] = useState(false);
+  const [challengeReason, setChallengeReason] = useState('');
+  const [challengeFiles, setChallengeFiles] = useState([]);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [escalated, setEscalated] = useState(false);
 
   // AI polling
@@ -191,21 +192,27 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
     }
   };
 
-  const handleSmartEscalate = async () => {
-    setEscalating(true);
+  const handleChallengeSubmit = async (e) => {
+    e.preventDefault();
+    if (!challengeReason.trim() && challengeFiles.length === 0) return;
+
+    setChallenging(true);
     try {
+      const formData = new FormData();
+      formData.append('rebuttal', challengeReason);
+      challengeFiles.forEach(f => formData.append('files', f));
+
       await axios.post(
-        `/api/disputes/${detail.dispute.id}/smart-escalate`,
-        { reason: escalateReason || 'Not satisfied with the AI recommendation' },
-        { headers }
+        `/api/disputes/deed/${deedId}/challenge`,
+        formData,
+        { headers: { ...headers, 'Content-Type': 'multipart/form-data' } }
       );
-      setEscalated(true);
-      setShowEscalateModal(false);
+      setShowChallengeModal(false);
       await fetchDetail();
     } catch (e) {
-      toast.error(e.response?.data?.message || 'Failed to escalate');
+      toast.error(e.response?.data?.message || 'Failed to submit challenge');
     } finally {
-      setEscalating(false);
+      setChallenging(false);
     }
   };
 
@@ -761,24 +768,21 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
         </div>
       )}
 
-      {/* ── SMART ESCALATION ─────────────────────────────────────────────────── */}
-      {!escalated && disputeStatus !== 'RESOLVED' && ai && (
+      {/* ── CHALLENGE PHASE ──────────────────────────────────────────────────── */}
+      {disputeStatus === 'CHALLENGE_PHASE' && ai && (
         <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
           <div className="flex items-start gap-4 flex-wrap">
             <div className="flex-1 min-w-48">
-              <h3 className="text-sm font-bold text-[#0A2540] font-inter mb-1">Not satisfied with the AI recommendation?</h3>
+              <h3 className="text-sm font-bold text-[#0A2540] font-inter mb-1">Challenge AI Decision?</h3>
               <p className="text-xs text-neutral-500 font-inter leading-relaxed">
-                You can escalate this dispute to a human moderator. An admin will review all evidence and make a final, binding decision.
+                If you disagree with the AI's first-pass recommendation, you can submit a formal challenge with additional context.
               </p>
             </div>
             <button
-              onClick={() => setShowEscalateModal(true)}
+              onClick={() => setShowChallengeModal(true)}
               className="flex-shrink-0 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-inter font-bold text-sm rounded-xl transition-colors flex items-center gap-2"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              Smart Escalate
+              Submit Challenge
             </button>
           </div>
         </div>
@@ -813,45 +817,57 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
         </div>
       )}
 
-      {/* ── ESCALATE MODAL ─────────────────────────────────────────────────── */}
-      {showEscalateModal && (
+      {/* ── CHALLENGE MODAL ──────────────────────────────────────────────────── */}
+      {showChallengeModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                <span className="text-xl">⚖️</span>
               </div>
               <div>
-                <h3 className="text-base font-black text-[#0A2540] font-inter">Request Human Review</h3>
-                <p className="text-xs text-neutral-400 font-inter">A moderator will make the final binding decision</p>
+                <h3 className="text-base font-black text-[#0A2540] font-inter">Submit Challenge</h3>
+                <p className="text-xs text-neutral-400 font-inter">Explain why the AI's reasoning is incorrect</p>
               </div>
             </div>
 
-            <textarea
-              value={escalateReason}
-              onChange={e => setEscalateReason(e.target.value)}
-              placeholder="(Optional) Why are you requesting human review?"
-              rows={3}
-              className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none mb-4"
-            />
+            <form onSubmit={handleChallengeSubmit}>
+              <textarea
+                value={challengeReason}
+                onChange={e => setChallengeReason(e.target.value)}
+                placeholder="What did the AI miss?"
+                rows={3}
+                className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none mb-3"
+                required
+              />
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowEscalateModal(false)}
-                className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm font-inter font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSmartEscalate}
-                disabled={escalating}
-                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-inter font-bold transition-colors"
-              >
-                {escalating ? 'Escalating…' : 'Confirm Escalation'}
-              </button>
-            </div>
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-neutral-500 font-inter mb-2">Additional Evidence (Optional)</label>
+                <input
+                  type="file"
+                  multiple
+                  onChange={e => setChallengeFiles(Array.from(e.target.files))}
+                  className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowChallengeModal(false)}
+                  className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm font-inter font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={challenging}
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-inter font-bold transition-colors"
+                >
+                  {challenging ? 'Submitting…' : 'Submit Challenge'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

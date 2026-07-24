@@ -366,8 +366,10 @@ model DeedDispute {
   // @deprecated - replaced by DisputeEvent
   aiAnalysis           Json?                
   // @deprecated - replaced by DisputeEvent
+  /// @deprecated Use DisputeEvent ledger instead. Keep for legacy UI compatibility.
   evidenceResponses    Json                 @default("{}")
   // @deprecated - replaced by DisputeEvent
+  /// @deprecated Use DisputeEvent ledger instead. Keep for legacy UI compatibility.
   timeline             Json                 @default("[]")
 
   resolution           String?              // "REFUND_BUYER" | "RELEASE_TO_SELLER"

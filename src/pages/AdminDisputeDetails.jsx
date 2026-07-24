@@ -56,7 +56,7 @@ function RiskGauge({ score }) {
 }
 
 function ConfBar({ value, color = 'bg-indigo-500', label }) {
-  const pct = Math.round(value * 100);
+  const pct = Math.round(value);
   return (
     <div>
       {label && <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-1">{label}</p>}
@@ -528,7 +528,7 @@ export default function AdminDisputeDetails() {
               <div className="space-y-2 mb-4">
                 {[
                   { label: 'Escrow Held', value: `$${(financial?.escrowAmount / 100)?.toFixed(2) || '0'}`, color: 'text-[#0A2540]', bold: true },
-                  { label: 'Platform Fee (5%)', value: `-$${(financial?.platformFee / 100)?.toFixed(2) || '0'}`, color: 'text-neutral-500' },
+                  { label: 'Platform Fee (2%)', value: `-$${(financial?.platformFee / 100)?.toFixed(2) || '0'}`, color: 'text-neutral-500' },
                   { label: 'Net to Seller', value: `$${(financial?.netToSeller / 100)?.toFixed(2) || '0'}`, color: 'text-emerald-600' },
                 ].map((row, i) => (
                   <div key={i} className={`flex justify-between items-center py-2 ${i === 0 ? 'border-b border-neutral-100' : ''}`}>
