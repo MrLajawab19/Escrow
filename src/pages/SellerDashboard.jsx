@@ -21,6 +21,8 @@ const SellerDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showMyDisputes, setShowMyDisputes] = useState(false);
 
   const [userId, setUserId] = useState(null);
   const [kycStatus, setKycStatus] = useState({ phoneVerified: false, kycComplete: false, reviewStatus: 'PENDING' });

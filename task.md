@@ -591,3 +591,7 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
   - Safely deleted orphaned `WalletEmptyState.jsx`, `WalletSkeleton.jsx` and 5 root-level backend scratch scripts.
   - Removed unused local variables, imports, and lucide icons from `SellerDashboard`, `BuyerDashboard`, `DeedDetails`, and `WalletHeroCard`.
   - Verified 100% build success via `vite build`.
+
+- [x] **Regression Fix (Pre-Audit)**
+  - Restored missing `Link` import from `react-router-dom` in `src/pages/DeedDetails.jsx`.
+  - Re-verified build and other cleaned files.
