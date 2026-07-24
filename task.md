@@ -531,7 +531,7 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
   - `kycGate.js` compares the deed amount directly against `10,000` (paise) instead of `1,000,000` (paise).
   - This creates an effective ₹100 threshold for mandatory KYC instead of the intended ₹10,000.
   - Action: Update the comparison from `10000` to `1000000`.
-  - Identified: 2026-07-24.
+  - Identified: 2026-07-24. Fixed in commit `8a35054`, but explicitly flagged for process failure: this fix was improperly bundled with an unrelated frontend fix (KG-19) and committed without a diff-review.
 
 - [x] **KG-19 — Challenge UI missing submission state (LOW, UI)**
   - The Challenge UI allows a user to submit a challenge, but then the UI fails to update and still displays the "Submit Challenge" button.

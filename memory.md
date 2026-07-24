@@ -123,8 +123,11 @@ See `task.md` KG-1 through KG-10 for full detail. Summary of open items:
 | KG-15 | Low | Admin UI Platform Fee is hardcoded to 5% instead of the 2% defined in the Fee Engine. *(Incomplete - top header missed)* |
 | KG-16 | Low | Admin Order Snapshot looks for legacy `scopeBox` fields instead of native `deed` fields, causing 'Unknown' displays. |
 | KG-17 | Low | Admin UI hardcodes `$` and double-divides financial values by 100, turning ₹100 into $1.00. |
-| KG-18 | High | KYC Gate threshold compares deed amount in paise against `10,000` (₹100) instead of `1,000,000` (₹10,000). |
+| KG-18 | High | KYC Gate threshold bug. Fixed in `8a35054` but explicitly flagged: improperly bundled with unrelated frontend fix (KG-19) without diff-review. |
 | KG-19 | Low | Challenge UI doesn't visually update after submission, leading to duplicate submissions and 400 errors. |
+| KG-20 | High | `submitChallengeEvent` escalates the dispute without emitting an observable `DisputeEvent` or updating the timeline. |
+| KG-21 | High | Backend data-integrity bug: old resolution route successfully updated `deedDispute` but crashed before updating `deed` status, causing silent desync. (Fixed via transactional rewrite). |
+| KG-22 | Low | Frontend UI obscuring backend errors: `EnhancedDisputeResolution.jsx` hardcodes generic "Failed to resolve dispute" toasts instead of surfacing the 400 backend error reason. |
 
 ---
 

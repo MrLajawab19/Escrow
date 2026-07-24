@@ -1,12 +1,15 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { HIGH_VALUE_THRESHOLD_INR } = require('../config/disputeConfig');
+
+const KYC_THRESHOLD_PAISE = HIGH_VALUE_THRESHOLD_INR * 100;
 
 const requireKYC = async (req, res, next) => {
   try {
     const amount = req.body.amount;
     
-    // If amount is <= 1000000 (10k INR), KYC is not strictly required to proceed
-    if (!amount || amount <= 1000000) {
+    // If amount is <= KYC_THRESHOLD_PAISE (10k INR), KYC is not strictly required to proceed
+    if (!amount || amount <= KYC_THRESHOLD_PAISE) {
       return next();
     }
 
