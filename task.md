@@ -216,6 +216,8 @@ and deleted `Order` from the schema entirely.
 > Commits `28defc9`, `e00b87c`, `34af4a4`.
 - [x] **KG-22 (Medium):** Fix error toast in `EnhancedDisputeResolution` to show real backend message.
 - [ ] **KG-23 (Medium):** Deed lifecycle socket events missing; implement silent polling fallback for dashboards.
+  - [x] Implemented on `BuyerDashboard.jsx` (verified 5s silent polling)
+  - [ ] Outstanding on `SellerDashboard.jsx`
 - [x] D2: Legacy `Order` model fully dropped from Prisma schema; admin + UI references cleaned
 - [x] Dead `Order`-era leftovers removed from codebase
 
