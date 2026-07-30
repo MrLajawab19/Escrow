@@ -599,3 +599,31 @@ AI-driven evidence review, challenge rounds, and mandatory human escalation for 
   - Restored missing `activeTab` and `showMyDisputes` state variables in `src/pages/SellerDashboard.jsx`.
   - Audited full project for missing imports and `ReferenceError` equivalents from the cleanup phase.
   - Re-verified build and other cleaned files.
+
+- [x] **KG-34 (CRITICAL) — Wallet Balance/Ledger Drift from Unguarded Raw `fix-db.js` Update**
+  - **Root cause (two wallets affected):**
+    - `wallet 64ae39f0` (`test-buyer-1`): A raw `prisma.wallet.update({ balance: 78400 })` intended for `wallet 2baf5755` accidentally landed on this wallet via `findFirst` with no ID guard. No `WalletTransaction` was created. Stored balance was reduced by 510,000 paise with no ledger record.
+    - `wallet 2baf5755` (primary test buyer): The USD→INR currency bug caused an ESCROW_LOCK of 589,300 paise when the wallet held only 85,500 paise, driving the ledger negative. A subsequent raw balance override (`balance: 78400`) set the stored value without creating a `WalletTransaction`, leaving stored and ledger permanently diverged by 582,200 paise.
+  - **Detection method:** Per-wallet `SUM(netAmount WHERE status=SUCCESS)` vs `wallet.balance` — both showed non-zero drift. Confirmed by audit script `backend/audit-wallets.js`.
+  - **Fix applied 2026-07-26 via `backend/ledger-corrections.js`:**
+    - `wallet 64ae39f0`: stored balance corrected from 2,076,626 → 2,586,626 to match existing (correct) ledger. No new transaction created (ledger was already accurate).
+    - `wallet 2baf5755`: New `WalletTransaction` (`LEDGER_CORRECTION`, `+582,200 paise`, `reference: audit-2026-07-26-currency-bug-escrow-overcollection`) created to bring ledger from -503,800 to 78,400. Stored balance confirmed unchanged at 78,400.
+  - **Post-fix verification:** All six wallets re-audited. All show `drift = 0`. Raw output confirmed live.
+  - **Process rule established:** Never use `prisma.wallet.update({ balance: X })` directly. All balance mutations must go through `walletService` which creates the `WalletTransaction` first. Any corrective script must specify the exact wallet `id`, not use `findFirst`.
+
+- [ ] **KG-35 (Medium) — Pre-Flight High-Value Escalation in `raiseDispute`**
+  - **Status:** INVESTIGATED. The `Submit Challenge` button (`DisputeResolutionFlow.jsx` line 772) is correctly gated to `disputeStatus === 'CHALLENGE_PHASE'` — no code change needed on the gate itself.
+  - **Real open gap:** `raiseDispute` in `deedService.js` creates disputes as `OPEN` with no pre-flight value threshold check. The dispute sits `OPEN` until `generateAIReport()` finishes or fails. For high-value deeds that will inevitably be `ESCALATED`, the evidence submission form (`disputeStatus === 'OPEN'`) shows during this window — potentially misleading UX.
+  - **Fix:** Move threshold check to `raiseDispute`; create dispute as `ESCALATED` immediately for deeds at or above `HIGH_VALUE_THRESHOLD`. Skip AI entirely for those.
+
+- [ ] **KG-36 (Low) — Challenge Shown Against AI Error Placeholder Verdict**
+  - **Finding:** When the AI call fails mid-run, `disputeAI.js` catch block (lines 207–223) attempts to set `dispute.status = 'ESCALATED'`. If that status update itself fails, the dispute can remain in `CHALLENGE_PHASE` with an AI report that is actually the error placeholder (`faultSide: NEUTRAL`, `confidenceScore: 0`, `reasoning: "AI Service unavailable"`). The `Submit Challenge` button then appears — but there is no real AI reasoning to contest.
+  - **Fix:** Two options: (a) UI — when `aiAnalysis.confidenceScore === 0` and `reasoning` contains "unavailable"/"error", suppress the Challenge button and show "AI analysis unavailable — this dispute will be reviewed by a human" instead; or (b) backend — make the catch block's status update non-optional by wrapping it in a dedicated retry/transaction separate from the main flow.
+  - **Preferred:** Option (a) is lower risk and immediately improveable without touching the AI service path.
+
+- [ ] **KG-37 (Low) — No Notification to Other Party on Challenge Submission**
+  - **Finding:** `handleChallengeSubmit` in `DisputeResolutionFlow.jsx` (line 195) calls `POST /api/disputes/deed/:id/challenge` and then `fetchDetail()`. No `createNotification` call exists anywhere in the challenge submission path — neither on the frontend nor in the backend challenge handler.
+  - **Expected behaviour:** When buyer submits a challenge, seller should receive a notification (and vice versa), mirroring the `createNotification` pattern used at dispute-creation.
+  - **Fix:** Locate the backend challenge handler, add `createNotification` call for the opposing party after a successful `CHALLENGE` event is appended to the `DisputeEvent` ledger.
+  - **Files to touch:** backend challenge route handler (find via `POST /api/disputes/deed/:id/challenge`).
+
