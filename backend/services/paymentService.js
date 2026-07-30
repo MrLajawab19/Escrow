@@ -15,12 +15,12 @@ class PaymentService {
    * Create a Top-Up Order in Razorpay.
    * If targetDeedId is provided, the webhook will fund the deed via JIT immediately after top-up.
    */
-  async createTopUpOrder(userId, amountPaise, targetDeedId = null) {
+  async createTopUpOrder(userId, amountPaise, targetDeedId = null, currency = 'INR') {
     if (!amountPaise || amountPaise <= 0) throw new Error('Invalid amount');
 
     const options = {
       amount: amountPaise,
-      currency: 'INR',
+      currency: currency,
       receipt: `topup_${Date.now()}_${userId.substring(0, 8)}`,
       notes: {
         userId,

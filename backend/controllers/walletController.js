@@ -131,7 +131,7 @@ exports.getTransactionHistory = async (req, res) => {
 exports.topUpWallet = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { amount, targetDeedId } = req.body; // amount is expected in paise
+    const { amount, targetDeedId, sourceCurrency = 'INR' } = req.body; // amount in cents/paise
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -140,6 +140,9 @@ exports.topUpWallet = async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid amount' });
     }
+
+    const { convertCurrency } = require('../utils/currencyUtils');
+    let finalSourceCurrency = sourceCurrency;
 
     if (targetDeedId) {
       const deed = await prisma.deed.findUnique({ where: { id: targetDeedId } });
@@ -153,12 +156,15 @@ exports.topUpWallet = async (req, res) => {
       if (deed.status !== 'DRAFT') {
         return res.status(400).json({ success: false, message: 'Deed is not in a fundable state (must be DRAFT)' });
       }
+      
+      // If we're funding a deed, the amount sent is in the deed's currency
+      finalSourceCurrency = deed.currency;
     }
 
-    // amount is expected in paise (e.g. 50000 for ₹500)
-    const amountPaise = amount;
-
     const wallet = await walletService.getOrCreateWallet(userId, req.user.role);
+
+    // Convert the top-up amount from the source currency to the wallet's currency
+    const amountPaise = convertCurrency(amount, finalSourceCurrency, wallet.currency);
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
     const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
 
@@ -209,7 +215,7 @@ exports.topUpWallet = async (req, res) => {
           type: 'CREDIT',
           category: 'TOP_UP',
           amount: amountPaise,
-          currency: 'INR',
+          currency: wallet.currency,
           status: 'INITIATED',
           description: `Top-up for ${targetDeedId ? 'Deed ' + targetDeedId : 'Wallet'}`,
           reference: targetDeedId || null,
@@ -268,7 +274,7 @@ exports.topUpWallet = async (req, res) => {
     // Now call Razorpay outside the DB transaction so we don't hold the lock over the network
     let transaction;
     try {
-      transaction = await paymentService.createTopUpOrder(userId, amountPaise, targetDeedId);
+      transaction = await paymentService.createTopUpOrder(userId, amountPaise, targetDeedId, wallet.currency);
       
       // Update placeholder with actual Razorpay Order ID
       await prisma.walletTransaction.update({
@@ -298,6 +304,62 @@ exports.topUpWallet = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Verify Top Up Payment
+exports.verifyTopUpPayment = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+      return res.status(400).json({ success: false, message: 'Missing payment verification fields' });
+    }
+
+    const txCheck = await prisma.walletTransaction.findFirst({
+      where: { razorpayOrderId: razorpay_order_id },
+      include: { wallet: true }
+    });
+
+    if (!txCheck) {
+      return res.status(404).json({ success: false, message: 'Transaction not found' });
+    }
+
+    // Ensure caller owns the wallet this transaction belongs to
+    if (txCheck.wallet.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Forbidden: Unauthorized payment claim' });
+    }
+    
+    // Idempotency: already successful
+    if (txCheck.status === 'SUCCESS') {
+      return res.status(200).json({ success: true, message: 'Payment already confirmed' });
+    }
+
+    // Verify signature
+    const crypto = require("crypto");
+    const generated_signature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest("hex");
+
+    if (generated_signature !== razorpay_signature) {
+      return res.status(400).json({ success: false, message: 'Payment verification failed: invalid signature' });
+    }
+
+    // Upgrade transaction and credit wallet
+    await walletService.topUpWallet(userId, txCheck.amount, 'Razorpay', txCheck.reference, razorpay_order_id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment verified successfully'
+    });
+  } catch (error) {
+    console.error(`[verifyTopUpPayment] ERROR:`, error.message);
+    res.status(500).json({ success: false, message: 'Payment verification failed' });
   }
 };
 

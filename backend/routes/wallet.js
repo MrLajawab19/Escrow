@@ -28,6 +28,9 @@ router.get('/transactions', authenticateToken, walletController.getTransactionHi
 // Top up wallet
 router.post('/top-up', authenticateToken, walletLimiter, walletController.topUpWallet);
 
+// Verify Top up payment
+router.post('/verify-payment', authenticateToken, walletController.verifyTopUpPayment);
+
 // Request withdrawal
 router.post('/withdraw', authenticateToken, walletLimiter, walletController.requestWithdrawal);
 

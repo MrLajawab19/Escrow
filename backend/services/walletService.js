@@ -13,7 +13,7 @@ class WalletService {
    * @param {string} userRole - "buyer" or "seller"
    * @param {string} currency - Currency code (default: USD)
    */
-  async getOrCreateWallet(userId, userRole, currency = 'USD') {
+  async getOrCreateWallet(userId, userRole, currency = 'INR') {
     try {
       let wallet = await prisma.wallet.findUnique({
         where: { userId },
@@ -57,7 +57,7 @@ class WalletService {
           data: {
             userId,
             userRole,
-            currency: 'USD',
+            currency: 'INR',
             balance: 0,
           },
           include: {
@@ -468,6 +468,47 @@ class WalletService {
         });
       }
 
+      // Monthly Stats
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const monthlyTransactions = await prisma.walletTransaction.findMany({
+        where: {
+          walletId: wallet.id,
+          status: 'SUCCESS',
+          createdAt: { gte: thirtyDaysAgo }
+        }
+      });
+
+      let monthlyDeposits = 0;
+      let monthlyPurchases = 0;
+      let monthlyWithdrawals = 0;
+      let monthlyEarnings = 0;
+
+      monthlyTransactions.forEach(t => {
+        if (t.category === 'TOP_UP' && t.type === 'CREDIT') {
+          monthlyDeposits += t.netAmount;
+        } else if (t.category === 'ESCROW_LOCK' && t.type === 'DEBIT') {
+          monthlyPurchases += t.netAmount;
+        } else if (t.category === 'WITHDRAWAL' && t.type === 'DEBIT') {
+          monthlyWithdrawals += t.netAmount;
+        } else if (t.category === 'ESCROW_RELEASE' && t.type === 'CREDIT') {
+          monthlyEarnings += t.netAmount;
+        }
+      });
+
+      const monthlyStats = {
+        deposits: monthlyDeposits,
+        purchases: monthlyPurchases,
+        withdrawals: monthlyWithdrawals,
+        earnings: monthlyEarnings
+      };
+
+      // Recent Transactions
+      const recentTransactions = await prisma.walletTransaction.findMany({
+        where: { walletId: wallet.id },
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      });
+
       return {
         balance: wallet.balance || 0,
         lockedBalance: wallet.lockedBalance || 0,
@@ -477,7 +518,9 @@ class WalletService {
         activeOrders,
         completedOrders,
         userRole: wallet.userRole,
-        currency: wallet.currency
+        currency: wallet.currency,
+        monthlyStats,
+        recentTransactions
       };
     } catch (error) {
       throw new Error(`Failed to get wallet summary: ${error.message}`);

@@ -97,32 +97,27 @@ class DeedService {
     const wallet = await prisma.wallet.findUnique({ where: { userId: buyerId } });
     if (!wallet) throw new Error("WALLET_NOT_FOUND");
 
+    const { convertCurrency } = require('../utils/currencyUtils');
+
     await prisma.$transaction(async (tx) => {
       // ── Concurrency Lock ────────────────────────────────────────────────────
-      // Lock the wallet row before re-reading the deed status. This serialises
-      // concurrent fundDeed calls (e.g. verify-payment + webhook arriving within
-      // the same millisecond) so only one can proceed to the balance decrement.
       await tx.$queryRaw`SELECT id FROM "Wallet" WHERE id = ${wallet.id} FOR UPDATE`;
 
-      // ── Re-read Deed Status Inside the Lock ─────────────────────────────────
-      // TOCTOU fix: the deed status check outside the transaction is a fast-fail
-      // optimisation only. The authoritative check must happen inside the lock so
-      // a concurrent caller that already set the deed to PENDING_SELLER is visible
-      // to us. Without this, both callers could pass the outside check (both see
-      // DRAFT), then both lock escrow and double-debit the wallet.
       const deed = await tx.deed.findUnique({ where: { id: deedId } });
       if (!deed || deed.buyerId !== buyerId) throw new Error("DEED_NOT_FOUND");
       if (deed.status !== "DRAFT") throw new Error("DEED_NOT_IN_DRAFT_STATE");
 
       // ── Atomic Balance Decrement with Sufficiency Guard ──────────────────────
+      const deedAmountInWalletCurrency = convertCurrency(deed.amount, deed.currency, wallet.currency);
+
       const updateResult = await tx.wallet.updateMany({
         where: {
           id: wallet.id,
-          balance: { gte: deed.amount }
+          balance: { gte: deedAmountInWalletCurrency }
         },
         data: {
-          balance: { decrement: deed.amount },
-          lockedBalance: { increment: deed.amount }
+          balance: { decrement: deedAmountInWalletCurrency },
+          lockedBalance: { increment: deedAmountInWalletCurrency }
         }
       });
 
@@ -297,11 +292,18 @@ class DeedService {
     if (deed.amount !== undefined) validateAmount(deed.amount);
     if (!["CONFIRMED", "ARBITRATED"].includes(deed.status)) throw new Error("DEED_NOT_RELEASABLE");
 
+    const { convertCurrency } = require('../utils/currencyUtils');
+
     await prisma.$transaction(async (tx) => {
+      const buyerWallet = await tx.wallet.findUnique({ where: { userId: deed.buyerId } });
+      if (!buyerWallet) throw new Error("BUYER_WALLET_NOT_FOUND");
+
+      const deedAmountInBuyerCurrency = convertCurrency(deed.amount, deed.currency, buyerWallet.currency);
+
       // Subphase A: Atomic decrement of locked balance with guard condition
       const updateResult = await tx.wallet.updateMany({
-        where: { userId: deed.buyerId, lockedBalance: { gte: deed.amount } },
-        data: { lockedBalance: { decrement: deed.amount } },
+        where: { userId: deed.buyerId, lockedBalance: { gte: deedAmountInBuyerCurrency } },
+        data: { lockedBalance: { decrement: deedAmountInBuyerCurrency } },
       });
 
       if (updateResult.count === 0) {
@@ -320,10 +322,12 @@ class DeedService {
       const platformFee = Math.floor(deed.amount * sellerBaseRate);
       const sellerNet = deed.amount - platformFee;
 
+      const sellerNetInSellerCurrency = convertCurrency(sellerNet, deed.currency, sellerWallet.currency);
+
       // Atomic increment of seller balance (safe pattern: increment without exact-match balance guard)
       await tx.wallet.update({
         where: { userId: deed.sellerId },
-        data: { balance: { increment: sellerNet } },
+        data: { balance: { increment: sellerNetInSellerCurrency } },
       });
 
       await tx.walletTransaction.create({
@@ -336,12 +340,14 @@ class DeedService {
           status: "SUCCESS",
           description: `Payment released for deed: ${deed.title}`,
           reference: deedId,
-          netAmount: sellerNet,
+          netAmount: deed.amount - platformFee, // Keep ledger in deed currency
           metadata: {
             feeTier: "HAPPY_PATH_SELLER_2_5",
             feePercentage: 2.5,
             baseAmount: deed.amount,
-            feeDeducted: platformFee
+            feeDeducted: platformFee,
+            convertedAmount: sellerNetInSellerCurrency,
+            walletCurrency: sellerWallet.currency
           }
         },
       });
@@ -368,16 +374,20 @@ class DeedService {
     if (!deed) throw new Error("DEED_NOT_FOUND");
     if (deed.amount !== undefined) validateAmount(deed.amount);
 
+    const { convertCurrency } = require('../utils/currencyUtils');
+
     await prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { userId: deed.buyerId } });
       if (!wallet) throw new Error("BUYER_WALLET_NOT_FOUND");
 
+      const deedAmountInBuyerCurrency = convertCurrency(deed.amount, deed.currency, wallet.currency);
+
       // Subphase A: Atomic lockedBalance decrement with guard condition
       const updateResult = await tx.wallet.updateMany({
-        where: { id: wallet.id, lockedBalance: { gte: deed.amount } },
+        where: { id: wallet.id, lockedBalance: { gte: deedAmountInBuyerCurrency } },
         data: {
-          balance: { increment: deed.amount },
-          lockedBalance: { decrement: deed.amount },
+          balance: { increment: deedAmountInBuyerCurrency },
+          lockedBalance: { decrement: deedAmountInBuyerCurrency },
         },
       });
 
