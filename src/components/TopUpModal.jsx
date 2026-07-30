@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useCurrency } from '../context/CurrencyContext';
 
 const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
-  const { formatCurrency, currencySymbol } = useCurrency();
+  const { formatCurrency, currencySymbol, currency } = useCurrency();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
@@ -26,30 +26,38 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
       const response = await axios.post('/api/wallet/top-up', {
         amount: Math.round(parseFloat(amount) * 100),
         paymentMethod,
+        sourceCurrency: currency,
       });
 
-      const { razorpayOrderId, amount: rzpAmount, currency } = response.data.data;
+      const { razorpayOrderId, amount: rzpAmount, currency: rzpCurrency } = response.data.data;
       
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TAVbIcT7jdp31E',
         amount: rzpAmount,
-        currency: currency,
+        currency: rzpCurrency,
         name: 'ScrowX',
         description: 'Wallet Top-Up',
         order_id: razorpayOrderId,
         handler: async function (paymentResponse) {
           try {
+            // Verify payment synchronously
+            await axios.post('/api/wallet/verify-payment', {
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_signature: paymentResponse.razorpay_signature
+            });
+
             setSuccess(true);
             
-            // Wait 3 seconds for webhook to process, then notify
+            // Wait a moment for the success animation, then close
             setTimeout(() => {
               onSuccess(); // Triggers a wallet balance refresh in the parent
-              setTimeout(() => handleClose(), 3000);
-            }, 3000);
+              setTimeout(() => handleClose(), 1500);
+            }, 1500);
             
           } catch (err) {
             console.error('Payment handler error:', err);
-            setError('Payment succeeded but verification timed out. Check balance shortly.');
+            setError(err.response?.data?.message || 'Payment verification failed. Please check your balance shortly.');
           }
         },
         theme: { color: '#2563eb' }

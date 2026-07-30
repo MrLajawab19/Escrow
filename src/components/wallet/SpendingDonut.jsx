@@ -4,15 +4,15 @@ import { useCurrency } from '../../context/CurrencyContext';
 const SpendingDonut = ({ walletSummary, walletLoading }) => {
   const { formatCurrency, currencySymbol } = useCurrency();
 
-  const deposits = Number(walletSummary?.monthlyStats?.monthlyIncome || 0) / 100;
-  const purchases = Number(walletSummary?.monthlyStats?.monthlyExpense || 0) / 100;
-  const withdrawals = Number(walletSummary?.totalDeposited || 0) / 100; 
+  const deposits = Number(walletSummary?.monthlyStats?.deposits || 0) / 100;
+  const purchases = Number(walletSummary?.monthlyStats?.purchases || 0) / 100;
+  const withdrawals = Number(walletSummary?.monthlyStats?.withdrawals || 0) / 100; 
 
-  const totalSpent = deposits + purchases + withdrawals || 1;
+  const totalSpent = deposits + purchases + withdrawals;
 
-  const depositsPercent = (deposits / totalSpent) * 100;
-  const purchasesPercent = (purchases / totalSpent) * 100;
-  const withdrawalsPercent = (withdrawals / totalSpent) * 100;
+  const depositsPercent = totalSpent > 0 ? (deposits / totalSpent) * 100 : 0;
+  const purchasesPercent = totalSpent > 0 ? (purchases / totalSpent) * 100 : 0;
+  const withdrawalsPercent = totalSpent > 0 ? (withdrawals / totalSpent) * 100 : 0;
 
   const radius = 60;
   const circumference = 2 * Math.PI * radius;

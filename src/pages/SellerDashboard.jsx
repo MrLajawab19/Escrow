@@ -288,9 +288,9 @@ const SellerDashboard = () => {
                   userType="seller"
                 />
                 <SpendingOverview
-                  transactions={walletSummary?.recentTransactions || []}
-                  loading={walletLoading}
-                  userType="seller"
+                  userId={userId}
+                  walletSummary={walletSummary}
+                  walletLoading={walletLoading}
                 />
                 <RecentTransactions
                   transactions={walletSummary?.recentTransactions || []}

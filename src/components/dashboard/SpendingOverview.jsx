@@ -5,16 +5,19 @@ import { useCurrency } from '../../context/CurrencyContext';
 const SpendingOverview = ({ userId, walletSummary, walletLoading }) => {
   const { formatCurrency, currencySymbol } = useCurrency();
 
-  const deposits = Number(walletSummary?.monthlyStats?.monthlyIncome || 0) / 100;
-  const purchases = Number(walletSummary?.monthlyStats?.monthlyExpense || 0) / 100;
-  const withdrawals = Number(walletSummary?.totalDeposited || 0) / 100; // Leaving as is unless backend API differs
+  const depositsRaw = Number(walletSummary?.monthlyStats?.deposits || 0);
+  const purchasesRaw = Number(walletSummary?.monthlyStats?.purchases || 0);
+  const withdrawalsRaw = Number(walletSummary?.monthlyStats?.withdrawals || 0);
+  const earningsRaw = Number(walletSummary?.monthlyStats?.earnings || 0);
 
-  const totalSpent = deposits + purchases + withdrawals || 1;
+  const isSeller = walletSummary?.userRole === 'seller';
+  const totalVolumeRaw = depositsRaw + purchasesRaw + withdrawalsRaw + earningsRaw;
 
   // Calculate percentages for donut chart
-  const depositsPercent = (deposits / totalSpent) * 100;
-  const purchasesPercent = (purchases / totalSpent) * 100;
-  const withdrawalsPercent = (withdrawals / totalSpent) * 100;
+  const depositsPercent = totalVolumeRaw > 0 ? (depositsRaw / totalVolumeRaw) * 100 : 0;
+  const purchasesPercent = totalVolumeRaw > 0 ? (purchasesRaw / totalVolumeRaw) * 100 : 0;
+  const withdrawalsPercent = totalVolumeRaw > 0 ? (withdrawalsRaw / totalVolumeRaw) * 100 : 0;
+  const earningsPercent = totalVolumeRaw > 0 ? (earningsRaw / totalVolumeRaw) * 100 : 0;
 
   // SVG donut chart params
   const radius = 60;
@@ -25,20 +28,22 @@ const SpendingOverview = ({ userId, walletSummary, walletLoading }) => {
   const seg1 = (depositsPercent / 100) * circumference;
   const seg2 = (purchasesPercent / 100) * circumference;
   const seg3 = (withdrawalsPercent / 100) * circumference;
+  const seg4 = (earningsPercent / 100) * circumference;
 
   const offset1 = 0;
-  const offset2 = seg1 + gap;
-  const offset3 = seg1 + seg2 + gap * 2;
+  const offset2 = seg1 > 0 ? seg1 + gap : offset1;
+  const offset3 = seg2 > 0 ? offset2 + seg2 + gap : offset2;
+  const offset4 = seg3 > 0 ? offset3 + seg3 + gap : offset3;
 
-  const formatAmount = (amount) => {
-    return `${currencySymbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const displayAmount = (rawAmount) => {
+    return formatCurrency(rawAmount, walletSummary?.currency || 'USD');
   };
 
   return (
     <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden mt-4">
       {/* Header */}
       <div className="px-5 pt-4 pb-3 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-navy-900">Spending Overview</h3>
+        <h3 className="text-sm font-bold text-navy-900">{isSeller ? 'Financial Overview' : 'Spending Overview'}</h3>
         <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 px-2 py-1 rounded-md">This Month</span>
       </div>
 
@@ -108,38 +113,66 @@ const SpendingOverview = ({ userId, walletSummary, walletLoading }) => {
                   className="transition-all duration-700"
                 />
               )}
+
+              {/* Earnings (blue) */}
+              {earningsPercent > 0 && (
+                <circle
+                  cx="70"
+                  cy="70"
+                  r={radius}
+                  fill="none"
+                  stroke="#3B82F6"
+                  strokeWidth="14"
+                  strokeLinecap="round"
+                  strokeDasharray={`${seg4} ${circumference - seg4}`}
+                  strokeDashoffset={-offset4}
+                  transform="rotate(-90 70 70)"
+                  className="transition-all duration-700"
+                />
+              )}
             </svg>
             {/* Center label */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <p className="text-base font-bold text-navy-900">
-                {walletLoading ? '...' : formatAmount(totalSpent)}
+                {walletLoading ? '...' : displayAmount(totalVolumeRaw)}
               </p>
-              <p className="text-[10px] text-neutral-400">Total Spent</p>
+              <p className="text-[10px] text-neutral-400">Total Volume</p>
             </div>
           </div>
 
           {/* Legend */}
           <div className="flex-1 space-y-3">
+            {isSeller && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <span className="text-xs text-neutral-500">Earnings</span>
+                </div>
+                <span className="text-xs font-semibold text-navy-900">{displayAmount(earningsRaw)}</span>
+              </div>
+            )}
+            {!isSeller && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
+                  <span className="text-xs text-neutral-500">Purchases</span>
+                </div>
+                <span className="text-xs font-semibold text-navy-900">{displayAmount(purchasesRaw)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 <span className="text-xs text-neutral-500">Deposits</span>
               </div>
-              <span className="text-xs font-semibold text-navy-900">{formatAmount(deposits)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
-                <span className="text-xs text-neutral-500">Purchases</span>
-              </div>
-              <span className="text-xs font-semibold text-navy-900">{formatAmount(purchases)}</span>
+              <span className="text-xs font-semibold text-navy-900">{displayAmount(depositsRaw)}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <span className="text-xs text-neutral-500">Withdrawals</span>
               </div>
-              <span className="text-xs font-semibold text-navy-900">{formatAmount(withdrawals)}</span>
+              <span className="text-xs font-semibold text-navy-900">{displayAmount(withdrawalsRaw)}</span>
             </div>
           </div>
         </div>
