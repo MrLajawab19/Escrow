@@ -32,12 +32,14 @@ const generateAIReport = async (deedDisputeId) => {
     const buyerEv = events.find(e => e.type === 'EVIDENCE_SUBMITTED' && e.actorRole === 'buyer');
     const sellerEv = events.find(e => e.type === 'EVIDENCE_SUBMITTED' && e.actorRole === 'seller');
     
+    const buyerFiles = buyerEv && buyerEv.payload.evidenceUrls?.length ? `Files Uploaded: ${buyerEv.payload.evidenceUrls.join(', ')}` : 'Files Uploaded: None';
     const buyerEvidenceContext = buyerEv 
-      ? `[Submitted ${buyerEv.payload.isLate ? 'LATE' : 'ON TIME'}] Rebuttal: ${buyerEv.payload.rebuttal}` 
+      ? `[Submitted ${buyerEv.payload.isLate ? 'LATE' : 'ON TIME'}] Rebuttal: ${buyerEv.payload.rebuttal}\n${buyerFiles}` 
       : '[No evidence submitted. The buyer failed to respond within the 48-hour window. You must weigh their silence negatively.]';
       
+    const sellerFiles = sellerEv && sellerEv.payload.evidenceUrls?.length ? `Files Uploaded: ${sellerEv.payload.evidenceUrls.join(', ')}` : 'Files Uploaded: None';
     const sellerEvidenceContext = sellerEv 
-      ? `[Submitted ${sellerEv.payload.isLate ? 'LATE' : 'ON TIME'}] Rebuttal: ${sellerEv.payload.rebuttal}` 
+      ? `[Submitted ${sellerEv.payload.isLate ? 'LATE' : 'ON TIME'}] Rebuttal: ${sellerEv.payload.rebuttal}\n${sellerFiles}` 
       : '[No evidence submitted. The seller failed to respond within the 48-hour window. You must weigh their silence negatively.]';
 
     // Extract Challenges
