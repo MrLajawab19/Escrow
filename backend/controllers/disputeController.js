@@ -569,23 +569,28 @@ const resolveDispute = async (req, res) => {
     const feeModelStatus = dispute.status === 'ESCALATED' ? 'ESCALATED' : 'RESOLVED';
     const split = calculateResolutionAmounts(price, finalBuyerPct, feeModelStatus);
 
+    const { convertCurrency } = require('../utils/currencyUtils');
+
     await prisma.$transaction(async (tx) => {
       // 1. Un-lock Buyer's balance (gte guard ensures we don't underflow or double-spend)
       const buyerId = deed.buyerId;
       const buyerWallet = await tx.wallet.findUnique({ where: { userId: buyerId } });
       if (!buyerWallet) throw new Error("BUYER_WALLET_NOT_FOUND");
 
+      const priceInBuyerCurrency = convertCurrency(price, deed?.currency || 'INR', buyerWallet.currency);
+
       const updateLock = await tx.wallet.updateMany({
-        where: { id: buyerWallet.id, lockedBalance: { gte: price } },
-        data: { lockedBalance: { decrement: price } }
+        where: { id: buyerWallet.id, lockedBalance: { gte: priceInBuyerCurrency } },
+        data: { lockedBalance: { decrement: priceInBuyerCurrency } }
       });
       if (updateLock.count === 0) throw new Error("INSUFFICIENT_LOCKED_BALANCE");
 
       // 2. Refund/Penalty Buyer (increment/decrement)
       if (split.buyerNet !== 0) {
+        const buyerNetInBuyerCurrency = convertCurrency(split.buyerNet, deed?.currency || 'INR', buyerWallet.currency);
         await tx.wallet.update({
           where: { id: buyerWallet.id },
-          data: { balance: { increment: split.buyerNet } }
+          data: { balance: { increment: buyerNetInBuyerCurrency } }
         });
         await tx.walletTransaction.create({
           data: {
@@ -603,7 +608,9 @@ const resolveDispute = async (req, res) => {
               feeTier: `DISPUTE_${feeModelStatus}_BUYER`,
               feePercentage: feeModelStatus === 'ESCALATED' ? 2 : (feeModelStatus === 'RESOLVED' ? 1 : 0),
               baseAmount: split.buyerGross,
-              feeDeducted: split.buyerFee
+              feeDeducted: split.buyerFee,
+              convertedAmount: buyerNetInBuyerCurrency,
+              walletCurrency: buyerWallet.currency
             }
           }
         });
@@ -618,9 +625,12 @@ const resolveDispute = async (req, res) => {
             data: { userId: sellerId, userRole: "seller", currency: deed?.currency || "INR" }
           });
         }
+        
+        const sellerNetInSellerCurrency = convertCurrency(split.sellerNet, deed?.currency || 'INR', sellerWallet.currency);
+
         await tx.wallet.update({
           where: { id: sellerWallet.id },
-          data: { balance: { increment: split.sellerNet } }
+          data: { balance: { increment: sellerNetInSellerCurrency } }
         });
         await tx.walletTransaction.create({
           data: {
@@ -638,7 +648,9 @@ const resolveDispute = async (req, res) => {
               feeTier: `DISPUTE_${feeModelStatus}_SELLER`,
               feePercentage: feeModelStatus === 'ESCALATED' ? 4.5 : (feeModelStatus === 'RESOLVED' ? 3.5 : 0), // 2.5% base + 1% or 2%
               baseAmount: split.sellerGross,
-              feeDeducted: split.sellerFee
+              feeDeducted: split.sellerFee,
+              convertedAmount: sellerNetInSellerCurrency,
+              walletCurrency: sellerWallet.currency
             }
           }
         });
