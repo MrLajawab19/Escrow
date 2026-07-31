@@ -8,7 +8,7 @@ axios.defaults.baseURL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_UR
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('buyerToken') || localStorage.getItem('sellerToken');
-    if (token) {
+    if (token && !config.headers.Authorization && !config.headers.authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -25,11 +25,19 @@ axios.interceptors.response.use(
     // Only redirect on 401 for authenticated requests (not login/signup)
     const isAuthEndpoint = error.config?.url?.includes('/auth/') && (error.config?.url?.includes('/login') || error.config?.url?.includes('/signup'));
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      localStorage.removeItem('buyerToken');
-      localStorage.removeItem('sellerToken');
-      localStorage.removeItem('buyerData');
-      localStorage.removeItem('sellerData');
-      window.location.href = '/';
+      const isAdminRoute = error.config?.url?.includes('/admin/');
+      
+      if (isAdminRoute) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminData');
+        window.location.href = '/admin/login';
+      } else {
+        localStorage.removeItem('buyerToken');
+        localStorage.removeItem('sellerToken');
+        localStorage.removeItem('buyerData');
+        localStorage.removeItem('sellerData');
+        window.location.href = '/';
+      }
     }
     return Promise.reject(error);
   }
