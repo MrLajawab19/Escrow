@@ -1,30 +1,152 @@
-# ScrowX — Trust Infrastructure for Informal Micro-Transactions
+<div align="center">
 
-A full-stack escrow platform for freelance and peer-to-peer service agreements.
-Locks funds, enforces digital agreements (Deeds), and resolves disputes with AI arbitration.
+# ScrowX
+
+### Secure Escrow Infrastructure for the Informal Economy
+
+*Trust through enforceable digital agreements. Scope-first transactions. Evidence-based settlement.*
+
+[![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma%20ORM-4169E1?logo=postgresql&logoColor=white)](https://prisma.io)
+[![Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?logo=google&logoColor=white)](https://aistudio.google.com)
+[![Razorpay](https://img.shields.io/badge/Payments-Razorpay-02042B?logo=razorpay&logoColor=white)](https://razorpay.com)
+
+</div>
 
 ---
 
-## Key Features
+## What is ScrowX?
 
-- **Deed-Based Lifecycle** — Every transaction is anchored to a digitally-signed `Deed` (the
-  sole source of truth). Funds cannot move without deed state transitions.
-- **AI-Driven Dispute Resolution** — Disputes are analyzed by Google Gemini AI using submitted
-  evidence, behavioral risk scores, and deed metadata. Includes challenge rounds and automatic
-  escalation to human review for high-value or low-confidence cases.
-- **Wallet & Ledger System** — Append-only ledger; balance is always derived from
-  `WalletTransaction` sums (never a mutable field). Atomic DB guards prevent double-spend and
-  race conditions.
-- **Real-Time Chat** — Socket.IO chat between deed participants throughout the deed lifecycle.
-- **AI Support Chat** — Live customer support chat powered by xAI Grok (with OpenAI fallback).
-- **Formal Notice System** — Structured, legally-weighted communication records (Progress
-  Requests, Revision Requests) with enforced deadlines.
-- **Immutable Audit Ledger** — Every wallet and deed action is chained and recorded;
-  tamper-evident history is preserved permanently.
-- **Behavioral Risk Score (BRS)** — Per-user risk scoring deters bad actors and informs
-  arbitration.
-- **One-Time KYC** — Phone and identity verification required before transacting.
-- **Admin Dashboard** — Dispute management, financial oversight, and user administration.
+ScrowX is a secure escrow and payment platform for the gig economy. It lets any two people — a freelancer and a client, a seller and a buyer, or any two parties in a digital deal — transact with the same safety guarantees as a bank-backed escrow, without the bank.
+
+The core mechanism is simple: **money is locked in escrow before work begins, and only released when both parties fulfill their agreed obligations.** If there's a dispute, an AI arbitration engine — powered by Google Gemini — reviews the evidence and issues a verdict.
+
+---
+
+## Why ScrowX Exists
+
+The informal economy — freelancers, gig workers, social media promoters, and peer-to-peer traders — processes billions of transactions annually with no enforcement mechanism.
+
+**Buyers** pay upfront and risk getting nothing. **Sellers** deliver work and risk never being paid. Platforms like Fiverr and Upwork lock you into high fees and opaque dispute processes. Traditional escrow services require legal identity verification and serve enterprise deals only.
+
+ScrowX fills this gap with:
+
+- **Phone KYC only** — no legal identity required to get started
+- **2.5% seller-side fee** — zero buyer fee
+- **Near-instant wallet settlement** — no bank clearing windows
+- **AI arbitration** — automated, evidence-based, and transparent
+
+---
+
+## Core Features
+
+| Feature | Description |
+|---|---|
+| **🔒 Escrow Payments** | Funds locked in internal wallet escrow before work begins; released atomically on completion |
+| **📜 Digital Deeds** | Every transaction anchored to a cryptographically signed scope agreement — the single source of truth |
+| **⚙️ Order Orchestration** | Full state machine from Draft → Active → Delivery → Completion with revision and dispute paths |
+| **🤖 AI Dispute Resolution** | Three-tier engine: rule scoring → Gemini AI verdict → human escalation for edge cases |
+| **💳 Wallet System** | Internal ledger-based wallet with append-only transaction log and double-entry accounting |
+| **🔗 Immutable Audit Ledger** | SHA-256 hash-chained log of every action — tamper-evident and independently verifiable |
+
+---
+
+## High-Level Architecture
+
+```mermaid
+graph TB
+    subgraph "Frontend (React · Netlify)"
+        A[Buyer Dashboard]
+        B[Seller Dashboard]
+        C[Deed Workspace]
+        D[Wallet Interface]
+        E[Dispute Center]
+        F[Admin Panel]
+    end
+
+    subgraph "Backend (Express.js · Render)"
+        G[API Gateway\nRate Limiter · JWT · Helmet]
+        H[Deed Service]
+        I[Wallet Service]
+        J[Dispute Engine]
+        K[AI Service — Gemini]
+        L[Audit Ledger]
+    end
+
+    subgraph "Infrastructure"
+        M[(PostgreSQL)]
+        N[File Storage]
+    end
+
+    subgraph "External"
+        O[Razorpay]
+        P[Google Gemini]
+        Q[Resend Email]
+    end
+
+    A & B & C & D & E & F --> G
+    G --> H & I & J
+    H --> L
+    J --> K --> P
+    I & H & J --> M
+    I --> O
+    G --> Q
+    N -.-> K
+```
+
+---
+
+## Core User Flow
+
+```mermaid
+flowchart LR
+    A([Buyer Creates Deed]) --> B[Scope Agreed\nDeadline · Formats · Criteria]
+    B --> C[Escrow Funded\nRazorpay to Wallet Lock]
+    C --> D[Seller Joins\nDeed Hash Locked]
+    D --> E[Work Period\nReal-time Chat]
+    E --> F[Seller Submits]
+    F --> G{Buyer Reviews}
+    G -- Approve --> H[Funds Released\n2.5% fee deducted]
+    G -- Revisions --> E
+    G -- Dispute --> I[Evidence Collection\n24 to 48h]
+    I --> J[AI Arbitration\nGemini verdict]
+    J -- Resolved --> K[Settlement]
+    J -- Escalated --> L[Human Review\nAdmin Decision]
+    L --> K
+```
+
+---
+
+## Key Components
+
+### 💳 Wallet System
+
+All funds flow through an internal wallet — not direct bank transfers. When a buyer funds a deed, money moves from their `balance` to `lockedBalance`. When work is approved, locked funds are credited to the seller's wallet instantly — no payment gateway round-trip required. Every balance change creates an immutable `WalletTransaction` ledger entry.
+
+> **Design rule:** All monetary values stored in paise (integer). ₹100 = `10000` in the database. No floating point.
+
+### 📜 Deed Engine
+
+The `Deed` is the singular source of truth for every transaction. It captures what will be delivered, in what format, by when, how many revisions are allowed, and for how much — *before* any money moves. When a seller joins via invite link, the core deed fields are SHA-256 hashed and locked. Any subsequent scope dispute references this immutable record.
+
+### ⚙️ Order Orchestration
+
+Every deed runs through a strict state machine managed exclusively by `DeedService`. No component may mutate `deed.status` directly. Every state transition emits an audit ledger event, triggers notifications, and applies the appropriate wallet operation atomically.
+
+```
+DRAFT → PENDING_SELLER → ACTIVE → SUBMITTED → CONFIRMED → CLOSED
+                                       ↓              ↓
+                               CHANGES_REQUESTED   DISPUTED → CLOSED
+```
+
+### 🤖 AI Dispute Resolution
+
+Disputes are processed through three tiers:
+
+1. **Rule Engine** (`disputeEngine.js`) — Category-specific checks (design, dev, content, physical goods, etc.) produce a risk score and fault flags
+2. **Gemini AI** (`disputeAI.js`) — Google Gemini analyzes evidence files and deed context, returns a confidence-scored verdict
+3. **Human Escalation** — Auto-triggered for deals > ₹10,000 or AI confidence < 70. Admin reviews the full evidence packet and makes a binding final decision
 
 ---
 
@@ -32,175 +154,66 @@ Locks funds, enforces digital agreements (Deeds), and resolves disputes with AI 
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 19, React Router v7, Vite 7, TailwindCSS, Framer Motion, Lucide React |
+| **Frontend** | React 19, React Router v7, Vite 7, TailwindCSS, Framer Motion |
 | **Backend** | Node.js, Express.js, Socket.IO |
-| **Database** | PostgreSQL with Prisma ORM (v5.10) |
-| **Authentication** | Custom JWT (`jsonwebtoken`, `bcryptjs`) |
-| **AI — Dispute Resolution** | Google Gemini (`@google/genai`, `GEMINI_API_KEY`) |
-| **AI — Support Chat** | xAI Grok (`GROK_API_KEY`); OpenAI GPT as fallback |
-| **Payments** | Razorpay (INR; wallet top-up and escrow lock/release) |
+| **Database** | PostgreSQL via Prisma ORM v5 |
+| **AI — Disputes** | Google Gemini (`@google/genai`) |
+| **AI — Support** | xAI Grok with OpenAI fallback |
+| **Payments** | Razorpay (INR) |
 | **Email** | Resend |
-| **File Analysis** | Tesseract.js, Sharp, imghash, file-type |
-| **Deployment** | Render (backend) + Netlify (frontend) |
+| **File Analysis** | Tesseract.js (OCR) · Sharp · imghash · file-type |
+| **Security** | helmet · express-rate-limit · bcryptjs · jsonwebtoken |
+| **Deployment** | Render (backend) · Netlify (frontend) |
 
 ---
 
-## Prerequisites
+## Project Status
 
-- **Node.js** v20.x (pinned in `engines` field of `package.json`)
-- **PostgreSQL** database (local or hosted — Railway, Supabase, Neon, etc.)
-- A **Razorpay** account (Key ID + Key Secret)
-- A **Google AI Studio** API key for Gemini dispute resolution
-- An **xAI** API key for Grok (support chat — optional for basic local dev)
-- A **Resend** API key (email notifications)
-
----
-
-## Setup & Installation
-
-### 1. Clone the repository
-
-```bash
-git clone <repository_url>
-cd Escrow
-```
-
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-> `postinstall` automatically runs `prisma generate` — no separate step needed.
-
-### 3. Configure environment variables
-
-Copy `.env.example` to `.env` and fill in all values:
-
-```bash
-cp .env.example .env   # Linux/macOS
-copy .env.example .env # Windows
-```
-
-Required variables:
-
-```env
-# Database
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/scrowx_dev"
-PROD_DATABASE_URL="postgresql://USER:PASSWORD@host:PORT/dbname"
-
-# Frontend (Vite)
-VITE_API_URL=http://localhost:3000
-
-# AI — Dispute resolution (Google Gemini)
-# Generate at: https://aistudio.google.com
-GEMINI_API_KEY="your-gemini-api-key"
-
-# AI — Support chat (xAI Grok)
-# Generate at: https://console.x.ai
-GROK_API_KEY="xai-your-api-key-here"
-
-# Auth — use a long random string (min 32 chars)
-# Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-JWT_SECRET="your-random-secret-here"
-
-# Payments
-RAZORPAY_KEY_ID="rzp_test_..."
-RAZORPAY_KEY_SECRET="your-razorpay-secret"
-
-# Email
-RESEND_API_KEY="re_..."
-```
-
-> ⚠️ **Never commit `.env`** — it is listed in `.gitignore`.
-
-### 4. Push the database schema
-
-```bash
-npx prisma db push
-```
-
-> Use `db push` (not `migrate deploy`) for development. Re-run this whenever
-> `prisma/schema.prisma` changes.
-
-### 5. (Optional) Seed the admin user
-
-```bash
-node backend/scripts/seedAdmin.js
-```
-
-### 6. Run the application locally
-
-```bash
-# Terminal 1 — Backend (Express + Socket.IO), defaults to port 3000
-node server.js
-
-# Terminal 2 — Frontend (Vite dev server), defaults to port 5173
-npm run dev
-```
-
-The app is then accessible at `http://localhost:5173`, with the API at `http://localhost:3000`.
-
-> **Note on Razorpay webhooks:** Webhooks cannot reach `localhost` in local dev — that is
-> expected. The `/api/deeds/:id/verify-payment` endpoint is the synchronous payment
-> confirmation path used during local development.
-
----
-
-## Available Scripts
-
-| Script | What it does |
+| Area | Status |
 |---|---|
-| `npm run dev` | Start Vite frontend dev server (port 5173) |
-| `npm run server` | Start backend with `node server.js` (port 3000) |
-| `npm start` | `prisma db push` then `node server.js` — used in deployment |
-| `npm run Frontend-build` | Build frontend for production (`vite build`) |
-| `npm run lint` | Run ESLint |
+| Wallet & Escrow (INR) | ✅ Production-ready |
+| Deed Creation & Lifecycle | ✅ Production-ready |
+| AI Dispute Resolution | ✅ Live (Gemini) |
+| SHA-256 Audit Ledger | ✅ Production-ready |
+| Real-time Chat (Socket.IO) | ✅ Live |
+| Milestone Escrow | ⚠️ Schema ready, logic pending |
+| Auto-release cron (48h) | ⚠️ In development |
+| Multi-currency Wallets | 🔵 Roadmap |
+| Stablecoin / On-chain Escrow | 🔵 Roadmap |
+| Mobile Apps (React Native) | 🔵 Roadmap |
 
 ---
 
-## Project Structure
+## Quick Start
 
-```text
-Escrow/
-├── backend/
-│   ├── config/          # DB and environment configuration
-│   ├── controllers/     # Route handlers and business logic
-│   ├── jobs/            # Scheduled/cron jobs (e.g. chat expiry)
-│   ├── middleware/       # Auth, KYC gates, rate limiting
-│   ├── routes/          # Express route definitions
-│   ├── scripts/         # Permanent utility scripts (e.g. seedAdmin.js)
-│   ├── services/        # Core services: Gemini AI, Grok, wallet, email, KYC
-│   ├── socket/          # Socket.IO chat handlers
-│   ├── tests/           # Backend regression test suite
-│   └── utils/           # Shared utilities
-├── prisma/
-│   └── schema.prisma    # Database schema (source of truth)
-├── src/                 # React frontend
-│   ├── components/      # Reusable UI components
-│   ├── config/          # Axios instance and API configuration
-│   ├── context/         # React context (auth, etc.)
-│   ├── lib/             # Frontend utilities
-│   └── pages/           # Page-level components
-├── tests/               # Root-level regression test suite
-│   ├── test-phase1.js   # Fee engine regression (Phase 1)
-│   ├── test-phase2.js   # Fee engine regression (Phase 2)
-│   ├── test-phase3.js   # Fee engine regression (Phase 3)
-│   ├── test-idempotency.js  # TOCTOU / double-payment regression
-│   └── test-concurrency.js  # Concurrency harness
-├── .env.example         # Environment variable template (copy to .env)
-├── index.html           # Vite HTML entry point
-├── server.js            # Express + Socket.IO application entry point
-├── vite.config.js       # Vite configuration
-└── package.json         # Dependencies and scripts
+```bash
+# 1. Clone
+git clone <repository_url> && cd Escrow
+
+# 2. Install (postinstall runs prisma generate automatically)
+npm install
+
+# 3. Configure environment
+copy .env.example .env   # fill in DATABASE_URL, GEMINI_API_KEY, RAZORPAY keys, JWT_SECRET
+
+# 4. Push schema
+npx prisma db push
+
+# 5. Run
+node server.js      # Backend: http://localhost:3000
+npm run dev         # Frontend: http://localhost:5173
 ```
 
+**Required env vars:** `DATABASE_URL` · `JWT_SECRET` · `RAZORPAY_KEY_ID` · `RAZORPAY_KEY_SECRET` · `GEMINI_API_KEY` · `RESEND_API_KEY` · `VITE_API_URL`
+
 ---
 
-## Deployment
+## Further Reading
 
-- **Backend:** [Render](https://render.com) — set all environment variables in the Render
-  dashboard. The `npm start` script (`prisma db push && node server.js`) runs automatically
-  on deploy.
-- **Frontend:** [Netlify](https://netlify.com) — `netlify.toml` is pre-configured. Set
-  `VITE_API_URL` to your Render backend URL as a Netlify environment variable before building.
+For a complete technical deep-dive — sequence diagrams, database schema, wallet concurrency guards, AI confidence scoring model, scalability architecture — open the **[System Architecture Document](./ScrowX-System-Architecture.pdf)** in this repository.
+
+---
+
+<div align="center">
+  <sub>Built for the informal economy · 2.5% fee · AI-first arbitration · Deed-anchored trust</sub>
+</div>
