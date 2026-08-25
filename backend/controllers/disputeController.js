@@ -222,6 +222,12 @@ const submitEvidence = async (req, res) => {
       }
     });
 
+    // [Shadow Mode] Independent comparison — polls for Gemini's DB write then runs new system
+    setImmediate(() => {
+      const { runShadowComparison } = require('../services/ai/shadowCompare');
+      runShadowComparison(id).catch(err => console.error('[ShadowCompare] uncaught:', err.message));
+    });
+
     return res.json({
       success: true,
       data: updated,
@@ -873,6 +879,12 @@ const submitEvidenceEvent = async (req, res) => {
         console.log(`[Dispute ${dispute.id}] Both parties submitted evidence, triggering AI report...`);
         generateAIReport(dispute.id).catch(err => console.error("AI Gen Error:", err));
       });
+
+      // [Shadow Mode] Independent comparison — polls for Gemini's DB write then runs new system
+      setImmediate(() => {
+        const { runShadowComparison } = require('../services/ai/shadowCompare');
+        runShadowComparison(dispute.id).catch(err => console.error('[ShadowCompare] uncaught:', err.message));
+      });
     }
     
     return res.json({ success: true, message: 'Evidence submitted successfully', data: newEvent });
@@ -960,6 +972,12 @@ const submitChallengeEvent = async (req, res) => {
       setImmediate(() => {
         console.log(`[Dispute ${dispute.id}] 1 challenge submitted, triggering AI re-analysis...`);
         generateAIReport(dispute.id).catch(err => console.error("AI Re-Analysis Error:", err));
+      });
+
+      // [Shadow Mode] Independent comparison — polls for Gemini's DB write then runs new system
+      setImmediate(() => {
+        const { runShadowComparison } = require('../services/ai/shadowCompare');
+        runShadowComparison(dispute.id).catch(err => console.error('[ShadowCompare] uncaught:', err.message));
       });
     } else if (challengeCount === 2) {
       // Both challenged, instantly escalate (human review overrides any pending or completed re-analysis)
