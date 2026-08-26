@@ -362,28 +362,60 @@ const getFullDisputeDetail = async (req, res) => {
           }
           
           if (readyToSettle) {
-            // Atomic update to flip status
-            const updated = await prisma.deedDispute.updateMany({
-              where: { id: dispute.id, status: 'CHALLENGE_PHASE' },
-              data: { status: 'RESOLVED', lastActivity: new Date() }
+            // 1. Fetch most recent AI_REPORT
+            const latestAiReport = await prisma.disputeEvent.findFirst({
+              where: { deedDisputeId: dispute.id, type: 'AI_REPORT' },
+              orderBy: { createdAt: 'desc' }
             });
-            
-            if (updated.count === 1) {
-              console.log(`[Lazy Wrapper] 48h elapsed in CHALLENGE_PHASE. Auto-settling...`);
-              await prisma.disputeEvent.create({
-                data: {
-                  deedDisputeId: dispute.id,
-                  type: 'SETTLEMENT',
-                  actorRole: 'system',
-                  payload: { 
-                    reason: 'Timeout elapsed with 0 or 1 challenges. Auto-settled based on latest AI report.',
-                    autoSettled: true,
-                    fundsDisbursed: false // Stage D will handle actual ledger movement
-                  }
-                }
+            const recommendation = latestAiReport?.payload?.recommendation;
+
+            // 2. Explicit Guard
+            if (recommendation !== 'REFUND_BUYER' && recommendation !== 'RELEASE_TO_SELLER') {
+              const updated = await prisma.deedDispute.updateMany({
+                where: { id: dispute.id, status: 'CHALLENGE_PHASE' },
+                data: { status: 'ESCALATED', lastActivity: new Date() }
               });
-              // Update in-memory object for response
-              dispute.status = 'RESOLVED';
+              
+              if (updated.count === 1) {
+                console.log(`[Lazy Wrapper] 48h elapsed in CHALLENGE_PHASE, but recommendation was ${recommendation}. Escalating...`);
+                await prisma.disputeEvent.create({
+                  data: {
+                    deedDisputeId: dispute.id,
+                    type: 'ESCALATED',
+                    actorRole: 'system',
+                    payload: { 
+                      reason: 'Auto-settlement timeout reached, but AI recommendation was MANUAL_REVIEW_REQUIRED (or missing/unparseable) — routing to human review instead of auto-resolving.' 
+                    }
+                  }
+                });
+                dispute.status = 'ESCALATED';
+              }
+            } else {
+              // 3. Valid Recommendation - Atomic lock then settle
+              // We use updateMany to atomically grab the lock so concurrent requests don't double-settle.
+              // We set it to RESOLVED here, and executeSettlementTransaction will update it again with the full timeline.
+              const updated = await prisma.deedDispute.updateMany({
+                where: { id: dispute.id, status: 'CHALLENGE_PHASE' },
+                data: { status: 'RESOLVED', lastActivity: new Date() }
+              });
+              
+              if (updated.count === 1) {
+                console.log(`[Lazy Wrapper] 48h elapsed in CHALLENGE_PHASE. Auto-settling with ${recommendation}...`);
+                const buyerPct = recommendation === 'REFUND_BUYER' ? 100 : 0;
+                
+                const { executeSettlementTransaction } = require('../services/settlementService');
+                await executeSettlementTransaction({
+                  dispute,
+                  deed,
+                  recommendation,
+                  buyerPct,
+                  actorRole: 'system',
+                  actorId: null,
+                  notes: 'Auto-settled via 48h challenge-phase timeout'
+                });
+
+                dispute.status = 'RESOLVED';
+              }
             }
           }
         }
@@ -560,169 +592,17 @@ const resolveDispute = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Deed not found' });
     }
 
-    const resolutionMap = { REFUND: 'REFUND_BUYER', RELEASE: 'RELEASE_TO_SELLER', PARTIAL_REFUND: 'PARTIAL_REFUND' };
-    const resolution = resolutionMap[action] || action;
-
-    // --- Phase 3: Dual-sided fee split and Wallet Balance updates ---
-    let finalBuyerPct = 100;
-    if (buyerPct !== undefined) {
-      finalBuyerPct = buyerPct;
-    } else if (resolution === 'RELEASE_TO_SELLER' || resolution.includes('RELEASE')) {
-      finalBuyerPct = 0;
-    }
-
-    const price = parseInt(deed?.amount || 0, 10);
-    const feeModelStatus = dispute.status === 'ESCALATED' ? 'ESCALATED' : 'RESOLVED';
-    const split = calculateResolutionAmounts(price, finalBuyerPct, feeModelStatus);
-
-    const { convertCurrency } = require('../utils/currencyUtils');
-
-    await prisma.$transaction(async (tx) => {
-      // 1. Un-lock Buyer's balance (gte guard ensures we don't underflow or double-spend)
-      const buyerId = deed.buyerId;
-      const buyerWallet = await tx.wallet.findUnique({ where: { userId: buyerId } });
-      if (!buyerWallet) throw new Error("BUYER_WALLET_NOT_FOUND");
-
-      const priceInBuyerCurrency = convertCurrency(price, deed?.currency || 'INR', buyerWallet.currency);
-
-      const updateLock = await tx.wallet.updateMany({
-        where: { id: buyerWallet.id, lockedBalance: { gte: priceInBuyerCurrency } },
-        data: { lockedBalance: { decrement: priceInBuyerCurrency } }
-      });
-      if (updateLock.count === 0) throw new Error("INSUFFICIENT_LOCKED_BALANCE");
-
-      // 2. Refund/Penalty Buyer (increment/decrement)
-      if (split.buyerNet !== 0) {
-        const buyerNetInBuyerCurrency = convertCurrency(split.buyerNet, deed?.currency || 'INR', buyerWallet.currency);
-        await tx.wallet.update({
-          where: { id: buyerWallet.id },
-          data: { balance: { increment: buyerNetInBuyerCurrency } }
-        });
-        await tx.walletTransaction.create({
-          data: {
-            walletId: buyerWallet.id,
-            type: "CREDIT",
-            category: "DISPUTE_REFUND",
-            amount: split.buyerGross,
-            currency: deed?.currency || "INR",
-            status: "SUCCESS",
-            description: `Dispute Refund: ${deed?.title || dispute.id}`,
-            reference: dispute.id,
-            netAmount: split.buyerNet,
-            fee: split.buyerFee,
-            metadata: {
-              feeTier: `DISPUTE_${feeModelStatus}_BUYER`,
-              feePercentage: feeModelStatus === 'ESCALATED' ? 2 : (feeModelStatus === 'RESOLVED' ? 1 : 0),
-              baseAmount: split.buyerGross,
-              feeDeducted: split.buyerFee,
-              convertedAmount: buyerNetInBuyerCurrency,
-              walletCurrency: buyerWallet.currency
-            }
-          }
-        });
-      }
-
-      // 3. Credit/Penalty Seller (increment/decrement)
-      const sellerId = deed.sellerId;
-      if (split.sellerNet !== 0 && sellerId) {
-        let sellerWallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
-        if (!sellerWallet) {
-          sellerWallet = await tx.wallet.create({
-            data: { userId: sellerId, userRole: "seller", currency: deed?.currency || "INR" }
-          });
-        }
-        
-        const sellerNetInSellerCurrency = convertCurrency(split.sellerNet, deed?.currency || 'INR', sellerWallet.currency);
-
-        await tx.wallet.update({
-          where: { id: sellerWallet.id },
-          data: { balance: { increment: sellerNetInSellerCurrency } }
-        });
-        await tx.walletTransaction.create({
-          data: {
-            walletId: sellerWallet.id,
-            type: "CREDIT",
-            category: "DISPUTE_RELEASE",
-            amount: split.sellerGross,
-            currency: deed?.currency || "INR",
-            status: "SUCCESS",
-            description: `Dispute Release: ${deed?.title || dispute.id}`,
-            reference: dispute.id,
-            netAmount: split.sellerNet,
-            fee: split.sellerFee,
-            metadata: {
-              feeTier: `DISPUTE_${feeModelStatus}_SELLER`,
-              feePercentage: feeModelStatus === 'ESCALATED' ? 4.5 : (feeModelStatus === 'RESOLVED' ? 3.5 : 0), // 2.5% base + 1% or 2%
-              baseAmount: split.sellerGross,
-              feeDeducted: split.sellerFee,
-              convertedAmount: sellerNetInSellerCurrency,
-              walletCurrency: sellerWallet.currency
-            }
-          }
-        });
-      }
-
-      // --- End of Wallet updates ---
-
-      // Write HUMAN_DECISION event
-      await tx.disputeEvent.create({
-        data: {
-          deedDisputeId: id,
-          eventType: undefined,
-          type: 'HUMAN_DECISION',
-          actorRole: 'admin',
-          actorId: req.user?.userId || req.user?.id || 'admin',
-          payload: JSON.stringify({ action: resolution, finalBuyerPct, notes: notes || '' })
-        }
-      });
-
-      // Write SETTLEMENT event
-      await tx.disputeEvent.create({
-        data: {
-          deedDisputeId: id,
-          eventType: undefined,
-          type: 'SETTLEMENT',
-          actorRole: 'system',
-          payload: JSON.stringify({ 
-            buyerNet: split.buyerNet, sellerNet: split.sellerNet, 
-            buyerFee: split.buyerFee, sellerFee: split.sellerFee, 
-            platformFee: split.platformFee 
-          })
-        }
-      });
-
-      const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-      const updateData = {
-        status: 'RESOLVED',
-        resolution,
-        resolvedBy: req.user?.userId || req.user?.id || 'admin',
-        resolvedAt: new Date(),
-        timeline: [
-          ...currentTimeline,
-          {
-            event: 'DISPUTE_RESOLVED',
-            by: req.user?.role || 'admin',
-            timestamp: new Date().toISOString(),
-            description: `Admin resolved: ${resolution} (Buyer: ${finalBuyerPct}%)`,
-            notes: notes || '',
-            enhancedAnalysis: enhancedAnalysis || null,
-            scopeCompliance: scopeCompliance || null,
-          },
-        ],
-        lastActivity: new Date(),
-      };
-
-      if (enhancedAnalysis) updateData.enhancedAnalysis = enhancedAnalysis;
-      if (scopeCompliance) updateData.scopeCompliance = scopeCompliance;
-
-      await tx.deedDispute.update({ where: { id }, data: updateData });
-
-      if (dispute.deedId) {
-        await tx.deed.update({
-          where: { id: dispute.deedId },
-          data: { status: 'CLOSED' }, 
-        });
-      }
+    const { executeSettlementTransaction } = require('../services/settlementService');
+    await executeSettlementTransaction({
+      dispute,
+      deed,
+      recommendation: action,
+      buyerPct,
+      actorRole: 'admin',
+      actorId: req.user?.userId || req.user?.id || 'admin',
+      notes,
+      enhancedAnalysis,
+      scopeCompliance
     });
 
     const finalDispute = await prisma.deedDispute.findUnique({ where: { id } });
