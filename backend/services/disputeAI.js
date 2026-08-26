@@ -9,6 +9,9 @@ const disputeConfig = require('../config/disputeConfig');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Phase 5: new multi-provider arbitration path (low-stakes only, feature-flagged)
+const { synthesizeVerdict } = require('./ai/agents/VerdictSynthesizer');
+
 const generateAIReport = async (deedDisputeId) => {
   try {
     const dispute = await prisma.deedDispute.findUnique({
@@ -98,6 +101,13 @@ EXPECTED JSON FORMAT:
 }
     `;
 
+    // ── Phase 5: High-stakes check (must run before both call paths) ────────────
+    // Uses the IDENTICAL formula + constants as Stage C3 (lines 166-169) and
+    // VerdictSynthesizer.js — same disputeConfig source, no duplication.
+    const _currency      = (dispute.deed.currency || 'INR').toUpperCase();
+    const _threshold     = (_currency === 'USD' ? disputeConfig.HIGH_VALUE_THRESHOLD_USD : disputeConfig.HIGH_VALUE_THRESHOLD_INR) * 100;
+    const highStakes     = (dispute.deed.amount || 0) >= _threshold;
+
     // Fast-fail if just testing stub
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'dummy-key') {
        console.log("[AI] Test mode stub returning mock data");
@@ -106,7 +116,8 @@ EXPECTED JSON FORMAT:
          faultSide: "BUYER",
          recommendation: "REFUND_BUYER",
          confidenceScore: 85,
-         reasoning: "The seller failed to upload deliverables."
+         reasoning: "The seller failed to upload deliverables.",
+         resolvedBy: 'legacy'
        };
        
        await prisma.disputeEvent.create({
@@ -126,14 +137,64 @@ EXPECTED JSON FORMAT:
        return;
     }
 
-    const result = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
-        contents: prompt
-    });
-    
-    let text = result.text;
-    text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const payload = JSON.parse(text);
+    // ── Phase 5: New arbitration path (LOW-STAKES + flag ON only) ────────────────
+    // HIGH-STAKES disputes ALWAYS bypass this block and use the legacy path below,
+    // regardless of the flag value. This is a hard requirement, not a default.
+    let faultSide, recommendation, confidenceScore, reasoning, resolvedBy;
+
+    if (process.env.FEATURE_NEW_ARBITRATION_LOW_STAKES === 'true' && !highStakes) {
+      try {
+        const newResult = await synthesizeVerdict({
+          isReAnalysis,
+          deed: {
+            currency:    dispute.deed.currency,
+            amount:      dispute.deed.amount,
+            description: dispute.deed.description,
+            title:       dispute.deed.title,
+          },
+          dispute: {
+            raisedBy:    dispute.raisedBy,
+            reason:      dispute.reason,
+            description: dispute.description,
+          },
+          buyerEvidence:    buyerEv  ? buyerEv.payload  : null,
+          sellerEvidence:   sellerEv ? sellerEv.payload : null,
+          originalAiReport: isReAnalysis ? aiReports[0].payload : null,
+          buyerChallenge:   events.find(e => e.type === 'CHALLENGE' && e.actorRole === 'buyer')?.payload  ?? null,
+          sellerChallenge:  events.find(e => e.type === 'CHALLENGE' && e.actorRole === 'seller')?.payload ?? null,
+        });
+
+        if (newResult.parseError) {
+          console.error('[AI] New arbitration path returned parseError, falling back to legacy Gemini call for this dispute:', deedDisputeId);
+          throw new Error('parseError from new system');
+        }
+
+        ({ faultSide, recommendation, confidenceScore, reasoning } = newResult);
+        resolvedBy = 'new_system';
+        console.log(`[AI] Dispute ${deedDisputeId} resolved via NEW arbitration system (low-stakes, provider=${newResult.providerUsed})`);
+      } catch (err) {
+        console.error('[AI] New arbitration path failed, falling back to legacy Gemini call:', err.message);
+        // fall through — faultSide remains undefined, legacy block fires below
+      }
+    }
+
+    // ── Legacy Gemini path — fires when: flag OFF, highStakes=true, or new path failed ──
+    if (faultSide === undefined) {
+
+      const result = await ai.models.generateContent({
+          model: 'gemini-3.5-flash',
+          contents: prompt
+      });
+      
+      let text = result.text;
+      text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const _parsed = JSON.parse(text);
+      faultSide       = _parsed.faultSide;
+      recommendation  = _parsed.recommendation;
+      confidenceScore = _parsed.confidenceScore;
+      reasoning       = _parsed.reasoning;
+      resolvedBy      = 'legacy';
+    } // end legacy block
     
     // Note (Accepted TOCTOU Gap): This is a check-then-act read.
     // If the dispute status flips to ESCALATED in the split millisecond between 
@@ -144,6 +205,8 @@ EXPECTED JSON FORMAT:
       console.log(`[AI] Dispute ${deedDisputeId} became ESCALATED during generation. Skipping write.`);
       return;
     }
+
+    const payload = { faultSide, recommendation, confidenceScore, reasoning, resolvedBy };
 
     await prisma.disputeEvent.create({
       data: {

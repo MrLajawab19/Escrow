@@ -84,6 +84,74 @@ class GeminiProvider extends BaseProvider {
       };
     }
   }
+
+  /**
+   * Multimodal (vision) call — for use when evidence includes image files.
+   * The existing text-only generate() method is NOT modified by this addition.
+   *
+   * KNOWN LIMITATION: This method calls Gemini directly (no ModelRouter fallback).
+   * If the Gemini vision call fails (quota, rate limit, error), there is currently
+   * no fallback for the vision step. The caller (EvidenceExtractor) handles this
+   * gracefully by returning a safe fallback rather than throwing.
+   *
+   * @param {{
+   *   systemPrompt: string,
+   *   userPrompt:   string,
+   *   images:       Array<{ data: string, mimeType: string }>,
+   *   maxTokens?:   number
+   * }} input
+   * @returns {Promise<{ text: string|null, raw: any|null, tokensUsed: number|null, latencyMs: number, success: boolean, error: string|null }>}
+   */
+  async generateWithImages({ systemPrompt, userPrompt, images = [], maxTokens }) {
+    const startMs = Date.now();
+
+    try {
+      const ai = getGeminiClient();
+
+      // Build the multimodal content parts array:
+      //   [ { text: systemPrompt + userPrompt }, { inlineData: ... }, ... ]
+      const textPart = {
+        text: systemPrompt ? `${systemPrompt}\n\n${userPrompt}` : userPrompt,
+      };
+
+      const imageParts = images.map(({ data, mimeType }) => ({
+        inlineData: { data, mimeType },
+      }));
+
+      const raw = await ai.models.generateContent({
+        model:    this.model,
+        contents: [{ role: 'user', parts: [textPart, ...imageParts] }],
+        ...(maxTokens ? { generationConfig: { maxOutputTokens: maxTokens } } : {}),
+      });
+
+      const latencyMs  = Date.now() - startMs;
+      const text       = raw.text ?? null;
+      const tokensUsed =
+        raw.usageMetadata?.totalTokenCount ??
+        raw.usageMetadata?.promptTokenCount ??
+        null;
+
+      console.log(
+        `[GeminiProvider] generateWithImages() OK — model=${this.model} ` +
+        `images=${images.length} latency=${latencyMs}ms tokens=${tokensUsed}`
+      );
+
+      return { text, raw, tokensUsed, latencyMs, success: true, error: null };
+    } catch (err) {
+      const latencyMs = Date.now() - startMs;
+      console.error(
+        `[GeminiProvider] generateWithImages() FAILED (${this.model}) — ${err.message}`
+      );
+      return {
+        text:       null,
+        raw:        null,
+        tokensUsed: null,
+        latencyMs,
+        success:    false,
+        error:      err.message,
+      };
+    }
+  }
 }
 
 module.exports = GeminiProvider;
