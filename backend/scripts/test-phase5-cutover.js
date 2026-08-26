@@ -29,7 +29,7 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const REAL_KEY_FROM_ENV = process.env.GEMINI_API_KEY;
 
 const { PrismaClient }    = require('@prisma/client');
-const VerdictSynthesizer  = require('../services/ai/agents/VerdictSynthesizer');
+const FullPipeline        = require('../services/ai/runFullArbitrationPipeline');
 
 const prisma = new PrismaClient();
 
@@ -96,7 +96,7 @@ function header(label) {
   console.log(`[Phase5Test] High-stakes dispute: ${highStake.id} amount=${highStake.deed.amount}`);
   console.log('[Phase5Test] Note: S1/S2 use dummy-key to avoid Flash quota. S3/S3b patch VerdictSynthesizer.');
 
-  const origSynthesize = VerdictSynthesizer.synthesizeVerdict;
+  const origPipeline = FullPipeline.runFullArbitrationPipeline;
 
   // Helper: re-require generateAIReport fresh each time (module is cached,
   // but we control env vars to change its behaviour via the flag and key checks)
@@ -110,7 +110,7 @@ function header(label) {
 
   delete process.env.FEATURE_NEW_ARBITRATION_LOW_STAKES;
   process.env.GEMINI_API_KEY = 'dummy-key'; // triggers the mock stub which returns early
-  VerdictSynthesizer.synthesizeVerdict = async () => { throw new Error('Should NOT be called — flag is off'); };
+  FullPipeline.runFullArbitrationPipeline = async () => { throw new Error('Should NOT be called — flag is off'); };
 
   await resetDispute(lowStake.id);
   await sleep(300);
@@ -133,8 +133,8 @@ function header(label) {
 
   process.env.FEATURE_NEW_ARBITRATION_LOW_STAKES = 'true';
   process.env.GEMINI_API_KEY = 'dummy-key';
-  VerdictSynthesizer.synthesizeVerdict = async () => {
-    throw new Error('🚨 CRITICAL: synthesizeVerdict called for a HIGH-STAKES dispute!');
+  FullPipeline.runFullArbitrationPipeline = async () => {
+    throw new Error('🚨 CRITICAL: runFullArbitrationPipeline called for a HIGH-STAKES dispute!');
   };
 
   await resetDispute(highStake.id);
@@ -148,7 +148,7 @@ function header(label) {
   console.log(`[Phase5Test] Scenario 2: resolvedBy=${s2?.resolvedBy} → ${s2Pass ? '✅ PASS' : '❌ FAIL — HIGH-STAKES USED NEW SYSTEM!'}`);
   if (!s2Pass) {
     console.error('\n🚨 CRITICAL: High-stakes dispute reached new system. Must fix before any production enable.\n');
-    VerdictSynthesizer.synthesizeVerdict = origSynthesize;
+    FullPipeline.runFullArbitrationPipeline = origPipeline;
     process.env.GEMINI_API_KEY = REAL_KEY_FROM_ENV;
     await prisma.$disconnect();
     process.exit(1);
@@ -157,11 +157,11 @@ function header(label) {
   // ── S2 supplemental: verify highStakes guard with real key + flag on ───────
   // With a real key + flag on + high-stakes dispute, the new path must be skipped
   // (faultSide stays undefined going into the legacy block, which calls Flash).
-  // Since Flash is quota-exhausted, we verify by checking that VerdictSynthesizer
+  // Since Flash is quota-exhausted, we verify by checking that runFullArbitrationPipeline
   // was NOT called (our throw-patch above would have aborted if it had been).
   // The 429 from Flash → outer catch → ESCALATED write is the existing known gap,
   // not a Phase 5 issue. The routing guard itself is verified by the mock not throwing.
-  console.log('\n[Phase5Test] Scenario 2 supplemental: VerdictSynthesizer was NOT called for high-stakes ✅');
+  console.log('\n[Phase5Test] Scenario 2 supplemental: runFullArbitrationPipeline was NOT called for high-stakes ✅');
   console.log('[Phase5Test] (If it had been called, the throw-patch above would have crashed)');
 
   // ══ SCENARIO 3: Flag ON + low-stakes + patched synthesizeVerdict → resolvedBy: new_system ═
@@ -169,9 +169,9 @@ function header(label) {
 
   process.env.FEATURE_NEW_ARBITRATION_LOW_STAKES = 'true';
   process.env.GEMINI_API_KEY = REAL_KEY_FROM_ENV; // real key — new-system runs via Lite, legacy won't be reached
-  VerdictSynthesizer.synthesizeVerdict = async (inputData) => {
-    console.log('[Phase5Test] synthesizeVerdict called ✅ — isReAnalysis:', inputData.isReAnalysis);
-    return { ...MOCK_NEW_SYSTEM_RESPONSE };
+  FullPipeline.runFullArbitrationPipeline = async (inputData) => {
+    console.log('[Phase5Test] runFullArbitrationPipeline called ✅');
+    return { ...MOCK_NEW_SYSTEM_RESPONSE, disputeContext: { overallDataQuality: 'mocked' } };
   };
 
   await resetDispute(lowStake.id);
@@ -190,9 +190,9 @@ function header(label) {
 
   process.env.FEATURE_NEW_ARBITRATION_LOW_STAKES = 'true';
   process.env.GEMINI_API_KEY = 'dummy-key';
-  VerdictSynthesizer.synthesizeVerdict = async () => {
-    console.log('[Phase5Test] synthesizeVerdict throwing (simulated failure)...');
-    throw new Error('[TEST INJECTION] Simulated synthesizeVerdict failure');
+  FullPipeline.runFullArbitrationPipeline = async () => {
+    console.log('[Phase5Test] runFullArbitrationPipeline throwing (simulated failure)...');
+    throw new Error('[TEST INJECTION] Simulated runFullArbitrationPipeline failure');
   };
 
   await resetDispute(lowStake.id);
@@ -206,7 +206,7 @@ function header(label) {
   console.log(`[Phase5Test] Scenario 3b: resolvedBy=${s3b?.resolvedBy} → ${s3bPass ? '✅ PASS — fell back to legacy correctly' : '❌ FAIL'}`);
 
   // ── Restore everything ────────────────────────────────────────────────────
-  VerdictSynthesizer.synthesizeVerdict = origSynthesize;
+  FullPipeline.runFullArbitrationPipeline = origPipeline;
   process.env.GEMINI_API_KEY           = REAL_KEY_FROM_ENV;
   delete process.env.FEATURE_NEW_ARBITRATION_LOW_STAKES;
 

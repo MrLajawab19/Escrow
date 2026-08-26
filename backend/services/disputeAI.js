@@ -10,7 +10,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Phase 5: new multi-provider arbitration path (low-stakes only, feature-flagged)
-const { synthesizeVerdict } = require('./ai/agents/VerdictSynthesizer');
+const { runFullArbitrationPipeline } = require('./ai/runFullArbitrationPipeline');
 
 const generateAIReport = async (deedDisputeId) => {
   try {
@@ -140,28 +140,23 @@ EXPECTED JSON FORMAT:
     // ── Phase 5: New arbitration path (LOW-STAKES + flag ON only) ────────────────
     // HIGH-STAKES disputes ALWAYS bypass this block and use the legacy path below,
     // regardless of the flag value. This is a hard requirement, not a default.
-    let faultSide, recommendation, confidenceScore, reasoning, resolvedBy;
+    let faultSide, recommendation, confidenceScore, reasoning, resolvedBy, pipelineVersion;
 
     if (process.env.FEATURE_NEW_ARBITRATION_LOW_STAKES === 'true' && !highStakes) {
       try {
-        const newResult = await synthesizeVerdict({
-          isReAnalysis,
-          deed: {
-            currency:    dispute.deed.currency,
-            amount:      dispute.deed.amount,
-            description: dispute.deed.description,
-            title:       dispute.deed.title,
-          },
-          dispute: {
-            raisedBy:    dispute.raisedBy,
-            reason:      dispute.reason,
-            description: dispute.description,
-          },
-          buyerEvidence:    buyerEv  ? buyerEv.payload  : null,
-          sellerEvidence:   sellerEv ? sellerEv.payload : null,
-          originalAiReport: isReAnalysis ? aiReports[0].payload : null,
-          buyerChallenge:   events.find(e => e.type === 'CHALLENGE' && e.actorRole === 'buyer')?.payload  ?? null,
-          sellerChallenge:  events.find(e => e.type === 'CHALLENGE' && e.actorRole === 'seller')?.payload ?? null,
+        const [buyer, seller] = await Promise.all([
+          prisma.buyer.findUnique({ where: { id: dispute.buyerId } }),
+          prisma.seller.findUnique({ where: { id: dispute.sellerId } })
+        ]);
+
+        const newResult = await runFullArbitrationPipeline({
+          dispute,
+          deed: dispute.deed,
+          evidenceEvents: dispute.events || [],
+          buyer,
+          seller,
+          priorDisputeHistory: null, // ScrowX has no history yet per Phase 8
+          highStakes
         });
 
         if (newResult.parseError) {
@@ -171,7 +166,8 @@ EXPECTED JSON FORMAT:
 
         ({ faultSide, recommendation, confidenceScore, reasoning } = newResult);
         resolvedBy = 'new_system';
-        console.log(`[AI] Dispute ${deedDisputeId} resolved via NEW arbitration system (low-stakes, provider=${newResult.providerUsed})`);
+        pipelineVersion = 'full_v1';
+        console.log(`[AI] Dispute ${deedDisputeId} resolved via NEW arbitration system (low-stakes, provider=${newResult.providerUsed}, quality=${newResult.disputeContext?.overallDataQuality})`);
       } catch (err) {
         console.error('[AI] New arbitration path failed, falling back to legacy Gemini call:', err.message);
         // fall through — faultSide remains undefined, legacy block fires below
@@ -207,6 +203,9 @@ EXPECTED JSON FORMAT:
     }
 
     const payload = { faultSide, recommendation, confidenceScore, reasoning, resolvedBy };
+    if (pipelineVersion) {
+      payload.pipelineVersion = pipelineVersion;
+    }
 
     await prisma.disputeEvent.create({
       data: {

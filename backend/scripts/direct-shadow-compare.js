@@ -20,7 +20,7 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
 const { PrismaClient }        = require('@prisma/client');
-const { synthesizeVerdict }   = require('../services/ai/agents/VerdictSynthesizer');
+const { runFullArbitrationPipeline } = require('../services/ai/runFullArbitrationPipeline');
 const { generateAIReport }    = require('../services/disputeAI');
 const disputeConfig           = require('../config/disputeConfig');
 
@@ -36,37 +36,7 @@ function isHighStakes(currency, amount) {
   return (amount || 0) >= thresholdMajor * 100;
 }
 
-/** Builds VerdictSynthesizer inputData from a fully-loaded dispute record. */
-function buildInput(dispute) {
-  const events     = dispute.events || [];
-  const aiReports  = events.filter(e => e.type === 'AI_REPORT');
-  const isReAnalysis = aiReports.length > 0;
-
-  const buyerEv  = events.find(e => e.type === 'EVIDENCE_SUBMITTED' && e.actorRole === 'buyer');
-  const sellerEv = events.find(e => e.type === 'EVIDENCE_SUBMITTED' && e.actorRole === 'seller');
-  const buyerCh  = events.find(e => e.type === 'CHALLENGE' && e.actorRole === 'buyer');
-  const sellerCh = events.find(e => e.type === 'CHALLENGE' && e.actorRole === 'seller');
-
-  return {
-    isReAnalysis,
-    deed: {
-      currency:    dispute.deed.currency,
-      amount:      dispute.deed.amount,
-      description: dispute.deed.description,
-      title:       dispute.deed.title,
-    },
-    dispute: {
-      raisedBy:    dispute.raisedBy,
-      reason:      dispute.reason,
-      description: dispute.description,
-    },
-    buyerEvidence:    buyerEv  ? buyerEv.payload  : null,
-    sellerEvidence:   sellerEv ? sellerEv.payload  : null,
-    originalAiReport: isReAnalysis ? aiReports[0].payload : null,
-    buyerChallenge:   buyerCh  ? buyerCh.payload  : null,
-    sellerChallenge:  sellerCh ? sellerCh.payload  : null,
-  };
-}
+// buildInput removed as we now use runFullArbitrationPipeline
 
 /** Runs VerdictSynthesizer and logs the structured comparison line. */
 async function runDirectComparison(dispute) {
@@ -83,13 +53,24 @@ async function runDirectComparison(dispute) {
   }
 
   const geminiPayload = aiReportEvents[0].payload;
-  const inputData     = buildInput(dispute);
+  const [buyer, seller] = await Promise.all([
+    prisma.buyer.findUnique({ where: { id: dispute.buyerId } }),
+    prisma.seller.findUnique({ where: { id: dispute.sellerId } })
+  ]);
 
   let newResult;
   try {
-    newResult = await synthesizeVerdict(inputData);
+    newResult = await runFullArbitrationPipeline({
+      dispute,
+      deed: dispute.deed,
+      evidenceEvents: dispute.events || [],
+      buyer,
+      seller,
+      priorDisputeHistory: null, // ScrowX has no history yet
+      highStakes
+    });
   } catch (err) {
-    console.error(`[DirectCompare] synthesizeVerdict threw for ${dispute.id}: ${err.message}`);
+    console.error(`[DirectCompare] runFullArbitrationPipeline threw for ${dispute.id}: ${err.message}`);
     return null;
   }
 
@@ -106,6 +87,8 @@ async function runDirectComparison(dispute) {
     disagreement:         newResult.disagreement ?? null,
     newSystemProvider:    newResult.providerUsed   ?? null,
     parseError:           newResult.parseError     ?? false,
+    pipelineVersion:      "full_v1",
+    dataQuality:          newResult.disputeContext?.overallDataQuality || "unknown"
   };
 
   console.log('[ShadowCompare]', JSON.stringify(comparisonLine));

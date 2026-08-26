@@ -16,7 +16,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const { synthesizeVerdict } = require('./agents/VerdictSynthesizer');
+const { runFullArbitrationPipeline } = require('./runFullArbitrationPipeline');
 const disputeConfig        = require('../../config/disputeConfig');
 
 // How long "fresh" means — prevents accidentally reading a stale AI_REPORT
@@ -45,47 +45,7 @@ function isHighStakes(currency, amount) {
   return (amount || 0) >= thresholdMajor * 100;
 }
 
-/**
- * Builds the VerdictSynthesizer inputData shape from the Prisma dispute record.
- * Mirrors the field-mapping used in test-verdict-synthesizer.js exactly —
- * same field names, same null-for-missing-evidence pattern.
- *
- * @param {object} dispute  — result of prisma.deedDispute.findUnique with events+deed include
- * @returns {object}        — inputData shape expected by synthesizeVerdict()
- */
-function buildSynthesizerInput(dispute) {
-  const events     = dispute.events || [];
-  const aiReports  = events.filter((e) => e.type === 'AI_REPORT');
-  const isReAnalysis = aiReports.length > 0;
-
-  // Evidence events — one per side at most (same .find() logic as disputeAI.js)
-  const buyerEv  = events.find((e) => e.type === 'EVIDENCE_SUBMITTED' && e.actorRole === 'buyer');
-  const sellerEv = events.find((e) => e.type === 'EVIDENCE_SUBMITTED' && e.actorRole === 'seller');
-
-  // Challenge events — for re-analysis context
-  const buyerCh  = events.find((e) => e.type === 'CHALLENGE' && e.actorRole === 'buyer');
-  const sellerCh = events.find((e) => e.type === 'CHALLENGE' && e.actorRole === 'seller');
-
-  return {
-    isReAnalysis,
-    deed: {
-      currency:    dispute.deed.currency,
-      amount:      dispute.deed.amount,
-      description: dispute.deed.description,
-      title:       dispute.deed.title,
-    },
-    dispute: {
-      raisedBy:    dispute.raisedBy,
-      reason:      dispute.reason,
-      description: dispute.description,
-    },
-    buyerEvidence:  buyerEv  ? buyerEv.payload  : null,
-    sellerEvidence: sellerEv ? sellerEv.payload  : null,
-    originalAiReport: isReAnalysis ? aiReports[0].payload : null,
-    buyerChallenge:   buyerCh  ? buyerCh.payload  : null,
-    sellerChallenge:  sellerCh ? sellerCh.payload  : null,
-  };
-}
+// buildSynthesizerInput removed as we now use runFullArbitrationPipeline
 
 /**
  * Runs a shadow comparison for one dispute.
@@ -151,14 +111,26 @@ async function runShadowComparison(deedDisputeId) {
       return;
     }
 
-    const inputData = buildSynthesizerInput(dispute);
+    const highStakes = isHighStakes(dispute.deed.currency, dispute.deed.amount);
 
-    // ── Step 4: Run VerdictSynthesizer ────────────────────────────────────────
-    const newResult = await synthesizeVerdict(inputData);
+    const [buyer, seller] = await Promise.all([
+      prisma.buyer.findUnique({ where: { id: dispute.buyerId } }),
+      prisma.seller.findUnique({ where: { id: dispute.sellerId } })
+    ]);
+
+    // ── Step 4: Run Full Pipeline ─────────────────────────────────────────────
+    const newResult = await runFullArbitrationPipeline({
+      dispute,
+      deed: dispute.deed,
+      evidenceEvents: dispute.events || [],
+      buyer,
+      seller,
+      priorDisputeHistory: null, // ScrowX has no history yet per Phase 8
+      highStakes
+    });
 
     // ── Step 5: Log structured comparison ─────────────────────────────────────
     const geminiPayload = geminiRecord.payload;
-    const highStakes    = isHighStakes(dispute.deed.currency, dispute.deed.amount);
 
     console.log(
       '[ShadowCompare]',
@@ -173,6 +145,8 @@ async function runShadowComparison(deedDisputeId) {
         match:                geminiPayload.recommendation === newResult.recommendation,
         highStakes,
         disagreement:         newResult.disagreement ?? null,
+        pipelineVersion:      "full_v1",
+        dataQuality:          newResult.disputeContext?.overallDataQuality || "unknown"
       })
     );
   } catch (err) {
