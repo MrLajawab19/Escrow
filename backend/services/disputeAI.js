@@ -38,12 +38,12 @@ const generateAIReport = async (deedDisputeId) => {
     const buyerFiles = buyerEv && buyerEv.payload.evidenceUrls?.length ? `Files Uploaded: ${buyerEv.payload.evidenceUrls.join(', ')}` : 'Files Uploaded: None';
     const buyerEvidenceContext = buyerEv 
       ? `[Submitted ${buyerEv.payload.isLate ? 'LATE' : 'ON TIME'}] Rebuttal: ${buyerEv.payload.rebuttal}\n${buyerFiles}` 
-      : '[No evidence submitted. The buyer failed to respond within the 48-hour window. You must weigh their silence negatively.]';
+      : `[No evidence submitted. The buyer failed to respond within the ${disputeConfig.EVIDENCE_LATE_WINDOW_HOURS}-hour window. You must weigh their silence negatively.]`;
       
     const sellerFiles = sellerEv && sellerEv.payload.evidenceUrls?.length ? `Files Uploaded: ${sellerEv.payload.evidenceUrls.join(', ')}` : 'Files Uploaded: None';
     const sellerEvidenceContext = sellerEv 
       ? `[Submitted ${sellerEv.payload.isLate ? 'LATE' : 'ON TIME'}] Rebuttal: ${sellerEv.payload.rebuttal}\n${sellerFiles}` 
-      : '[No evidence submitted. The seller failed to respond within the 48-hour window. You must weigh their silence negatively.]';
+      : `[No evidence submitted. The seller failed to respond within the ${disputeConfig.EVIDENCE_LATE_WINDOW_HOURS}-hour window. You must weigh their silence negatively.]`;
 
     // Extract Challenges
     let challengeContext = '';
@@ -84,7 +84,7 @@ Raised By: ${dispute.raisedBy}
 Reason: ${dispute.reason}
 Description: ${dispute.description}
 
---- EVIDENCE SUBMISSIONS (48H WINDOW) ---
+--- EVIDENCE SUBMISSIONS (${disputeConfig.EVIDENCE_LATE_WINDOW_HOURS}H WINDOW) ---
 BUYER EVIDENCE:
 ${buyerEvidenceContext}
 
@@ -197,6 +197,10 @@ EXPECTED JSON FORMAT:
     // this check and the write below, we will write a harmless extra AI_REPORT row.
     // Because this doesn't mutate financial state or lock funds, we accept this minor gap.
     const currentDispute = await prisma.deedDispute.findUnique({ where: { id: deedDisputeId } });
+    if (!currentDispute) {
+      console.log(`[AI] Dispute ${deedDisputeId} no longer exists. Skipping write.`);
+      return;
+    }
     if (currentDispute.status === 'ESCALATED') {
       console.log(`[AI] Dispute ${deedDisputeId} became ESCALATED during generation. Skipping write.`);
       return;
@@ -207,62 +211,67 @@ EXPECTED JSON FORMAT:
       payload.pipelineVersion = pipelineVersion;
     }
 
-    await prisma.disputeEvent.create({
-      data: {
-        deedDisputeId,
-        type: 'AI_REPORT',
-        actorRole: 'ai',
-        payload
-      }
-    });
-
-    await prisma.deedDispute.update({
-      where: { id: deedDisputeId },
-      data: { aiAnalysis: payload }
-    });
-    
-    console.log(`[AI] Successfully generated ${isReAnalysis ? 're-analysis' : 'first-pass'} AI_REPORT for ${deedDisputeId}`);
-
-    // --- STAGE C3: Value Threshold & Confidence Wiring ---
-    
-    const currency = (dispute.deed.currency || 'INR').toUpperCase();
-    const thresholdMajor = currency === 'USD' ? disputeConfig.HIGH_VALUE_THRESHOLD_USD : disputeConfig.HIGH_VALUE_THRESHOLD_INR;
-    const thresholdSubUnit = thresholdMajor * 100;
-    const isHighValue = (dispute.deed.amount || 0) >= thresholdSubUnit;
-    
-    let shouldEscalate = false;
-    let escalationReason = '';
-
-    if (payload.confidenceScore < disputeConfig.AI_MIN_CONFIDENCE) {
-      shouldEscalate = true;
-      escalationReason = `AI confidence score (${payload.confidenceScore}) is below minimum threshold (${disputeConfig.AI_MIN_CONFIDENCE}).`;
-    } else if (!isReAnalysis && isHighValue) {
-      shouldEscalate = true;
-      escalationReason = `Dispute value (${currency} ${(dispute.deed.amount || 0) / 100}) meets or exceeds auto-resolution threshold (${thresholdMajor}). AI report provided as advisory.`;
-    }
-
-    if (shouldEscalate) {
-      await prisma.deedDispute.update({
-        where: { id: deedDisputeId },
-        data: { status: 'ESCALATED', lastActivity: new Date() }
-      });
-      
+    try {
       await prisma.disputeEvent.create({
         data: {
           deedDisputeId,
-          type: 'ESCALATED',
-          actorRole: 'system',
-          payload: { reason: escalationReason, triggeredBy: 'rules_engine' }
+          type: 'AI_REPORT',
+          actorRole: 'ai',
+          payload
         }
       });
-      console.log(`[AI] Dispute ${deedDisputeId} ESCALATED: ${escalationReason}`);
-    } else if (!isReAnalysis) {
-      // Safe to proceed to Challenge Phase
+
       await prisma.deedDispute.update({
         where: { id: deedDisputeId },
-        data: { status: 'CHALLENGE_PHASE', lastActivity: new Date() }
+        data: { aiAnalysis: payload }
       });
-      console.log(`[AI] Dispute ${deedDisputeId} moved to CHALLENGE_PHASE.`);
+      
+      console.log(`[AI] Successfully generated ${isReAnalysis ? 're-analysis' : 'first-pass'} AI_REPORT for ${deedDisputeId}`);
+
+      // --- STAGE C3: Value Threshold & Confidence Wiring ---
+      
+      const currency = (dispute.deed.currency || 'INR').toUpperCase();
+      const thresholdMajor = currency === 'USD' ? disputeConfig.HIGH_VALUE_THRESHOLD_USD : disputeConfig.HIGH_VALUE_THRESHOLD_INR;
+      const thresholdSubUnit = thresholdMajor * 100;
+      const isHighValue = (dispute.deed.amount || 0) >= thresholdSubUnit;
+      
+      let shouldEscalate = false;
+      let escalationReason = '';
+
+      if (payload.confidenceScore < disputeConfig.AI_MIN_CONFIDENCE) {
+        shouldEscalate = true;
+        escalationReason = `AI confidence score (${payload.confidenceScore}) is below minimum threshold (${disputeConfig.AI_MIN_CONFIDENCE}).`;
+      } else if (!isReAnalysis && isHighValue) {
+        shouldEscalate = true;
+        escalationReason = `Dispute value (${currency} ${(dispute.deed.amount || 0) / 100}) meets or exceeds auto-resolution threshold (${thresholdMajor}). AI report provided as advisory.`;
+      }
+
+      if (shouldEscalate) {
+        await prisma.deedDispute.update({
+          where: { id: deedDisputeId },
+          data: { status: 'ESCALATED', lastActivity: new Date() }
+        });
+        
+        await prisma.disputeEvent.create({
+          data: {
+            deedDisputeId,
+            type: 'ESCALATED',
+            actorRole: 'system',
+            payload: { reason: escalationReason, triggeredBy: 'rules_engine' }
+          }
+        });
+        console.log(`[AI] Dispute ${deedDisputeId} ESCALATED: ${escalationReason}`);
+      } else if (!isReAnalysis) {
+        // Safe to proceed to Challenge Phase
+        await prisma.deedDispute.update({
+          where: { id: deedDisputeId },
+          data: { status: 'CHALLENGE_PHASE', lastActivity: new Date() }
+        });
+        console.log(`[AI] Dispute ${deedDisputeId} moved to CHALLENGE_PHASE.`);
+      }
+    } catch (dbError) {
+      console.log(`[AI] Failed to write report — dispute record may have changed state or been removed`);
+      return; // Do not fall through to the fallback block if it's a DB consistency error
     }
 
   } catch (error) {

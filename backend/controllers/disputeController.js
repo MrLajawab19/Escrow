@@ -95,6 +95,13 @@ const createDispute = async (req, res) => {
         notes: description,
       },
       {
+        event: 'EVIDENCE_SUBMITTED',
+        by: raisedBy,
+        timestamp: new Date().toISOString(),
+        description: `${raisedBy.charAt(0).toUpperCase() + raisedBy.slice(1)} submitted initial evidence`,
+        notes: description,
+      },
+      {
         event: 'RULE_ENGINE_RAN',
         by: 'system',
         timestamp: new Date().toISOString(),
@@ -118,10 +125,30 @@ const createDispute = async (req, res) => {
         status: 'OPEN',
         ruleFlags: ruleResult,
         autoFlaggedAt: new Date(),
-        evidenceResponses: {},
+        evidenceResponses: {
+          [raisedBy]: {
+            submittedAt: new Date().toISOString(),
+            rebuttal: description,
+            evidenceUrls
+          }
+        },
         timeline: initialTimeline,
         lastActivity: new Date(),
       },
+    });
+
+    // ── Step 3.5: Create the EVIDENCE_SUBMITTED DisputeEvent ────────────────
+    await prisma.disputeEvent.create({
+      data: {
+        deedDisputeId: dispute.id,
+        type: 'EVIDENCE_SUBMITTED',
+        actorRole: raisedBy,
+        payload: {
+          rebuttal: description,
+          evidenceUrls,
+          isLate: false
+        }
+      }
     });
 
     // ── Step 4: Update deed status ────────────────────────────────
@@ -748,15 +775,11 @@ const submitEvidenceEvent = async (req, res) => {
       }
     });
     
-    // 5. Lazy Trigger: check if both submitted
-    const evidenceCount = await prisma.disputeEvent.count({
-      where: { deedDisputeId: dispute.id, type: 'EVIDENCE_SUBMITTED' }
-    });
-    
-    if (evidenceCount === 2) {
+    // 5. Trigger AI when counterparty submits
+    if (actorRole !== dispute.raisedBy) {
       // Async trigger AI Report
       setImmediate(() => {
-        console.log(`[Dispute ${dispute.id}] Both parties submitted evidence, triggering AI report...`);
+        console.log(`[Dispute ${dispute.id}] Counterparty submitted evidence, triggering AI report...`);
         generateAIReport(dispute.id).catch(err => console.error("AI Gen Error:", err));
       });
 

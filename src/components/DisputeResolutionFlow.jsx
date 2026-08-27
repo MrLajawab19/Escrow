@@ -216,15 +216,6 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
     }
   };
 
-  const handleRefreshAI = async () => {
-    try {
-      await axios.post(`/api/disputes/${detail.dispute.id}/ai-analysis`, {}, { headers });
-      await fetchDetail();
-    } catch (e) {
-      toast.error('Failed to refresh AI analysis');
-    }
-  };
-
   // ─── Loading / Error states ─────────────────────────────────────────────────
 
   if (loading && !detail) {
@@ -656,17 +647,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Powered by Google Gemini</p>
             </div>
           </div>
-          {ai && (
-            <button
-              onClick={handleRefreshAI}
-              className="text-xs text-violet-600 font-semibold font-inter hover:text-violet-800 flex items-center gap-1"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Refresh
-            </button>
-          )}
+          {/* AI Recommendation title area */}
         </div>
 
         {!ai && aiPolling && (

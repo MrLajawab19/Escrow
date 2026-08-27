@@ -79,8 +79,8 @@ router.post('/:id/submit-evidence', upload.array('files', 5), disputeController.
 // Smart escalate to human moderator
 router.post('/:id/smart-escalate', disputeController.smartEscalate);
 
-// Trigger / re-trigger AI analysis
-router.post('/:id/ai-analysis', disputeController.triggerAIAnalysis);
+// Trigger / re-trigger AI analysis (Admin only to prevent quota burn)
+router.post('/:id/ai-analysis', authenticateAdmin, disputeController.triggerAIAnalysis);
 
 // Update dispute status
 router.patch('/:id/status', disputeController.updateDisputeStatus);
