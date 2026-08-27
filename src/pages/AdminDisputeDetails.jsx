@@ -7,17 +7,17 @@ import EnhancedDisputeResolution from '../components/EnhancedDisputeResolution';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const SEV_COLORS = {
-  CRITICAL: 'bg-red-100 text-red-700 border-red-200',
+  CRITICAL: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50',
   HIGH:     'bg-orange-100 text-orange-700 border-orange-200',
   MEDIUM:   'bg-yellow-100 text-yellow-700 border-yellow-200',
-  LOW:      'bg-blue-100 text-blue-700 border-blue-200',
+  LOW:      'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50',
 };
 const SEV_ICONS = { CRITICAL: '🚨', HIGH: '⚠️', MEDIUM: '⚡', LOW: 'ℹ️' };
 
 const REC_CFG = {
-  REFUND_BUYER:       { color: 'text-red-600',     bg: 'bg-red-50',     border: 'border-red-200',     icon: '💸', label: 'Refund Buyer' },
-  RELEASE_TO_SELLER:  { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: '✅', label: 'Release to Seller' },
-  PARTIAL_REFUND:     { color: 'text-amber-600',   bg: 'bg-amber-50',   border: 'border-amber-200',   icon: '⚖️', label: 'Partial Refund' },
+  REFUND_BUYER:       { color: 'text-red-600 dark:text-red-400',     bg: 'bg-red-50 dark:bg-red-900/20',     border: 'border-red-200 dark:border-red-900/50',     icon: '💸', label: 'Refund Buyer' },
+  RELEASE_TO_SELLER:  { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-900/50', icon: '✅', label: 'Release to Seller' },
+  PARTIAL_REFUND:     { color: 'text-amber-600 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-900/20',   border: 'border-amber-200 dark:border-amber-900/50',   icon: '⚖️', label: 'Partial Refund' },
   ESCALATE_TO_HUMAN:  { color: 'text-indigo-600',  bg: 'bg-indigo-50',  border: 'border-indigo-200',  icon: '👤', label: 'Escalate to Human' },
   ESCALATE:           { color: 'text-indigo-600',  bg: 'bg-indigo-50',  border: 'border-indigo-200',  icon: '👤', label: 'Needs Human Review' },
 };
@@ -45,7 +45,7 @@ function RiskGauge({ score }) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-black font-inter" style={{ color }}>{score}</span>
-          <span className="text-[10px] text-neutral-400 font-inter">/100</span>
+          <span className="text-[10px] text-neutral-400 dark:text-dark-muted font-inter">/100</span>
         </div>
       </div>
       <span className="text-xs font-bold font-inter mt-1" style={{ color }}>
@@ -59,12 +59,12 @@ function ConfBar({ value, color = 'bg-indigo-500', label }) {
   const pct = Math.round(value);
   return (
     <div>
-      {label && <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-1">{label}</p>}
+      {label && <p className="text-[10px] font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-1">{label}</p>}
       <div className="flex items-center gap-3">
-        <div className="flex-1 bg-neutral-100 rounded-full h-2.5 overflow-hidden">
+        <div className="flex-1 bg-neutral-100 dark:bg-dark-elevated rounded-full h-2.5 overflow-hidden">
           <div className={`${color} h-full rounded-full transition-all duration-1000`} style={{ width: `${pct}%` }} />
         </div>
-        <span className="text-sm font-bold font-inter text-neutral-700 w-9 text-right">{pct}%</span>
+        <span className="text-sm font-bold font-inter text-neutral-700 dark:text-dark-primary w-9 text-right">{pct}%</span>
       </div>
     </div>
   );
@@ -79,9 +79,9 @@ function TimelineEntry({ entry, isLast }) {
     EVIDENCE_SUBMITTED: 'bg-indigo-500',
     EVIDENCE_ADDED:   'bg-indigo-400',
     SMART_ESCALATED:  'bg-blue-500',
-    STATUS_UPDATED:   'bg-neutral-400',
+    STATUS_UPDATED:   'bg-neutral-400 dark:bg-dark-muted',
     DISPUTE_RESOLVED: 'bg-emerald-500',
-    default:          'bg-neutral-300',
+    default:          'bg-neutral-300 dark:bg-dark-muted',
   };
   const dotColor = eventColors[entry.event] || eventColors.default;
 
@@ -89,17 +89,17 @@ function TimelineEntry({ entry, isLast }) {
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
         <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1 ${dotColor}`} />
-        {!isLast && <div className="w-0.5 bg-neutral-150 flex-1 mt-1" style={{ background: '#e5e7eb' }} />}
+        {!isLast && <div className="w-0.5 bg-neutral-150 dark:bg-dark-elevated flex-1 mt-1" style={{ background: '#e5e7eb' }} />}
       </div>
       <div className="pb-4 flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-neutral-800 font-inter leading-snug">{entry.description}</p>
-          <span className="text-[10px] text-neutral-400 font-inter flex-shrink-0 mt-0.5">{fmtTime(entry.timestamp)}</span>
+          <p className="text-sm font-semibold text-neutral-800 dark:text-dark-primary font-inter leading-snug">{entry.description}</p>
+          <span className="text-[10px] text-neutral-400 dark:text-dark-muted font-inter flex-shrink-0 mt-0.5">{fmtTime(entry.timestamp)}</span>
         </div>
         {entry.notes && (
-          <p className="text-xs text-neutral-500 font-inter mt-0.5 italic leading-relaxed">{entry.notes}</p>
+          <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter mt-0.5 italic leading-relaxed">{entry.notes}</p>
         )}
-        <p className="text-[10px] text-neutral-300 font-inter mt-1 uppercase tracking-wide">{entry.by}</p>
+        <p className="text-[10px] text-neutral-300 dark:text-dark-muted font-inter mt-1 uppercase tracking-wide">{entry.by}</p>
       </div>
     </div>
   );
@@ -232,7 +232,7 @@ export default function AdminDisputeDetails() {
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.3" />
             <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
           </svg>
-          <p className="text-sm text-neutral-400 font-inter">Loading dispute intelligence…</p>
+          <p className="text-sm text-neutral-400 dark:text-dark-muted font-inter">Loading dispute intelligence…</p>
         </div>
       </div>
     );
@@ -242,7 +242,7 @@ export default function AdminDisputeDetails() {
     return (
       <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-500 font-inter mb-4">{error}</p>
+          <p className="text-red-500 dark:text-red-400 font-inter mb-4">{error}</p>
           <button onClick={() => navigate('/admin/dashboard')}
             className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-inter font-semibold">
             Back to Dashboard
@@ -262,7 +262,7 @@ export default function AdminDisputeDetails() {
         {/* ── TOP BAR ──────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <button onClick={() => navigate('/admin/dashboard')}
-            className="flex items-center gap-2 text-sm text-neutral-500 hover:text-[#0A2540] font-inter font-medium transition-colors group">
+            className="flex items-center gap-2 text-sm text-neutral-500 dark:text-dark-muted hover:text-[#0A2540] font-inter font-medium transition-colors group">
             <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -270,9 +270,9 @@ export default function AdminDisputeDetails() {
           </button>
           <div className="flex items-center gap-2">
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full border uppercase tracking-wider font-inter ${
-              dispute?.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+              dispute?.status === 'RESOLVED' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50' :
               dispute?.status === 'ESCALATED' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-              'bg-red-50 text-red-700 border-red-200'
+              'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50'
             }`}>{dispute?.status}</span>
           </div>
         </div>
@@ -282,7 +282,7 @@ export default function AdminDisputeDetails() {
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-white dark:bg-dark-surface/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <span className="text-xl">⚖️</span>
                 </div>
                 <div>
@@ -297,7 +297,7 @@ export default function AdminDisputeDetails() {
                   { label: 'Raised By', value: dispute?.raisedBy?.charAt(0).toUpperCase() + dispute?.raisedBy?.slice(1), icon: '👤' },
                   { label: 'Filed', value: fmt(dispute?.createdAt), icon: '📅' },
                 ].map((item, i) => (
-                  <div key={i} className="bg-white/5 rounded-xl p-3 border border-white/10">
+                  <div key={i} className="bg-white dark:bg-dark-surface/5 rounded-xl p-3 border border-white/10">
                     <p className="text-[10px] text-white/40 font-inter uppercase tracking-wider mb-0.5">{item.icon} {item.label}</p>
                     <p className="text-sm font-bold text-white font-inter">{item.value}</p>
                   </div>
@@ -315,8 +315,8 @@ export default function AdminDisputeDetails() {
           <div className="lg:col-span-2 space-y-5">
 
             {/* Order snapshot */}
-            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
-              <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Order Snapshot</h2>
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
+              <h2 className="text-sm font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-4">Order Snapshot</h2>
               <div className="space-y-3">
                 {[
                   { label: 'Product Type', value: order?.scopeBox?.productType || 'Unknown' },
@@ -328,34 +328,34 @@ export default function AdminDisputeDetails() {
                   { label: 'Buyer', value: buyer ? `${buyer.firstName} ${buyer.lastName} (${buyer.email})` : order?.buyerName || '—' },
                   { label: 'Seller', value: seller ? `${seller.firstName} ${seller.lastName}` : order?.sellerContact || '—' },
                 ].map((row, i) => (
-                  <div key={i} className="flex items-start gap-3 py-2 border-b border-neutral-50 last:border-0">
-                    <p className="text-xs font-semibold text-neutral-400 font-inter w-32 flex-shrink-0">{row.label}</p>
-                    <p className="text-sm text-neutral-800 font-inter font-medium">{row.value}</p>
+                  <div key={i} className="flex items-start gap-3 py-2 border-b border-neutral-50 dark:border-dark-border last:border-0">
+                    <p className="text-xs font-semibold text-neutral-400 dark:text-dark-muted font-inter w-32 flex-shrink-0">{row.label}</p>
+                    <p className="text-sm text-neutral-800 dark:text-dark-primary font-inter font-medium">{row.value}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Dispute details */}
-            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
-              <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Dispute Details</h2>
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
+              <h2 className="text-sm font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-4">Dispute Details</h2>
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs font-semibold text-neutral-400 font-inter mb-1">Reason</p>
-                  <span className="inline-block px-3 py-1.5 bg-red-50 text-red-700 text-sm font-semibold rounded-lg border border-red-100 font-inter">
+                  <p className="text-xs font-semibold text-neutral-400 dark:text-dark-muted font-inter mb-1">Reason</p>
+                  <span className="inline-block px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm font-semibold rounded-lg border border-red-100 dark:border-red-900/50 font-inter">
                     {dispute?.reason}
                   </span>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-neutral-400 font-inter mb-1">Buyer's Complaint</p>
-                  <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-100">
-                    <p className="text-sm text-neutral-700 font-inter leading-relaxed">{dispute?.description}</p>
+                  <p className="text-xs font-semibold text-neutral-400 dark:text-dark-muted font-inter mb-1">Buyer's Complaint</p>
+                  <div className="bg-neutral-50 dark:bg-dark-bg rounded-xl p-4 border border-neutral-100 dark:border-dark-border">
+                    <p className="text-sm text-neutral-700 dark:text-dark-primary font-inter leading-relaxed">{dispute?.description}</p>
                   </div>
                 </div>
                 {dispute?.requestedResolution && (
                   <div>
-                    <p className="text-xs font-semibold text-neutral-400 font-inter mb-1">Requested Resolution</p>
-                    <p className="text-sm text-neutral-700 font-inter">{dispute.requestedResolution}</p>
+                    <p className="text-xs font-semibold text-neutral-400 dark:text-dark-muted font-inter mb-1">Requested Resolution</p>
+                    <p className="text-sm text-neutral-700 dark:text-dark-primary font-inter">{dispute.requestedResolution}</p>
                   </div>
                 )}
               </div>
@@ -363,7 +363,7 @@ export default function AdminDisputeDetails() {
 
             {/* Rule Engine Flags */}
             {rf?.flags?.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-orange-100 p-6">
+              <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-orange-100 p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,22 +372,22 @@ export default function AdminDisputeDetails() {
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-[#0A2540] font-inter">Rule Engine Flags</h2>
-                    <p className="text-xs text-neutral-400 font-inter">{rf.flags.length} automated flag{rf.flags.length !== 1 ? 's' : ''} triggered</p>
+                    <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">{rf.flags.length} automated flag{rf.flags.length !== 1 ? 's' : ''} triggered</p>
                   </div>
                   <div className="ml-auto flex gap-4 text-xs font-inter font-semibold">
                     <span className="text-orange-600">Seller fault: <strong>{rf.sellerFaultPoints}pts</strong></span>
-                    <span className="text-blue-600">Buyer fault: <strong>{rf.buyerFaultPoints}pts</strong></span>
+                    <span className="text-blue-600 dark:text-blue-400">Buyer fault: <strong>{rf.buyerFaultPoints}pts</strong></span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   {rf.flags.map((flag, i) => (
-                    <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${SEV_COLORS[flag.severity] || 'bg-neutral-50 border-neutral-200 text-neutral-700'}`}>
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${SEV_COLORS[flag.severity] || 'bg-neutral-50 dark:bg-dark-bg border-neutral-200 dark:border-dark-border text-neutral-700 dark:text-dark-primary'}`}>
                       <span>{SEV_ICONS[flag.severity] || 'ℹ️'}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-bold font-inter">{flag.label}</p>
                           <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border font-inter">{flag.severity}</span>
-                          <span className="text-[10px] text-neutral-400 font-inter ml-auto">+{flag.riskPoints}pts · fault: {flag.fault}</span>
+                          <span className="text-[10px] text-neutral-400 dark:text-dark-muted font-inter ml-auto">+{flag.riskPoints}pts · fault: {flag.fault}</span>
                         </div>
                         <p className="text-xs font-inter leading-relaxed mt-0.5 opacity-80">{flag.description}</p>
                       </div>
@@ -398,7 +398,7 @@ export default function AdminDisputeDetails() {
             )}
 
             {/* AI Analysis Panel */}
-            <div className={`bg-white rounded-2xl shadow-sm border ${ai ? 'border-violet-100' : 'border-dashed border-violet-200'} p-6`}>
+            <div className={`bg-white dark:bg-dark-surface rounded-2xl shadow-sm border ${ai ? 'border-violet-100' : 'border-dashed border-violet-200'} p-6`}>
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
@@ -408,7 +408,7 @@ export default function AdminDisputeDetails() {
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-[#0A2540] font-inter">Dispute AI Analysis</h2>
-                    <p className="text-xs text-neutral-400 font-inter">
+                    <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">
                       {ai ? 'AI Review Complete' : 'Analysis in progress...'}
                     </p>
                   </div>
@@ -428,7 +428,7 @@ export default function AdminDisputeDetails() {
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.3" />
                     <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                   </svg>
-                  <p className="text-sm text-neutral-500 font-inter">AI is analyzing all evidence, chat logs, and order data…</p>
+                  <p className="text-sm text-neutral-500 dark:text-dark-muted font-inter">AI is analyzing all evidence, chat logs, and order data…</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -436,7 +436,7 @@ export default function AdminDisputeDetails() {
                   <div className={`flex items-center gap-4 p-4 rounded-xl border ${recCfg.bg} ${recCfg.border}`}>
                     <span className="text-3xl">{recCfg.icon}</span>
                     <div className="flex-1">
-                      <p className="text-[10px] text-neutral-500 font-inter font-bold uppercase tracking-wider">AI Recommends</p>
+                      <p className="text-[10px] text-neutral-500 dark:text-dark-muted font-inter font-bold uppercase tracking-wider">AI Recommends</p>
                       <p className={`text-xl font-black font-inter ${recCfg.color}`}>{recCfg.label}</p>
                     </div>
                   </div>
@@ -445,9 +445,9 @@ export default function AdminDisputeDetails() {
                   <ConfBar value={ai.confidenceScore || 0} color="bg-violet-500" label="Confidence Level" />
 
                   {/* Reasoning */}
-                  <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-100">
-                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-inter mb-2">AI Reasoning</p>
-                    <p className="text-sm text-neutral-700 font-inter leading-relaxed">{ai.reasoning}</p>
+                  <div className="bg-neutral-50 dark:bg-dark-bg rounded-xl p-4 border border-neutral-100 dark:border-dark-border">
+                    <p className="text-[10px] font-bold text-neutral-400 dark:text-dark-muted uppercase tracking-wider font-inter mb-2">AI Reasoning</p>
+                    <p className="text-sm text-neutral-700 dark:text-dark-primary font-inter leading-relaxed">{ai.reasoning}</p>
                   </div>
                 </div>
               )}
@@ -455,8 +455,8 @@ export default function AdminDisputeDetails() {
 
             {/* Evidence Responses */}
             {(evidenceResponses?.seller?.text || evidenceResponses?.buyer?.text) && (
-              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
-                <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Submitted Evidence</h2>
+              <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
+                <h2 className="text-sm font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-4">Submitted Evidence</h2>
                 <div className="space-y-3">
                   {evidenceResponses.seller?.text && (
                     <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
@@ -464,16 +464,16 @@ export default function AdminDisputeDetails() {
                         🔷 Seller's Counter-Evidence
                         <span className="font-normal text-orange-400">{fmtTime(evidenceResponses.seller.submittedAt)}</span>
                       </p>
-                      <p className="text-sm text-neutral-700 font-inter leading-relaxed">{evidenceResponses.seller.text}</p>
+                      <p className="text-sm text-neutral-700 dark:text-dark-primary font-inter leading-relaxed">{evidenceResponses.seller.text}</p>
                     </div>
                   )}
                   {evidenceResponses.buyer?.text && (
-                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                      <p className="text-xs font-bold text-blue-600 font-inter mb-2 flex items-center gap-2">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50 rounded-xl">
+                      <p className="text-xs font-bold text-blue-600 dark:text-blue-400 font-inter mb-2 flex items-center gap-2">
                         🔶 Buyer's Statement
-                        <span className="font-normal text-blue-400">{fmtTime(evidenceResponses.buyer.submittedAt)}</span>
+                        <span className="font-normal text-blue-400 dark:text-blue-400">{fmtTime(evidenceResponses.buyer.submittedAt)}</span>
                       </p>
-                      <p className="text-sm text-neutral-700 font-inter leading-relaxed">{evidenceResponses.buyer.text}</p>
+                      <p className="text-sm text-neutral-700 dark:text-dark-primary font-inter leading-relaxed">{evidenceResponses.buyer.text}</p>
                     </div>
                   )}
                 </div>
@@ -482,8 +482,8 @@ export default function AdminDisputeDetails() {
 
             {/* Chat Log Preview */}
             {chatMessages?.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
-                <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">
+              <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
+                <h2 className="text-sm font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-4">
                   Recent Chat Log ({chatMessages.length} messages)
                 </h2>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -492,10 +492,10 @@ export default function AdminDisputeDetails() {
                       <div className={`max-w-xs px-3 py-2 rounded-xl text-sm font-inter ${
                         msg.senderRole === 'buyer'
                           ? 'bg-indigo-500 text-white'
-                          : 'bg-neutral-100 text-neutral-800'
+                          : 'bg-neutral-100 dark:bg-dark-elevated text-neutral-800 dark:text-dark-primary'
                       }`}>
                         <p>{msg.content}</p>
-                        <p className={`text-[10px] mt-1 ${msg.senderRole === 'buyer' ? 'text-indigo-200' : 'text-neutral-400'}`}>
+                        <p className={`text-[10px] mt-1 ${msg.senderRole === 'buyer' ? 'text-indigo-200' : 'text-neutral-400 dark:text-dark-muted'}`}>
                           {msg.senderName} · {fmtTime(msg.createdAt)}
                         </p>
                       </div>
@@ -507,8 +507,8 @@ export default function AdminDisputeDetails() {
 
             {/* Timeline */}
             {dispute?.timeline?.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
-                <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">Dispute Timeline</h2>
+              <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
+                <h2 className="text-sm font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-4">Dispute Timeline</h2>
                 <div>
                   {dispute.timeline.map((entry, i) => (
                     <TimelineEntry key={i} entry={entry} isLast={i === dispute.timeline.length - 1} />
@@ -522,54 +522,54 @@ export default function AdminDisputeDetails() {
           <div className="space-y-5">
 
             {/* Financial Analysis */}
-            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 sticky top-20">
-              <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-wider font-inter mb-4">💰 Financial Analysis</h2>
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6 sticky top-20">
+              <h2 className="text-sm font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-4">💰 Financial Analysis</h2>
 
               <div className="space-y-2 mb-4">
                 {[
                   { label: 'Escrow Held', value: `$${(financial?.escrowAmount / 100)?.toFixed(2) || '0'}`, color: 'text-[#0A2540]', bold: true },
-                  { label: 'Platform Fee (2%)', value: `-$${(financial?.platformFee / 100)?.toFixed(2) || '0'}`, color: 'text-neutral-500' },
-                  { label: 'Net to Seller', value: `$${(financial?.netToSeller / 100)?.toFixed(2) || '0'}`, color: 'text-emerald-600' },
+                  { label: 'Platform Fee (2%)', value: `-$${(financial?.platformFee / 100)?.toFixed(2) || '0'}`, color: 'text-neutral-500 dark:text-dark-muted' },
+                  { label: 'Net to Seller', value: `$${(financial?.netToSeller / 100)?.toFixed(2) || '0'}`, color: 'text-emerald-600 dark:text-emerald-400' },
                 ].map((row, i) => (
-                  <div key={i} className={`flex justify-between items-center py-2 ${i === 0 ? 'border-b border-neutral-100' : ''}`}>
-                    <p className="text-xs text-neutral-500 font-inter">{row.label}</p>
+                  <div key={i} className={`flex justify-between items-center py-2 ${i === 0 ? 'border-b border-neutral-100 dark:border-dark-border' : ''}`}>
+                    <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter">{row.label}</p>
                     <p className={`text-sm font-inter font-bold ${row.color}`}>{row.value}</p>
                   </div>
                 ))}
               </div>
 
-              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-inter mb-3">Resolution Scenarios</p>
+              <p className="text-[10px] font-bold text-neutral-400 dark:text-dark-muted uppercase tracking-wider font-inter mb-3">Resolution Scenarios</p>
 
               <div className="space-y-2">
                 {/* Refund scenario */}
-                <div className="flex items-start gap-3 p-3 bg-red-50 rounded-xl border border-red-100">
+                <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/50">
                   <span className="text-base">💸</span>
                   <div className="flex-1 text-xs font-inter">
-                    <p className="font-bold text-red-700 mb-1">Full Refund to Buyer</p>
-                    <p className="text-neutral-500">Buyer gets: <strong className="text-red-600">${(financial?.refundScenario?.buyerReceives / 100)?.toFixed(2) || '0'}</strong></p>
-                    <p className="text-neutral-500">Seller gets: <strong>$0</strong></p>
-                    <p className="text-neutral-500">Platform: <strong>$0</strong></p>
+                    <p className="font-bold text-red-700 dark:text-red-400 mb-1">Full Refund to Buyer</p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Buyer gets: <strong className="text-red-600 dark:text-red-400">${(financial?.refundScenario?.buyerReceives / 100)?.toFixed(2) || '0'}</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Seller gets: <strong>$0</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Platform: <strong>$0</strong></p>
                   </div>
                 </div>
 
                 {/* Release scenario */}
-                <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                <div className="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
                   <span className="text-base">✅</span>
                   <div className="flex-1 text-xs font-inter">
-                    <p className="font-bold text-emerald-700 mb-1">Release to Seller</p>
-                    <p className="text-neutral-500">Buyer gets: <strong>$0</strong></p>
-                    <p className="text-neutral-500">Seller gets: <strong className="text-emerald-600">${(financial?.releaseScenario?.sellerReceives / 100)?.toFixed(2) || '0'}</strong></p>
-                    <p className="text-neutral-500">Platform: <strong>${(financial?.releaseScenario?.platformReceives / 100)?.toFixed(2) || '0'}</strong></p>
+                    <p className="font-bold text-emerald-700 dark:text-emerald-400 mb-1">Release to Seller</p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Buyer gets: <strong>$0</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Seller gets: <strong className="text-emerald-600 dark:text-emerald-400">${(financial?.releaseScenario?.sellerReceives / 100)?.toFixed(2) || '0'}</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Platform: <strong>${(financial?.releaseScenario?.platformReceives / 100)?.toFixed(2) || '0'}</strong></p>
                   </div>
                 </div>
 
                 {/* Partial scenarios */}
                 {financial?.partialScenarios?.slice(0, 2).map((s, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                  <div key={i} className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/50">
                     <span className="text-base">⚖️</span>
                     <div className="flex-1 text-xs font-inter">
-                      <p className="font-bold text-amber-700 mb-1">{s.label}</p>
-                      <p className="text-neutral-500">Buyer: <strong className="text-amber-600">${(s.buyerReceives / 100)?.toFixed(2)}</strong> · Seller: <strong>${(s.sellerReceives / 100)?.toFixed(2)}</strong></p>
+                      <p className="font-bold text-amber-700 dark:text-amber-400 mb-1">{s.label}</p>
+                      <p className="text-neutral-500 dark:text-dark-muted">Buyer: <strong className="text-amber-600 dark:text-amber-400">${(s.buyerReceives / 100)?.toFixed(2)}</strong> · Seller: <strong>${(s.sellerReceives / 100)?.toFixed(2)}</strong></p>
                     </div>
                   </div>
                 ))}
@@ -578,7 +578,7 @@ export default function AdminDisputeDetails() {
               {/* Admin Decision */}
               {!resolved && (
                 <div className="mt-6 space-y-3">
-                  <p className="text-xs font-bold text-neutral-700 font-inter uppercase tracking-wider">Make Final Decision</p>
+                  <p className="text-xs font-bold text-neutral-700 dark:text-dark-primary font-inter uppercase tracking-wider">Make Final Decision</p>
 
                   {/* Enhanced Resolution Button */}
                   <button
@@ -592,23 +592,23 @@ export default function AdminDisputeDetails() {
 
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-neutral-200"></div>
+                      <div className="w-full border-t border-neutral-200 dark:border-dark-border"></div>
                     </div>
                     <div className="relative flex justify-center text-xs">
-                      <span className="px-2 bg-white text-neutral-400 font-inter">or use simple resolution</span>
+                      <span className="px-2 bg-white dark:bg-dark-surface text-neutral-400 dark:text-dark-muted font-inter">or use simple resolution</span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     {[
-                      { val: 'REFUND_BUYER', label: '💸 Refund Buyer', cls: 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100' },
-                      { val: 'RELEASE_TO_SELLER', label: '✅ Release to Seller', cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' },
+                      { val: 'REFUND_BUYER', label: '💸 Refund Buyer', cls: 'border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 dark:bg-red-900/30' },
+                      { val: 'RELEASE_TO_SELLER', label: '✅ Release to Seller', cls: 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:bg-emerald-900/30' },
                     ].map(opt => (
                       <button
                         key={opt.val}
                         onClick={() => setResolution(prev => prev === opt.val ? '' : opt.val)}
                         className={`w-full py-2.5 rounded-xl border text-sm font-bold font-inter transition-all flex items-center justify-between px-3
-                          ${resolution === opt.val ? opt.cls + ' ring-2 ring-offset-1 ring-current' : 'border-neutral-200 hover:bg-neutral-50 text-neutral-600'}`}
+                          ${resolution === opt.val ? opt.cls + ' ring-2 ring-offset-1 ring-current' : 'border-neutral-200 dark:border-dark-border hover:bg-neutral-50 dark:bg-dark-bg text-neutral-600 dark:text-dark-muted'}`}
                       >
                         <span>{opt.label}</span>
                         {resolution === opt.val && <span>✓</span>}
@@ -621,7 +621,7 @@ export default function AdminDisputeDetails() {
                     onChange={e => setResolutionNotes(e.target.value)}
                     placeholder="Admin notes (optional)…"
                     rows={3}
-                    className="w-full px-3 py-2.5 border border-neutral-200 rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
+                    className="w-full px-3 py-2.5 border border-neutral-200 dark:border-dark-border rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
                   />
 
                   <button
@@ -644,9 +644,9 @@ export default function AdminDisputeDetails() {
               )}
 
               {resolved && (
-                <div className="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-center">
-                  <p className="text-sm font-bold text-emerald-700 font-inter">✅ Dispute Resolved</p>
-                  <p className="text-xs text-emerald-600 font-inter mt-1">
+                <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-900/50 text-center">
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 font-inter">✅ Dispute Resolved</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-inter mt-1">
                     {dispute?.resolution?.replace(/_/g, ' ')}
                   </p>
                 </div>

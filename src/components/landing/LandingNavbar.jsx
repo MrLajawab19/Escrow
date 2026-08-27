@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, ChevronRight, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import ThemeToggle from '../ThemeToggle';
 
 const LandingNavbar = ({ onAuthClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -57,14 +58,7 @@ const LandingNavbar = ({ onAuthClick }) => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-2">
-            <button
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
-              title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
-              className="p-2 text-neutral-600 dark:text-neutral-400 hover:text-navy-900 dark:hover:text-white rounded-full hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            <ThemeToggle />
             <button
               onClick={onAuthClick}
               className="text-[15px] font-semibold text-navy-900 dark:text-white hover:bg-neutral-100/80 dark:hover:bg-white/10 px-4 py-2 rounded-full transition-all tracking-tight focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -87,13 +81,7 @@ const LandingNavbar = ({ onAuthClick }) => {
             >
               Start a transaction
             </button>
-            <button
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
-              className="p-1 text-neutral-600 dark:text-neutral-400 hover:text-navy-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
-            >
-              {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
-            </button>
+            <ThemeToggle className="p-1" />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="text-neutral-600 dark:text-neutral-400 hover:text-navy-900 dark:hover:text-white focus:outline-none p-1 focus:ring-2 focus:ring-primary-500 rounded"

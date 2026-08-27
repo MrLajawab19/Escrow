@@ -86,10 +86,10 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
   };
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden mt-6">
+    <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden mt-6">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-neutral-100">
-        <h2 className="text-base font-bold text-navy-900">{userType === 'seller' ? 'Your Orders' : 'My Deeds'}</h2>
+      <div className="px-6 py-4 flex items-center justify-between border-b border-neutral-100 dark:border-dark-border">
+        <h2 className="text-base font-bold text-navy-900 dark:text-dark-primary">{userType === 'seller' ? 'Your Orders' : 'My Deeds'}</h2>
         {onViewAllDeeds && (
           <button
             onClick={onViewAllDeeds}
@@ -101,7 +101,7 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
       </div>
 
       {/* Filter Tabs */}
-      <div className="px-6 pt-3 pb-0 flex gap-1 overflow-x-auto border-b border-neutral-100 hide-scrollbar">
+      <div className="px-6 pt-3 pb-0 flex gap-1 overflow-x-auto border-b border-neutral-100 dark:border-dark-border hide-scrollbar">
         {filterTabs.map((tab) => (
           <button
             key={tab.key}
@@ -110,7 +110,7 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
               px-3.5 py-2 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap mb-3
               ${activeFilter === tab.key
                 ? (userType === 'seller' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-navy-900 text-white shadow-sm')
-                : 'text-neutral-500 hover:bg-neutral-100 hover:text-navy-900'
+                : 'text-neutral-500 dark:text-dark-muted hover:bg-neutral-100 dark:hover:bg-dark-elevated dark:bg-dark-elevated hover:text-navy-900 dark:text-dark-primary'
               }
             `}
           >
@@ -123,13 +123,13 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
       <div className="divide-y divide-neutral-100">
         {filteredDeeds.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <div className="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-14 h-14 rounded-full bg-neutral-100 dark:bg-dark-elevated flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-neutral-400 dark:text-dark-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
             </div>
-            <p className="text-sm font-semibold text-navy-900 mb-1">{userType === 'seller' ? 'No orders found' : 'No deeds found'}</p>
-            <p className="text-xs text-neutral-400">
+            <p className="text-sm font-semibold text-navy-900 dark:text-dark-primary mb-1">{userType === 'seller' ? 'No orders found' : 'No deeds found'}</p>
+            <p className="text-xs text-neutral-400 dark:text-dark-muted">
               {activeFilter === 'all' 
                 ? (userType === 'seller' ? 'Accept order requests to start working with buyers.' : 'Create your first deed to get started.') 
                 : `No ${filterTabs.find(t => t.key === activeFilter)?.label?.toLowerCase()} ${userType === 'seller' ? 'orders' : 'deeds'}.`}
@@ -148,7 +148,7 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
               <div
                 key={deed.id}
                 onClick={() => handleDeedClick(deed)}
-                className="px-6 py-4 flex items-center gap-4 hover:bg-neutral-50 transition-colors cursor-pointer group"
+                className="px-6 py-4 flex items-center gap-4 hover:bg-neutral-50 dark:hover:bg-dark-surface dark:bg-dark-bg transition-colors cursor-pointer group"
               >
                 {/* Service Icon */}
                 <div className={`w-10 h-10 rounded-xl ${userType === 'seller' ? 'bg-indigo-500' : icon.bg} flex items-center justify-center text-white text-sm flex-shrink-0`}>
@@ -157,17 +157,17 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
 
                 {/* Title & Deed ID */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-navy-900 truncate">{title}</p>
-                  <p className="text-xs text-neutral-400 mt-0.5">Order ID: {getDeedId(deed)}</p>
+                  <p className="text-sm font-semibold text-navy-900 dark:text-dark-primary truncate">{title}</p>
+                  <p className="text-xs text-neutral-400 dark:text-dark-muted mt-0.5">Order ID: {getDeedId(deed)}</p>
                 </div>
 
                 {/* Counterparty */}
                 <div className="hidden md:flex items-center gap-2 min-w-[120px]">
                   <div className="text-right w-full">
-                    <p className="text-[10px] text-neutral-400">{userType === 'seller' ? 'Buyer' : 'Seller'}</p>
+                    <p className="text-[10px] text-neutral-400 dark:text-dark-muted">{userType === 'seller' ? 'Buyer' : 'Seller'}</p>
                     <div className="flex items-center justify-end gap-1.5">
                       <p className="text-xs font-medium text-neutral-700 truncate max-w-[90px]">{counterpartyName}</p>
-                      <div className="w-5 h-5 rounded-full bg-neutral-200 flex items-center justify-center text-[10px] font-bold text-neutral-600 flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-neutral-200 flex items-center justify-center text-[10px] font-bold text-neutral-600 dark:text-dark-muted flex-shrink-0">
                         {avatarUrl ? (
                           <img
                             src={`${import.meta.env.VITE_API_URL}${avatarUrl}`}
@@ -184,15 +184,15 @@ const DeedsTable = ({ deeds, onViewAllDeeds, userType = 'buyer' }) => {
 
                 {/* Amount */}
                 <div className="hidden sm:block text-right min-w-[80px]">
-                  <p className="text-[10px] text-neutral-400">Amount</p>
-                  <p className="text-sm font-semibold text-navy-900">
+                  <p className="text-[10px] text-neutral-400 dark:text-dark-muted">Amount</p>
+                  <p className="text-sm font-semibold text-navy-900 dark:text-dark-primary">
                     {formatCurrency(amount, deed.currency || 'INR')}
                   </p>
                 </div>
 
                 {/* Status */}
                 <div className="min-w-[100px] text-right">
-                  <p className="text-[10px] text-neutral-400 mb-0.5 hidden sm:block">Status</p>
+                  <p className="text-[10px] text-neutral-400 dark:text-dark-muted mb-0.5 hidden sm:block">Status</p>
                   <StatusBadge status={displayStatus} userType={userType} />
                 </div>
 

@@ -152,10 +152,10 @@ const SellerDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F6F9FC] dark:bg-dark-bg flex items-center justify-center transition-colors">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-500 font-inter font-medium">Loading your orders...</p>
+          <p className="text-neutral-500 dark:text-dark-muted font-inter font-medium">Loading your orders...</p>
         </div>
       </div>
     );
@@ -163,15 +163,15 @@ const SellerDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center p-4">
-        <div className="bg-white border border-neutral-200 shadow-sm rounded-xl p-8 max-w-md w-full text-center">
-          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="min-h-screen bg-[#F6F9FC] dark:bg-dark-bg flex items-center justify-center p-4 transition-colors">
+        <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border shadow-sm rounded-xl p-8 max-w-md w-full text-center">
+          <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h3 className="text-lg font-bold text-navy-900 mb-2 font-inter">Error Loading Orders</h3>
-          <p className="text-neutral-600 mb-6 text-sm font-inter">{error}</p>
+          <h3 className="text-lg font-bold text-navy-900 dark:text-dark-primary mb-2 font-inter">Error Loading Orders</h3>
+          <p className="text-neutral-600 dark:text-dark-muted mb-6 text-sm font-inter">{error}</p>
           <button onClick={fetchOrders} className="w-full py-3 px-4 rounded-xl font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all duration-200 shadow-md font-inter text-sm">
             Try Again
           </button>
@@ -213,28 +213,28 @@ const SellerDashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <MetricCard
                 icon={<ClipboardCheck size={22} className="text-primary-500" />}
-                iconBg="bg-primary-50"
+                iconBg="bg-primary-50 dark:bg-primary-900/30"
                 value={totalOrders}
                 label="Total Orders"
                 subtitle="All time orders"
               />
               <MetricCard
                 icon={<Clock size={22} className="text-blue-500" />}
-                iconBg="bg-blue-50"
+                iconBg="bg-blue-50 dark:bg-blue-900/30"
                 value={inProgress}
                 label="In Progress"
                 subtitle="Active orders"
               />
               <MetricCard
                 icon={<Flag size={22} className="text-amber-500" />}
-                iconBg="bg-amber-50"
+                iconBg="bg-amber-50 dark:bg-amber-900/30"
                 value={pendingReview}
                 label="Pending Review"
                 subtitle="Awaiting your action"
               />
               <MetricCard
                 icon={<span className="text-lg font-bold text-emerald-500">₹</span>}
-                iconBg="bg-emerald-50"
+                iconBg="bg-emerald-50 dark:bg-emerald-900/30"
                 value={formatCurrency(totalEarnings, 'INR')}
                 label="Earnings"
                 subtitle="Total revenue"
@@ -305,7 +305,7 @@ const SellerDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-neutral-50 overflow-hidden font-inter">
+    <div className="flex h-screen bg-neutral-50 dark:bg-dark-bg overflow-hidden font-inter transition-colors">
       {/* Sidebar */}
       <DashboardSidebar
         activeTab={activeTab}

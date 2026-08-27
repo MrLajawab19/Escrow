@@ -11,19 +11,13 @@ export const ThemeProvider = ({ children }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Only apply the theme to the DOM if we are on the landing page
-    if (location.pathname === '/') {
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      localStorage.setItem('theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
     } else {
-      // Ensure we clean up the dark class when leaving the landing page
       document.documentElement.classList.remove('dark');
     }
-  }, [theme, location.pathname]);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));

@@ -267,7 +267,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
       {/* Notification Popup */}
       {notification && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className={`bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all duration-300 ${
+          <div className={`bg-white dark:bg-dark-surface rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all duration-300 ${
             notification.type === 'success' ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'
           }`}>
             <div className="flex items-center">
@@ -279,7 +279,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 )}
@@ -315,7 +315,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
 
       {/* Main Modal */}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white dark:bg-dark-surface rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 flex items-center">
@@ -464,9 +464,9 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
             </div>
 
             {/* Fee Warning */}
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mt-4">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-md p-4 mt-4">
               <h4 className="flex items-center gap-2 text-sm font-bold text-amber-900 mb-2">
-                <span className="text-amber-600">⚠️</span>
+                <span className="text-amber-600 dark:text-amber-400">⚠️</span>
                 Raising a dispute changes the fee structure for BOTH parties:
               </h4>
               <ul className="text-xs text-amber-800 space-y-1 list-disc pl-5">

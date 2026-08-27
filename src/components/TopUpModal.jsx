@@ -88,7 +88,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <div className="bg-white dark:bg-dark-surface rounded-lg shadow-xl max-w-md w-full p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Add Funds</h2>
@@ -109,7 +109,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg text-red-700 text-sm">
                 {error}
               </div>
             )}
@@ -177,7 +177,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
 
             {/* Fee Information */}
             {amount && (
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-700">Amount:</span>
                   <span className="font-semibold text-gray-900">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>

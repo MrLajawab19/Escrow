@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationDropdown from '../NotificationDropdown';
+import ThemeToggle from '../ThemeToggle';
 import { useCurrency } from '../../context/CurrencyContext';
 import { Plus, ChevronDown, ShieldCheck, AlertTriangle, ArrowDownToLine } from 'lucide-react';
 
@@ -10,15 +11,15 @@ const DashboardHeader = ({ userData, kycStatus, walletBalance, walletCurrency, w
   const firstName = userData?.firstName || 'User';
 
   return (
-    <header className="bg-white border-b border-neutral-200 px-6 lg:px-8 py-4 flex-shrink-0">
+    <header className="bg-white dark:bg-dark-surface border-b border-neutral-200 dark:border-dark-border px-6 lg:px-8 py-4 flex-shrink-0 transition-colors">
       <div className="flex items-center justify-between gap-4">
         {/* Left: Welcome */}
         <div className="flex-shrink-0 min-w-0 pl-10 lg:pl-0">
-          <p className="text-xs text-neutral-500 font-medium">Welcome back,</p>
-          <h1 className="text-xl font-bold text-navy-900 truncate">
+          <p className="text-xs text-neutral-500 dark:text-dark-muted font-medium">Welcome back,</p>
+          <h1 className="text-xl font-bold text-navy-900 dark:text-dark-primary truncate">
             {firstName} 👋
           </h1>
-          <p className="text-xs text-neutral-400 hidden sm:block">
+          <p className="text-xs text-neutral-400 dark:text-dark-muted hidden sm:block">
             {userType === 'seller' ? "Here's what's happening with your business today." : "Ready to make your next deal secure?"}
           </p>
         </div>
@@ -47,12 +48,15 @@ const DashboardHeader = ({ userData, kycStatus, walletBalance, walletCurrency, w
           {/* Wallet Balance */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl">
             <div className="text-right">
-              <p className="text-[10px] text-neutral-400 font-medium leading-tight">Wallet Balance</p>
-              <p className="text-sm font-bold text-navy-900">
+              <p className="text-[10px] text-neutral-400 dark:text-dark-muted font-medium leading-tight">Wallet Balance</p>
+              <p className="text-sm font-bold text-navy-900 dark:text-dark-primary">
                 {walletLoading ? '...' : formatCurrency(walletBalance || 0, walletCurrency || 'INR')}
               </p>
             </div>
           </div>
+
+          {/* Theme Toggle */}
+          <ThemeToggle className="hidden sm:flex" />
 
           {/* Notifications */}
           <NotificationDropdown userType={userType} />
@@ -71,18 +75,18 @@ const DashboardHeader = ({ userData, kycStatus, walletBalance, walletCurrency, w
               )}
             </div>
             <div className="text-left hidden lg:block">
-              <p className="text-sm font-semibold text-navy-900 leading-tight">{firstName}</p>
-              <p className="text-[10px] text-neutral-400 capitalize">{userType}</p>
+              <p className="text-sm font-semibold text-navy-900 dark:text-dark-primary leading-tight">{firstName}</p>
+              <p className="text-[10px] text-neutral-400 dark:text-dark-muted capitalize">{userType}</p>
             </div>
-            <ChevronDown size={14} className="text-neutral-400 group-hover:text-neutral-600 transition-colors" />
+            <ChevronDown size={14} className="text-neutral-400 dark:text-dark-muted group-hover:text-neutral-600 dark:group-hover:text-white transition-colors" />
           </div>
 
           {/* Actions */}
           {userType === 'seller' ? (
-            <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-neutral-100">
+            <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-neutral-100 dark:border-dark-border">
               <button
                 onClick={onDisputesClick}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 bg-white text-navy-900 hover:bg-neutral-50 text-sm font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 dark:border-dark-border bg-white dark:bg-dark-elevated text-navy-900 dark:text-dark-primary hover:bg-neutral-50 dark:hover:bg-dark-surface text-sm font-semibold transition-colors"
               >
                 <AlertTriangle size={16} className="text-amber-500" />
                 <span>My Disputes</span>

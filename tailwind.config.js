@@ -1,4 +1,46 @@
 /** @type {import('tailwindcss').Config} */
+const navy = {
+  50: '#F0F3F7',
+  100: '#E1E7EF',
+  200: '#C2CFDE',
+  300: '#A4B7CD',
+  400: '#859FBD',
+  500: '#6787AC',
+  600: '#496F9B',
+  700: '#2A578A',
+  800: '#173E66',
+  900: '#0A2540',
+  950: '#051220',
+};
+
+const neutral = {
+  50: '#F6F9FC',
+  100: '#F0F4F8',
+  200: '#E6EBF1',
+  300: '#DDE2E8',
+  400: '#C0C8D1',
+  500: '#A3ACB5',
+  600: '#8898AA',
+  700: '#6D7C8F',
+  800: '#526074',
+  900: '#374558',
+  950: '#1C293D',
+};
+
+const secondary = {
+  50: '#E6FAFF',
+  100: '#CCF5FF',
+  200: '#99EAFC',
+  300: '#66E0F9',
+  400: '#33D5F6',
+  500: '#00BAF2',
+  600: '#00A3D6',
+  700: '#008CBA',
+  800: '#00759E',
+  900: '#005E82',
+  950: '#002F41',
+};
+
 export default {
   content: [
     "./index.html",
@@ -22,45 +64,9 @@ export default {
           900: '#211F99',
           950: '#100F4C',
         },
-        secondary: {
-          50: '#E6FAFF',
-          100: '#CCF5FF',
-          200: '#99EAFC',
-          300: '#66E0F9',
-          400: '#33D5F6',
-          500: '#00BAF2', // Paytm Blue
-          600: '#00A3D6',
-          700: '#008CBA',
-          800: '#00759E',
-          900: '#005E82',
-          950: '#002F41',
-        },
-        navy: {
-          50: '#F0F3F7',
-          100: '#E1E7EF',
-          200: '#C2CFDE',
-          300: '#A4B7CD',
-          400: '#859FBD',
-          500: '#6787AC',
-          600: '#496F9B',
-          700: '#2A578A',
-          800: '#173E66',
-          900: '#0A2540', // Stripe Deep Navy
-          950: '#051220',
-        },
-        neutral: {
-          50: '#F6F9FC', // Soft Background
-          100: '#F0F4F8',
-          200: '#E6EBF1', // Border Light
-          300: '#DDE2E8',
-          400: '#C0C8D1',
-          500: '#A3ACB5',
-          600: '#8898AA', // Neutral Text
-          700: '#6D7C8F',
-          800: '#526074',
-          900: '#374558',
-          950: '#1C293D',
-        },
+        secondary,
+        navy,
+        neutral,
         success: {
           50: '#E8FAF2',
           100: '#CFF5E4',
@@ -72,6 +78,15 @@ export default {
           700: '#0D7B4E',
           800: '#095536',
           900: '#042F1D',
+        },
+        dark: {
+          bg: navy[950],
+          surface: navy[900],
+          elevated: navy[800],
+          border: 'rgba(255, 255, 255, 0.1)',
+          primary: '#FFFFFF',
+          muted: neutral[400],
+          accent: secondary[500]
         },
         error: {
           50: '#FFE6E6',

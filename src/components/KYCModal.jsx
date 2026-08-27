@@ -77,31 +77,32 @@ export default function KYCModal({ isOpen, onClose, onComplete }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#1a1b1e] border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
-        <h2 className="text-2xl font-bold text-white mb-2">Complete KYC</h2>
-        <p className="text-gray-400 mb-6 text-sm">Verify your identity to unlock high-value escrow transactions.</p>
+    <div className="fixed inset-0 bg-navy-900/30 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border p-8 rounded-2xl w-full max-w-md shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-neutral-500 dark:text-dark-muted hover:text-navy-900 dark:text-dark-primary">✕</button>
+        <h2 className="text-2xl font-bold text-navy-900 dark:text-dark-primary mb-2">Complete KYC</h2>
+        <p className="text-neutral-500 dark:text-dark-muted mb-6 text-sm">Verify your identity to unlock high-value escrow transactions.</p>
         
         {/* Step Indicators */}
         <div className="flex gap-2 mb-8">
-          <div className={`h-1 flex-1 rounded ${step >= 1 ? 'bg-indigo-500' : 'bg-gray-800'}`}></div>
-          <div className={`h-1 flex-1 rounded ${step >= 2 ? 'bg-indigo-500' : 'bg-gray-800'}`}></div>
-          <div className={`h-1 flex-1 rounded ${step >= 3 ? 'bg-indigo-500' : 'bg-gray-800'}`}></div>
+          <div className={`h-1 flex-1 rounded ${step >= 1 ? 'bg-indigo-500' : 'bg-neutral-100 dark:bg-dark-elevated'}`}></div>
+          <div className={`h-1 flex-1 rounded ${step >= 2 ? 'bg-indigo-500' : 'bg-neutral-100 dark:bg-dark-elevated'}`}></div>
+          <div className={`h-1 flex-1 rounded ${step >= 3 ? 'bg-indigo-500' : 'bg-neutral-100 dark:bg-dark-elevated'}`}></div>
         </div>
 
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Phone Number</label>
+              <label className="block text-sm font-medium text-neutral-500 dark:text-dark-muted mb-1">Phone Number</label>
               <input 
                 type="tel" 
                 value={phone} 
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 9876543210"
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-indigo-500 outline-none transition-colors"
+                className="w-full bg-white dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-lg p-3 text-navy-900 dark:text-dark-primary focus:border-indigo-500 outline-none transition-colors"
               />
             </div>
+            {/* NOTE: text-white is intentionally hardcoded here (no dark: variant) because it sits on a colored primary button background in both themes. */}
             <button 
               onClick={handleSendOtp} 
               disabled={loading}
@@ -115,16 +116,17 @@ export default function KYCModal({ isOpen, onClose, onComplete }) {
         {step === 2 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Enter 6-digit OTP</label>
+              <label className="block text-sm font-medium text-neutral-500 dark:text-dark-muted mb-1">Enter 6-digit OTP</label>
               <input 
                 type="text" 
                 value={otp} 
                 onChange={(e) => setOtp(e.target.value)}
                 placeholder="000000"
                 maxLength={6}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-indigo-500 outline-none transition-colors text-center text-2xl tracking-widest"
+                className="w-full bg-white dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-lg p-3 text-navy-900 dark:text-dark-primary focus:border-indigo-500 outline-none transition-colors text-center text-2xl tracking-widest"
               />
             </div>
+            {/* NOTE: text-white is intentionally hardcoded here (no dark: variant) because it sits on a colored primary button background in both themes. */}
             <button 
               onClick={handleVerifyOtp} 
               disabled={loading}
@@ -132,7 +134,7 @@ export default function KYCModal({ isOpen, onClose, onComplete }) {
             >
               {loading ? 'Verifying...' : 'Verify OTP'}
             </button>
-            <button onClick={() => setStep(1)} className="w-full text-gray-500 hover:text-white text-sm mt-2">
+            <button onClick={() => setStep(1)} className="w-full text-gray-500 hover:text-navy-900 dark:text-dark-primary text-sm mt-2">
               Back to phone entry
             </button>
           </div>
@@ -141,31 +143,31 @@ export default function KYCModal({ isOpen, onClose, onComplete }) {
         {step === 3 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Full Legal Name</label>
+              <label className="block text-sm font-medium text-neutral-500 dark:text-dark-muted mb-1">Full Legal Name</label>
               <input 
                 type="text" 
                 value={fullLegalName} 
                 onChange={(e) => setFullLegalName(e.target.value)}
                 placeholder="As per ID Document"
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-indigo-500 outline-none transition-colors"
+                className="w-full bg-white dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-lg p-3 text-navy-900 dark:text-dark-primary focus:border-indigo-500 outline-none transition-colors"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Date of Birth</label>
+                <label className="block text-sm font-medium text-neutral-500 dark:text-dark-muted mb-1">Date of Birth</label>
                 <input 
                   type="date" 
                   value={dateOfBirth} 
                   onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-indigo-500 outline-none transition-colors"
+                  className="w-full bg-white dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-lg p-3 text-navy-900 dark:text-dark-primary focus:border-indigo-500 outline-none transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">ID Type</label>
+                <label className="block text-sm font-medium text-neutral-500 dark:text-dark-muted mb-1">ID Type</label>
                 <select 
                   value={idDocType} 
                   onChange={(e) => setIdDocType(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-indigo-500 outline-none transition-colors"
+                  className="w-full bg-white dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-lg p-3 text-navy-900 dark:text-dark-primary focus:border-indigo-500 outline-none transition-colors"
                 >
                   <option value="AADHAR">Aadhar Card</option>
                   <option value="PAN">PAN Card</option>
@@ -174,15 +176,16 @@ export default function KYCModal({ isOpen, onClose, onComplete }) {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Upload ID Images (Front & Back)</label>
+              <label className="block text-sm font-medium text-neutral-500 dark:text-dark-muted mb-1">Upload ID Images (Front & Back)</label>
               <input 
                 type="file" 
                 multiple
                 accept="image/*,application/pdf"
                 onChange={(e) => setDocuments(e.target.files)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-indigo-500 outline-none transition-colors text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer"
+                className="w-full bg-white dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-lg p-3 text-navy-900 dark:text-dark-primary focus:border-indigo-500 outline-none transition-colors text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer"
               />
             </div>
+            {/* NOTE: text-white is intentionally hardcoded here (no dark: variant) because it sits on a colored primary button background in both themes. */}
             <button 
               onClick={handleSubmitDocs} 
               disabled={loading}

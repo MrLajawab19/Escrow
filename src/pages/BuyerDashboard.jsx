@@ -175,10 +175,10 @@ const BuyerDashboard = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 dark:bg-dark-bg flex items-center justify-center transition-colors">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-neutral-500 font-medium text-sm">Loading your dashboard...</p>
+          <p className="text-neutral-500 dark:text-dark-muted font-medium text-sm">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -187,16 +187,16 @@ const BuyerDashboard = () => {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-neutral-50 dark:bg-dark-bg flex items-center justify-center p-4 transition-colors">
         <div className="text-center">
-          <div className="bg-white border border-neutral-200 shadow-sm rounded-2xl p-8 max-w-md w-full">
-            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border shadow-sm rounded-2xl p-8 max-w-md w-full">
+            <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-navy-900 mb-2">Error Loading Dashboard</h3>
-            <p className="text-neutral-600 mb-6 text-sm leading-relaxed">{error}</p>
+            <h3 className="text-lg font-bold text-navy-900 dark:text-dark-primary mb-2">Error Loading Dashboard</h3>
+            <p className="text-neutral-600 dark:text-dark-muted mb-6 text-sm leading-relaxed">{error}</p>
             <button onClick={fetchOrders} className="btn btn-primary w-full">
               Try Again
             </button>
@@ -233,28 +233,28 @@ const BuyerDashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <MetricCard
                 icon={<ClipboardCheck size={22} className="text-primary-500" />}
-                iconBg="bg-primary-50"
+                iconBg="bg-primary-50 dark:bg-primary-900/30"
                 value={totalOrders}
                 label="Total Orders"
                 subtitle="All time orders"
               />
               <MetricCard
                 icon={<Clock size={22} className="text-blue-500" />}
-                iconBg="bg-blue-50"
+                iconBg="bg-blue-50 dark:bg-blue-900/30"
                 value={inProgress}
                 label="In Progress"
                 subtitle="Active orders"
               />
               <MetricCard
                 icon={<Flag size={22} className="text-amber-500" />}
-                iconBg="bg-amber-50"
+                iconBg="bg-amber-50 dark:bg-amber-900/30"
                 value={pendingReview}
                 label="Pending Review"
                 subtitle="Awaiting your action"
               />
               <MetricCard
                 icon={<CheckCircle2 size={22} className="text-emerald-500" />}
-                iconBg="bg-emerald-50"
+                iconBg="bg-emerald-50 dark:bg-emerald-900/30"
                 value={completed}
                 label="Completed"
                 subtitle="Successfully done"
@@ -298,7 +298,7 @@ const BuyerDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-neutral-50 overflow-hidden">
+    <div className="flex h-screen bg-neutral-50 dark:bg-dark-bg overflow-hidden transition-colors">
       {/* Sidebar */}
       <DashboardSidebar
         activeTab={activeTab}

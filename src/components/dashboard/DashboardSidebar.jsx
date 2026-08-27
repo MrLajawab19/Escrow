@@ -146,7 +146,7 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
         {navSections.map((section, sIdx) => (
           <div key={sIdx} className={sIdx > 0 ? 'mt-5' : ''}>
             {section.label && (
-              <p className="px-3 mb-1.5 text-[10px] font-bold tracking-[0.12em] text-neutral-400 uppercase">
+              <p className="px-3 mb-1.5 text-[10px] font-bold tracking-[0.12em] text-neutral-400 dark:text-dark-muted uppercase">
                 {section.label}
               </p>
             )}
@@ -162,14 +162,14 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
                       w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
                       ${isActive
                         ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20'
-                        : 'text-neutral-600 hover:bg-neutral-100 hover:text-navy-900'
+                        : 'text-neutral-600 dark:text-dark-muted hover:bg-neutral-100 dark:hover:bg-dark-elevated hover:text-navy-900 dark:hover:text-dark-primary'
                       }
                     `}
                   >
                     <Icon
                       size={18}
                       strokeWidth={isActive ? 2.2 : 1.8}
-                      className={`flex-shrink-0 transition-colors duration-200 ${isActive ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-600'}`}
+                      className={`flex-shrink-0 transition-colors duration-200 ${isActive ? 'text-white' : 'text-neutral-400 dark:text-dark-muted group-hover:text-neutral-600 dark:group-hover:text-dark-primary'}`}
                     />
                     <span className="flex-1 text-left">{item.label}</span>
                     {isActive && (
@@ -186,14 +186,14 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
       {/* Bottom CTA Card */}
       <div className="px-3 pb-4">
         {userType === 'seller' ? (
-          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/60 border border-indigo-200/50 rounded-2xl p-4">
+          <div className="bg-gradient-to-br from-indigo-50 dark:from-dark-elevated to-indigo-100/60 dark:to-dark-elevated border border-indigo-200/50 dark:border-dark-border rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={16} className="text-indigo-500" />
-              <h4 className="text-sm font-bold text-navy-900 leading-tight">
+              <Sparkles size={16} className="text-indigo-500 dark:text-indigo-400" />
+              <h4 className="text-sm font-bold text-navy-900 dark:text-dark-primary leading-tight">
                 Upgrade to Pro Seller
               </h4>
             </div>
-            <p className="text-xs text-neutral-500 mb-3 leading-relaxed">
+            <p className="text-xs text-neutral-500 dark:text-dark-muted mb-3 leading-relaxed">
               Get priority support, lower fees & more benefits.
             </p>
             <button
@@ -203,11 +203,11 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
             </button>
           </div>
         ) : (
-          <div className="bg-gradient-to-br from-primary-50 to-primary-100/60 border border-primary-200/50 rounded-2xl p-4">
-            <h4 className="text-sm font-bold text-navy-900 mb-1 leading-tight">
+          <div className="bg-gradient-to-br from-primary-50 dark:from-dark-elevated to-primary-100/60 dark:to-dark-elevated border border-primary-200/50 dark:border-dark-border rounded-2xl p-4">
+            <h4 className="text-sm font-bold text-navy-900 dark:text-dark-primary mb-1 leading-tight">
               Secure every deal with ScrowX
             </h4>
-            <p className="text-xs text-neutral-500 mb-3 leading-relaxed">
+            <p className="text-xs text-neutral-500 dark:text-dark-muted mb-3 leading-relaxed">
               Your trust is protected with escrow.
             </p>
             <button
@@ -225,7 +225,7 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm"
+          className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm"
         >
           <LogOut size={16} strokeWidth={2} />
           Logout
@@ -239,7 +239,7 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
       {/* Mobile Toggle */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-[60] p-2 bg-white border border-neutral-200 rounded-xl shadow-md hover:shadow-lg transition-shadow"
+        className="lg:hidden fixed top-4 left-4 z-[60] p-2 bg-white dark:bg-dark-elevated border border-neutral-200 dark:border-dark-border text-navy-900 dark:text-dark-primary rounded-xl shadow-md hover:shadow-lg transition-shadow"
       >
         {mobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
@@ -255,7 +255,7 @@ const DashboardSidebar = ({ activeTab, setActiveTab, onNewOrder, onDisputesClick
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:sticky top-0 left-0 z-[50] h-screen w-[260px] bg-white border-r border-neutral-200 
+          fixed lg:sticky top-0 left-0 z-[50] h-screen w-[260px] bg-white dark:bg-dark-surface border-r border-neutral-200 dark:border-dark-border 
           flex-shrink-0 transition-transform duration-300 ease-in-out
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}

@@ -5,16 +5,16 @@ import toast from 'react-hot-toast';
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 const SEV_CONFIG = {
-  CRITICAL: { bg: 'bg-red-50', border: 'border-red-200', badge: 'bg-red-100 text-red-700 border-red-200', icon: '🚨', label: 'Critical' },
+  CRITICAL: { bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-900/50', badge: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50', icon: '🚨', label: 'Critical' },
   HIGH:     { bg: 'bg-orange-50', border: 'border-orange-200', badge: 'bg-orange-100 text-orange-700 border-orange-200', icon: '⚠️', label: 'High' },
   MEDIUM:   { bg: 'bg-yellow-50', border: 'border-yellow-200', badge: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: '⚡', label: 'Medium' },
-  LOW:      { bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-700 border-blue-200', icon: 'ℹ️', label: 'Low' },
+  LOW:      { bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-900/50', badge: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50', icon: 'ℹ️', label: 'Low' },
 };
 
 const REC_CONFIG = {
-  REFUND_BUYER:       { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', icon: '💸', label: 'Refund Buyer' },
-  RELEASE_TO_SELLER:  { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: '✅', label: 'Release to Seller' },
-  PARTIAL_REFUND:     { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: '⚖️', label: 'Partial Refund' },
+  REFUND_BUYER:       { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-900/50', icon: '💸', label: 'Refund Buyer' },
+  RELEASE_TO_SELLER:  { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-900/50', icon: '✅', label: 'Release to Seller' },
+  PARTIAL_REFUND:     { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-900/50', icon: '⚖️', label: 'Partial Refund' },
   ESCALATE_TO_HUMAN:  { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200', icon: '👤', label: 'Escalate to Human' },
   ESCALATE:           { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200', icon: '👤', label: 'Needs Human Review' },
 };
@@ -39,7 +39,7 @@ function RiskGauge({ score }) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-xl font-black font-inter" style={{ color }}>{score}</span>
-          <span className="text-[10px] text-neutral-400 font-inter -mt-0.5">/ 100</span>
+          <span className="text-[10px] text-neutral-400 dark:text-dark-muted font-inter -mt-0.5">/ 100</span>
         </div>
       </div>
       <p className="text-xs font-semibold font-inter mt-1" style={{ color }}>
@@ -54,13 +54,13 @@ function ConfidenceBar({ confidence }) {
   const color = pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 bg-neutral-100 rounded-full h-2.5 overflow-hidden">
+      <div className="flex-1 bg-neutral-100 dark:bg-dark-elevated rounded-full h-2.5 overflow-hidden">
         <div
           className={`${color} h-full rounded-full transition-all duration-1000`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-sm font-bold font-inter text-neutral-700 w-10 text-right">{pct}%</span>
+      <span className="text-sm font-bold font-inter text-neutral-700 dark:text-dark-primary w-10 text-right">{pct}%</span>
     </div>
   );
 }
@@ -74,17 +74,17 @@ function FlagCard({ flag, rootFaultSide }) {
       <span className="text-lg flex-shrink-0">{sev.icon}</span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap mb-0.5">
-          <p className="text-sm font-bold text-neutral-800 font-inter capitalize">{label.toLowerCase().replace('_', ' ')}</p>
+          <p className="text-sm font-bold text-neutral-800 dark:text-dark-primary font-inter capitalize">{label.toLowerCase().replace('_', ' ')}</p>
           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border font-inter ${sev.badge}`}>
             {sev.label}
           </span>
           {rootFaultSide && (
-            <span className="text-[10px] font-semibold text-neutral-400 font-inter ml-auto">
+            <span className="text-[10px] font-semibold text-neutral-400 dark:text-dark-muted font-inter ml-auto">
               Fault side: <span className="capitalize">{rootFaultSide.toLowerCase()}</span>
             </span>
           )}
         </div>
-        <p className="text-xs text-neutral-600 font-inter leading-relaxed mt-1">{flag.reason}</p>
+        <p className="text-xs text-neutral-600 dark:text-dark-muted font-inter leading-relaxed mt-1">{flag.reason}</p>
       </div>
     </div>
   );
@@ -229,16 +229,16 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
   if (loading && !detail) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-red-100 dark:border-red-900/50 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
             <span className="text-lg">⚖️</span>
           </div>
           <h2 className="text-base font-bold text-[#0A2540] font-inter">Dispute Resolution Center</h2>
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="animate-pulse bg-neutral-100 rounded-xl h-16" />
+            <div key={i} className="animate-pulse bg-neutral-100 dark:bg-dark-elevated rounded-xl h-16" />
           ))}
         </div>
       </div>
@@ -247,8 +247,8 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6 text-center">
-        <p className="text-red-500 font-inter text-sm">{error}</p>
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-red-100 dark:border-red-900/50 p-6 text-center">
+        <p className="text-red-500 dark:text-red-400 font-inter text-sm">{error}</p>
         <button onClick={fetchDetail} className="mt-3 text-sm text-indigo-600 font-semibold font-inter hover:underline">
           Retry
         </button>
@@ -271,20 +271,20 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
     <div className="space-y-4">
 
       {/* ── DISPUTE HEADER ──────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl shadow-sm border border-red-100 p-6">
+      <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl shadow-sm border border-red-100 dark:border-red-900/50 p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
               <span className="text-xl">⚖️</span>
             </div>
             <div>
               <h2 className="text-base font-black text-[#0A2540] font-inter">Dispute Resolution Center</h2>
-              <p className="text-xs text-neutral-500 font-inter mt-0.5">
+              <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter mt-0.5">
                 Status:&nbsp;
                 <span className={`font-bold ${
-                  disputeStatus === 'RESOLVED' ? 'text-emerald-600' :
+                  disputeStatus === 'RESOLVED' ? 'text-emerald-600 dark:text-emerald-400' :
                   disputeStatus === 'ESCALATED' ? 'text-indigo-600' :
-                  'text-red-600'
+                  'text-red-600 dark:text-red-400'
                 }`}>
                   {disputeStatus === 'OPEN' ? 'Under Investigation' :
                    disputeStatus === 'CHALLENGE_PHASE' ? 'Evidence Collected' :
@@ -302,19 +302,19 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
         {/* Word Count Info */}
         {rf.minWordCount > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-3">
-            <div className="bg-white/70 rounded-xl p-3 border border-white">
-              <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider font-inter">Min Word Count</p>
+            <div className="bg-white dark:bg-dark-surface/70 rounded-xl p-3 border border-white">
+              <p className="text-[10px] font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter">Min Word Count</p>
               <p className="text-lg font-black text-[#0A2540] font-inter">{rf.minWordCount.toLocaleString()}</p>
             </div>
-            <div className={`rounded-xl p-3 border ${rf.analyzedWordCount < rf.minWordCount ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
-              <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider font-inter">Words Delivered</p>
-              <p className={`text-lg font-black font-inter ${rf.analyzedWordCount < rf.minWordCount ? 'text-red-600' : 'text-emerald-600'}`}>
+            <div className={`rounded-xl p-3 border ${rf.analyzedWordCount < rf.minWordCount ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/50' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50'}`}>
+              <p className="text-[10px] font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter">Words Delivered</p>
+              <p className={`text-lg font-black font-inter ${rf.analyzedWordCount < rf.minWordCount ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                 {rf.analyzedWordCount > 0 ? rf.analyzedWordCount.toLocaleString() : '—'}
               </p>
             </div>
-            <div className="bg-white/70 rounded-xl p-3 border border-white">
-              <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider font-inter">Gap</p>
-              <p className={`text-lg font-black font-inter ${rf.wordCountDelta !== null && rf.wordCountDelta < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+            <div className="bg-white dark:bg-dark-surface/70 rounded-xl p-3 border border-white">
+              <p className="text-[10px] font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter">Gap</p>
+              <p className={`text-lg font-black font-inter ${rf.wordCountDelta !== null && rf.wordCountDelta < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                 {rf.wordCountDelta !== null
                   ? (rf.wordCountDelta >= 0 ? `+${rf.wordCountDelta}` : rf.wordCountDelta)
                   : '—'}
@@ -326,7 +326,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
       {/* ── AUTO-FLAGS ──────────────────────────────────────────────────────── */}
       {rf.flags && rf.flags.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,7 +335,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#0A2540] font-inter">Auto-Detection Flags</h3>
-              <p className="text-xs text-neutral-400 font-inter">{rf.flags.length} issue{rf.flags.length !== 1 ? 's' : ''} detected by rule engine</p>
+              <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">{rf.flags.length} issue{rf.flags.length !== 1 ? 's' : ''} detected by rule engine</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -345,18 +345,18 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
       )}
 
       {rf.flags && rf.flags.length === 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 p-5 flex items-center gap-3">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-emerald-100 dark:border-emerald-900/50 p-5 flex items-center gap-3">
           <span className="text-2xl">✅</span>
           <div>
-            <p className="text-sm font-bold text-emerald-700 font-inter">No violations detected by rule engine</p>
-            <p className="text-xs text-neutral-400 font-inter">The AI will analyze the dispute details for further insights</p>
+            <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 font-inter">No violations detected by rule engine</p>
+            <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">The AI will analyze the dispute details for further insights</p>
           </div>
         </div>
       )}
 
       {/* ── EVIDENCE SUBMISSION ──────────────────────────── */}
       {disputeStatus === 'OPEN' && !myEvidenceSubmitted && (
-        <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-indigo-100 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -367,7 +367,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               <h3 className="text-sm font-bold text-[#0A2540] font-inter">
                 Your Statement
               </h3>
-              <p className="text-xs text-neutral-500 font-inter font-semibold">
+              <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter font-semibold">
                 {rf.faultSide && rf.faultSide.toLowerCase() === myRole
                   ? "The system has flagged issues on your side. Please provide your counter-evidence."
                   : "Please provide any evidence or clarification for your side."}
@@ -377,7 +377,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
           <form onSubmit={handleEvidenceSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 font-inter mb-1.5">
+              <label className="block text-xs font-semibold text-neutral-600 dark:text-dark-muted font-inter mb-1.5">
                 Your Statement *
               </label>
               <textarea
@@ -389,12 +389,12 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                     ? 'Explain what you delivered, why the word count may differ, any delays, etc...'
                     : 'Explain exactly what issues you found with the delivered work...'
                 }
-                className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
+                className="w-full px-4 py-3 border border-neutral-200 dark:border-dark-border rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 font-inter mb-1.5">
+              <label className="block text-xs font-semibold text-neutral-600 dark:text-dark-muted font-inter mb-1.5">
                 Upload Supporting Files (optional)
               </label>
               <input
@@ -402,7 +402,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                 multiple
                 accept=".txt,.pdf,.doc,.docx,.png,.jpg,.jpeg"
                 onChange={e => setEvidenceFiles(Array.from(e.target.files))}
-                className="block w-full text-sm text-neutral-500 font-inter
+                className="block w-full text-sm text-neutral-500 dark:text-dark-muted font-inter
                   file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
                   file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700
                   hover:file:bg-indigo-100 transition-all cursor-pointer"
@@ -436,30 +436,30 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
       {/* Evidence submitted confirmation */}
       {myEvidenceSubmitted && (
-        <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-4 flex items-center gap-3">
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 p-4 flex items-center gap-3">
           <span className="text-xl">✅</span>
           <div>
-            <p className="text-sm font-bold text-emerald-700 font-inter">Your evidence has been submitted</p>
-            <p className="text-xs text-emerald-600 font-inter">The AI will factor in your response. Analysis is being updated.</p>
+            <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 font-inter">Your evidence has been submitted</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-inter">The AI will factor in your response. Analysis is being updated.</p>
           </div>
         </div>
       )}
 
       {/* ── SCOPE BOX ANALYSIS ─────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 p-6">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-emerald-100 dark:border-emerald-900/50 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
-              <span className="text-emerald-600">📋</span>
+            <div className="w-8 h-8 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center">
+              <span className="text-emerald-600 dark:text-emerald-400">📋</span>
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#0A2540] font-inter">Scope Box Analysis</h3>
-              <p className="text-xs text-neutral-400 font-inter">Original requirements vs delivery</p>
+              <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Original requirements vs delivery</p>
             </div>
           </div>
           <button
             onClick={() => setShowScopeBoxDetails(!showScopeBoxDetails)}
-            className="text-xs text-emerald-600 font-semibold font-inter hover:text-emerald-800 flex items-center gap-1"
+            className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-inter hover:text-emerald-800 dark:hover:text-emerald-400 dark:text-emerald-400 flex items-center gap-1"
           >
             {showScopeBoxDetails ? 'Hide' : 'Show'} Details
             <svg className={`w-3 h-3 transform transition-transform ${showScopeBoxDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -470,49 +470,49 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
         {/* Scope Compliance Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-            <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider font-inter mb-1">Requirements</p>
-            <p className="text-lg font-black text-emerald-700 font-inter">
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-900/50">
+            <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-inter mb-1">Requirements</p>
+            <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 font-inter">
               {detail.deed?.scopeBox?.deliverables?.length || 0}
             </p>
-            <p className="text-xs text-emerald-600 font-inter">deliverables</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-inter">deliverables</p>
           </div>
-          <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-            <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider font-inter mb-1">Deadline</p>
-            <p className="text-lg font-black text-blue-700 font-inter">
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 border border-blue-100 dark:border-blue-900/50">
+            <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider font-inter mb-1">Deadline</p>
+            <p className="text-lg font-black text-blue-700 dark:text-blue-400 font-inter">
               {detail.deed?.scopeBox?.deadline ? 
                 new Date(detail.deed.scopeBox.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 
                 'Not set'
               }
             </p>
-            <p className="text-xs text-blue-600 font-inter">due date</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-inter">due date</p>
           </div>
-          <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
-            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider font-inter mb-1">Value</p>
-            <p className="text-lg font-black text-amber-700 font-inter">
+          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-100 dark:border-amber-900/50">
+            <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider font-inter mb-1">Value</p>
+            <p className="text-lg font-black text-amber-700 dark:text-amber-400 font-inter">
               ${detail.deed?.scopeBox?.price || '0'}
             </p>
-            <p className="text-xs text-amber-600 font-inter">order value</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-inter">order value</p>
           </div>
         </div>
 
         {/* Detailed Scope Box */}
         {showScopeBoxDetails && detail.deed?.scopeBox && (
-          <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 space-y-4">
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/50 space-y-4">
             <div>
-              <p className="text-sm font-semibold text-emerald-900 mb-2">📝 Description</p>
-              <p className="text-sm text-emerald-800 leading-relaxed bg-white rounded-lg p-3 border border-emerald-200">
+              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-2">📝 Description</p>
+              <p className="text-sm text-emerald-800 dark:text-emerald-400 leading-relaxed bg-white dark:bg-dark-surface rounded-lg p-3 border border-emerald-200 dark:border-emerald-900/50">
                 {detail.deed.scopeBox.description || 'No description provided'}
               </p>
             </div>
 
             {detail.deed.scopeBox.deliverables && (
               <div>
-                <p className="text-sm font-semibold text-emerald-900 mb-2">✅ Deliverables Required</p>
+                <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-2">✅ Deliverables Required</p>
                 <ul className="space-y-1">
                   {detail.deed.scopeBox.deliverables.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-emerald-800">
-                      <span className="text-emerald-600 mt-0.5">•</span>
+                    <li key={i} className="flex items-start gap-2 text-sm text-emerald-800 dark:text-emerald-400">
+                      <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
                       <span>{item}</span>
                     </li>
                   ))}
@@ -523,8 +523,8 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {detail.deed.scopeBox.deadline && (
                 <div>
-                  <p className="text-sm font-semibold text-emerald-900 mb-1">📅 Deadline</p>
-                  <p className="text-sm text-emerald-800">
+                  <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-1">📅 Deadline</p>
+                  <p className="text-sm text-emerald-800 dark:text-emerald-400">
                     {new Date(detail.deed.scopeBox.deadline).toLocaleDateString('en-US', { 
                       weekday: 'short', 
                       year: 'numeric', 
@@ -532,17 +532,17 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                       day: 'numeric' 
                     })}
                   </p>
-                  <p className="text-xs text-emerald-600">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
                     {new Date(detail.deed.scopeBox.deadline) < new Date() ? '⚠️ Overdue' : '⏱️ Pending'}
                   </p>
                 </div>
               )}
               <div>
-                <p className="text-sm font-semibold text-emerald-900 mb-1">💰 Price</p>
-                <p className="text-sm text-emerald-800 font-semibold">
+                <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-1">💰 Price</p>
+                <p className="text-sm text-emerald-800 dark:text-emerald-400 font-semibold">
                   ${detail.deed.scopeBox.price?.toLocaleString() || '0'}
                 </p>
-                <p className="text-xs text-emerald-600">Escrow amount</p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">Escrow amount</p>
               </div>
             </div>
 
@@ -551,16 +551,16 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               !['description', 'deliverables', 'deadline', 'price'].includes(key)
             ).length > 0 && (
               <div>
-                <p className="text-sm font-semibold text-emerald-900 mb-2">🔧 Additional Requirements</p>
-                <div className="bg-white rounded-lg p-3 border border-emerald-200">
+                <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-2">🔧 Additional Requirements</p>
+                <div className="bg-white dark:bg-dark-surface rounded-lg p-3 border border-emerald-200 dark:border-emerald-900/50">
                   {Object.entries(detail.deed.scopeBox)
                     .filter(([key]) => !['description', 'deliverables', 'deadline', 'price'].includes(key))
                     .map(([key, value]) => (
                       <div key={key} className="mb-2 last:mb-0">
-                        <p className="text-xs font-semibold text-emerald-600 capitalize">
+                        <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 capitalize">
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </p>
-                        <p className="text-sm text-emerald-800">
+                        <p className="text-sm text-emerald-800 dark:text-emerald-400">
                           {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
                         </p>
                       </div>
@@ -573,47 +573,47 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
       </div>
 
       {/* ── DISPUTE DETAILS ──────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-red-100 dark:border-red-900/50 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
-            <span className="text-red-600">⚠️</span>
+          <div className="w-8 h-8 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+            <span className="text-red-600 dark:text-red-400">⚠️</span>
           </div>
           <div>
             <h3 className="text-sm font-bold text-[#0A2540] font-inter">Dispute Details</h3>
-            <p className="text-xs text-neutral-400 font-inter">What went wrong</p>
+            <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">What went wrong</p>
           </div>
         </div>
 
         <div className="space-y-3">
           <div>
-            <p className="text-xs font-semibold text-red-600 uppercase tracking-wider font-inter mb-1">Reason</p>
-            <span className="inline-block px-3 py-1.5 bg-red-100 text-red-700 text-sm font-semibold rounded-lg border border-red-200 font-inter">
+            <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider font-inter mb-1">Reason</p>
+            <span className="inline-block px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-semibold rounded-lg border border-red-200 dark:border-red-900/50 font-inter">
               {dispute.reason}
             </span>
           </div>
           
           <div>
-            <p className="text-xs font-semibold text-red-600 uppercase tracking-wider font-inter mb-1">Complaint Details</p>
-            <div className="bg-red-50 rounded-xl p-4 border border-red-100">
-              <p className="text-sm text-red-800 font-inter leading-relaxed">{dispute.description}</p>
+            <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider font-inter mb-1">Complaint Details</p>
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-100 dark:border-red-900/50">
+              <p className="text-sm text-red-800 dark:text-red-400 font-inter leading-relaxed">{dispute.description}</p>
             </div>
           </div>
 
           {dispute.requestedResolution && (
             <div>
-              <p className="text-xs font-semibold text-red-600 uppercase tracking-wider font-inter mb-1">Requested Resolution</p>
-              <p className="text-sm text-red-800 font-inter">{dispute.requestedResolution}</p>
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider font-inter mb-1">Requested Resolution</p>
+              <p className="text-sm text-red-800 dark:text-red-400 font-inter">{dispute.requestedResolution}</p>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4 pt-2">
             <div>
-              <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-1">Raised By</p>
-              <p className="text-sm text-neutral-800 font-inter capitalize">{dispute.raisedBy}</p>
+              <p className="text-xs font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-1">Raised By</p>
+              <p className="text-sm text-neutral-800 dark:text-dark-primary font-inter capitalize">{dispute.raisedBy}</p>
             </div>
             <div>
-              <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-1">Filed</p>
-              <p className="text-sm text-neutral-800 font-inter">
+              <p className="text-xs font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-1">Filed</p>
+              <p className="text-sm text-neutral-800 dark:text-dark-primary font-inter">
                 {new Date(dispute.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </p>
             </div>
@@ -623,7 +623,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
       {/* ── RULE ENGINE FLAGS ─────────────────────────────────────────────────── */}
       {rf.flags?.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-orange-100 p-6">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-orange-100 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -632,7 +632,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#0A2540] font-inter">Automated Analysis</h3>
-              <p className="text-xs text-neutral-400 font-inter">{rf.flags.length} issue{rf.flags.length !== 1 ? 's' : ''} detected</p>
+              <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">{rf.flags.length} issue{rf.flags.length !== 1 ? 's' : ''} detected</p>
             </div>
           </div>
           
@@ -643,7 +643,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
       )}
 
       {/* ── AI RECOMMENDATION PANEL ──────────────────────────────────────────── */}
-      <div className={`bg-white rounded-2xl shadow-sm border ${ai ? 'border-violet-100' : 'border-neutral-100'} p-6`}>
+      <div className={`bg-white dark:bg-dark-surface rounded-2xl shadow-sm border ${ai ? 'border-violet-100' : 'border-neutral-100 dark:border-dark-border'} p-6`}>
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
@@ -653,7 +653,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#0A2540] font-inter">AI Analysis & Recommendation</h3>
-              <p className="text-xs text-neutral-400 font-inter">Powered by Google Gemini</p>
+              <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Powered by Google Gemini</p>
             </div>
           </div>
           {ai && (
@@ -676,8 +676,8 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
             </svg>
             <div>
-              <p className="text-sm font-semibold text-neutral-600 font-inter">Google Gemini is analyzing the dispute…</p>
-              <p className="text-xs text-neutral-400 font-inter">Reviewing order scope, chat logs, delivery, and evidence</p>
+              <p className="text-sm font-semibold text-neutral-600 dark:text-dark-muted font-inter">Google Gemini is analyzing the dispute…</p>
+              <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Reviewing order scope, chat logs, delivery, and evidence</p>
             </div>
           </div>
         )}
@@ -688,8 +688,8 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               <span className="text-lg">⏳</span>
             </div>
             <div>
-              <p className="text-sm font-semibold text-neutral-600 font-inter">Waiting for evidence</p>
-              <p className="text-xs text-neutral-400 font-inter">The AI will begin analysis once both parties submit their evidence.</p>
+              <p className="text-sm font-semibold text-neutral-600 dark:text-dark-muted font-inter">Waiting for evidence</p>
+              <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">The AI will begin analysis once both parties submit their evidence.</p>
             </div>
           </div>
         )}
@@ -700,9 +700,9 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             <div className={`flex items-center gap-3 p-4 rounded-xl border ${recConfig.bg} ${recConfig.border}`}>
               <span className="text-2xl">{recConfig.icon}</span>
               <div className="flex-1">
-                <p className="text-xs text-neutral-500 font-inter font-semibold uppercase tracking-wider">AI Recommends</p>
+                <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter font-semibold uppercase tracking-wider">AI Recommends</p>
                 <p className={`text-lg font-black font-inter ${recConfig.color}`}>{recConfig.label}</p>
-                <p className="text-xs text-neutral-500 font-inter italic mt-0.5">
+                <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter italic mt-0.5">
                   Favors: {recConfig.color.includes('red') ? 'Buyer' : recConfig.color.includes('emerald') ? 'Seller' : 'Neutral/Compromise'}
                 </p>
               </div>
@@ -711,24 +711,24 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             {/* Confidence */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <p className="text-xs font-semibold text-neutral-600 font-inter uppercase tracking-wider">Confidence Level</p>
+                <p className="text-xs font-semibold text-neutral-600 dark:text-dark-muted font-inter uppercase tracking-wider">Confidence Level</p>
               </div>
               <ConfidenceBar confidence={ai.confidenceScore / 100 || 0} />
             </div>
 
             {/* Reasoning */}
-            <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-100">
-              <p className="text-xs font-bold text-neutral-500 font-inter uppercase tracking-wider mb-2">AI Reasoning</p>
-              <p className="text-sm text-neutral-700 font-inter leading-relaxed">{ai.reasoning}</p>
+            <div className="bg-neutral-50 dark:bg-dark-bg rounded-xl p-4 border border-neutral-100 dark:border-dark-border">
+              <p className="text-xs font-bold text-neutral-500 dark:text-dark-muted font-inter uppercase tracking-wider mb-2">AI Reasoning</p>
+              <p className="text-sm text-neutral-700 dark:text-dark-primary font-inter leading-relaxed">{ai.reasoning}</p>
             </div>
 
             {/* Key Findings */}
             {ai.keyFindings && ai.keyFindings.length > 0 && (
               <div>
-                <p className="text-xs font-bold text-neutral-500 font-inter uppercase trackingmb-2">Key Findings</p>
+                <p className="text-xs font-bold text-neutral-500 dark:text-dark-muted font-inter uppercase trackingmb-2">Key Findings</p>
                 <ul className="space-y-1.5">
                   {ai.keyFindings.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm font-inter text-neutral-700">
+                    <li key={i} className="flex items-start gap-2 text-sm font-inter text-neutral-700 dark:text-dark-primary">
                       <span className="text-violet-400 mt-0.5 flex-shrink-0">•</span>
                       {f}
                     </li>
@@ -744,9 +744,9 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
       {/* ── BOTH PARTIES' EVIDENCE ────────────────────────────────────────────── */}
       {((evidenceResponses?.seller?.text || evidenceResponses?.buyer?.text)) && (
-        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-neutral-100 dark:bg-dark-elevated rounded-lg flex items-center justify-center">
               <span>📋</span>
             </div>
             <h3 className="text-sm font-bold text-[#0A2540] font-inter">Submitted Evidence</h3>
@@ -755,13 +755,13 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             {evidenceResponses?.seller?.text && (
               <div className="p-4 bg-orange-50 rounded-xl border border-orange-100">
                 <p className="text-xs font-bold text-orange-600 font-inter mb-2">🔷 Seller's Response</p>
-                <p className="text-sm text-neutral-700 font-inter leading-relaxed">{evidenceResponses.seller.text}</p>
+                <p className="text-sm text-neutral-700 dark:text-dark-primary font-inter leading-relaxed">{evidenceResponses.seller.text}</p>
               </div>
             )}
             {evidenceResponses?.buyer?.text && (
-              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                <p className="text-xs font-bold text-blue-600 font-inter mb-2">🔶 Buyer's Statement</p>
-                <p className="text-sm text-neutral-700 font-inter leading-relaxed">{evidenceResponses.buyer.text}</p>
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/50">
+                <p className="text-xs font-bold text-blue-600 dark:text-blue-400 font-inter mb-2">🔶 Buyer's Statement</p>
+                <p className="text-sm text-neutral-700 dark:text-dark-primary font-inter leading-relaxed">{evidenceResponses.buyer.text}</p>
               </div>
             )}
           </div>
@@ -770,11 +770,11 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
       {/* ── CHALLENGE PHASE ──────────────────────────────────────────────────── */}
       {disputeStatus === 'CHALLENGE_PHASE' && ai && !detail?.dispute?.events?.some(e => e.type === 'CHALLENGE' && e.actorRole === userType) && (
-        <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-indigo-100 p-6">
           <div className="flex items-start gap-4 flex-wrap">
             <div className="flex-1 min-w-48">
               <h3 className="text-sm font-bold text-[#0A2540] font-inter mb-1">Challenge AI Decision?</h3>
-              <p className="text-xs text-neutral-500 font-inter leading-relaxed">
+              <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter leading-relaxed">
                 If you disagree with the AI's first-pass recommendation, you can submit a formal challenge with additional context.
               </p>
             </div>
@@ -817,12 +817,12 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
 
       {/* Resolved status */}
       {disputeStatus === 'RESOLVED' && (
-        <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-5">
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 p-5">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏁</span>
             <div>
-              <p className="text-sm font-bold text-emerald-700 font-inter">Dispute Resolved</p>
-              <p className="text-xs text-emerald-600 font-inter">
+              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 font-inter">Dispute Resolved</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-inter">
                 Resolution: <span className="font-bold">{dispute.resolution?.replace(/_/g, ' ')}</span>
                 {dispute.resolutionNotes && ` — ${dispute.resolutionNotes}`}
               </p>
@@ -834,14 +834,14 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
       {/* ── CHALLENGE MODAL ──────────────────────────────────────────────────── */}
       {showChallengeModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
                 <span className="text-xl">⚖️</span>
               </div>
               <div>
                 <h3 className="text-base font-black text-[#0A2540] font-inter">Submit Challenge</h3>
-                <p className="text-xs text-neutral-400 font-inter">Explain why the AI's reasoning is incorrect</p>
+                <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Explain why the AI's reasoning is incorrect</p>
               </div>
             </div>
 
@@ -851,17 +851,17 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                 onChange={e => setChallengeReason(e.target.value)}
                 placeholder="What did the AI miss?"
                 rows={3}
-                className="w-full px-4 py-3 border border-neutral-200 rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none mb-3"
+                className="w-full px-4 py-3 border border-neutral-200 dark:border-dark-border rounded-xl text-sm font-inter focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none mb-3"
                 required
               />
 
               <div className="mb-4">
-                <label className="block text-xs font-bold text-neutral-500 font-inter mb-2">Additional Evidence (Optional)</label>
+                <label className="block text-xs font-bold text-neutral-500 dark:text-dark-muted font-inter mb-2">Additional Evidence (Optional)</label>
                 <input
                   type="file"
                   multiple
                   onChange={e => setChallengeFiles(Array.from(e.target.files))}
-                  className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  className="block w-full text-sm text-neutral-500 dark:text-dark-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                 />
               </div>
 
@@ -869,7 +869,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                 <button
                   type="button"
                   onClick={() => setShowChallengeModal(false)}
-                  className="flex-1 py-2.5 border border-neutral-200 rounded-xl text-sm font-inter font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
+                  className="flex-1 py-2.5 border border-neutral-200 dark:border-dark-border rounded-xl text-sm font-inter font-semibold text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:bg-dark-bg transition-colors"
                 >
                   Cancel
                 </button>

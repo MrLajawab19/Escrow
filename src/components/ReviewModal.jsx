@@ -43,7 +43,7 @@ const ReviewModal = ({ deedId, isOpen, onClose, onReviewSubmitted }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slide-up">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slide-up">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-gray-900">Leave a Review</h2>
@@ -96,7 +96,7 @@ const ReviewModal = ({ deedId, isOpen, onClose, onReviewSubmitted }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 bg-white dark:bg-dark-surface border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
                 disabled={isSubmitting}
               >
                 Cancel

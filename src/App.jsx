@@ -20,6 +20,7 @@ const DeedSigningPage = lazy(() => import('./pages/DeedSigningPage'));
 const AuditLedgerPage = lazy(() => import('./pages/AuditLedgerPage'));
 import { CurrencyProvider } from './context/CurrencyContext';
 import { ThemeProvider } from './context/ThemeContext';
+import ThemeToggle from './components/ThemeToggle';
 import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useParams } from 'react-router-dom';
@@ -83,7 +84,7 @@ const AppNav = ({
   const showHomeAction = isBuyerArea || isSellerArea || isAdminArea;
 
   return (
-    <nav className="bg-white border-b border-neutral-200 sticky top-0 z-50 shadow-sm">
+    <nav className="bg-white dark:bg-dark-surface border-b border-neutral-200 dark:border-dark-border sticky top-0 z-50 shadow-sm transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 py-2">
           <div className="flex items-center">
@@ -102,10 +103,12 @@ const AppNav = ({
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-2">
+            <ThemeToggle />
+
             {showHomeAction && (
               <Link
                 to="/"
-                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] hover:bg-neutral-100 transition-all duration-200 font-inter"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 onClick={handleHomeClick}
               >
                 Home
@@ -116,11 +119,11 @@ const AppNav = ({
               <>
                 <Link
                   to="/buyer/dashboard"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] hover:bg-neutral-100 transition-all duration-200 font-inter"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 >
                   Buyer Dashboard
                 </Link>
-                <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200">
+                <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200 dark:border-dark-border">
                   <Link to={`/buyer/profile/${buyerData?.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     {buyerData?.profileImage ? (
                       <img src={`${import.meta.env.VITE_API_URL}${buyerData.profileImage}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
@@ -129,8 +132,8 @@ const AppNav = ({
                         {buyerData?.firstName?.charAt(0) || 'B'}
                       </div>
                     )}
-                    <span className="text-sm text-neutral-500 font-inter">
-                      Welcome, <span className="font-semibold text-[#0A2540]">{buyerData?.firstName || 'Buyer'}</span>
+                    <span className="text-sm text-neutral-500 dark:text-dark-muted font-inter">
+                      Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary">{buyerData?.firstName || 'Buyer'}</span>
                     </span>
                   </Link>
                   <button
@@ -145,11 +148,11 @@ const AppNav = ({
               <>
                 <Link
                   to="/seller/dashboard"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] hover:bg-neutral-100 transition-all duration-200 font-inter"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 >
                   Seller Dashboard
                 </Link>
-                <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200">
+                <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200 dark:border-dark-border">
                   <Link to={`/seller/profile/${sellerData?.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     {sellerData?.profileImage ? (
                       <img src={`${import.meta.env.VITE_API_URL}${sellerData.profileImage}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
@@ -158,8 +161,8 @@ const AppNav = ({
                         {sellerData?.firstName?.charAt(0) || 'S'}
                       </div>
                     )}
-                    <span className="text-sm text-neutral-500 font-inter">
-                      Welcome, <span className="font-semibold text-[#0A2540]">{sellerData?.firstName || 'Seller'}</span>
+                    <span className="text-sm text-neutral-500 dark:text-dark-muted font-inter">
+                      Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary">{sellerData?.firstName || 'Seller'}</span>
                     </span>
                   </Link>
                   <button
@@ -178,9 +181,9 @@ const AppNav = ({
                 >
                   Admin Dashboard
                 </Link>
-                <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200">
-                  <span className="text-sm text-neutral-500 font-inter">
-                    Welcome, <span className="font-semibold text-[#0A2540]">{adminData?.name || 'Admin'}</span>
+                <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200 dark:border-dark-border">
+                  <span className="text-sm text-neutral-500 dark:text-dark-muted font-inter">
+                    Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary">{adminData?.name || 'Admin'}</span>
                   </span>
                   <button
                     onClick={handleAdminLogout}
@@ -193,14 +196,14 @@ const AppNav = ({
             ) : isBuyerArea ? (
               <Link
                 to="/buyer/auth"
-                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] hover:bg-neutral-100 transition-all duration-200 font-inter"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
               >
                 Buyer Login
               </Link>
             ) : isSellerArea ? (
               <Link
                 to="/seller/auth"
-                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] hover:bg-neutral-100 transition-all duration-200 font-inter"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
               >
                 Seller Login
               </Link>
@@ -215,13 +218,13 @@ const AppNav = ({
               <>
                 <Link
                   to="/buyer/auth"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] hover:bg-neutral-100 transition-all duration-200 font-inter"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 >
                   Buyer Login
                 </Link>
                 <Link
                   to="/seller/auth"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] hover:bg-neutral-100 transition-all duration-200 font-inter"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 >
                   Seller Login
                 </Link>
@@ -230,10 +233,11 @@ const AppNav = ({
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="flex items-center space-x-2 md:hidden">
+            <ThemeToggle />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg text-neutral-500 hover:text-[#0A2540] hover:bg-neutral-100 transition-colors"
+              className="p-2 rounded-lg text-neutral-500 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-colors"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {isMobileMenuOpen ? (

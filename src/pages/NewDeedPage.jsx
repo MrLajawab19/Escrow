@@ -313,18 +313,18 @@ export default function NewDeedPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] pb-24 font-inter">
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-dark-bg pb-24 font-inter">
       {/* 4. Minimalist Hero (Height reduced by ~60%) */}
-      <div className="bg-white border-b border-neutral-200 pt-8 pb-6 shadow-sm sticky top-0 z-40">
+      <div className="bg-white dark:bg-dark-surface border-b border-neutral-200 dark:border-dark-border pt-8 pb-6 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link to="/buyer/dashboard" className="inline-flex items-center text-neutral-500 hover:text-navy-900 mb-4 transition-colors text-sm font-medium">
+          <Link to="/buyer/dashboard" className="inline-flex items-center text-neutral-500 dark:text-dark-muted hover:text-navy-900 dark:hover:text-dark-primary dark:text-dark-primary mb-4 transition-colors text-sm font-medium">
             <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Back to Dashboard
           </Link>
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-2xl font-black text-navy-900 tracking-tight mb-1">Create Secure Agreement</h1>
-              <p className="text-neutral-500 text-sm">Create a legally binding escrow agreement.</p>
+              <h1 className="text-2xl font-black text-navy-900 dark:text-dark-primary tracking-tight mb-1">Create Secure Agreement</h1>
+              <p className="text-neutral-500 dark:text-dark-muted text-sm">Create a legally binding escrow agreement.</p>
             </div>
             
             {/* Horizontal 4-Stage Progress Stepper */}
@@ -346,7 +346,7 @@ export default function NewDeedPage() {
                         if (s.num === 4 && validateStage3()) setStep(4);
                       }}
                     >
-                      <div className={`text-xs font-black tracking-widest ${step >= s.num ? 'text-indigo-600' : 'text-neutral-400'}`}>
+                      <div className={`text-xs font-black tracking-widest ${step >= s.num ? 'text-indigo-600' : 'text-neutral-400 dark:text-dark-muted'}`}>
                         {s.label}
                       </div>
                       <div className={`h-1.5 w-16 mt-2 rounded-full transition-colors ${step >= s.num ? 'bg-indigo-600' : 'bg-neutral-200'}`}></div>
@@ -373,45 +373,45 @@ export default function NewDeedPage() {
             {step === 1 && !showSuccess && (
               <div className="animate-fadeIn space-y-10">
                 <section>
-                  <h2 className="text-sm font-black text-neutral-400 uppercase tracking-widest mb-6 pb-2 border-b border-neutral-200">Project Information</h2>
+                  <h2 className="text-sm font-black text-neutral-400 dark:text-dark-muted uppercase tracking-widest mb-6 pb-2 border-b border-neutral-200 dark:border-dark-border">Project Information</h2>
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-sm font-bold text-navy-900 mb-2">Project Title</label>
+                      <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Project Title</label>
                       <input
                         name="title" value={form.title} onChange={handleInput} placeholder="e.g. Redesign Landing Page"
-                        className="w-full px-5 py-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 placeholder:text-neutral-400 text-lg shadow-sm"
+                        className="w-full px-5 py-4 bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 dark:text-dark-primary placeholder:text-neutral-400 dark:text-dark-muted text-lg shadow-sm"
                       />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-bold text-navy-900 mb-2">Platform</label>
+                        <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Platform</label>
                         <input
                           name="platform" value={form.scopeBox.platform} onChange={handleScopeInput} placeholder="e.g. Freelancer, Upwork"
-                          className="w-full px-5 py-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 placeholder:text-neutral-400 shadow-sm"
+                          className="w-full px-5 py-4 bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 dark:text-dark-primary placeholder:text-neutral-400 dark:text-dark-muted shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-navy-900 mb-2">Seller Contact</label>
+                        <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Seller Contact</label>
                         <input
                           name="sellerContact" value={form.scopeBox.sellerContact} onChange={handleScopeInput} placeholder="Email or Profile URL"
-                          className="w-full px-5 py-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 placeholder:text-neutral-400 shadow-sm"
+                          className="w-full px-5 py-4 bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 dark:text-dark-primary placeholder:text-neutral-400 dark:text-dark-muted shadow-sm"
                         />
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-bold text-navy-900 mb-2">Detailed Description</label>
+                      <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Detailed Description</label>
                       <textarea
                         name="description" value={form.description} onChange={handleInput} placeholder="Describe the project goals and requirements..."
                         rows={5}
-                        className="w-full px-5 py-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 placeholder:text-neutral-400 resize-y shadow-sm"
+                        className="w-full px-5 py-4 bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 dark:text-dark-primary placeholder:text-neutral-400 dark:text-dark-muted resize-y shadow-sm"
                       />
                     </div>
                   </div>
                 </section>
 
-                <div className="flex justify-end pt-4 border-t border-neutral-200">
+                <div className="flex justify-end pt-4 border-t border-neutral-200 dark:border-dark-border">
                   <button
                     className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-600/20"
                     disabled={!validateStage1()}
@@ -427,79 +427,79 @@ export default function NewDeedPage() {
             {step === 2 && !showSuccess && (
               <div className="animate-fadeIn space-y-10">
                 <section>
-                  <h2 className="text-sm font-black text-neutral-400 uppercase tracking-widest mb-6 pb-2 border-b border-neutral-200">ScopeBox details</h2>
+                  <h2 className="text-sm font-black text-neutral-400 dark:text-dark-muted uppercase tracking-widest mb-6 pb-2 border-b border-neutral-200 dark:border-dark-border">ScopeBox details</h2>
                   <div className="space-y-6">
                     
                     <div>
                       <div className="flex justify-between items-end mb-2">
-                        <label className="block text-sm font-bold text-navy-900">Acceptance Criteria</label>
-                        <span className={`text-xs font-bold ${form.acceptanceCriteria.length < 50 ? 'text-red-500' : 'text-emerald-500'}`}>{form.acceptanceCriteria.length} / 50 min</span>
+                        <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary">Acceptance Criteria</label>
+                        <span className={`text-xs font-bold ${form.acceptanceCriteria.length < 50 ? 'text-red-500 dark:text-red-400' : 'text-emerald-500 dark:text-emerald-400'}`}>{form.acceptanceCriteria.length} / 50 min</span>
                       </div>
                       <textarea
                         name="acceptanceCriteria" value={form.acceptanceCriteria} onChange={handleInput} placeholder="How do you define 'done'? (e.g. I need 3 logo concepts in PNG format...)"
                         rows={4}
-                        className={`w-full px-5 py-4 bg-white border rounded-xl focus:ring-4 transition-all text-navy-900 placeholder:text-neutral-400 shadow-sm ${form.acceptanceCriteria.length > 0 && form.acceptanceCriteria.length < 50 ? 'border-red-300 focus:ring-red-500/10 focus:border-red-500' : 'border-neutral-200 focus:ring-indigo-500/10 focus:border-indigo-500'}`}
+                        className={`w-full px-5 py-4 bg-white dark:bg-dark-surface border rounded-xl focus:ring-4 transition-all text-navy-900 dark:text-dark-primary placeholder:text-neutral-400 dark:text-dark-muted shadow-sm ${form.acceptanceCriteria.length > 0 && form.acceptanceCriteria.length < 50 ? 'border-red-300 dark:border-red-500/50 focus:ring-red-500/10 dark:focus:ring-red-500/20 focus:border-red-500 dark:focus:border-red-400' : 'border-neutral-200 dark:border-dark-border focus:ring-indigo-500/10 focus:border-indigo-500'}`}
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-bold text-navy-900 mb-2">Delivery Deadline</label>
+                        <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Delivery Deadline</label>
                         <input
                           type="date" name="deadline" value={form.deadline} onChange={handleInput} min={new Date().toISOString().split('T')[0]}
-                          className="w-full px-5 py-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 shadow-sm"
+                          className="w-full px-5 py-4 bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 dark:text-dark-primary shadow-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-navy-900 mb-2">Revision Limit</label>
+                        <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Revision Limit</label>
                         <input
                           type="number" name="revisionLimit" value={form.revisionLimit} onChange={handleInput} placeholder="e.g. 2" min="0"
-                          className="w-full px-5 py-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 shadow-sm"
+                          className="w-full px-5 py-4 bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 dark:text-dark-primary shadow-sm"
                         />
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-bold text-navy-900 mb-2">Deliverable Formats</label>
+                      <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Deliverable Formats</label>
                       <input
                         type="text" name="deliverableFormats" value={form.deliverableFormats} onChange={handleInput} placeholder="e.g. PNG, PDF, ZIP (comma separated)"
-                        className="w-full px-5 py-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 shadow-sm"
+                        className="w-full px-5 py-4 bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-navy-900 dark:text-dark-primary shadow-sm"
                       />
                     </div>
                   </div>
                 </section>
 
                 <section>
-                  <div className="flex items-center justify-between mb-6 pb-2 border-b border-neutral-200">
-                    <h2 className="text-sm font-black text-neutral-400 uppercase tracking-widest">Milestones</h2>
+                  <div className="flex items-center justify-between mb-6 pb-2 border-b border-neutral-200 dark:border-dark-border">
+                    <h2 className="text-sm font-black text-neutral-400 dark:text-dark-muted uppercase tracking-widest">Milestones</h2>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" name="isMilestone" checked={form.isMilestone} onChange={handleInput} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-dark-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                     </label>
                   </div>
 
                   {form.isMilestone && (
                     <div className="space-y-6">
                       {form.milestones.map((m, idx) => (
-                        <div key={idx} className="p-6 border border-neutral-200 rounded-2xl bg-white shadow-sm relative">
-                          <button onClick={() => removeMilestone(idx)} className="absolute top-6 right-6 text-neutral-400 hover:text-red-500 text-sm font-bold transition-colors flex items-center">Remove</button>
-                          <h4 className="font-black text-navy-900 mb-4">Milestone {idx + 1}</h4>
+                        <div key={idx} className="p-6 border border-neutral-200 dark:border-dark-border rounded-2xl bg-white dark:bg-dark-surface shadow-sm relative">
+                          <button onClick={() => removeMilestone(idx)} className="absolute top-6 right-6 text-neutral-400 dark:text-dark-muted hover:text-red-500 dark:hover:text-red-400 text-sm font-bold transition-colors flex items-center">Remove</button>
+                          <h4 className="font-black text-navy-900 dark:text-dark-primary mb-4">Milestone {idx + 1}</h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-xs font-bold text-neutral-500 mb-1">Title *</label>
-                              <input value={m.title} onChange={(e) => updateMilestone(idx, 'title', e.target.value)} className="w-full px-4 py-3 border border-neutral-200 rounded-lg text-sm bg-neutral-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+                              <label className="block text-xs font-bold text-neutral-500 dark:text-dark-muted mb-1">Title *</label>
+                              <input value={m.title} onChange={(e) => updateMilestone(idx, 'title', e.target.value)} className="w-full px-4 py-3 border border-neutral-200 dark:border-dark-border rounded-lg text-sm bg-neutral-50 dark:bg-dark-bg focus:bg-white dark:bg-dark-surface focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
                             </div>
                             <div>
-                              <label className="block text-xs font-bold text-neutral-500 mb-1">Amount *</label>
-                              <input type="number" value={m.amount} onChange={(e) => updateMilestone(idx, 'amount', e.target.value)} className="w-full px-4 py-3 border border-neutral-200 rounded-lg text-sm bg-neutral-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+                              <label className="block text-xs font-bold text-neutral-500 dark:text-dark-muted mb-1">Amount *</label>
+                              <input type="number" value={m.amount} onChange={(e) => updateMilestone(idx, 'amount', e.target.value)} className="w-full px-4 py-3 border border-neutral-200 dark:border-dark-border rounded-lg text-sm bg-neutral-50 dark:bg-dark-bg focus:bg-white dark:bg-dark-surface focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
                             </div>
                             <div className="col-span-2">
-                              <label className="block text-xs font-bold text-neutral-500 mb-1">Acceptance Criteria</label>
-                              <textarea value={m.acceptanceCriteria} onChange={(e) => updateMilestone(idx, 'acceptanceCriteria', e.target.value)} rows={2} className="w-full px-4 py-3 border border-neutral-200 rounded-lg text-sm bg-neutral-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+                              <label className="block text-xs font-bold text-neutral-500 dark:text-dark-muted mb-1">Acceptance Criteria</label>
+                              <textarea value={m.acceptanceCriteria} onChange={(e) => updateMilestone(idx, 'acceptanceCriteria', e.target.value)} rows={2} className="w-full px-4 py-3 border border-neutral-200 dark:border-dark-border rounded-lg text-sm bg-neutral-50 dark:bg-dark-bg focus:bg-white dark:bg-dark-surface focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
                             </div>
                             <div>
-                              <label className="block text-xs font-bold text-neutral-500 mb-1">Deadline *</label>
-                              <input type="date" value={m.deadline} onChange={(e) => updateMilestone(idx, 'deadline', e.target.value)} className="w-full px-4 py-3 border border-neutral-200 rounded-lg text-sm bg-neutral-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+                              <label className="block text-xs font-bold text-neutral-500 dark:text-dark-muted mb-1">Deadline *</label>
+                              <input type="date" value={m.deadline} onChange={(e) => updateMilestone(idx, 'deadline', e.target.value)} className="w-full px-4 py-3 border border-neutral-200 dark:border-dark-border rounded-lg text-sm bg-neutral-50 dark:bg-dark-bg focus:bg-white dark:bg-dark-surface focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
                             </div>
                           </div>
                         </div>
@@ -511,8 +511,8 @@ export default function NewDeedPage() {
                   )}
                 </section>
 
-                <div className="flex justify-between pt-4 border-t border-neutral-200">
-                  <button className="px-6 py-4 text-neutral-500 font-bold hover:text-navy-900 transition-colors" onClick={() => setStep(1)}>Back</button>
+                <div className="flex justify-between pt-4 border-t border-neutral-200 dark:border-dark-border">
+                  <button className="px-6 py-4 text-neutral-500 dark:text-dark-muted font-bold hover:text-navy-900 dark:hover:text-dark-primary dark:text-dark-primary transition-colors" onClick={() => setStep(1)}>Back</button>
                   <button
                     className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-600/20"
                     disabled={!validateStage2()}
@@ -528,24 +528,24 @@ export default function NewDeedPage() {
             {step === 3 && !showSuccess && (
               <div className="animate-fadeIn space-y-10">
                 <section>
-                  <h2 className="text-sm font-black text-neutral-400 uppercase tracking-widest mb-6 pb-2 border-b border-neutral-200">Review & Validate</h2>
+                  <h2 className="text-sm font-black text-neutral-400 dark:text-dark-muted uppercase tracking-widest mb-6 pb-2 border-b border-neutral-200 dark:border-dark-border">Review & Validate</h2>
                   
-                  <div className="bg-white border border-neutral-200 shadow-sm rounded-2xl p-8 mb-8">
-                    <h3 className="text-xl font-black text-navy-900 mb-6 font-inter">{form.title}</h3>
+                  <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border shadow-sm rounded-2xl p-8 mb-8">
+                    <h3 className="text-xl font-black text-navy-900 dark:text-dark-primary mb-6 font-inter">{form.title}</h3>
                     <div className="space-y-6">
                       <div>
-                        <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Description</div>
+                        <div className="text-xs font-bold text-neutral-400 dark:text-dark-muted uppercase tracking-wider mb-1">Description</div>
                         <p className="text-neutral-700 text-sm leading-relaxed">{form.description}</p>
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Acceptance Criteria</div>
-                        <p className="text-neutral-700 text-sm leading-relaxed bg-neutral-50 p-4 rounded-xl border border-neutral-100">{form.acceptanceCriteria}</p>
+                        <div className="text-xs font-bold text-neutral-400 dark:text-dark-muted uppercase tracking-wider mb-1">Acceptance Criteria</div>
+                        <p className="text-neutral-700 text-sm leading-relaxed bg-neutral-50 dark:bg-dark-bg p-4 rounded-xl border border-neutral-100 dark:border-dark-border">{form.acceptanceCriteria}</p>
                       </div>
                     </div>
                   </div>
                   
                   
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-5 mb-8 flex items-start gap-3">
+                  <div className="bg-neutral-50 dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-xl p-5 mb-8 flex items-start gap-3">
                     <input
                       type="checkbox"
                       id="isReviewed"
@@ -554,23 +554,23 @@ export default function NewDeedPage() {
                       onChange={handleInput}
                       className="mt-1 w-5 h-5 text-indigo-600 border-neutral-300 rounded focus:ring-indigo-500 cursor-pointer"
                     />
-                    <label htmlFor="isReviewed" className="text-sm font-medium text-navy-900 cursor-pointer select-none">
+                    <label htmlFor="isReviewed" className="text-sm font-medium text-navy-900 dark:text-dark-primary cursor-pointer select-none">
                       I have reviewed the project details and acceptance criteria. I confirm they accurately represent the agreement.
                     </label>
                   </div>
                   
                   {getMissingFields().length > 0 && (
-                     <div className="bg-red-50 border border-red-200 rounded-xl p-5 mb-8">
-                       <h4 className="font-bold text-red-700 flex items-center gap-2 mb-2"><AlertTriangle size={18} /> Missing Information</h4>
-                       <ul className="list-disc pl-5 text-sm text-red-600 space-y-1">
+                     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl p-5 mb-8">
+                       <h4 className="font-bold text-red-700 dark:text-red-400 flex items-center gap-2 mb-2"><AlertTriangle size={18} /> Missing Information</h4>
+                       <ul className="list-disc pl-5 text-sm text-red-600 dark:text-red-400 space-y-1">
                          {getMissingFields().map((err, i) => <li key={i}>{err}</li>)}
                        </ul>
                      </div>
                   )}
                 </section>
 
-                <div className="flex justify-between pt-4 border-t border-neutral-200">
-                  <button className="px-6 py-4 text-neutral-500 font-bold hover:text-navy-900 transition-colors" onClick={() => setStep(2)}>Back</button>
+                <div className="flex justify-between pt-4 border-t border-neutral-200 dark:border-dark-border">
+                  <button className="px-6 py-4 text-neutral-500 dark:text-dark-muted font-bold hover:text-navy-900 dark:hover:text-dark-primary dark:text-dark-primary transition-colors" onClick={() => setStep(2)}>Back</button>
                   <button
                     className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-600/20"
                     disabled={!validateStage3()}
@@ -586,15 +586,15 @@ export default function NewDeedPage() {
             {step === 4 && !showSuccess && (
               <div className="animate-fadeIn space-y-10">
                 <section>
-                  <h2 className="text-sm font-black text-neutral-400 uppercase tracking-widest mb-6 pb-2 border-b border-neutral-200">Payment & Escrow</h2>
+                  <h2 className="text-sm font-black text-neutral-400 dark:text-dark-muted uppercase tracking-widest mb-6 pb-2 border-b border-neutral-200 dark:border-dark-border">Payment & Escrow</h2>
                   
-                  <div className="bg-white border border-neutral-200 shadow-sm rounded-2xl p-8 mb-8 space-y-8">
+                  <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border shadow-sm rounded-2xl p-8 mb-8 space-y-8">
                     <div className="grid grid-cols-2 gap-8">
                       <div>
-                        <label className="block text-sm font-bold text-navy-900 mb-2">Currency *</label>
+                        <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Currency *</label>
                         <select
                           name="currency" value={form.currency} onChange={handleInput}
-                          className="w-full px-5 py-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-navy-900"
+                          className="w-full px-5 py-4 bg-neutral-50 dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-navy-900 dark:text-dark-primary"
                         >
                           <option value="INR">INR (₹)</option>
                           <option value="USD">USD ($)</option>
@@ -602,18 +602,18 @@ export default function NewDeedPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-bold text-navy-900 mb-2">Total Amount *</label>
+                        <label className="block text-sm font-bold text-navy-900 dark:text-dark-primary mb-2">Total Amount *</label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                            <span className="text-neutral-500 font-black">{form.currency === 'INR' ? '₹' : '$'}</span>
+                            <span className="text-neutral-500 dark:text-dark-muted font-black">{form.currency === 'INR' ? '₹' : '$'}</span>
                           </div>
                           <input
                             type="number" name="amount" value={form.amount} onChange={handleInput} placeholder="0.00" min="0"
-                            className="w-full pl-12 pr-5 py-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-black text-navy-900 text-xl shadow-sm"
+                            className="w-full pl-12 pr-5 py-4 bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-black text-navy-900 dark:text-dark-primary text-xl shadow-sm"
                           />
                         </div>
                         {form.isMilestone && (
-                          <div className={`text-sm mt-3 font-bold flex items-center gap-1.5 ${!isMilestoneMathValid() ? 'text-red-500 bg-red-50 px-3 py-2 rounded-lg border border-red-100' : 'text-emerald-600'}`}>
+                          <div className={`text-sm mt-3 font-bold flex items-center gap-1.5 ${!isMilestoneMathValid() ? 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-100 dark:border-red-900/50' : 'text-emerald-600 dark:text-emerald-400'}`}>
                             {!isMilestoneMathValid() ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
                             Milestone sum: {getTotalMilestoneAmount()}
                           </div>
@@ -623,8 +623,8 @@ export default function NewDeedPage() {
                   </div>
                 </section>
 
-                <div className="flex justify-between pt-4 border-t border-neutral-200">
-                  <button className="px-6 py-4 text-neutral-500 font-bold hover:text-navy-900 transition-colors" onClick={() => setStep(3)}>Back</button>
+                <div className="flex justify-between pt-4 border-t border-neutral-200 dark:border-dark-border">
+                  <button className="px-6 py-4 text-neutral-500 dark:text-dark-muted font-bold hover:text-navy-900 dark:hover:text-dark-primary dark:text-dark-primary transition-colors" onClick={() => setStep(3)}>Back</button>
                   <button
                     className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-600/30"
                     disabled={!validateStage4() || loading}
@@ -638,21 +638,21 @@ export default function NewDeedPage() {
 
             {/* Success Screen */}
             {showSuccess && deedData && (
-              <div className="bg-white border border-neutral-200 rounded-3xl p-16 text-center shadow-sm animate-fadeIn">
-                <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8 text-5xl text-emerald-500 shadow-inner">
+              <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-3xl p-16 text-center shadow-sm animate-fadeIn">
+                <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-8 text-5xl text-emerald-500 dark:text-emerald-400 shadow-inner">
                   <Check />
                 </div>
-                <h2 className="text-4xl font-black text-navy-900 font-inter mb-4">Deed Secured!</h2>
-                <p className="text-neutral-500 text-lg max-w-lg mx-auto mb-10">
+                <h2 className="text-4xl font-black text-navy-900 dark:text-dark-primary font-inter mb-4">Deed Secured!</h2>
+                <p className="text-neutral-500 dark:text-dark-muted text-lg max-w-lg mx-auto mb-10">
                   Funds are locked in escrow. Share this invite link with the seller to start work.
                 </p>
 
-                <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-6 mb-10 max-w-lg mx-auto text-left shadow-sm">
-                  <label className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 block">Secure Invite Link</label>
+                <div className="bg-neutral-50 dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-2xl p-6 mb-10 max-w-lg mx-auto text-left shadow-sm">
+                  <label className="text-xs font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-widest mb-2 block">Secure Invite Link</label>
                   <div className="flex gap-2">
                     <input 
                       readOnly value={`${window.location.origin}/deed/invite/${deedData.inviteToken}`}
-                      className="flex-1 px-4 py-3 border border-neutral-200 rounded-xl text-sm bg-white text-navy-900 font-bold focus:outline-none focus:border-indigo-300"
+                      className="flex-1 px-4 py-3 border border-neutral-200 dark:border-dark-border rounded-xl text-sm bg-white dark:bg-dark-surface text-navy-900 dark:text-dark-primary font-bold focus:outline-none focus:border-indigo-300"
                     />
                     <button 
                       onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/deed/invite/${deedData.inviteToken}`); toast.success('Copied!'); }}
@@ -673,41 +673,41 @@ export default function NewDeedPage() {
             <div className="lg:col-span-4 lg:sticky lg:top-32 animate-fadeIn space-y-6">
               
               {/* Contract Preview Card */}
-              <div className="bg-white border-2 border-neutral-900 rounded-2xl shadow-[8px_8px_0px_0px_rgba(23,23,23,1)] overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[10px_10px_0px_0px_rgba(23,23,23,1)]">
+              <div className="bg-white dark:bg-dark-surface border-2 border-neutral-900 rounded-2xl shadow-[8px_8px_0px_0px_rgba(23,23,23,1)] overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[10px_10px_0px_0px_rgba(23,23,23,1)]">
                 <div className="bg-neutral-900 px-6 py-5">
-                  <div className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mb-1">Live Agreement Preview</div>
+                  <div className="text-[10px] font-black text-neutral-400 dark:text-dark-muted uppercase tracking-[0.2em] mb-1">Live Agreement Preview</div>
                   <h3 className="font-black text-white text-xl truncate tracking-tight uppercase">
                     {form.title || 'UNTITLED'}
                   </h3>
                 </div>
                 
-                <div className="p-6 space-y-5 bg-[#FAFAFA]">
-                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 border-dashed">
-                    <div className="text-xs font-black text-neutral-500 uppercase tracking-widest">Buyer</div>
-                    <div className="text-sm font-bold text-navy-900">{buyerData?.firstName} {buyerData?.lastName}</div>
+                <div className="p-6 space-y-5 bg-[#FAFAFA] dark:bg-dark-bg">
+                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 dark:border-dark-border border-dashed">
+                    <div className="text-xs font-black text-neutral-500 dark:text-dark-muted uppercase tracking-widest">Buyer</div>
+                    <div className="text-sm font-bold text-navy-900 dark:text-dark-primary">{buyerData?.firstName} {buyerData?.lastName}</div>
                   </div>
-                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 border-dashed">
-                    <div className="text-xs font-black text-neutral-500 uppercase tracking-widest">Seller</div>
-                    <div className="text-sm font-bold text-navy-900 max-w-[150px] truncate">{form.scopeBox.sellerContact || 'Pending'}</div>
+                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 dark:border-dark-border border-dashed">
+                    <div className="text-xs font-black text-neutral-500 dark:text-dark-muted uppercase tracking-widest">Seller</div>
+                    <div className="text-sm font-bold text-navy-900 dark:text-dark-primary max-w-[150px] truncate">{form.scopeBox.sellerContact || 'Pending'}</div>
                   </div>
-                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 border-dashed">
-                    <div className="text-xs font-black text-neutral-500 uppercase tracking-widest">Escrow</div>
+                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 dark:border-dark-border border-dashed">
+                    <div className="text-xs font-black text-neutral-500 dark:text-dark-muted uppercase tracking-widest">Escrow</div>
                     <div className="text-sm font-black text-indigo-600">
                       {form.amount ? formatCurrency(form.amount, form.currency) : 'Pending'}
                     </div>
                   </div>
-                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 border-dashed">
-                    <div className="text-xs font-black text-neutral-500 uppercase tracking-widest">Deadline</div>
-                    <div className="text-sm font-bold text-navy-900">{form.deadline || 'Pending'}</div>
+                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 dark:border-dark-border border-dashed">
+                    <div className="text-xs font-black text-neutral-500 dark:text-dark-muted uppercase tracking-widest">Deadline</div>
+                    <div className="text-sm font-bold text-navy-900 dark:text-dark-primary">{form.deadline || 'Pending'}</div>
                   </div>
-                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 border-dashed">
-                    <div className="text-xs font-black text-neutral-500 uppercase tracking-widest">Status</div>
-                    <div className="text-xs font-black px-2 py-1 bg-neutral-200 text-neutral-600 rounded">DRAFT</div>
+                  <div className="flex justify-between items-start pb-4 border-b border-neutral-200 dark:border-dark-border border-dashed">
+                    <div className="text-xs font-black text-neutral-500 dark:text-dark-muted uppercase tracking-widest">Status</div>
+                    <div className="text-xs font-black px-2 py-1 bg-neutral-200 text-neutral-600 dark:text-dark-muted rounded">DRAFT</div>
                   </div>
                   
                   <div className="pt-2">
                     <div className="flex justify-between items-end mb-2">
-                      <div className="text-xs font-black text-neutral-500 uppercase tracking-widest">ScopeBox</div>
+                      <div className="text-xs font-black text-neutral-500 dark:text-dark-muted uppercase tracking-widest">ScopeBox</div>
                       <div className="text-xs font-black text-indigo-600">{calculateScopeBoxCompletion()}%</div>
                     </div>
                     <div className="w-full h-2.5 bg-neutral-200 rounded-full overflow-hidden">
@@ -716,7 +716,7 @@ export default function NewDeedPage() {
                   </div>
                 </div>
                 
-                <div className="bg-white px-6 py-4 border-t-2 border-neutral-900 flex items-center justify-between text-xs font-bold text-neutral-500">
+                <div className="bg-white dark:bg-dark-surface px-6 py-4 border-t-2 border-neutral-900 flex items-center justify-between text-xs font-bold text-neutral-500 dark:text-dark-muted">
                   <div className="flex items-center gap-1.5"><Save size={14} /> Autosave active</div>
                   <div>{timeAgo(saveTime)}</div>
                 </div>
@@ -724,9 +724,9 @@ export default function NewDeedPage() {
 
               {/* Missing Fields Widget (Only show if there are actual missing fields from earlier stages) */}
               {getMissingFields().length > 0 && step > 2 && (
-                 <div className="bg-red-50 border-l-4 border-red-500 rounded-r-xl p-5 shadow-sm">
-                   <h4 className="font-bold text-red-700 text-sm mb-2 uppercase tracking-wide">Action Required</h4>
-                   <p className="text-xs text-red-600 font-medium">You have incomplete fields in previous stages. Review is locked.</p>
+                 <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-500/50 rounded-r-xl p-5 shadow-sm">
+                   <h4 className="font-bold text-red-700 dark:text-red-400 text-sm mb-2 uppercase tracking-wide">Action Required</h4>
+                   <p className="text-xs text-red-600 dark:text-red-400 font-medium">You have incomplete fields in previous stages. Review is locked.</p>
                  </div>
               )}
             </div>
@@ -737,13 +737,13 @@ export default function NewDeedPage() {
       {/* Funding Modal (Unchanged) */}
       {showFundingModal && deedData && (
         <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border border-neutral-100 animate-fadeIn">
-            <h3 className="text-2xl font-bold text-navy-900 font-inter mb-2 text-center">Fund Escrow</h3>
-            <p className="text-neutral-500 font-inter text-sm text-center mb-6">Complete payment to secure your order.</p>
+          <div className="bg-white dark:bg-dark-surface rounded-3xl shadow-2xl p-8 max-w-md w-full border border-neutral-100 dark:border-dark-border animate-fadeIn">
+            <h3 className="text-2xl font-bold text-navy-900 dark:text-dark-primary font-inter mb-2 text-center">Fund Escrow</h3>
+            <p className="text-neutral-500 dark:text-dark-muted font-inter text-sm text-center mb-6">Complete payment to secure your order.</p>
 
-            <div className="bg-neutral-50 rounded-2xl p-6 mb-8 text-center border border-neutral-200">
-              <div className="text-sm font-semibold text-neutral-500 font-inter mb-2 uppercase tracking-wider">Total to Pay</div>
-              <div className="text-4xl font-bold text-navy-900 font-inter">{formatCurrency(deedData.amount, deedData.currency)}</div>
+            <div className="bg-neutral-50 dark:bg-dark-bg rounded-2xl p-6 mb-8 text-center border border-neutral-200 dark:border-dark-border">
+              <div className="text-sm font-semibold text-neutral-500 dark:text-dark-muted font-inter mb-2 uppercase tracking-wider">Total to Pay</div>
+              <div className="text-4xl font-bold text-navy-900 dark:text-dark-primary font-inter">{formatCurrency(deedData.amount, deedData.currency)}</div>
             </div>
 
             <button 

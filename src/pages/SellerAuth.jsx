@@ -105,11 +105,11 @@ const SellerAuth = () => {
     setFormData({ email: '', password: '', confirmPassword: '', firstName: '', lastName: '', phone: '', country: '', businessName: '' });
   };
 
-  const inputClass = "w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-[#0A2540] placeholder-neutral-400 font-inter text-sm shadow-sm";
-  const labelClass = "block text-sm font-medium mb-1.5 text-[#0A2540] font-inter";
+  const inputClass = "w-full px-4 py-3 border border-neutral-200 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-indigo-500 dark:focus:border-dark-accent transition-all duration-200 bg-white dark:bg-dark-elevated text-[#0A2540] dark:text-dark-primary placeholder-neutral-400 dark:placeholder-dark-muted font-inter text-sm shadow-sm";
+  const labelClass = "block text-sm font-medium mb-1.5 text-[#0A2540] dark:text-dark-primary font-inter";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-white dark:bg-navy-950">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-white dark:bg-dark-bg transition-colors">
       <HeroFlowShader />
 
       <div className="max-w-md w-full relative z-10">
@@ -120,12 +120,12 @@ const SellerAuth = () => {
         </div>
 
         {/* Auth Card */}
-        <div className="bg-white border border-neutral-200 rounded-2xl shadow-lg p-8">
+        <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-2xl shadow-lg p-8 transition-colors">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-[#0A2540] font-inter">
+            <h2 className="text-2xl font-bold text-[#0A2540] dark:text-dark-primary font-inter">
               {isLogin ? 'Welcome Back' : 'Join as Seller'}
             </h2>
-            <p className="mt-1 text-sm text-neutral-500 font-inter">
+            <p className="mt-1 text-sm text-neutral-500 dark:text-dark-muted font-inter">
               {isLogin ? 'Sign in to your seller account' : 'Create your seller account'}
             </p>
           </div>
@@ -218,7 +218,7 @@ const SellerAuth = () => {
           </form>
 
           <div className="mt-5 text-center">
-            <p className="text-sm text-neutral-500 font-inter">
+            <p className="text-sm text-neutral-500 dark:text-dark-muted font-inter">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button onClick={toggleMode} className="ml-1.5 font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
                 {isLogin ? 'Sign up' : 'Sign in'}
@@ -228,7 +228,7 @@ const SellerAuth = () => {
 
           {isLogin && (
             <div className="mt-3 text-center">
-              <button className="text-sm text-neutral-400 hover:text-neutral-600 transition-colors font-inter">
+              <button className="text-sm text-neutral-400 dark:text-dark-muted hover:text-neutral-600 dark:hover:text-dark-primary transition-colors font-inter">
                 Forgot your password?
               </button>
             </div>
@@ -237,7 +237,7 @@ const SellerAuth = () => {
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-xs text-neutral-400 font-inter">
+          <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">
             By continuing, you agree to our{' '}
             <a href="#" className="text-indigo-600 hover:text-indigo-800 transition-colors">Terms of Service</a>
             {' '}and{' '}

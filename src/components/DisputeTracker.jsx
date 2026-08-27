@@ -53,7 +53,7 @@ const DisputeTracker = ({ userId, userRole }) => {
 
   const getStatusColor = (status) => {
     const colors = {
-      'OPEN': 'bg-red-100 text-red-800',
+      'OPEN': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400',
       'CHALLENGE_PHASE': 'bg-yellow-100 text-yellow-800',
       'ESCALATED': 'bg-purple-100 text-purple-800',
       'RESOLVED': 'bg-green-100 text-green-800',
@@ -67,7 +67,7 @@ const DisputeTracker = ({ userId, userRole }) => {
       'LOW': 'bg-green-100 text-green-800',
       'MEDIUM': 'bg-yellow-100 text-yellow-800',
       'HIGH': 'bg-orange-100 text-orange-800',
-      'URGENT': 'bg-red-100 text-red-800'
+      'URGENT': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
     };
     return colors[priority] || 'bg-gray-100 text-gray-800';
   };
@@ -96,15 +96,15 @@ const DisputeTracker = ({ userId, userRole }) => {
 
   const getResolutionColor = (resolution) => {
     const side = getResolutionSide(resolution);
-    return side === 'buyer' ? 'text-red-600' : 
-           side === 'seller' ? 'text-emerald-600' : 
-           'text-amber-600';
+    return side === 'buyer' ? 'text-red-600 dark:text-red-400' : 
+           side === 'seller' ? 'text-emerald-600 dark:text-emerald-400' : 
+           'text-amber-600 dark:text-amber-400';
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500"></div>
       </div>
     );
   }
@@ -118,7 +118,7 @@ const DisputeTracker = ({ userId, userRole }) => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-6 mb-6">
         <div className="flex items-center space-x-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
@@ -149,7 +149,7 @@ const DisputeTracker = ({ userId, userRole }) => {
       {/* Disputes List */}
       <div className="space-y-6">
         {disputes.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
+          <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-8 text-center">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -158,13 +158,13 @@ const DisputeTracker = ({ userId, userRole }) => {
           </div>
         ) : (
           disputes.map((dispute) => (
-            <div key={dispute.id} className="bg-white rounded-lg shadow overflow-hidden">
+            <div key={dispute.id} className="bg-white dark:bg-dark-surface rounded-lg shadow overflow-hidden">
               <div className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                        <svg className="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                       </div>
@@ -217,9 +217,9 @@ const DisputeTracker = ({ userId, userRole }) => {
                           <div className="flex items-center gap-2 mt-2">
                             <span className="text-xs text-gray-500">Favors:</span>
                             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                              getResolutionSide(dispute.resolution) === 'buyer' ? 'bg-red-100 text-red-700' :
-                              getResolutionSide(dispute.resolution) === 'seller' ? 'bg-emerald-100 text-emerald-700' :
-                              'bg-amber-100 text-amber-700'
+                              getResolutionSide(dispute.resolution) === 'buyer' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                              getResolutionSide(dispute.resolution) === 'seller' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
+                              'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                             }`}>
                               {getResolutionSide(dispute.resolution) === 'buyer' ? '👤 Buyer' :
                                getResolutionSide(dispute.resolution) === 'seller' ? '🛠️ Seller' :
@@ -259,7 +259,7 @@ const DisputeTracker = ({ userId, userRole }) => {
                             href={url.startsWith('http') ? url : `${window.location.origin}${url}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-blue-600 hover:text-blue-800"
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:text-blue-400"
                           >
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -298,7 +298,7 @@ const DisputeTracker = ({ userId, userRole }) => {
                   <div className="mt-6 flex items-center justify-between">
                     <button
                       onClick={() => setSelectedDispute(dispute)}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:text-blue-400 text-sm font-medium"
                     >
                       View Details
                     </button>
@@ -347,7 +347,7 @@ const DisputeDetailModal = ({ dispute, userRole, onClose, onAddEvidence }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-dark-surface">
         <div className="mt-3">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-gray-900">Dispute Details</h3>
@@ -400,7 +400,7 @@ const DisputeDetailModal = ({ dispute, userRole, onClose, onAddEvidence }) => {
                       href={url.startsWith('http') ? url : `${window.location.origin}${url}`}
                         target="_blank" 
                         rel="noopener noreferrer"
-                      className="block text-sm text-blue-600 hover:text-blue-800"
+                      className="block text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:text-blue-400"
                       >
                       Evidence {index + 1}
                       </a>

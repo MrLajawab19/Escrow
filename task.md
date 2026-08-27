@@ -1,629 +1,79 @@
 # ScrowX — Comprehensive Task & History Tracker
 
-## How to use this file
-- Canonical checklist for all work on ScrowX, in chronological order.
-- Mark items `[/]` when starting, `[x]` when done, `[ ]` when not started.
-- Add new tickets at the bottom. **Never delete completed tickets — they are permanent record.**
-- Last updated: 2026-07-21
-
----
-
-## Pre-Antigravity MVP (March 2026)
-> Initial Sequelize→Prisma port, basic escrow flow. Commits `cdcf97d`–`8d3c960`.
-
-- [x] Basic escrow order flow (buyer/seller dashboards, scope box, dispute box)
-- [x] Seller Dashboard with scope request management and order fulfillment
-- [x] ScopeBox preview and niche-specific scope types (logo, content writing, etc.)
-- [x] Dispute system (basic modal, auto-release stub)
-- [x] Deploy to Railway (backend) + Netlify (frontend)
-- [x] `.env` security: remove from git, add `.gitignore` and `.env.example`
-
----
-
-## Phase 1 — Foundation Hardening
-> Commits `2e75cdf`, `d4a6140`. Sessions: `fcace840`.
-
-- [x] 1.1 — JWT Standardization & Backend Fixes
-- [x] 1.2 — Frontend API Integration Fix
-- [x] 1.3 — Error Handling, Loading States & 404
-
-## Phase 2 — Unified Deed → Order Bridge
-> Commits `6f4fc08`, `22097de`, `57508ec`.
-
-- [x] 2.1 — Backend: Deed → Order Bridge (Deed model created, Order used as bridge)
-- [x] 2.2 — Deed Creation Frontend (`NewDeedPage.jsx` initial version)
-- [x] 2.3 — Seller Deed Acceptance & Funding Flow
-
-## Phase 3 — KYC & Identity Verification
-> Commits `a017549`, `f3daa46`, `b3b0c83`.
-
-- [x] 3.1 — OTP Backend (Fast2SMS integration)
-- [x] 3.2 — ID Upload & KYC Gating (middleware)
-- [x] 3.3 — KYC Frontend
-
-## Phase 4 — Dispute Engine & AI (Initial)
-> Commit `6e87643`.
-
-- [x] 4.1 — Universal Rule Engine (category-based, scopeBox-driven)
-- [x] 4.2 — Universal Dispute AI (Gemini integration)
-- [x] 4.3 — Dispute Frontend Polish (new dispute modal)
-
-## Phase 5 — Initial Razorpay Integration
-> Commit `3184e0e`.
-
-- [x] End-to-end wallet functionality with Razorpay
-
-## Phase 6 — Notifications & Emails
-> Commit `07e7842`.
-
-- [x] Notification backend
-- [x] Resend email service
-- [x] In-app notification UI
-
-## Phase 7 — User Profiles & Ratings
-> Commits `8d5133a`, `870ab13`, `f14500a`.
-
-- [x] 7.1 — Review System Backend
-- [x] 7.2 — Seller Profile Frontend
-- [x] 7.3 — Buyer Profile & Profile Images
-
-## Phase 8 — Deed Milestone Tracker & Audit Ledger
-> Commit `851cfb0`.
-
-- [x] 8.1 — Milestone Tracker Frontend
-- [x] 8.2 — Deed Signing & Content Hash (SHA-256 hash chain via AuditLedger)
-- [x] 8.3 — Audit Ledger Viewer
-
-## Phase 9 — Admin Panel (Initial)
-> Commits `3ec9f2d`, `5f09702`.
-
-- [x] 9.1 — Admin KYC & User Management
-- [x] 9.2 — Admin Dashboard Functionalities
-
----
-
-## Wallet Hardening — Subphase A–F
-
-### Subphase A — Initial Razorpay Top-Up Hardening
-> Commit `eccb47c`.
-- [x] Server-side double payment prevention for top-ups
-
-### Subphase A Fix — Atomic Row-Level Lock
-> Commit `ab43e6c`.
-- [x] Make top-up double payment prevention atomic using row-level lock
-
-### Subphase B Fix — Graceful Concurrent Polling
-> Commit `2891648`.
-- [x] Graceful polling for concurrent Razorpay orders; add cron job flag
-
-### Subphase E — Float → Int (Paise) Migration
-> Commit `d94d1362-session`. Commit `bf71047` (Render deploy fix).
-- [x] Update `schema.prisma` Float → Int (all monetary fields now in paise/subunits)
-- [x] Run `npx prisma db push --accept-data-loss` (Float→Int cast)
-- [x] Update `validationUtils.js` upper bound
-- [x] Update `walletService.js` fee calculations (`Math.floor`)
-- [x] Update `deedService.js` (`parseInt`, `Math.floor`)
-- [x] Update `paymentController.js` (remove `/100` division)
-- [x] Update test scripts for paise amounts
-
-### Subphase F — Ledger-Derived `lockedBalance` Reconciliation
-> Commit `41f23cf`.
-- [x] `lockedBalance` derived from ledger (deed amounts), not mutable wallet field
-
----
-
-## Phase 5 — Payment Gateway Full Rewrite (JIT/Webhook Architecture)
-> Commits `797a06c`–`3cc98cc`. Session: `d94d1362`-adjacent.
-
-- [x] Phase 5 Step 1: `WebhookEvent` schema; rate limiter; critical route auth fix
-- [x] Phase 5 Step 2: `paymentService.js` and JIT webhook rewrite with idempotency
-- [x] Phase 5 Step 2 Fix: Payout webhooks, stuck-PROCESSING crash recovery, auto-seeding tests
-- [x] Phase 5 Step 2.5: Harden withdrawal flows and idempotency race conditions
-- [x] Phase 5 Step 2.6: Remove legacy `processTransaction` and `updateWalletBalance` recalculation
-- [x] Phase 5 Security: Purge dead legacy mutation endpoints (`cancelOrder`, `rejectOrder`, `refundBuyer`)
-- [x] Phase 5 Security: Disable legacy refund route in `orders.js`
-- [x] Phase 5 Security: Auth guards, `walletLimiter` on reject
-- [x] Phase 5 Step 3: Real Razorpay top-up flow; disable direct fund routes
-- [x] Phase 5 Step 3 Fix: Unit mismatch bug; standardise on paise for top-ups
-- [x] Phase 5 Step 4: Tune `walletLimiter` max to 20; use `req.user.id` explicitly
-- [x] Phase 5 Final: E2E uses webhooks; payout stubs blocked with warnings
-- [x] Phase 5 Final: Wire `TopUpModal` to real Razorpay Checkout.js + async polling message
-- [x] `getWalletSummary` fixed for sellers; architecture note on ledger limits (`9183f40`)
-
-## Phase 10 — Security & Performance
-> Commits `f976238`, `7c1720a`, `3a400e1`.
-
-- [x] 10.1 — Helmet, rate limiting, and input validation middleware
-- [x] 10.2 — Admin queue pagination + N+1 query fixes
-- [x] 10.3 — react-helmet-async SEO tags + route-level lazy loading
-
----
-
-## UI/UX Sessions
-
-### Landing Page Redesign
-> Session `d155ec8e`. Commits in `21a5b04`-adjacent work.
-- [x] Audit and remove global CSS conflicts (`index.css` / `App.css`)
-- [x] Create `LandingNavbar.jsx`, `HeroEmbedded.jsx`, `TrustStrip.jsx`
-- [x] Create `InteractiveTimeline.jsx`, `ScopeBoxPreview.jsx`, `DisputeComparison.jsx`, `FinalCTA.jsx`
-- [x] Refactor `LandingPage.jsx` to wrap new components
-
-### Dark Mode
-> Session `c85e8022`. Commit `b43fa70`.
-- [x] `ThemeContext` + `App` provider
-- [x] Flash-prevention script in `index.html`
-- [x] Dark mode applied to all landing page components and `AuthModal.jsx`
-- [x] Dark mode preserved on `DisputeComparison.jsx` (intentional dark styling)
-
-### Multi-Currency Support
-> Session `57201c01`.
-- [x] `CurrencyContext.jsx` with live exchange-rate API
-- [x] Currency dropdown in `WalletDashboard.jsx`
-- [x] `formatCurrency` applied across all amount displays (WalletDashboard, BuyerDashboard, SellerDashboard, TransactionHistory, TopUpModal, WithdrawalModal)
-
-### Admin Dashboard Full Redesign
-> Session `a12e2412`. Commit `bbf396e`.
-- [x] `AdminLayout.jsx`, `AdminSidebar.jsx`, `AdminHeader.jsx`
-- [x] `AdminMetricCard.jsx`, `SystemHealth.jsx`, `RecentActivity.jsx`, `OverviewTab.jsx`
-- [x] `AdminTable.jsx`, `AdminPagination.jsx`
-- [x] `OrdersTab.jsx`, `DisputesTab.jsx`, `DeedsTab.jsx`, `KycQueueTab.jsx`, `UsersTab.jsx`
-- [x] `FinancialsTab.jsx`, `SettlementsTab.jsx` + stub tabs (AuditLogs, Reports, SystemSettings)
-- [x] Responsive layout, `React.memo`/`useMemo` optimisation
-
-### NewDeedPage — Generic Form Rewrite (Pre-4-Stage)
-> Session `a6d3697b`. Commit precedes `3d23e63`.
-- [x] Rewrite `NewDeedPage.jsx` with generic form fields (removed niche-specific ScopeBox logic)
-- [x] Milestone toggle and per-milestone breakdown UI
-- [x] `orderController.createOrder` deprecated in favour of `deedController.createDeed`
-- [x] Backend routing verified and payload validation tested
-
-### Wallet & Ledger UI Full Redesign
-> Session `101cbdab`.
-- [x] Scaffold `src/components/wallet/`
-- [x] `WalletSkeleton.jsx`, `WalletEmptyState.jsx`
-- [x] `WalletHeader.jsx`, `WalletHeroCard.jsx`, `WalletInsights.jsx`
-- [x] `QuickActions.jsx`, `AnalyticsSection.jsx`, `SpendingDonut.jsx`
-- [x] `TransactionTable.jsx`, `TransactionRow.jsx` (migrated `TransactionHistory.jsx` logic)
-- [x] `PaymentMethods.jsx`, `LedgerTimeline.jsx`
-- [x] `WalletDashboard.jsx` refactored as single source of truth (single API fetch)
-- [ ] ⚠️ Responsiveness verification across breakpoints (1440/1280/1024/768/480/390) — deferred
-- [ ] ⚠️ Final pixel-perfect polish — deferred
-
----
-
-## Part 1 — Foundation Unification: Order → Deed Migration
-
-### Background
-The legacy `Order` model was tightly coupled to everything — disputes, wallets, chat, UI.
-Part 1 migrated the entire platform to use `Deed` as the sole lifecycle source of truth
-and deleted `Order` from the schema entirely.
-
-### Stage A — Dispute Entry Point Unification
-> Commit `a9db152`.
-- [x] Unify all dispute creation entry points to read from and write to `Deed` (not `Order`)
-
-### Stage B — Dispute Engine / AI Decoupled from Order
-> Commit `2c3107c`.
-- [x] `disputeEngine.js` reads `Deed` + `WalletTransaction` ledger, not `Order`
-- [x] AI evidence review (`disputeAI.js`) reads `Deed` fields, not `Order`
-
-### Stage C — Delivery, Revision, Dispute UI Decoupled
-> Commits `64d2b6f`, `bce495c`.
-- [x] C2b: Full Deed-based dispute UI + backend read paths
-- [x] C Final sweep: `DeliveryActions`, `RevisionModal`, `DisputeModal` decoupled from `Order`
-
-### Stage D — Schema Unification
-> Commits `28defc9`, `e00b87c`, `34af4a4`.
-- [x] **KG-22 (Medium):** Fix error toast in `EnhancedDisputeResolution` to show real backend message.
-- [ ] **KG-23 (Medium):** Deed lifecycle socket events missing; implement silent polling fallback for dashboards.
-  - [x] Implemented on `BuyerDashboard.jsx` (verified 5s silent polling)
-  - [ ] Outstanding on `SellerDashboard.jsx`
-- [x] D2: Legacy `Order` model fully dropped from Prisma schema; admin + UI references cleaned
-- [x] Dead `Order`-era leftovers removed from codebase
-
-### Stage D-wallet — Wallet Balance & Ledger Fixes ⭐ LANDMARK FIX
-> Session `bfe0590a`. Commit `47bbb41`.
->
-> **What this fixed**: The wallet had a dual-source-of-truth bug — `wallet.balance`
-> was a mutable field that could drift from the actual ledger sum. After this fix,
-> balance is always derived from summing `WalletTransaction` rows via `getCalculatedBalance()`.
-> This is one of the two most significant fixes in the project.
-
-- [x] D-wallet-1: Single shared ledger-sum calculation (`getCalculatedBalance`)
-  - `requestWithdrawal` now reads ledger sum, not mutable `wallet.balance`
-- [x] D-wallet-2: Currency formatting fixes (`DashboardHeader.jsx`, `WithdrawalModal.jsx`)
-  - `DashboardHeader` no longer hardcodes 'INR'; uses `formatCurrency`
-- [x] D-wallet-3: Withdrawal modal negative-balance UX
-  - Disable Withdraw button when balance ≤ 0
-  - Show explanatory message for negative balance (dispute penalty debt)
-  - Clamp max input to `Math.max(0, balance / 100)`
-- [x] D-wallet-4: Fix test data corruption pattern
-  - `resetWalletBalance(userId, targetBalance)` helper creates `TEST_ADJUSTMENT` transactions
-  - `test-phase1.js`, `test-phase2.js`, `test-phase3.js` updated to use helper
-  - Tests re-run and confirmed passing
-
----
-
-## Part 2 — Target Dispute Architecture
-
-### Background
-Replace the old flat-field dispute system with an append-only `DisputeEvent` arbitration log.
-AI-driven evidence review, challenge rounds, and mandatory human escalation for high-value/contested disputes.
-
-### Stage A — Schema & Configuration
-> Sessions `b0a19180`, `869eef5f`.
-- [x] `DisputeEvent` model and `DisputeEventType` enum added to `schema.prisma`
-- [x] `backend/config/disputeConfig.js` created with locked thresholds:
-  - `HIGH_VALUE_THRESHOLD_INR = 10000` (₹100 in paise — auto-escalates to human)
-  - `AI_MIN_CONFIDENCE = 70` (below this → escalate)
-- [x] `DeedDisputeStatus` remapped to: `OPEN`, `CHALLENGE_PHASE`, `ESCALATED`, `RESOLVED`
-- [x] Legacy JSON fields on `DeedDispute` marked `@deprecated` (replaced by `DisputeEvent`)
-- [x] `npx prisma db push` run; DB tables verified
-
-### Stage B — API Endpoints & Event Ingestion
-> Sessions `b0a19180`, `869eef5f`.
-- [x] `POST /api/disputes/deed/:id/evidence` — creates `EVIDENCE_SUBMITTED` event; flags late if 24–48h
-- [x] `POST /api/disputes/deed/:id/challenge` — creates `CHALLENGE` event; enforces 1-per-side limit
-- [x] 24h/48h timeout enforcement; 1-challenge-per-party limits
-- [x] Race conditions fixed using raw `prisma.disputeEvent.count()` queries
-
-### Stage C1 — Lazy-Eval Timeout Wrappers
-> Session `869eef5f`.
-- [x] Wrapper 1: `OPEN` → AI trigger — atomic 60s debounce lock (fires when both evidence submitted or 48h elapsed)
-- [x] Wrapper 2: `CHALLENGE_PHASE` → `RESOLVED` — atomic status compare-and-swap (48h after AI report posted)
-- [x] Active single-challenge AI re-analysis triggered immediately (not deferred)
-
-### Stage C2 — AI Prompt & Ledger Integration
-> Session `869eef5f`.
-- [x] `generateAIReport` in `disputeAI.js` — consumes full `DisputeEvent` log
-- [x] Fetches all evidence + challenges + original report from ledger
-- [x] `isLate` flag injected into AI prompt; late submissions weighted negatively
-- [x] Pre-write guard `if (currentDispute.status === 'ESCALATED') return;` added
-- [x] Tested end-to-end (`test-stage-c2.js` passes with expected LLM reasoning)
-
-### Stage C3 — Value-Threshold Dual-Flow & Confidence Wiring
-> Session `869eef5f`.
-- [x] Dual-flow at dispute creation: below `HIGH_VALUE_THRESHOLD` → full challenge round; at/above → direct `ESCALATED`
-- [x] Confidence-threshold check on **first-pass AI report** (< 70% → escalate immediately)
-- [x] Confidence-threshold check on **single-challenge re-analysis report** (< 70% → escalate)
-- [x] Both-parties-challenged → always `ESCALATED` (bypasses confidence check entirely)
-
-### Stage D — Human Decision, Settlement & Dual 2% Fee Refactor
-> Sessions `869eef5f`, `b0a19180`. Commit likely in `e00b87c`-adjacent work.
-- [x] D1: Refactor `calculateResolutionAmounts` — fix 100% blind spot:
-  - Both parties pay 2% arbitration fee even when one receives 0% of the principal
-  - `sellerNet` can go negative (wallet debt) — this is intentional, Prisma `Int` supports it
-  - Loser's fee charged against their wallet balance regardless of current balance
-- [x] D2: `POST /api/disputes/admin/:id/decision` endpoint built:
-  - Accepts `action` + `buyerPct`; validates dispute is `ESCALATED`
-  - Auto-triggers settlement (no separate `/settle` step)
-  - Writes `HUMAN_DECISION` + `SETTLEMENT` events to `DisputeEvent`
-  - Updates deed to `CLOSED`
-- [ ] D3 (PARTIAL): Admin stale-dispute query filter — **not confirmed complete**
-- [ ] D3 (PARTIAL): Admin dashboard enum-conflation cleanup — **not confirmed complete**
-
----
-
-## Phase 1–3 — Fee Engine (New Naming, Post Part-1)
-> Commits `1d8df32`, `20dbabe`, `5cb15d6`, `a3de240`.
-
-### Phase 1 — Zero-Fee Top-Ups & Withdrawals
-- [x] Zero-fee top-ups (no platform fee on wallet funding)
-- [x] Zero-fee withdrawals (no fee on seller payout)
-- [x] `test-phase1.js` passes
-
-### Phase 2 — 2.5% Seller Fee on Release
-- [x] `releaseDeed()` deducts 2.5% from seller's share
-- [x] `test-phase2.js` passes (including paise-correct math)
-
-### Phase 3 — Tiered Dispute Fee Engine
-- [x] Tiered dispute fees by resolution type: RESOLVED vs ESCALATED
-- [x] Remainder-safe math (`Math.floor` throughout, no float drift)
-- [x] `test-phase3.js` passes
-- [x] Phase 2 and Phase 3 test scripts restored as permanent regression suite
-
-### Phase 4 — Fee Model UI Transparency
-> Commit `d9781aa`.
-- [x] Buyer and seller see fee breakdown in deed detail, checkout, and release flows
-
----
-
-## 4-Stage NewDeedPage Architecture
-> Commits `3d23e63`, `bb4f157`, `2dd3432`. Session `a6d3697b` (prior generic-form foundation).
-
-- [x] Stage 1: Basic deed details (title, description, amount, deadline)
-- [x] Stage 2: Deliverable formats and acceptance criteria
-- [x] Stage 3: Review + confirmation screen
-- [x] Stage 4: Payment / escrow funding (Razorpay integration)
-- [x] Autosave between stages
-- [x] Stage 4 `Lock` import crash fixed
-- [x] Stage 3 review confirmation UX added
-
----
-
-## Payment Flow Hardening (2026-07-20) ⭐ LANDMARK FIX
-> Commits `7764b43`, `32cf79f`, `9e444e6`. Session `7ed1fc2c`.
->
-> **What this fixed**: Two confirmed TOCTOU race conditions (`topUpWallet`, `fundDeed`),
-> a false-success UI bug ("Deed Secured!" shown on poll timeout even when deed still DRAFT),
-> a disabled `verifyPayment` endpoint restored with security hardening, a wallet balance
-> display bug (INITIATED transactions appearing as real credits), and a data-mapping bug
-> (deed detail page reading legacy `scopeBox` JSON instead of first-class `Deed` columns).
-> Proved idempotent under concurrent load via `test-idempotency.js` (Promise.all dual-fire).
-> This is the second most significant fix in the project.
-
-- [x] False-success UI bug fixed:
-  - `setShowSuccess(true)` no longer called on poll timeout
-  - "Deed Secured!" screen only shown when backend confirms deed status changed
-  - `MAX_ATTEMPTS` named constant restored
-  - Operator-precedence bug on line 221 fixed
-- [x] `topUpWallet` TOCTOU race condition fixed:
-  - `SELECT ... FOR UPDATE` row lock on wallet
-  - SUCCESS idempotency guard: returns early if same `razorpayOrderId` already has SUCCESS tx
-  - INITIATED → SUCCESS upgrade path preserved inside transaction
-- [x] `fundDeed` TOCTOU race condition fixed:
-  - Deed status re-read **inside** `prisma.$transaction` after acquiring wallet lock
-  - Second concurrent caller sees `PENDING_SELLER` on re-read and throws `DEED_NOT_IN_DRAFT_STATE`
-- [x] `verifyPayment` endpoint restored from disabled stub:
-  - HMAC-SHA256 signature verification (`razorpayOrderId|razorpayPaymentId`, `RAZORPAY_KEY_SECRET`)
-  - No secret/signature logging; no stack trace in HTTP responses
-  - Idempotency guard: if deed already `!== DRAFT`, returns 200 immediately
-  - Missing-field validation before any DB/crypto work
-  - `walletService` import added to `deedController.js`
-- [x] Wallet balance display bug: INITIATED transactions excluded from balance display
-- [x] Deed detail page field-mapping bug:
-  - Page now reads first-class `Deed` columns (`title`, `amount`, `deliverableFormats`, etc.)
-  - No longer falls back to legacy `scopeBox` JSON for new-flow deeds
-  - Invite link correctly retrieved via `deed.inviteToken`
-- [x] Server startup crash fixed: missing closing brace in `paymentController.js` catch block
-
----
-
-## Invite Flow Bug Fixes (2026-07-21)
-> Commit `8796dcd`.
-
-- [x] **Bug A — `InviteLinkBanner` wrong URL path** (`DeedDetails.jsx` L78):
-  Generated `/invite/:token` (404) instead of `/deed/invite/:token` (correct route).
-  Every invite link copied from the deed detail page has been broken since the banner
-  was added. `NewDeedPage.jsx` already had the correct path — `DeedDetails.jsx` now matches.
-- [x] **Bug B — Post-accept redirect to `/seller/order/undefined`** (`DeedInvitePage.jsx` L55–56):
-  Used `response.data.data.order.id` but `deedService.sellerJoin` returns `{ deed: updatedDeed }`
-  (no `order` key). Fixed to `response.data.data.deed.id` → navigate to `/seller/deed/:id`
-  (confirmed route `App.jsx` L625).
-- [x] E2E verified manually (2026-07-21): invite banner shows correct URL, invite page loads,
-  post-accept lands at `/seller/deed/:id`, deed shows ACTIVE on both buyer and seller sides.
-
----
-
-
-- [ ] **KG-1 — `disputeEngine.js` scopeBox subcategory fields (MEDIUM RISK)**
-  - `disputeEngine.js` reads `deed.scopeBox.contentWritingSpecific.wordCount` (L99) and
-    `deed.scopeBox.logoSpecific.fileFormats` (L105) — neither is populated by the 4-stage flow.
-  - For new-flow deeds: `promisedWordCount = 0`, `fileFormats = []`.
-    Content-writing disputes evaluate as if 0 words were promised → incorrectly lenient.
-    Logo disputes evaluate as if no file formats required → incorrectly lenient.
-  - Resolution path: decide whether `acceptanceCriteria` (free text, already on `Deed`) is
-    sufficient for the dispute engine, OR add structured `wordCount`/`fileFormats` columns
-    to the `Deed` schema and update `disputeEngine.js` to read them.
-  - **Schema design decision required before implementing — do not fix unilaterally.**
-  - Identified: 2026-07-20.
-
-- [ ] **KG-2 — Regression test coverage gap (LOW-MEDIUM)**
-  - `tests/` covers wallet/fee logic but NOT the 4-stage `NewDeedPage` flow, `fundDeed`,
-    or `verifyPayment` end-to-end.
-  - `test-idempotency.js` covers TOCTOU fixes but nothing else in the new payment path.
-  - Action: add E2E tests for the full buyer flow once architecture stabilises.
-
-- [ ] **KG-3 — `productCategory` field missing on `Deed` schema (LOW, deferred)**
-  - The new 4-stage deed creation flow uses a generic `transactionType` field, but the old
-    ScopeBox system had niche-specific product categories (logo, content writing, software, etc.)
-    which drove the dispute engine's category-specific evidence rules.
-  - No first-class `productCategory` column exists on the `Deed` model; this affects
-    `disputeEngine.js` category branching and any future analytics/filtering by category.
-  - Decision needed: keep generic `transactionType` + expand dispute engine, or add
-    `productCategory` enum column to `Deed`.
-
-- [ ] **KG-4 — Physical-goods tracking schema (NOT STARTED)**
-  - ScrowX currently has no schema or flow for physical goods escrow (where a tracking number,
-    carrier, and delivery confirmation are required before release).
-  - Current `Deed` model has no `trackingNumber`, `carrier`, or `deliveryConfirmedAt` fields.
-  - Needs product decision and schema design before any implementation.
-
-- [ ] **KG-5 — Gemini model version pinning (LOW, hygiene)**
-  - `disputeAI.js` and related AI services reference a Gemini model string that may not be
-    pinned to a specific version (e.g., `gemini-pro` instead of `gemini-1.5-pro-002`).
-  - Risk: silent model upgrades from Google could change AI reasoning/output format without
-    notice, breaking dispute resolution logic or structured JSON output parsing.
-  - Action: audit `disputeAI.js` and pin to a specific dated model version.
-    Add to memory.md when confirmed.
-
-- [ ] **KG-6 — Debt collection / recovery mechanism (MEDIUM, product decision needed)**
-  - When a dispute penalty reduces a user's wallet balance to negative (e.g., loser pays 2%
-    from an empty wallet), the balance goes to `-N paise`. Prisma `Int` supports this natively
-    and it was intentionally allowed (freezing the transaction would block resolution).
-  - No mechanism exists to: block new deed creation while a user is in debt, auto-deduct
-    from future earnings, notify the user, or escalate unpaid debt to the platform.
-  - Product decision required: what happens when a user owes the platform money?
-  - Identified: Part 2 Stage D design discussion.
-
-- [ ] **KG-7 — Deed auto-release cron (NOT STARTED)**
-  - Deeds should auto-release to the seller if the buyer does not raise a dispute within
-    a configurable window after the seller marks delivery complete.
-  - A stub/flag exists (`2891648` — cron job flag) but no actual cron job or scheduler
-    logic has been implemented for deed auto-release.
-  - The `ChatExpiry` cron (seen in server startup) is unrelated.
-  - Needs: cron scheduler entry in `server.js`, configurable release window on `Deed`,
-    and a `autoReleaseAt` timestamp set when seller marks delivery.
-
-- [ ] **KG-8 — Per-flag fault UI in dispute analysis (NOT STARTED)**
-  - The AI dispute analysis returns a verdict with a confidence score and flags per-party faults.
-  - The admin dashboard does not currently show a per-flag breakdown UI — only the overall
-    verdict is displayed.
-  - Needs: admin dispute detail view showing each `DisputeEvent` entry with its payload,
-    the AI report's structured fault flags, and the final HUMAN_DECISION if present.
-
-- [x] **KG-9 — Stage D3 admin cleanup (RESOLVED 2026-07-21)**
-  - Stale-dispute filter: ✅ done (`admin.js` L97–106, `DisputesTab.jsx` staleFilter checkbox).
-  - Backend stats all-4-statuses breakdown: ✅ done (`admin.js` L56–60).
-  - **Bug 1 fixed** — Enum mismatch in status dropdown (`DisputesTab.jsx` L65):
-    `value="CHALLENGE"` → `value="CHALLENGE_PHASE"`. Challenge filter now correctly matches
-    the DB enum and returns results.
-  - **Bug 2 fixed** — Legacy `d.order?.` references replaced with correct `d.deed?.` paths
-    (`DisputesTab.jsx` L108, 115, 119). API response shape confirmed from `admin.js` L134–140:
-    backend pre-composes `deed.buyerName` (`"${buyer.firstName} ${buyer.lastName}"`) and
-    `deed.sellerContact` (seller email string) — they are NOT nested objects.
-    Fixed: `d.order?.id` → `d.deed?.id`; `d.order?.buyer?.firstName` → `d.deed?.buyerName`;
-    `d.order?.seller?.firstName` → `d.deed?.sellerContact`.
-  - Note: my initial KG-9 description guessed `d.deed?.buyer?.firstName` as the fix —
-    that was also wrong. Correct path confirmed from the actual backend code before applying.
-
-- [ ] **KG-10 — Wallet & Ledger UI responsiveness (deferred, patterns present)**
-  - **Code-verified 2026-07-21.** The responsive patterns are in place:
-    `WalletHeroCard` uses `md:p-8`, `md:text-5xl`, `lg:flex-row`, `sm:grid-cols-3`;
-    `WalletDashboard` uses `grid-cols-1 lg:grid-cols-12`;
-    `TransactionTable` uses `overflow-x-auto` with `min-w-[800px]` (correct mobile scroll pattern).
-  - **What's missing**: formal visual verification at the specific breakpoints (1440/1280/1024/
-    768/480/390) was never completed. The code *should* work, but it hasn't been confirmed
-    with eyes on the actual rendered output at each breakpoint.
-  - Final pixel-perfect polish pass also not done.
-  - Low priority while backend architecture is in flux.
-
-- [ ] **KG-11 — AI phrasing conflates 'late' with 'absent' (LOW, prompt quality)**
-  - When evidence is submitted past the 48-hour window, `isLate: true` triggers `[Submitted LATE]` in the Gemini prompt.
-  - Gemini interprets this as missing the deadline entirely and outputs misleading reasoning like "Both parties failed to submit evidence".
-  - Action: Refine the prompt in `disputeAI.js` to explicitly distinguish between "submitted late" and "never submitted" so the generated text doesn't confuse users.
-  - Identified: 2026-07-24.
-
-- [ ] **KG-12 — Admin Timeline reads from legacy JSON column (HIGH, architecture gap)**
-  - `admin.js` `/api/admin/disputes/:id/full` builds the timeline using `dispute.timeline` (legacy JSON column) instead of the `DisputeEvent` ledger.
-  - This causes the admin view to be completely blind to new evidence submissions, showing stale dual-source-of-truth data.
-  - Action: Update `admin.js` to fetch and parse `DisputeEvent` rows for the timeline. Mark `dispute.timeline` for eventual deletion.
-  - Identified: 2026-07-24.
-
-- [ ] **KG-13 — Missing Challenge UI in frontend (HIGH, missing feature)**
-  - `DisputeResolutionFlow.jsx` has no handling for `status === 'CHALLENGE_PHASE'`.
-  - Instead, it renders an old "Smart Escalate" button that hits the legacy `/smart-escalate` endpoint, bypassing the challenge round entirely and jumping straight to `ESCALATED`.
-  - Action: Build the proper Challenge UI and wire it to `/api/disputes/deed/:id/challenge`.
-  - Identified: 2026-07-24.
-
-- [ ] **KG-14 — Admin UI confidence score formatting bug (LOW, UI)**
-  - `ConfBar` in `AdminDisputeDetails.jsx` multiplies the score by 100 (`Math.round(value * 100)`), causing a score of 95 to display as 9500%.
-  - Action: Remove the `* 100` multiplication.
-  - Identified: 2026-07-24.
-
-- [ ] **KG-15 (Follow-up) — Incomplete platform fee fix (LOW, UI)**
-  - The first pass of KG-15 only fixed the "Financial Analysis" panel.
-  - The top summary strip (`AdminDisputeDetails.jsx` line 296) still hardcodes `Platform Fee (5%)`.
-  - Action: Update the second label to `2%`.
-  - Identified: 2026-07-24.
-
-- [ ] **KG-16 — Admin Order Snapshot field mapping bug (LOW, UI)**
-  - The admin dashboard looks for `order.scopeBox.productType`, `order.scopeBox.title`, and `order.scopeBox.deadline`.
-  - In the current schema, `deed` stores these natively (`deed.title`, `deed.deadline`, `ruleFlags.productType`).
-  - This causes the snapshot to display "Unknown", "—", and "N/A" for perfectly valid deeds.
-  - Action: Remap the frontend to use the correct fields on `deed`.
-  - Identified: 2026-07-24.
-
-- [ ] **KG-17 — Admin currency formatting & math bug (LOW, UI)**
-  - The admin dashboard hardcodes `$` everywhere instead of respecting the app's `₹` standard or `financial.currency`.
-  - It also double-divides by 100 (`financial?.escrowAmount / 100`) even though the backend already parsed the value correctly, turning a ₹100 deed into `$1.00`.
-  - Action: Replace hardcoded `$` with proper currency formatter and remove the secondary `/ 100`.
-  - Identified: 2026-07-24.
-
-- [x] **KG-18 — KYC Gate threshold bug (HIGH, API)**
-  - `kycGate.js` compares the deed amount directly against `10,000` (paise) instead of `1,000,000` (paise).
-  - This creates an effective ₹100 threshold for mandatory KYC instead of the intended ₹10,000.
-  - Action: Update the comparison from `10000` to `1000000`.
-  - Identified: 2026-07-24. Fixed in commit `8a35054`, but explicitly flagged for process failure: this fix was improperly bundled with an unrelated frontend fix (KG-19) and committed without a diff-review.
-
-- [x] **KG-19 — Challenge UI missing submission state (LOW, UI)**
-  - The Challenge UI allows a user to submit a challenge, but then the UI fails to update and still displays the "Submit Challenge" button.
-  - Clicking it again results in a 400 error from the backend (`Challenge already submitted for this party`).
-  - Action: Hide the challenge form and display a "Challenge Submitted" state if `events` contain a `CHALLENGE` event for the current `actorRole`.
-  - Identified: 2026-07-24.
-
-- [x] **KG-24 — Dead Order Acceptance Flow Removal (SellerDashboard.jsx)**
-  - Removed completely unreachable legacy flow (`handleAcceptOrder`, `handleRejectOrder`, modals, banner).
-  - Why: `sellerId` is only attached to a deed *after* the seller accepts an invite via `DeedInvitePage`. Therefore, `/api/deeds/seller` will never return a deed in the "pending acceptance" state (`ESCROW_FUNDED`/`PENDING_SELLER`). The dashboard flow was mathematically unreachable dead code.
-
----
-
-## Phase 11 — Legacy Status Elimination (In Progress)
-> Plan approved 2026-07-24. See `legacy_status_inventory.md` for full categorization.
-
-- [x] **KG-25 (High) — Chat Blackout on ACTIVE deeds**
-  - Frontend `CHAT_ELIGIBLE` whitelist in `DeedDetails.jsx` and `OrderChat.jsx` drops `ACTIVE`, hiding chat immediately after acceptance. Backend investigation confirmed chat is fully authorized for all participants regardless of status.
-- [x] **KG-26 (Medium) — Dashboard Metric Undercounting**
-  - `BuyerDashboard.jsx` and `SellerDashboard.jsx` filter `inProgress` stats by legacy strings (`ACCEPTED`, `ESCROW_FUNDED`) instead of `ACTIVE` and `PENDING_SELLER`, causing live deeds to vanish from metrics.
-- [x] **KG-27 (Low) — Cosmetic Legacy Status Purge**
-  - Remove ghost strings (`PLACED`, `ACCEPTED`, `REJECTED`, `ESCROW_FUNDED`, `REFUNDED`) from dictionaries, UI hacks (`BUYER_ACCEPTED_GRACE_MS`), and `OrderTimeline` steps.
-
----
-
-## Phase 12: Post-Migration Fixes (New Discoveries)
-
-- [x] **KG-28A (Medium) — Dashboard Metrics Correction**
-  - `BuyerDashboard.jsx` completed metric checks `RELEASED` instead of `CLOSED`.
-  - SellerDashboard earnings logic explicitly deferred to KG-30.
-- [x] **KG-28B (Low) — DeliveryActions Optimistic Update**
-  - `DeliveryActions.jsx` optimistic update pushes local state to legacy `RELEASED` instead of `CLOSED`.
-- [x] **KG-29 (Low) — DeedsTable Logic Duplication (Cleanup)**
-  - `DeedsTable.jsx` duplicates the `BUYER_ACCEPTED_GRACE_MS` hack and `sellerAcceptedAtMs()` logic, which currently causes a visual bug showing the fallback "Pending" badge for 1 hour. Will remove this dead code and the unreachable `RELEASED` string from the filter array.
-- [x] **KG-29.1 (Low) — Final Legacy Deed Status Removal**
-  - Removed dead `RELEASED` and `COMPLETED` strings from `DeedDetails.jsx` review banner condition. Checked project-wide for legacy identifiers. Frontend Deed Status Migration is officially complete.
-
----
-
-## Phase 13: Architectural Debt
-
-- [x] **KG-30A (High) — Backend Engine Refactor**
-  - Rewrite `walletService.getWalletSummary` to use Prisma aggregates instead of fetching thousands of rows into JS memory.
-  - Compute `lifetimeEarnings` securely from `WalletTransaction` (`category = 'ESCROW_RELEASE'`).
-- [x] **KG-30B (Medium) — Frontend Wiring**
-  - Update `SellerDashboard.jsx` and `BuyerDashboard.jsx` to consume `lifetimeEarnings` from the `/api/wallet/summary` response instead of doing array math.
-- [x] **KG-30C (Low) — Dashboard Cleanup**
-  - Delete the legacy array filter `.reduce()` functions from the dashboard components.
-
-- [ ] **KG-31 (Medium) — Wallet UI Semantic Reconciliation**
-  - [x] **KG-31B — WalletHeroCard Refactor**: Implement role-based semantic fork. Map buyer metrics to the newly exposed API fields. Delete the hardcoded monthly stats cards entirely.
-  - [x] **KG-31C — WalletInsights Refactor**: Pass `isBuyer` from `WalletDashboard`. Implement role-based semantic fork for "Earnings" vs "Deposits" and "Net Retained" vs "Total Spent".
-  - [ ] **KG-31A (Optional Future Task)**: Decide whether buyer analytics (totalDeposited/Spent) justify expanding `/api/wallet/summary` or if they need a separate endpoint.
-
-- [x] **Repository Cleanup (Pre-Audit)**
-  - Safely deleted orphaned `WalletEmptyState.jsx`, `WalletSkeleton.jsx` and 5 root-level backend scratch scripts.
-  - Removed unused local variables, imports, and lucide icons from `SellerDashboard`, `BuyerDashboard`, `DeedDetails`, and `WalletHeroCard`.
-  - Verified 100% build success via `vite build`.
-
-- [x] **Regression Fix (Pre-Audit)**
-  - Restored missing `Link` import from `react-router-dom` in `src/pages/DeedDetails.jsx`.
-  - Restored missing `activeTab` and `showMyDisputes` state variables in `src/pages/SellerDashboard.jsx`.
-  - Audited full project for missing imports and `ReferenceError` equivalents from the cleanup phase.
-  - Re-verified build and other cleaned files.
-
-- [x] **KG-34 (CRITICAL) — Wallet Balance/Ledger Drift from Unguarded Raw `fix-db.js` Update**
-  - **Root cause (two wallets affected):**
-    - `wallet 64ae39f0` (`test-buyer-1`): A raw `prisma.wallet.update({ balance: 78400 })` intended for `wallet 2baf5755` accidentally landed on this wallet via `findFirst` with no ID guard. No `WalletTransaction` was created. Stored balance was reduced by 510,000 paise with no ledger record.
-    - `wallet 2baf5755` (primary test buyer): The USD→INR currency bug caused an ESCROW_LOCK of 589,300 paise when the wallet held only 85,500 paise, driving the ledger negative. A subsequent raw balance override (`balance: 78400`) set the stored value without creating a `WalletTransaction`, leaving stored and ledger permanently diverged by 582,200 paise.
-  - **Detection method:** Per-wallet `SUM(netAmount WHERE status=SUCCESS)` vs `wallet.balance` — both showed non-zero drift. Confirmed by audit script `backend/audit-wallets.js`.
-  - **Fix applied 2026-07-26 via `backend/ledger-corrections.js`:**
-    - `wallet 64ae39f0`: stored balance corrected from 2,076,626 → 2,586,626 to match existing (correct) ledger. No new transaction created (ledger was already accurate).
-    - `wallet 2baf5755`: New `WalletTransaction` (`LEDGER_CORRECTION`, `+582,200 paise`, `reference: audit-2026-07-26-currency-bug-escrow-overcollection`) created to bring ledger from -503,800 to 78,400. Stored balance confirmed unchanged at 78,400.
-  - **Post-fix verification:** All six wallets re-audited. All show `drift = 0`. Raw output confirmed live.
-  - **Process rule established:** Never use `prisma.wallet.update({ balance: X })` directly. All balance mutations must go through `walletService` which creates the `WalletTransaction` first. Any corrective script must specify the exact wallet `id`, not use `findFirst`.
-
-- [ ] **KG-35 (Medium) — Pre-Flight High-Value Escalation in `raiseDispute`**
-  - **Status:** INVESTIGATED. The `Submit Challenge` button (`DisputeResolutionFlow.jsx` line 772) is correctly gated to `disputeStatus === 'CHALLENGE_PHASE'` — no code change needed on the gate itself.
-  - **Real open gap:** `raiseDispute` in `deedService.js` creates disputes as `OPEN` with no pre-flight value threshold check. The dispute sits `OPEN` until `generateAIReport()` finishes or fails. For high-value deeds that will inevitably be `ESCALATED`, the evidence submission form (`disputeStatus === 'OPEN'`) shows during this window — potentially misleading UX.
-  - **Fix:** Move threshold check to `raiseDispute`; create dispute as `ESCALATED` immediately for deeds at or above `HIGH_VALUE_THRESHOLD`. Skip AI entirely for those.
-
-- [ ] **KG-36 (Low) — Challenge Shown Against AI Error Placeholder Verdict**
-  - **Finding:** When the AI call fails mid-run, `disputeAI.js` catch block (lines 207–223) attempts to set `dispute.status = 'ESCALATED'`. If that status update itself fails, the dispute can remain in `CHALLENGE_PHASE` with an AI report that is actually the error placeholder (`faultSide: NEUTRAL`, `confidenceScore: 0`, `reasoning: "AI Service unavailable"`). The `Submit Challenge` button then appears — but there is no real AI reasoning to contest.
-  - **Fix:** Two options: (a) UI — when `aiAnalysis.confidenceScore === 0` and `reasoning` contains "unavailable"/"error", suppress the Challenge button and show "AI analysis unavailable — this dispute will be reviewed by a human" instead; or (b) backend — make the catch block's status update non-optional by wrapping it in a dedicated retry/transaction separate from the main flow.
-  - **Preferred:** Option (a) is lower risk and immediately improveable without touching the AI service path.
-
-- [ ] **KG-37 (Low) — No Notification to Other Party on Challenge Submission**
-  - **Finding:** `handleChallengeSubmit` in `DisputeResolutionFlow.jsx` (line 195) calls `POST /api/disputes/deed/:id/challenge` and then `fetchDetail()`. No `createNotification` call exists anywhere in the challenge submission path — neither on the frontend nor in the backend challenge handler.
-  - **Expected behaviour:** When buyer submits a challenge, seller should receive a notification (and vice versa), mirroring the `createNotification` pattern used at dispute-creation.
-  - **Fix:** Locate the backend challenge handler, add `createNotification` call for the opposing party after a successful `CHALLENGE` event is appended to the `DisputeEvent` ledger.
-  - **Files to touch:** backend challenge route handler (find via `POST /api/disputes/deed/:id/challenge`).
-
+## Dark Mode — Remaining Work (Paused)
+
+### 1. Status Summary
+**Completed & Visually Verified:**
+- **Stage 1 (Shared Primitives & Modals):** Applied baseline dark mode tokens. Note: Re-auditing shows a few residual occurrences (`bg-white` edge cases) still exist in these files (e.g. `WithdrawalModal.jsx`, `TopUpModal.jsx`, `DisputeModal.jsx`, `ReviewModal.jsx`, `ChangesReviewModal.jsx`) that need a final polish sweep.
+- **Stage 2 (Heavy-weight Flows):** `NewDeedPage.jsx`, `DisputeResolutionFlow.jsx`, `DisputeTracker.jsx`, `AdminDisputeDetails.jsx` are functionally converted and visually verified. (Note: `NewDeedPage.jsx` has ~11 residual occurrences to polish).
+
+**Explicitly Excluded (Deprioritized):**
+- **Admin Dashboard (19 files + AdminLogin.jsx + AdminDashboard.jsx):** Reverted to light-mode via `git restore`. Explicitly skipped to avoid shipping unverified structural styling changes to an internal-only tool. Marked as excluded in `dark_mode_audit.md`.
+
+### 2. Exact Remaining File List (Stage 4 - The Long Tail)
+Total remaining files requiring systematic attention: 46 (plus minor cleanups on Stage 1/2 files).
+
+**GROUP 1 — Remaining Modals & Small Shared Components**
+*Status: Not Started. (A script was run, but due to browser automation failure, no visual verification occurred. The files were cleanly reverted via `git restore` to prevent unverified code from lingering).*
+- `NotificationModal.jsx`
+- `EditProfileModal.jsx`
+- `RevisionModal.jsx`
+- `AuthModal.jsx`
+- `TermsModal.jsx`
+- `ThemeToggle.jsx`
+- `DeedCard.jsx`
+- `NotificationDropdown.jsx`
+
+**GROUP 2 — Wallet & Transaction Components**
+*Status: Not Started.*
+- `TransactionHistory.jsx`
+- `LedgerTimeline.jsx`
+- `SpendingDonut.jsx`
+- `WalletHeader.jsx` (both occurrences)
+- `PaymentMethods.jsx`
+- `WalletOverviewCard.jsx`
+- `WalletInsights.jsx`
+- `QuickActions.jsx` (wallet + dashboard versions)
+- `WalletHeroCard.jsx`
+- `WalletDashboard.jsx`
+- `RecentTransactions.jsx`
+- `dashboard/QuickActions.jsx`
+
+**GROUP 3 — Standalone Pages & Order Flow**
+*Status: Not Started.*
+- `DeedDetails.jsx` (See Known Open Items)
+- `DeedSigningPage.jsx`
+- `DeedInvitePage.jsx`
+- `DeedMilestonePage.jsx`
+- `BuyerProfilePage.jsx`
+- `SellerProfilePage.jsx`
+- `AuditLedgerPage.jsx`
+- `OrderChat.jsx`
+- `OrderTimeline.jsx`
+- `DeliveryActions.jsx`
+- `MilestoneList.jsx`
+- `SellerDeliverySubmit.jsx`
+- `FooterSection.jsx`
+- `DisputeComparison.jsx`
+- `ScopeBoxPreview.jsx`
+- `EnhancedDisputeResolution.jsx`
+- `SellerDashboard.jsx` (remaining occurrences)
+- `App.jsx` (remaining occurrences)
+
+### 3. Established Process/Standard (Mandatory for Resumption)
+1. **Pre-Check:** Before any bulk replacement on a file, check for semantic color exceptions (destructive/danger buttons, status-specific colors, anything where a color's MEANING matters, not just its role as background/text/border). Report any exceptions found and how they were handled.
+2. **Token Mapping:** Apply the `dark:` token mappings using only the existing tokens (`dark-bg`, `dark-surface`, `dark-elevated`, `dark-border`, `dark-primary`, `dark-muted`, `dark-accent`) plus the established semantic-color pattern for status colors (e.g. `bg-red-50 dark:bg-red-900/20`, `text-red-600 dark:text-red-400`).
+3. **Hex Code Sweep:** Check for hardcoded hex values (`/#[0-9a-fA-F]{3,6}/g`) in EVERY file, not just the ones that seem likely to have them.
+4. **Visual Verification:** AFTER each group (not individual files, but after Group 1, then Group 2, then Group 3), capture REAL screenshots (light and dark) of at least 2-3 representative components/pages from that group using existing test data. If browser automation fails, report exactly which files went unverified. **DO NOT report a group as completed based on a passing build alone.**
+5. **Flagging Unreachable States:** If any file in a group cannot be reasonably verified, flag it by name rather than silently letting it ride on "the script ran successfully."
+
+### 4. Known Open Items
+- **Flash of Wrong Theme:** Confirm whether the flash-of-wrong-theme fix (`index.html` inline script) is still fully functioning and hasn't regressed.
+- **Header Contrast:** Confirm the `DashboardHeader` / KYC banner shade fix is still correct in both modes.
+- **DeedDetails Outer Wrapper:** `DeedDetails.jsx` was specifically observed to have its outer wrapper still rendering a light gradient during the dispute screenshot check. This must be fixed when addressing Group 3.
+
+### 5. Final Completion Criteria
+After all 3 groups are done:
+1. Re-run the full occurrence-count audit (using `audit.js` which checks for isolated light classes without `dark:` siblings) and confirm it's at or near zero.
+2. Explicitly justify any remainder (e.g., the Wallet Overview gradient card intentionally excluded, or `DisputeComparison.jsx` intentionally dark).
+3. Perform a full manual click-through (homepage -> buyer flow -> seller flow -> every sidebar item -> every modal) in dark mode with screenshots as the absolute final definition of "done."

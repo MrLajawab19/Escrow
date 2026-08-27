@@ -102,7 +102,7 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <div className="bg-white dark:bg-dark-surface rounded-lg shadow-xl max-w-md w-full p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -144,7 +144,7 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
         ) : (
           <form onSubmit={step === 1 ? handleAmountSubmit : step === 2 ? handleBankDetailsSubmit : handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg text-red-700 text-sm">
                 {error}
               </div>
             )}
@@ -286,7 +286,7 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
             {/* Step 3: Review */}
             {step === 3 && (
               <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-700">Amount:</span>
                     <span className="font-semibold">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
