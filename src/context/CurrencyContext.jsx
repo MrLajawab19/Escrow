@@ -96,7 +96,7 @@ export const CurrencyProvider = ({ children }) => {
       maximumFractionDigits: 2
     })}`;
 
-    return `${originalFormatted} (≈${targetFormatted})`;
+    return targetFormatted;
   };
 
   const formatCurrencyRaw = (amount, sourceCurrency = 'USD') => {

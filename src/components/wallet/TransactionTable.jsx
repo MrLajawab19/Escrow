@@ -3,7 +3,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 import { ArrowDownLeft, ArrowUpRight, Search, Filter, ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react';
 
 const TransactionRow = ({ transaction, formatCurrency }) => {
-  const isCredit = (transaction.netAmount ?? 0) < 0 ? transaction.type !== 'CREDIT' : transaction.type === 'CREDIT';
+  const isCredit = transaction.type === 'CREDIT';
   
   const getCategoryIcon = (category) => {
     switch(category) {

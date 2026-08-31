@@ -35,7 +35,7 @@ const RecentTransactions = ({ userId, onViewAll }) => {
 
 
   const getIcon = (tx) => {
-    const isCredit = (tx.netAmount ?? 0) < 0 ? tx.type !== 'CREDIT' : tx.type === 'CREDIT';
+    const isCredit = tx.type === 'CREDIT';
     if (isCredit) {
       return (
         <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
@@ -82,7 +82,7 @@ const RecentTransactions = ({ userId, onViewAll }) => {
           </div>
         ) : (
           transactions.map((tx) => {
-            const isCredit = (tx.netAmount ?? 0) < 0 ? tx.type !== 'CREDIT' : tx.type === 'CREDIT';
+            const isCredit = tx.type === 'CREDIT';
             const displayAmount = Math.abs(tx.netAmount ?? tx.amount ?? 0);
             return (
               <div key={tx.id} className="flex items-center gap-3">
