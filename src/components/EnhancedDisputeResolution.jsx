@@ -291,7 +291,7 @@ const EnhancedDisputeResolution = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-6">
           <div className="flex items-center justify-between">
@@ -304,7 +304,7 @@ const EnhancedDisputeResolution = ({
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-slate-400 dark:text-dark-muted hover:text-white transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -315,7 +315,7 @@ const EnhancedDisputeResolution = ({
 
         <div className="flex flex-col lg:flex-row h-[calc(95vh-120px)]">
           {/* Left Panel - Analysis */}
-          <div className="flex-1 p-6 overflow-y-auto border-r border-slate-200">
+          <div className="flex-1 p-6 overflow-y-auto border-r border-slate-200 dark:border-dark-border">
             {/* Evidence Analysis */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -395,19 +395,19 @@ const EnhancedDisputeResolution = ({
                   </div>
 
                   {/* Evidence Quality */}
-                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <p className="text-sm font-semibold text-slate-900 mb-3">Evidence Quality Assessment</p>
+                  <div className="bg-slate-50 dark:bg-dark-bg rounded-lg p-4 border border-slate-200 dark:border-dark-border">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-dark-primary mb-3">Evidence Quality Assessment</p>
                     <div className="space-y-2">
                       {Object.entries(evidenceAnalysis.evidenceScore).map(([key, score]) => (
                         <div key={key} className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-slate-600 w-20 capitalize">{key}</span>
+                          <span className="text-xs font-medium text-slate-600 dark:text-dark-muted w-20 capitalize">{key}</span>
                           <div className="flex-1 bg-slate-200 rounded-full h-2">
                             <div 
                               className="bg-slate-600 h-full rounded-full transition-all duration-500" 
                               style={{ width: `${score}%` }} 
                             />
                           </div>
-                          <span className="text-xs font-bold text-slate-700 w-10">{score.toFixed(0)}%</span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-dark-primary w-10">{score.toFixed(0)}%</span>
                         </div>
                       ))}
                     </div>
@@ -470,11 +470,11 @@ const EnhancedDisputeResolution = ({
                   {/* Detailed Requirements */}
                   <div className="space-y-3">
                     {scopeCompliance.requirements.map((req, i) => (
-                      <div key={i} className="bg-white rounded-lg p-3 border border-slate-200">
+                      <div key={i} className="bg-white dark:bg-dark-surface rounded-lg p-3 border border-slate-200 dark:border-dark-border">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-slate-900">{req.label}</p>
-                            <p className="text-xs text-slate-600 mt-1">
+                            <p className="text-sm font-medium text-slate-900 dark:text-dark-primary">{req.label}</p>
+                            <p className="text-xs text-slate-600 dark:text-dark-muted mt-1">
                               {req.status === 'met' ? '✅ Requirement fully met' :
                                req.status === 'partial' ? '⚠️ Partially met' :
                                req.status === 'missed' ? '❌ Requirement missed' :
@@ -489,7 +489,7 @@ const EnhancedDisputeResolution = ({
                               req.status === 'met' ? 'bg-emerald-100 text-emerald-700' :
                               req.status === 'partial' ? 'bg-amber-100 text-amber-700' :
                               req.status === 'missed' ? 'bg-red-100 text-red-700' :
-                              'bg-slate-100 text-slate-700'
+                              'bg-slate-100 dark:bg-dark-elevated text-slate-700 dark:text-dark-primary'
                             }`}>
                               {req.score}%
                             </span>
@@ -506,7 +506,7 @@ const EnhancedDisputeResolution = ({
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm font-medium text-emerald-800">Description</p>
-                          <p className="text-sm text-emerald-700 bg-white rounded p-2 mt-1">
+                          <p className="text-sm text-emerald-700 bg-white dark:bg-dark-surface rounded p-2 mt-1">
                             {order.scopeBox.description || 'No description provided'}
                           </p>
                         </div>
@@ -572,7 +572,7 @@ const EnhancedDisputeResolution = ({
           </div>
 
           {/* Right Panel - Resolution Options */}
-          <div className="w-full lg:w-96 p-6 overflow-y-auto bg-slate-50">
+          <div className="w-full lg:w-96 p-6 overflow-y-auto bg-slate-50 dark:bg-dark-bg">
             <h3 className="text-lg font-semibold mb-4">Resolution Options</h3>
             
             {/* Recommended Option */}
@@ -594,29 +594,29 @@ const EnhancedDisputeResolution = ({
                   className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                     selectedResolution === option.id
                       ? `border-${option.color}-500 bg-${option.color}-50`
-                      : 'border-slate-200 bg-white hover:border-slate-300'
+                      : 'border-slate-200 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-slate-300'
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">{option.icon}</span>
                     <div className="flex-1">
-                      <p className="font-semibold text-slate-900">{option.title}</p>
-                      <p className="text-sm text-slate-600 mt-1">{option.description}</p>
+                      <p className="font-semibold text-slate-900 dark:text-dark-primary">{option.title}</p>
+                      <p className="text-sm text-slate-600 dark:text-dark-muted mt-1">{option.description}</p>
                       
                       {/* Financial Impact */}
-                      <div className="mt-2 p-2 bg-white rounded border border-slate-100">
-                        <p className="text-xs font-medium text-slate-700 mb-1">Financial Impact:</p>
+                      <div className="mt-2 p-2 bg-white dark:bg-dark-surface rounded border border-slate-100 dark:border-dark-border">
+                        <p className="text-xs font-medium text-slate-700 dark:text-dark-primary mb-1">Financial Impact:</p>
                         <div className="grid grid-cols-3 gap-1 text-xs">
                           <div>
-                            <span className="text-slate-500">Buyer:</span>
+                            <span className="text-slate-500 dark:text-dark-muted">Buyer:</span>
                             <span className="font-medium ml-1">{option.financialImpact.buyer}</span>
                           </div>
                           <div>
-                            <span className="text-slate-500">Seller:</span>
+                            <span className="text-slate-500 dark:text-dark-muted">Seller:</span>
                             <span className="font-medium ml-1">{option.financialImpact.seller}</span>
                           </div>
                           <div>
-                            <span className="text-slate-500">Platform:</span>
+                            <span className="text-slate-500 dark:text-dark-muted">Platform:</span>
                             <span className="font-medium ml-1">{option.financialImpact.platform}</span>
                           </div>
                         </div>
@@ -624,12 +624,12 @@ const EnhancedDisputeResolution = ({
                       
                       {/* Best Scenarios */}
                       <div className="mt-2">
-                        <p className="text-xs text-slate-500">Best for:</p>
+                        <p className="text-xs text-slate-500 dark:text-dark-muted">Best for:</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {option.scenarios.map((scenario, i) => (
                             <span
                               key={i}
-                              className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded"
+                              className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-dark-elevated text-slate-600 dark:text-dark-muted rounded"
                             >
                               {scenario}
                             </span>
@@ -651,8 +651,8 @@ const EnhancedDisputeResolution = ({
 
             {/* Resolution Notes */}
             <div className="mt-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Resolution Notes <span className="text-slate-400">(required)</span>
+              <label className="block text-sm font-medium text-slate-700 dark:text-dark-primary mb-2">
+                Resolution Notes <span className="text-slate-400 dark:text-dark-muted">(required)</span>
               </label>
               <textarea
                 value={resolutionNotes}
@@ -674,7 +674,7 @@ const EnhancedDisputeResolution = ({
               </button>
               <button
                 onClick={onClose}
-                className="w-full py-3 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
+                className="w-full py-3 bg-slate-200 text-slate-700 dark:text-dark-primary rounded-lg font-semibold hover:bg-slate-300 transition-colors"
               >
                 Cancel
               </button>

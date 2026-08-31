@@ -32,7 +32,7 @@ const FooterSection = ({ setShowTermsModal }) => {
                 {section.links.map((link, linkIdx) => (
                   <li key={linkIdx}>
                     <span
-                      className="text-neutral-500 cursor-default text-sm"
+                      className="text-neutral-500 dark:text-dark-muted cursor-default text-sm"
                     >
                       {link}
                     </span>
@@ -45,7 +45,7 @@ const FooterSection = ({ setShowTermsModal }) => {
           {/* Social & Newsletter */}
           <div>
             <h4 className="text-white font-bold text-lg mb-4">Connect</h4>
-            <p className="text-neutral-400 text-sm mb-4">Follow us on social media</p>
+            <p className="text-neutral-400 dark:text-dark-muted text-sm mb-4">Follow us on social media</p>
 
             {/* Social Icons */}
             <div className="flex gap-3 mb-6">
@@ -81,7 +81,7 @@ const FooterSection = ({ setShowTermsModal }) => {
               </a>
             </div>
 
-            <p className="text-neutral-400 text-xs">
+            <p className="text-neutral-400 dark:text-dark-muted text-xs">
               Stay updated with our latest features
             </p>
           </div>
@@ -90,7 +90,7 @@ const FooterSection = ({ setShowTermsModal }) => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-navy-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-neutral-500 text-sm text-center md:text-left">
+            <p className="text-neutral-500 dark:text-dark-muted text-sm text-center md:text-left">
               © 2025 ScrowX. All rights reserved.
             </p>
 
@@ -98,28 +98,28 @@ const FooterSection = ({ setShowTermsModal }) => {
             <div className="flex flex-wrap gap-6 justify-center text-sm">
               <a
                 href="#home"
-                className="text-neutral-500 hover:text-white transition-colors cursor-pointer"
+                className="text-neutral-500 dark:text-dark-muted hover:text-white transition-colors cursor-pointer"
               >
                 Home
               </a>
               <span
-                className="text-neutral-600 cursor-default"
+                className="text-neutral-600 dark:text-dark-muted cursor-default"
               >
                 About
               </span>
               <span
-                className="text-neutral-600 cursor-default"
+                className="text-neutral-600 dark:text-dark-muted cursor-default"
               >
                 Privacy Policy
               </span>
               <button
                 onClick={() => setShowTermsModal(true)}
-                className="text-neutral-500 hover:text-white transition-colors"
+                className="text-neutral-500 dark:text-dark-muted hover:text-white transition-colors"
               >
                 Terms
               </button>
               <span
-                className="text-neutral-600 cursor-default"
+                className="text-neutral-600 dark:text-dark-muted cursor-default"
               >
                 Contact
               </span>

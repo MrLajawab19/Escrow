@@ -55,7 +55,7 @@ const DeedSigningPage = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading deed...</div>;
+  if (loading) return <div className="p-8 text-center text-gray-500 dark:text-dark-muted">Loading deed...</div>;
   if (!deed) return null;
 
   const hasBuyerSigned = !!deed.buyerSignedAt;
@@ -66,81 +66,81 @@ const DeedSigningPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-      <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border overflow-hidden">
         {/* Header */}
-        <div className="bg-slate-50 border-b border-neutral-200 p-6 sm:p-8 flex items-start gap-4">
+        <div className="bg-slate-50 dark:bg-dark-bg border-b border-neutral-200 dark:border-dark-border p-6 sm:p-8 flex items-start gap-4">
           <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
             <FileSignature className="w-6 h-6 text-indigo-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 font-inter">Digital Deed Signing</h1>
-            <p className="text-gray-500 mt-1 flex items-center gap-2">
-              <span className="font-mono text-sm bg-gray-200 text-gray-700 px-2 py-0.5 rounded">{deed.id.substring(0, 8)}...</span>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-dark-primary font-inter">Digital Deed Signing</h1>
+            <p className="text-gray-500 dark:text-dark-muted mt-1 flex items-center gap-2">
+              <span className="font-mono text-sm bg-gray-200 dark:bg-dark-border text-gray-700 dark:text-dark-primary px-2 py-0.5 rounded">{deed.id.substring(0, 8)}...</span>
               Review the final terms before locking the escrow contract.
             </p>
           </div>
         </div>
 
         {/* Content Review */}
-        <div className="p-6 sm:p-8 border-b border-neutral-200">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-            <FileText className="w-5 h-5 text-gray-400" /> Contract Terms
+        <div className="p-6 sm:p-8 border-b border-neutral-200 dark:border-dark-border">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-dark-primary flex items-center gap-2 mb-4">
+            <FileText className="w-5 h-5 text-gray-400 dark:text-dark-muted" /> Contract Terms
           </h3>
           
-          <div className="bg-slate-50 rounded-xl p-6 space-y-4 text-sm text-gray-700 border border-slate-100">
+          <div className="bg-slate-50 dark:bg-dark-bg rounded-xl p-6 space-y-4 text-sm text-gray-700 dark:text-dark-primary border border-slate-100 dark:border-dark-border">
             <div>
-              <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Title</span>
-              <p className="font-medium text-gray-900 text-base">{deed.title}</p>
+              <span className="block text-xs font-bold text-gray-400 dark:text-dark-muted uppercase mb-1">Title</span>
+              <p className="font-medium text-gray-900 dark:text-dark-primary text-base">{deed.title}</p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200">
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-dark-border">
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Amount</span>
-                <p className="font-medium text-gray-900 text-base">{deed.currency} {deed.amount}</p>
+                <span className="block text-xs font-bold text-gray-400 dark:text-dark-muted uppercase mb-1">Amount</span>
+                <p className="font-medium text-gray-900 dark:text-dark-primary text-base">{deed.currency} {deed.amount}</p>
               </div>
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Deadline</span>
-                <p className="font-medium text-gray-900">
+                <span className="block text-xs font-bold text-gray-400 dark:text-dark-muted uppercase mb-1">Deadline</span>
+                <p className="font-medium text-gray-900 dark:text-dark-primary">
                   {deed.deadline ? new Date(deed.deadline).toLocaleDateString() : 'N/A'}
                 </p>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-200">
-              <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Description</span>
+            <div className="pt-4 border-t border-slate-200 dark:border-dark-border">
+              <span className="block text-xs font-bold text-gray-400 dark:text-dark-muted uppercase mb-1">Description</span>
               <p className="whitespace-pre-wrap">{deed.description}</p>
             </div>
             
-            <div className="pt-4 border-t border-slate-200">
-              <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Acceptance Criteria</span>
+            <div className="pt-4 border-t border-slate-200 dark:border-dark-border">
+              <span className="block text-xs font-bold text-gray-400 dark:text-dark-muted uppercase mb-1">Acceptance Criteria</span>
               <p className="whitespace-pre-wrap">{deed.acceptanceCriteria}</p>
             </div>
           </div>
         </div>
 
         {/* Signatures & Status */}
-        <div className="p-6 sm:p-8 bg-slate-50">
+        <div className="p-6 sm:p-8 bg-slate-50 dark:bg-dark-bg">
           <div className="flex flex-col md:flex-row gap-6 mb-8">
-            <div className={`flex-1 p-4 rounded-xl border ${hasBuyerSigned ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200'}`}>
+            <div className={`flex-1 p-4 rounded-xl border ${hasBuyerSigned ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200' : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border'}`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-gray-900">Buyer Signature</span>
-                {hasBuyerSigned ? <ShieldCheck className="w-5 h-5 text-emerald-500" /> : <Clock className="w-5 h-5 text-gray-400" />}
+                <span className="font-semibold text-gray-900 dark:text-dark-primary">Buyer Signature</span>
+                {hasBuyerSigned ? <ShieldCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> : <Clock className="w-5 h-5 text-gray-400 dark:text-dark-muted" />}
               </div>
               {hasBuyerSigned ? (
                 <p className="text-xs text-emerald-700 font-mono">Signed at {new Date(deed.buyerSignedAt).toLocaleString()}</p>
               ) : (
-                <p className="text-xs text-gray-500">Awaiting signature...</p>
+                <p className="text-xs text-gray-500 dark:text-dark-muted">Awaiting signature...</p>
               )}
             </div>
-            <div className={`flex-1 p-4 rounded-xl border ${hasSellerSigned ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200'}`}>
+            <div className={`flex-1 p-4 rounded-xl border ${hasSellerSigned ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200' : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border'}`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-gray-900">Seller Signature</span>
-                {hasSellerSigned ? <ShieldCheck className="w-5 h-5 text-emerald-500" /> : <Clock className="w-5 h-5 text-gray-400" />}
+                <span className="font-semibold text-gray-900 dark:text-dark-primary">Seller Signature</span>
+                {hasSellerSigned ? <ShieldCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> : <Clock className="w-5 h-5 text-gray-400 dark:text-dark-muted" />}
               </div>
               {hasSellerSigned ? (
                 <p className="text-xs text-emerald-700 font-mono">Signed at {new Date(deed.sellerSignedAt).toLocaleString()}</p>
               ) : (
-                <p className="text-xs text-gray-500">Awaiting signature...</p>
+                <p className="text-xs text-gray-500 dark:text-dark-muted">Awaiting signature...</p>
               )}
             </div>
           </div>
@@ -149,14 +149,14 @@ const DeedSigningPage = () => {
             <div className="mb-8 p-4 bg-gray-900 rounded-xl text-gray-300 font-mono text-xs break-all border border-gray-700 flex items-start gap-3 shadow-inner">
               <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
               <div>
-                <span className="block text-gray-500 mb-1 uppercase tracking-wider">Cryptographic Hash (SHA-256)</span>
+                <span className="block text-gray-500 dark:text-dark-muted mb-1 uppercase tracking-wider">Cryptographic Hash (SHA-256)</span>
                 {deed.contentHash}
               </div>
             </div>
           )}
 
           {!iHaveSigned ? (
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <div className="bg-white dark:bg-dark-surface p-6 rounded-xl border border-gray-200 dark:border-dark-border shadow-sm">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input 
                   type="checkbox" 
@@ -164,7 +164,7 @@ const DeedSigningPage = () => {
                   checked={agreed}
                   onChange={(e) => setAgreed(e.target.checked)}
                 />
-                <span className="text-sm text-gray-700 leading-relaxed">
+                <span className="text-sm text-gray-700 dark:text-dark-primary leading-relaxed">
                   I agree to the terms listed above. I understand that signing this deed constitutes a legally binding agreement under ScrowX Terms of Service.
                 </span>
               </label>
@@ -178,12 +178,12 @@ const DeedSigningPage = () => {
             </div>
           ) : (
             <div className="text-center p-6">
-              <p className="text-emerald-600 font-medium flex items-center justify-center gap-2">
+              <p className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center justify-center gap-2">
                 <ShieldCheck className="w-5 h-5" />
                 You have successfully signed this deed.
               </p>
               {!theyHaveSigned && (
-                <p className="text-gray-500 text-sm mt-2">Waiting for the other party to sign...</p>
+                <p className="text-gray-500 dark:text-dark-muted text-sm mt-2">Waiting for the other party to sign...</p>
               )}
             </div>
           )}

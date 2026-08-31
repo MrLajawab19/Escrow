@@ -93,7 +93,7 @@ const NotificationDropdown = ({ userType }) => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-neutral-500 hover:bg-neutral-100 rounded-full transition-colors"
+        className="relative p-2 text-neutral-500 dark:text-dark-muted hover:bg-neutral-100 dark:bg-dark-elevated rounded-full transition-colors"
       >
         <Bell size={20} className={unreadCount > 0 ? 'text-indigo-600' : ''} />
         {unreadCount > 0 && (
@@ -105,9 +105,9 @@ const NotificationDropdown = ({ userType }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-neutral-200 overflow-hidden z-50 animate-fade-in">
-          <div className="px-4 py-3 border-b border-neutral-100 flex justify-between items-center bg-slate-50">
-            <h3 className="text-sm font-semibold text-slate-800 font-inter">Notifications</h3>
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark-surface rounded-xl shadow-lg border border-neutral-200 dark:border-dark-border overflow-hidden z-50 animate-fade-in">
+          <div className="px-4 py-3 border-b border-neutral-100 dark:border-dark-border flex justify-between items-center bg-slate-50 dark:bg-dark-surface">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-dark-primary font-inter">Notifications</h3>
             {unreadCount > 0 && (
               <button 
                 onClick={markAllAsRead}
@@ -120,7 +120,7 @@ const NotificationDropdown = ({ userType }) => {
           
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-neutral-500 text-sm font-inter">
+              <div className="p-8 text-center text-neutral-500 dark:text-dark-muted text-sm font-inter">
                 <div className="text-2xl mb-2 opacity-50">🔕</div>
                 No notifications yet.
               </div>
@@ -129,7 +129,7 @@ const NotificationDropdown = ({ userType }) => {
                 <div 
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`p-4 border-b border-neutral-100 cursor-pointer transition-colors hover:bg-slate-50 ${!notification.isRead ? 'bg-indigo-50/30' : ''}`}
+                  className={`p-4 border-b border-neutral-100 dark:border-dark-border cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-dark-elevated ${!notification.isRead ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}
                 >
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 mt-0.5">
@@ -138,14 +138,14 @@ const NotificationDropdown = ({ userType }) => {
                        notification.type === 'WALLET' ? '💰' : '🔔'}
                     </div>
                     <div className="flex-1">
-                      <p className={`text-sm font-inter ${!notification.isRead ? 'font-semibold text-slate-800' : 'font-medium text-slate-600'}`}>
+                      <p className={`text-sm font-inter ${!notification.isRead ? 'font-semibold text-slate-800 dark:text-white' : 'font-medium text-slate-600 dark:text-dark-primary'}`}>
                         {notification.title}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                      <p className="text-xs text-slate-500 dark:text-dark-muted mt-1 line-clamp-2">
                         {notification.message}
                       </p>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                        <span className="text-[10px] text-slate-400 dark:text-dark-muted font-medium uppercase tracking-wider">
                           {new Date(notification.createdAt).toLocaleDateString()}
                         </span>
                         {notification.link && (

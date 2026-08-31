@@ -67,11 +67,11 @@ const EditProfileModal = ({ isOpen, onClose, user, userType, onProfileUpdated })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-slide-up">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-slide-up">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Edit Profile Picture</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-dark-primary">Edit Profile Picture</h2>
+            <button onClick={onClose} className="text-neutral-500 dark:text-dark-muted hover:text-gray-600 dark:hover:text-dark-primary transition-colors">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -80,11 +80,11 @@ const EditProfileModal = ({ isOpen, onClose, user, userType, onProfileUpdated })
 
           <form onSubmit={handleSubmit} className="flex flex-col items-center">
             <div className="relative group cursor-pointer mb-6" onClick={() => fileInputRef.current?.click()}>
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-100 bg-slate-100 flex items-center justify-center">
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-100 dark:border-dark-border bg-slate-100 dark:bg-dark-surface flex items-center justify-center">
                 {preview ? (
                   <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-4xl text-slate-400">{user?.firstName?.charAt(0) || 'U'}</span>
+                  <span className="text-4xl text-slate-400 dark:text-dark-muted">{user?.firstName?.charAt(0) || 'U'}</span>
                 )}
               </div>
               <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -107,7 +107,7 @@ const EditProfileModal = ({ isOpen, onClose, user, userType, onProfileUpdated })
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2.5 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-700 dark:text-dark-primary font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-dark-elevated transition-colors"
                 disabled={isSubmitting}
               >
                 Cancel

@@ -106,12 +106,12 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Withdraw Funds</h2>
-            <p className="text-sm text-gray-600 mt-1">Step {step} of 3</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-primary">Withdraw Funds</h2>
+            <p className="text-sm text-gray-600 dark:text-dark-muted mt-1">Step {step} of 3</p>
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-dark-primary dark:text-dark-primary text-2xl"
           >
             ×
           </button>
@@ -133,7 +133,7 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
           <div className="text-center py-8">
             <div className="text-5xl mb-4">✓</div>
             <h3 className="text-xl font-bold text-green-600 mb-2">Success!</h3>
-            <p className="text-gray-600 mb-2">Your withdrawal request has been submitted.</p>
+            <p className="text-gray-600 dark:text-dark-muted mb-2">Your withdrawal request has been submitted.</p>
             <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg text-left">
               <p className="text-sm font-semibold text-orange-800">⚠️ Payouts are not live</p>
               <p className="text-xs text-orange-700 mt-1">
@@ -158,18 +158,18 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
             {step === 1 && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                     Available Balance
                   </label>
                   <p className="text-2xl font-bold text-blue-600">{currencySymbol}{maxAmount.toFixed(2)}</p>
                 </div>
 
                 <div>
-                  <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                     Withdrawal Amount
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-3 text-gray-600 font-semibold">{currencySymbol}</span>
+                    <span className="absolute left-4 top-3 text-gray-600 dark:text-dark-muted font-semibold">{currencySymbol}</span>
                     <input
                       id="amount"
                       type="number"
@@ -180,25 +180,25 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
-                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Minimum: {currencySymbol}10 | Maximum: {currencySymbol}{maxAmount.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 dark:text-dark-muted mt-1">Minimum: {currencySymbol}10 | Maximum: {currencySymbol}{maxAmount.toFixed(2)}</p>
                 </div>
 
                 {/* Fee Preview */}
                 {amount && (
                   <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-700">Withdrawal Amount:</span>
-                      <span className="font-semibold text-gray-900">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
+                      <span className="text-gray-700 dark:text-dark-primary">Withdrawal Amount:</span>
+                      <span className="font-semibold text-gray-900 dark:text-dark-primary">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-700">Withdrawal Fee (2%):</span>
-                      <span className="font-semibold text-gray-900">-{currencySymbol}{estimatedFee}</span>
+                      <span className="text-gray-700 dark:text-dark-primary">Withdrawal Fee (2%):</span>
+                      <span className="font-semibold text-gray-900 dark:text-dark-primary">-{currencySymbol}{estimatedFee}</span>
                     </div>
                     <div className="border-t border-yellow-300 pt-2 flex justify-between">
-                      <span className="text-gray-700 font-semibold">You'll receive:</span>
+                      <span className="text-gray-700 dark:text-dark-primary font-semibold">You'll receive:</span>
                       <span className="font-bold text-yellow-600">{currencySymbol}{netAmount}</span>
                     </div>
                   </div>
@@ -210,7 +210,7 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
             {step === 2 && (
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="accountHolder" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="accountHolder" className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                     Account Holder Name *
                   </label>
                   <input
@@ -219,12 +219,12 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
                     value={accountHolder}
                     onChange={(e) => setAccountHolder(e.target.value)}
                     placeholder="Full name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="bankName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="bankName" className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                     Bank Name *
                   </label>
                   <input
@@ -233,12 +233,12 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
                     placeholder="e.g., Chase Bank"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="accountNumber" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="accountNumber" className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                     Account Number *
                   </label>
                   <input
@@ -247,12 +247,12 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
                     placeholder="Your account number"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="routingNumber" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="routingNumber" className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                     Routing Number (US)
                   </label>
                   <input
@@ -261,12 +261,12 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
                     value={routingNumber}
                     onChange={(e) => setRoutingNumber(e.target.value)}
                     placeholder="9-digit routing number"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="swiftCode" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="swiftCode" className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                     SWIFT Code (International)
                   </label>
                   <input
@@ -275,11 +275,11 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
                     value={swiftCode}
                     onChange={(e) => setSwiftCode(e.target.value)}
                     placeholder="SWIFT/BIC code"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
 
-                <p className="text-xs text-gray-500">* Required fields</p>
+                <p className="text-xs text-gray-500 dark:text-dark-muted">* Required fields</p>
               </div>
             )}
 
@@ -288,22 +288,22 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
               <div className="space-y-4">
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-700">Amount:</span>
+                    <span className="text-gray-700 dark:text-dark-primary">Amount:</span>
                     <span className="font-semibold">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-700">Fee (2%):</span>
+                    <span className="text-gray-700 dark:text-dark-primary">Fee (2%):</span>
                     <span className="font-semibold">-{currencySymbol}{estimatedFee}</span>
                   </div>
                   <div className="border-t border-blue-300 pt-3 flex justify-between">
-                    <span className="text-gray-700 font-semibold">You'll receive:</span>
+                    <span className="text-gray-700 dark:text-dark-primary font-semibold">You'll receive:</span>
                     <span className="font-bold text-blue-600">{currencySymbol}{netAmount}</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-gray-900">Bank Details</h4>
-                  <p className="text-sm text-gray-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-dark-primary">Bank Details</h4>
+                  <p className="text-sm text-gray-700 dark:text-dark-primary">
                     <strong>Account:</strong> {accountHolder}<br/>
                     <strong>Bank:</strong> {bankName}<br/>
                     <strong>Account #:</strong> ****{accountNumber.slice(-4)}
@@ -314,7 +314,7 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
                   <strong>Note:</strong> Please verify your bank details carefully. Withdrawals typically take 2-5 business days to process.
                 </div>
 
-                <div className="text-xs text-gray-600">
+                <div className="text-xs text-gray-600 dark:text-dark-muted">
                   <input
                     type="checkbox"
                     id="confirm"
@@ -334,7 +334,7 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-primary font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition"
                 >
                   Back
                 </button>
@@ -342,7 +342,7 @@ const WithdrawalModal = ({ isOpen, onClose, walletBalance = 0, walletCurrency = 
               <button
                 type="button"
                 onClick={handleClose}
-                className={`flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition ${step > 1 ? '' : ''}`}
+                className={`flex-1 px-4 py-3 border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-primary font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition ${step > 1 ? '' : ''}`}
               >
                 Cancel
               </button>

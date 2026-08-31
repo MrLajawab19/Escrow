@@ -5,7 +5,7 @@ import SystemHealth from '../shared/widgets/SystemHealth';
 import AdminStatusBadge, { AdminRiskBadge } from '../shared/AdminStatusBadge';
 
 export default function OverviewTab({ stats, disputes = [], setTab }) {
-  const autoFlagged = disputes.filter(d => d.flagReason === 'AUTO_FLAGGED' && d.status !== 'RESOLVED');
+  const autoFlagged = disputes.filter(d => d.autoFlag === 'AUTO_FLAGGED' && d.status !== 'RESOLVED');
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -98,11 +98,11 @@ export default function OverviewTab({ stats, disputes = [], setTab }) {
                     {autoFlagged.slice(0, 5).map(d => (
                       <tr key={d.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-5 py-3">
-                          <p className="text-sm font-bold text-slate-800 font-mono">#{d.order?.id?.slice(0,8)}</p>
-                          <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]">{d.reason}</p>
+                          <p className="text-sm font-bold text-slate-800 font-mono">#{d.deed?.id?.slice(0,8) || d.deedId?.slice(0,8)}</p>
+                          <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]" title={d.riskReason}>{d.riskReason || d.reason}</p>
                         </td>
                         <td className="px-5 py-3"><AdminStatusBadge status={d.status} /></td>
-                        <td className="px-5 py-3"><AdminRiskBadge score={d.aiRiskScore} flag={d.flagReason} /></td>
+                        <td className="px-5 py-3"><AdminRiskBadge score={d.riskScore} flag={d.autoFlag} /></td>
                       </tr>
                     ))}
                   </tbody>

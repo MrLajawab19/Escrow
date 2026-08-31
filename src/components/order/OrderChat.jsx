@@ -270,8 +270,8 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
 
   // ─── Chat panel (inline = embedded in card, else floating fixed) ──────────
   const panelClass = inline
-    ? 'flex flex-col bg-white overflow-hidden'
-    : 'fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-2rem)] flex flex-col bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden';
+    ? 'flex flex-col bg-white dark:bg-dark-surface overflow-hidden'
+    : 'fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-2rem)] flex flex-col bg-white dark:bg-dark-surface rounded-2xl shadow-2xl border border-neutral-200 dark:border-dark-border overflow-hidden';
   const panelStyle = inline ? { height: '400px' } : { height: '520px' };
 
   return (
@@ -319,7 +319,7 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
       )}
 
       {/* ── Message list ──────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-neutral-50">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-neutral-50 dark:bg-dark-bg">
 
         {/* Load more */}
         {hasMore && (
@@ -341,8 +341,8 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <span className="text-3xl mb-2">🔒</span>
-            <p className="text-sm text-neutral-500 font-inter">No messages yet.</p>
-            <p className="text-xs text-neutral-400 font-inter mt-1">
+            <p className="text-sm text-neutral-500 dark:text-dark-muted font-inter">No messages yet.</p>
+            <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter mt-1">
               Start the conversation securely.
             </p>
           </div>
@@ -354,7 +354,7 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
                 <div className={`max-w-[78%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
                   {/* Sender name (only for other party) */}
                   {!isOwn && (
-                    <span className="text-xs text-neutral-500 font-inter px-1">
+                    <span className="text-xs text-neutral-500 dark:text-dark-muted font-inter px-1">
                       {msg.senderName}
                     </span>
                   )}
@@ -362,14 +362,14 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
                     className={`px-3 py-2 rounded-2xl text-sm font-inter leading-relaxed break-words
                       ${isOwn
                         ? 'bg-indigo-600 text-white rounded-br-sm'
-                        : 'bg-white text-[#0A2540] border border-neutral-200 rounded-bl-sm shadow-sm'
+                        : 'bg-white dark:bg-dark-surface text-[#0A2540] dark:text-dark-primary border border-neutral-200 dark:border-dark-border rounded-bl-sm shadow-sm'
                       }`}
                   >
                     {msg.content}
                   </div>
                   {/* Timestamp + read receipt */}
                   <div className={`flex items-center gap-1 px-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <span className="text-[10px] text-neutral-400 font-inter">
+                    <span className="text-[10px] text-neutral-400 dark:text-dark-muted font-inter">
                       {formatTime(msg.createdAt)}
                     </span>
                     {isOwn && (
@@ -387,9 +387,9 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
         {/* Typing indicator */}
         {typingUser && (
           <div className="flex justify-start">
-            <div className="bg-white border border-neutral-200 rounded-2xl rounded-bl-sm px-3 py-2 shadow-sm">
+            <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-2xl rounded-bl-sm px-3 py-2 shadow-sm">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-neutral-500 font-inter italic">{typingUser}</span>
+                <span className="text-xs text-neutral-500 dark:text-dark-muted font-inter italic">{typingUser}</span>
                 <span className="flex gap-0.5 ml-1">
                   {[0, 1, 2].map(i => (
                     <span
@@ -408,9 +408,9 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
       </div>
 
       {/* ── Input area ────────────────────────────────────────────────────── */}
-      <div className="px-3 py-3 bg-white border-t border-neutral-100">
+      <div className="px-3 py-3 bg-white dark:bg-dark-surface border-t border-neutral-100">
         {isExpired ? (
-          <div className="text-center text-sm text-neutral-400 font-inter py-1">
+          <div className="text-center text-sm text-neutral-400 dark:text-dark-muted font-inter py-1">
             Chat is archived — no new messages allowed.
           </div>
         ) : (
@@ -423,7 +423,7 @@ const OrderChat = ({ deedId, currentUser, orderStatus, inline = false }) => {
               placeholder="Type a message… (Enter to send)"
               rows={1}
               maxLength={2000}
-              className="flex-1 resize-none px-3 py-2 border border-neutral-200 rounded-xl text-sm font-inter text-[#0A2540] bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all placeholder-neutral-400 max-h-24 overflow-y-auto"
+              className="flex-1 resize-none px-3 py-2 border border-neutral-200 dark:border-dark-border rounded-xl text-sm font-inter text-[#0A2540] dark:text-dark-primary bg-neutral-50 dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all placeholder-neutral-400 max-h-24 overflow-y-auto"
               style={{ lineHeight: '1.5' }}
             />
             <button

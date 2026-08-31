@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const disputeConfig = require('../config/disputeConfig');
 const { generateAIReport } = require('../services/disputeAI');
+const ledgerService = require('../services/ledgerService');
 
 function calculateResolutionAmounts(price, buyerPct, disputeStatus = 'NONE') {
   let disputeRate = 0;
@@ -319,7 +320,10 @@ const getFullDisputeDetail = async (req, res) => {
   try {
     const { id } = req.params;
 
-    let dispute = await prisma.deedDispute.findUnique({ where: { id } });
+    let dispute = await prisma.deedDispute.findUnique({
+      where: { id },
+      include: { events: { orderBy: { createdAt: 'desc' } } }
+    });
     if (!dispute) return res.status(404).json({ success: false, message: 'Dispute not found' });
 
     const deed = await prisma.deed.findUnique({ 
@@ -363,86 +367,72 @@ const getFullDisputeDetail = async (req, res) => {
     
     // Wrapper 2: Challenge Phase Timeout (CHALLENGE_PHASE -> RESOLVED)
     if (dispute.status === 'CHALLENGE_PHASE') {
-      // Find the FIRST AI_REPORT to calculate the 48h window from start of challenge phase
-      const firstAiReportEvent = await prisma.disputeEvent.findFirst({
+      const latestAiReportEvent = await prisma.disputeEvent.findFirst({
         where: { deedDisputeId: dispute.id, type: 'AI_REPORT' },
-        orderBy: { createdAt: 'asc' }
+        orderBy: { createdAt: 'desc' }
       });
       
-      if (firstAiReportEvent) {
-        const reportAgeHours = (Date.now() - new Date(firstAiReportEvent.createdAt).getTime()) / (1000 * 60 * 60);
-        if (reportAgeHours > disputeConfig.CHALLENGE_WINDOW_HOURS) {
-          
-          const challengeCount = await prisma.disputeEvent.count({
-            where: { deedDisputeId: dispute.id, type: 'CHALLENGE' }
-          });
-          
-          let readyToSettle = false;
-          if (challengeCount === 0) {
-            readyToSettle = true;
-          } else if (challengeCount === 1) {
-            // Wait for AI re-analysis (AI_REPORT #2) to finish before settling
-            const totalAiReports = await prisma.disputeEvent.count({
-              where: { deedDisputeId: dispute.id, type: 'AI_REPORT' }
+      if (latestAiReportEvent) {
+        const totalAiReports = await prisma.disputeEvent.count({
+          where: { deedDisputeId: dispute.id, type: 'AI_REPORT' }
+        });
+
+        let readyToSettle = false;
+        let shouldTriggerReAnalysis = false;
+        
+        if (totalAiReports >= 2) {
+          readyToSettle = true;
+        } else {
+          const reportAgeHours = (Date.now() - new Date(latestAiReportEvent.createdAt).getTime()) / (1000 * 60 * 60);
+          if (reportAgeHours > disputeConfig.CHALLENGE_WINDOW_HOURS) {
+            const challengeCount = await prisma.disputeEvent.count({
+              where: { deedDisputeId: dispute.id, type: 'CHALLENGE' }
             });
-            if (totalAiReports >= 2) readyToSettle = true;
+            
+            if (challengeCount === 0) {
+              readyToSettle = true;
+            } else if (challengeCount === 1) {
+              shouldTriggerReAnalysis = true;
+            }
           }
-          
-          if (readyToSettle) {
-            // 1. Fetch most recent AI_REPORT
-            const latestAiReport = await prisma.disputeEvent.findFirst({
-              where: { deedDisputeId: dispute.id, type: 'AI_REPORT' },
-              orderBy: { createdAt: 'desc' }
+        }
+
+        if (shouldTriggerReAnalysis) {
+          console.log(`[Lazy Wrapper] 24h elapsed for ${dispute.id} with 1 challenge. Triggering AI Re-Analysis (Verdict 2)...`);
+          const { generateAIReport } = require('../services/disputeAI');
+          generateAIReport(dispute.id).catch(err => console.error("AI Re-Analysis Error from Wrapper:", err));
+        } else if (readyToSettle) {
+          const recommendation = latestAiReportEvent?.payload?.recommendation;
+
+          // Explicit Guard
+          if (recommendation !== 'REFUND_BUYER' && recommendation !== 'RELEASE_TO_SELLER') {
+            const updated = await prisma.deedDispute.updateMany({
+              where: { id: dispute.id, status: 'CHALLENGE_PHASE' },
+              data: { status: 'ESCALATED', lastActivity: new Date() }
             });
-            const recommendation = latestAiReport?.payload?.recommendation;
-
-            // 2. Explicit Guard
-            if (recommendation !== 'REFUND_BUYER' && recommendation !== 'RELEASE_TO_SELLER') {
-              const updated = await prisma.deedDispute.updateMany({
-                where: { id: dispute.id, status: 'CHALLENGE_PHASE' },
-                data: { status: 'ESCALATED', lastActivity: new Date() }
+            
+            if (updated.count === 1) {
+              console.log(`[Lazy Wrapper] Timeout elapsed in CHALLENGE_PHASE, but recommendation was ${recommendation}. Escalating...`);
+              await prisma.disputeEvent.create({
+                data: {
+                  deedDisputeId: dispute.id,
+                  type: 'ESCALATED',
+                  actorRole: 'system-lazy-eval',
+                  payload: { reason: 'Auto-settlement condition reached, but AI recommendation was MANUAL_REVIEW_REQUIRED. Escalating instead.' }
+                }
               });
-              
-              if (updated.count === 1) {
-                console.log(`[Lazy Wrapper] 48h elapsed in CHALLENGE_PHASE, but recommendation was ${recommendation}. Escalating...`);
-                await prisma.disputeEvent.create({
-                  data: {
-                    deedDisputeId: dispute.id,
-                    type: 'ESCALATED',
-                    actorRole: 'system',
-                    payload: { 
-                      reason: 'Auto-settlement timeout reached, but AI recommendation was MANUAL_REVIEW_REQUIRED (or missing/unparseable) — routing to human review instead of auto-resolving.' 
-                    }
-                  }
-                });
-                dispute.status = 'ESCALATED';
-              }
-            } else {
-              // 3. Valid Recommendation - Atomic lock then settle
-              // We use updateMany to atomically grab the lock so concurrent requests don't double-settle.
-              // We set it to RESOLVED here, and executeSettlementTransaction will update it again with the full timeline.
-              const updated = await prisma.deedDispute.updateMany({
-                where: { id: dispute.id, status: 'CHALLENGE_PHASE' },
-                data: { status: 'RESOLVED', lastActivity: new Date() }
-              });
-              
-              if (updated.count === 1) {
-                console.log(`[Lazy Wrapper] 48h elapsed in CHALLENGE_PHASE. Auto-settling with ${recommendation}...`);
-                const buyerPct = recommendation === 'REFUND_BUYER' ? 100 : 0;
-                
-                const { executeSettlementTransaction } = require('../services/settlementService');
-                await executeSettlementTransaction({
-                  dispute,
-                  deed,
-                  recommendation,
-                  buyerPct,
-                  actorRole: 'system',
-                  actorId: null,
-                  notes: 'Auto-settled via 48h challenge-phase timeout'
-                });
-
-                dispute.status = 'RESOLVED';
-              }
+              dispute.status = 'ESCALATED';
+            }
+          } else {
+            const { processTimeoutSettlement } = require('../services/settlementService');
+            const settled = await processTimeoutSettlement({
+              dispute,
+              deed,
+              recommendation,
+              triggerSource: 'system-lazy-eval'
+            });
+            if (settled) {
+              dispute.status = 'RESOLVED';
             }
           }
         }
@@ -484,6 +474,10 @@ const getFullDisputeDetail = async (req, res) => {
           ? {
               id: deed.id,
               status: deed.status,
+              amount: deed.amount,
+              deadline: deed.deadline,
+              description: deed.description,
+              deliverableFormats: deed.deliverableFormats,
               scopeBox: deed.scopeBox,
               currency: deed.currency,
               createdAt: deed.createdAt,
@@ -758,6 +752,14 @@ const submitEvidenceEvent = async (req, res) => {
         }
       }
     });
+
+    // Mirror into AuditLedger so the Activity Log on the deed page stays complete.
+    // Fire-and-forget — a ledger write failure must never block evidence submission.
+    ledgerService.appendEvent(deedId, 'EVIDENCE_SUBMITTED', actorRole, req.user.id, {
+      isLate,
+      fileCount: evidenceUrls.length,
+      disputeId: dispute.id
+    }).catch(err => console.error('[Ledger] EVIDENCE_SUBMITTED write failed:', err.message));
     
     // 4.5. Backwards Compatibility: Update the legacy JSON column so the UI recognizes the submission
     const currentResponses = dispute.evidenceResponses && typeof dispute.evidenceResponses === 'object' ? dispute.evidenceResponses : {};
@@ -864,6 +866,12 @@ const submitChallengeEvent = async (req, res) => {
         }
       }
     });
+
+    // Mirror into AuditLedger (fire-and-forget).
+    ledgerService.appendEvent(deedId, 'DISPUTE_CHALLENGE', actorRole, req.user.id, {
+      fileCount: evidenceUrls.length,
+      disputeId: dispute.id
+    }).catch(err => console.error('[Ledger] DISPUTE_CHALLENGE write failed:', err.message));
     
     // 5. Active Triggers
     const challengeCount = await prisma.disputeEvent.count({
@@ -871,49 +879,37 @@ const submitChallengeEvent = async (req, res) => {
     });
     
     if (challengeCount === 1) {
-      // Trigger AI re-analysis on the first challenge immediately
-      setImmediate(() => {
-        console.log(`[Dispute ${dispute.id}] 1 challenge submitted, triggering AI re-analysis...`);
-        generateAIReport(dispute.id).catch(err => console.error("AI Re-Analysis Error:", err));
+      console.log(`[Dispute ${dispute.id}] 1 challenge submitted. Waiting for counterparty or 24h timeout...`);
+    } else if (challengeCount === 2) {
+      // Both parties challenged. The challenge window is effectively over. 
+      // Trigger AI re-analysis immediately.
+      setImmediate(async () => {
+        try {
+          console.log(`[Dispute ${dispute.id}] Both parties challenged. Triggering AI re-analysis (Verdict 2)...`);
+          const { generateAIReport } = require('../services/disputeAI');
+          await generateAIReport(dispute.id, { triggeredBySecondChallenge: true });
+        } catch (err) {
+          // generateAIReport only re-throws when BOTH the AI run AND its internal
+          // fallback escalation failed (see disputeAI.js). Apply emergency escalation
+          // here as the last line of defence so the dispute never stalls indefinitely.
+          console.error(`[Dispute ${dispute.id}] AI re-analysis trigger failed — applying emergency escalation:`, err.message);
+          try {
+            await prisma.deedDispute.updateMany({
+              where: { id: dispute.id, status: { notIn: ['ESCALATED', 'RESOLVED'] } },
+              data: { status: 'ESCALATED', lastActivity: new Date() }
+            });
+            console.log(`[Dispute ${dispute.id}] Emergency escalation applied.`);
+          } catch (dbErr) {
+            console.error(`[Dispute ${dispute.id}] Emergency escalation also failed:`, dbErr.message);
+          }
+        }
       });
 
-      // [Shadow Mode] Independent comparison — polls for Gemini's DB write then runs new system
+      // [Shadow Mode] Independent comparison
       setImmediate(() => {
         const { runShadowComparison } = require('../services/ai/shadowCompare');
         runShadowComparison(dispute.id).catch(err => console.error('[ShadowCompare] uncaught:', err.message));
       });
-    } else if (challengeCount === 2) {
-      // Both challenged, instantly escalate (human review overrides any pending or completed re-analysis)
-      const escalationEntry = {
-        event: 'ESCALATED',
-        by: 'system',
-        timestamp: new Date().toISOString(),
-        description: 'Auto-escalated: Both parties challenged the AI decision.',
-        notes: 'Awaiting human moderator review.'
-      };
-
-      const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
-
-      await prisma.deedDispute.update({
-        where: { id: dispute.id },
-        data: { 
-          status: 'ESCALATED',
-          escalatedAt: new Date(),
-          lastActivity: new Date(),
-          timeline: [...currentTimeline, escalationEntry]
-        }
-      });
-
-      await prisma.disputeEvent.create({
-        data: {
-          deedDisputeId: dispute.id,
-          type: 'ESCALATED',
-          actorRole: 'system',
-          payload: { reason: 'Both parties challenged the decision.' }
-        }
-      });
-
-      console.log(`[Dispute ${dispute.id}] Both parties challenged, escalated to human review.`);
     }
     
     return res.json({ success: true, message: 'Challenge submitted successfully', data: newEvent });

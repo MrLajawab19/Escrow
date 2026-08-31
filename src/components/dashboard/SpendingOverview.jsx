@@ -11,10 +11,9 @@ const SpendingOverview = ({ userId, walletSummary, walletLoading }) => {
   const earningsRaw = Number(walletSummary?.monthlyStats?.earnings || 0);
 
   const isSeller = walletSummary?.userRole === 'seller';
-  const totalVolumeRaw = depositsRaw + purchasesRaw + withdrawalsRaw + earningsRaw;
+  const totalVolumeRaw = purchasesRaw + withdrawalsRaw + earningsRaw;
 
   // Calculate percentages for donut chart
-  const depositsPercent = totalVolumeRaw > 0 ? (depositsRaw / totalVolumeRaw) * 100 : 0;
   const purchasesPercent = totalVolumeRaw > 0 ? (purchasesRaw / totalVolumeRaw) * 100 : 0;
   const withdrawalsPercent = totalVolumeRaw > 0 ? (withdrawalsRaw / totalVolumeRaw) * 100 : 0;
   const earningsPercent = totalVolumeRaw > 0 ? (earningsRaw / totalVolumeRaw) * 100 : 0;
@@ -25,13 +24,11 @@ const SpendingOverview = ({ userId, walletSummary, walletLoading }) => {
   const gap = 4;
 
   // Calculate stroke dash arrays
-  const seg1 = (depositsPercent / 100) * circumference;
   const seg2 = (purchasesPercent / 100) * circumference;
   const seg3 = (withdrawalsPercent / 100) * circumference;
   const seg4 = (earningsPercent / 100) * circumference;
 
-  const offset1 = 0;
-  const offset2 = seg1 > 0 ? seg1 + gap : offset1;
+  const offset2 = 0;
   const offset3 = seg2 > 0 ? offset2 + seg2 + gap : offset2;
   const offset4 = seg3 > 0 ? offset3 + seg3 + gap : offset3;
 
@@ -62,23 +59,6 @@ const SpendingOverview = ({ userId, walletSummary, walletLoading }) => {
                 stroke="#F1F5F9"
                 strokeWidth="14"
               />
-
-              {/* Deposits (green) */}
-              {depositsPercent > 0 && (
-                <circle
-                  cx="70"
-                  cy="70"
-                  r={radius}
-                  fill="none"
-                  stroke="#10B981"
-                  strokeWidth="14"
-                  strokeLinecap="round"
-                  strokeDasharray={`${seg1} ${circumference - seg1}`}
-                  strokeDashoffset={-offset1}
-                  transform="rotate(-90 70 70)"
-                  className="transition-all duration-700"
-                />
-              )}
 
               {/* Purchases (purple) */}
               {purchasesPercent > 0 && (
@@ -136,7 +116,7 @@ const SpendingOverview = ({ userId, walletSummary, walletLoading }) => {
               <p className="text-base font-bold text-navy-900">
                 {walletLoading ? '...' : displayAmount(totalVolumeRaw)}
               </p>
-              <p className="text-[10px] text-neutral-400">Total Volume</p>
+              <p className="text-[10px] text-neutral-400">{isSeller ? 'Total Volume' : 'Total Spent'}</p>
             </div>
           </div>
 
@@ -160,13 +140,7 @@ const SpendingOverview = ({ userId, walletSummary, walletLoading }) => {
                 <span className="text-xs font-semibold text-navy-900">{displayAmount(purchasesRaw)}</span>
               </div>
             )}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-xs text-neutral-500">Deposits</span>
-              </div>
-              <span className="text-xs font-semibold text-navy-900">{displayAmount(depositsRaw)}</span>
-            </div>
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />

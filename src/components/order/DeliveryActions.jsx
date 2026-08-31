@@ -6,7 +6,11 @@ import DisputeModal from '../DisputeModal';
 const DeliveryActions = ({ deed, userType, onUpdate }) => {
   // Extract delivery files dynamically from the ledger
   const deliveryEntry = deed?.ledgerEntries?.find(e => e.eventType === 'DELIVERY_CLAIMED');
-  const deliveryFiles = deliveryEntry?.payload?.fileUrls || [];
+  let payloadObj = {};
+  if (deliveryEntry?.payload) {
+    try { payloadObj = typeof deliveryEntry.payload === 'string' ? JSON.parse(deliveryEntry.payload) : deliveryEntry.payload; } catch (e) {}
+  }
+  const deliveryFiles = payloadObj.fileUrls || [];
   const [showRevision, setShowRevision] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [loading, setLoading] = useState('');
@@ -45,7 +49,7 @@ const DeliveryActions = ({ deed, userType, onUpdate }) => {
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
             <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,26 +58,26 @@ const DeliveryActions = ({ deed, userType, onUpdate }) => {
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-bold text-[#0A2540] font-inter">Delivery Received</h2>
-            <p className="text-xs text-neutral-400 font-inter">Seller has submitted the work for your review</p>
+            <h2 className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">Delivery Received</h2>
+            <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Seller has submitted the work for your review</p>
           </div>
         </div>
 
         {/* Delivery Files */}
         {deliveryFiles.length > 0 && (
           <div className="mb-5">
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 font-inter">
+            <p className="text-xs font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider mb-2 font-inter">
               Submitted Files
             </p>
             <div className="space-y-2">
               {deliveryFiles.map((file, i) => (
                 <div key={i}
-                  className="flex items-center gap-3 px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl">
+                  className="flex items-center gap-3 px-4 py-2.5 bg-neutral-50 dark:bg-dark-bg border border-neutral-200 dark:border-dark-border rounded-xl">
                   <svg className="w-4 h-4 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
-                  <span className="text-sm font-inter text-[#0A2540] truncate">{file}</span>
+                  <span className="text-sm font-inter text-[#0A2540] dark:text-dark-primary truncate">{file}</span>
                 </div>
               ))}
             </div>
@@ -121,7 +125,7 @@ const DeliveryActions = ({ deed, userType, onUpdate }) => {
             onClick={() => setShowRevision(true)}
             disabled={!canRequestRevision}
             title={!canRequestRevision ? 'Revision limit reached' : 'Request changes'}
-            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-200 disabled:cursor-not-allowed text-white disabled:text-neutral-400 text-sm font-semibold rounded-xl transition-all font-inter"
+            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-200 disabled:cursor-not-allowed text-white disabled:text-neutral-400 dark:text-dark-muted text-sm font-semibold rounded-xl transition-all font-inter"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -131,7 +135,7 @@ const DeliveryActions = ({ deed, userType, onUpdate }) => {
           </button>
           <button
             onClick={() => setShowDisputeModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold rounded-xl transition-all font-inter"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-dark-surface border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold rounded-xl transition-all font-inter"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />

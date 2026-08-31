@@ -20,7 +20,7 @@ const DisputeComparison = () => {
             <h2 className="text-4xl md:text-5xl font-black text-white font-inter mb-6 leading-[1.1]">
               Resolve disputes with evidence, not arguments.
             </h2>
-            <p className="text-lg text-neutral-400 mb-8 leading-relaxed">
+            <p className="text-lg text-neutral-400 dark:text-dark-muted mb-8 leading-relaxed">
               Our AI Arbitration Engine reviews the locked ScopeBox, submitted evidence, and transaction history to recommend an outcome based on what was actually agreed. Complex cases can be escalated for human review.
             </p>
             
@@ -31,7 +31,7 @@ const DisputeComparison = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-white mb-1">Evidence Analysis</h4>
-                  <p className="text-sm text-neutral-400">Reviews submitted evidence against the locked agreement.</p>
+                  <p className="text-sm text-neutral-400 dark:text-dark-muted">Reviews submitted evidence against the locked agreement.</p>
                 </div>
               </div>
               
@@ -41,7 +41,7 @@ const DisputeComparison = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-white mb-1">Faster Resolution</h4>
-                  <p className="text-sm text-neutral-400">Clear cases can be resolved without weeks of back-and-forth.</p>
+                  <p className="text-sm text-neutral-400 dark:text-dark-muted">Clear cases can be resolved without weeks of back-and-forth.</p>
                 </div>
               </div>
               
@@ -51,7 +51,7 @@ const DisputeComparison = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-white mb-1">Human Escalation</h4>
-                  <p className="text-sm text-neutral-400">Complex or contested cases can be escalated for human review.</p>
+                  <p className="text-sm text-neutral-400 dark:text-dark-muted">Complex or contested cases can be escalated for human review.</p>
                 </div>
               </div>
             </div>
@@ -79,7 +79,7 @@ const DisputeComparison = () => {
                     In Review
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-neutral-400 font-medium">
+                <div className="flex items-center gap-2 text-sm text-neutral-400 dark:text-dark-muted font-medium">
                   <span className="text-white font-bold">5m</span> Avg Resolution Time
                 </div>
               </div>
@@ -91,19 +91,19 @@ const DisputeComparison = () => {
                   {/* Buyer Claim */}
                   <div className="bg-navy-900 rounded-xl p-5 border border-navy-800">
                     <h3 className="text-sm font-bold text-white mb-3">Buyer Claim</h3>
-                    <p className="text-xs text-neutral-400 mb-6 leading-relaxed">
+                    <p className="text-xs text-neutral-400 dark:text-dark-muted mb-6 leading-relaxed">
                       "The delivered logo doesn't match the brand guidelines and color requirements."
                     </p>
                     
-                    <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Evidence (3)</h4>
+                    <h4 className="text-[10px] font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider mb-2">Evidence (3)</h4>
                     <div className="flex gap-2">
                       <div className="w-10 h-10 rounded border border-navy-700 bg-navy-800 flex items-center justify-center opacity-80 hover:opacity-100 cursor-pointer">
-                        <FileImage size={16} className="text-neutral-500" />
+                        <FileImage size={16} className="text-neutral-500 dark:text-dark-muted" />
                       </div>
                       <div className="w-10 h-10 rounded border border-navy-700 bg-navy-800 flex items-center justify-center opacity-80 hover:opacity-100 cursor-pointer">
-                        <FileImage size={16} className="text-neutral-500" />
+                        <FileImage size={16} className="text-neutral-500 dark:text-dark-muted" />
                       </div>
-                      <div className="w-10 h-10 rounded border border-navy-700 bg-navy-800 flex items-center justify-center text-xs font-bold text-neutral-400 cursor-pointer hover:bg-navy-700 hover:text-white transition-colors">
+                      <div className="w-10 h-10 rounded border border-navy-700 bg-navy-800 flex items-center justify-center text-xs font-bold text-neutral-400 dark:text-dark-muted cursor-pointer hover:bg-navy-700 hover:text-white transition-colors">
                         +1
                       </div>
                     </div>
@@ -117,11 +117,11 @@ const DisputeComparison = () => {
                     <div className="space-y-4 mt-2">
                       <div>
                         <h4 className="text-xs font-bold text-white mb-1">Color Scheme</h4>
-                        <p className="text-[10px] text-neutral-400">Primary and secondary color palette as per guidelines.</p>
+                        <p className="text-[10px] text-neutral-400 dark:text-dark-muted">Primary and secondary color palette as per guidelines.</p>
                       </div>
                       <div>
                         <h4 className="text-xs font-bold text-white mb-1">File Formats</h4>
-                        <p className="text-[10px] text-neutral-400">AI, EPS, PDF, PNG, JPG</p>
+                        <p className="text-[10px] text-neutral-400 dark:text-dark-muted">AI, EPS, PDF, PNG, JPG</p>
                       </div>
                     </div>
                   </div>
@@ -129,15 +129,15 @@ const DisputeComparison = () => {
                   {/* Seller Evidence */}
                   <div className="bg-navy-900 rounded-xl p-5 border border-navy-800">
                     <h3 className="text-sm font-bold text-white mb-3">Seller Evidence</h3>
-                    <p className="text-xs text-neutral-400 mb-6 leading-relaxed">
+                    <p className="text-xs text-neutral-400 dark:text-dark-muted mb-6 leading-relaxed">
                       "Delivered files meet all agreed requirements in the ScopeBox."
                     </p>
                     
-                    <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Evidence (4)</h4>
+                    <h4 className="text-[10px] font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider mb-2">Evidence (4)</h4>
                     <div className="flex gap-2">
                       <div className="flex-1 h-10 rounded border border-navy-700 bg-navy-800 flex items-center px-2 gap-2 opacity-80 hover:opacity-100 cursor-pointer">
-                        <AlertCircle size={14} className="text-neutral-500" />
-                        <span className="text-[10px] text-neutral-400 truncate">final-deliverables.zip</span>
+                        <AlertCircle size={14} className="text-neutral-500 dark:text-dark-muted" />
+                        <span className="text-[10px] text-neutral-400 dark:text-dark-muted truncate">final-deliverables.zip</span>
                       </div>
                     </div>
                   </div>
@@ -158,7 +158,7 @@ const DisputeComparison = () => {
                       </div>
                       <div className="flex items-end gap-2">
                         <span className="text-2xl font-black text-white">90%</span>
-                        <span className="text-xs text-neutral-400 mb-1">Match with ScopeBox</span>
+                        <span className="text-xs text-neutral-400 dark:text-dark-muted mb-1">Match with ScopeBox</span>
                       </div>
                     </div>
                   </div>

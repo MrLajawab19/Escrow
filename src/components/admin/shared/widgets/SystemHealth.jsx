@@ -20,19 +20,19 @@ function SystemHealth({ stats }) {
         <div>
           <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Order Distribution</h4>
           <div className="space-y-3">
-            <StatusBar label="PENDING SELLER" count={stats?.ordersByStatus?.find(s => s.status === 'PENDING_SELLER')?._count || 0} total={stats?.totalOrders} color="bg-orange-500" />
-            <StatusBar label="ACTIVE" count={stats?.ordersByStatus?.find(s => s.status === 'ACTIVE')?._count || 0} total={stats?.totalOrders} color="bg-amber-500" />
-            <StatusBar label="IN PROGRESS" count={stats?.ordersByStatus?.find(s => s.status === 'IN_PROGRESS')?._count || 0} total={stats?.totalOrders} color="bg-indigo-500" />
-            <StatusBar label="CLOSED" count={stats?.ordersByStatus?.find(s => s.status === 'CLOSED')?._count || 0} total={stats?.totalOrders} color="bg-emerald-500" />
+            <StatusBar label="PENDING SELLER" count={stats?.ordersByStatus?.find(s => s.status === 'PENDING_SELLER')?.count || 0} total={stats?.totalOrders} color="bg-orange-500" />
+            <StatusBar label="ACTIVE" count={stats?.ordersByStatus?.find(s => s.status === 'ACTIVE')?.count || 0} total={stats?.totalOrders} color="bg-amber-500" />
+            <StatusBar label="IN PROGRESS" count={stats?.ordersByStatus?.find(s => s.status === 'IN_PROGRESS')?.count || 0} total={stats?.totalOrders} color="bg-indigo-500" />
+            <StatusBar label="CLOSED" count={stats?.ordersByStatus?.find(s => s.status === 'CLOSED')?.count || 0} total={stats?.totalOrders} color="bg-emerald-500" />
           </div>
         </div>
 
         <div className="pt-6 border-t border-slate-100">
           <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Dispute Health</h4>
           <div className="space-y-3">
-            <StatusBar label="OPEN" count={stats?.disputesByStatus?.find(s => s.status === 'OPEN')?._count || 0} total={stats?.totalDisputes} color="bg-red-500" />
-            <StatusBar label="CHALLENGE" count={stats?.disputesByStatus?.find(s => s.status === 'CHALLENGE')?._count || 0} total={stats?.totalDisputes} color="bg-amber-500" />
-            <StatusBar label="RESOLVED" count={stats?.disputesByStatus?.find(s => s.status === 'RESOLVED')?._count || 0} total={stats?.totalDisputes} color="bg-green-500" />
+            <StatusBar label="OPEN" count={stats?.openDisputes || 0} total={stats?.totalDisputes} color="bg-red-500" />
+            <StatusBar label="CHALLENGE" count={stats?.challengeDisputes || 0} total={stats?.totalDisputes} color="bg-amber-500" />
+            <StatusBar label="RESOLVED" count={stats?.resolvedDisputes || 0} total={stats?.totalDisputes} color="bg-green-500" />
           </div>
         </div>
       </div>

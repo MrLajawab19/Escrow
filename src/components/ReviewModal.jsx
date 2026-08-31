@@ -46,8 +46,8 @@ const ReviewModal = ({ deedId, isOpen, onClose, onReviewSubmitted }) => {
       <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slide-up">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Leave a Review</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-dark-primary">Leave a Review</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-dark-muted transition-colors">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -56,7 +56,7 @@ const ReviewModal = ({ deedId, isOpen, onClose, onReviewSubmitted }) => {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-6 flex flex-col items-center">
-              <p className="text-sm font-medium text-gray-700 mb-2">How was your experience?</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-dark-primary mb-2">How was your experience?</p>
               <div className="flex space-x-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -79,14 +79,14 @@ const ReviewModal = ({ deedId, isOpen, onClose, onReviewSubmitted }) => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-primary mb-2">
                 Share details of your experience
               </label>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows="4"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none"
                 placeholder="What did you like? What could be improved?"
                 required
               />
@@ -96,7 +96,7 @@ const ReviewModal = ({ deedId, isOpen, onClose, onReviewSubmitted }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-3 bg-white dark:bg-dark-surface border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-700 dark:text-dark-primary font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors"
                 disabled={isSubmitting}
               >
                 Cancel

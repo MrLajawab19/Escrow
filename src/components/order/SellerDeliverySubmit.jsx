@@ -30,7 +30,7 @@ const SellerDeliverySubmit = ({ deed, userType, onUpdate }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 mt-6">
+    <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6 mt-6">
       <div className="flex items-center gap-3 mb-5">
         <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
           <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,13 +39,13 @@ const SellerDeliverySubmit = ({ deed, userType, onUpdate }) => {
           </svg>
         </div>
         <div>
-          <h2 className="text-base font-bold text-[#0A2540] font-inter">Submit Delivery</h2>
-          <p className="text-xs text-neutral-400 font-inter">Submit your completed work to the buyer.</p>
+          <h2 className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">Submit Delivery</h2>
+          <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Submit your completed work to the buyer.</p>
         </div>
       </div>
       
       <textarea
-        className="w-full border border-neutral-200 rounded-xl p-3 text-sm mb-4 outline-none focus:border-indigo-500 font-inter"
+        className="w-full border border-neutral-200 dark:border-dark-border rounded-xl p-3 text-sm mb-4 outline-none focus:border-indigo-500 font-inter"
         rows="3"
         placeholder="Add a message for the buyer..."
         value={description}

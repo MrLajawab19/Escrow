@@ -57,9 +57,9 @@ const DisputeTracker = ({ userId, userRole }) => {
       'CHALLENGE_PHASE': 'bg-yellow-100 text-yellow-800',
       'ESCALATED': 'bg-purple-100 text-purple-800',
       'RESOLVED': 'bg-green-100 text-green-800',
-      'CLOSED': 'bg-gray-100 text-gray-800'
+      'CLOSED': 'bg-gray-100 dark:bg-dark-elevated text-gray-800 dark:text-dark-primary'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-gray-100 dark:bg-dark-elevated text-gray-800 dark:text-dark-primary';
   };
 
   const getPriorityColor = (priority) => {
@@ -69,7 +69,7 @@ const DisputeTracker = ({ userId, userRole }) => {
       'HIGH': 'bg-orange-100 text-orange-800',
       'URGENT': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
     };
-    return colors[priority] || 'bg-gray-100 text-gray-800';
+    return colors[priority] || 'bg-gray-100 dark:bg-dark-elevated text-gray-800 dark:text-dark-primary';
   };
 
   const getResolutionText = (resolution) => {
@@ -113,19 +113,19 @@ const DisputeTracker = ({ userId, userRole }) => {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Disputes</h1>
-        <p className="mt-2 text-gray-600">Track and manage your dispute cases</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-dark-primary">My Disputes</h1>
+        <p className="mt-2 text-gray-600 dark:text-dark-muted">Track and manage your dispute cases</p>
       </div>
 
       {/* Filters */}
       <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-6 mb-6">
         <div className="flex items-center space-x-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-primary mb-2">Status</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-300 dark:border-dark-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Statuses</option>
               <option value="OPEN">Open</option>
@@ -138,7 +138,7 @@ const DisputeTracker = ({ userId, userRole }) => {
           <div className="flex items-end">
             <button
               onClick={() => setFilters({ status: '' })}
-              className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              className="bg-gray-50 dark:bg-dark-bg0 text-white px-4 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Clear Filters
             </button>
@@ -150,11 +150,11 @@ const DisputeTracker = ({ userId, userRole }) => {
       <div className="space-y-6">
         {disputes.length === 0 ? (
           <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-8 text-center">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No disputes found</h3>
-            <p className="mt-1 text-sm text-gray-500">You don't have any disputes at the moment.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-dark-primary">No disputes found</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-dark-muted">You don't have any disputes at the moment.</p>
           </div>
         ) : (
           disputes.map((dispute) => (
@@ -170,10 +170,10 @@ const DisputeTracker = ({ userId, userRole }) => {
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-dark-primary">
                         Dispute #{dispute.id.substring(0, 8)}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-dark-muted">
                         Order: {dispute.Order?.platform} • Raised: {new Date(dispute.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -191,31 +191,31 @@ const DisputeTracker = ({ userId, userRole }) => {
                 <div className="mt-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900">Dispute Details</h4>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-dark-primary">Dispute Details</h4>
+                      <p className="text-sm text-gray-600 dark:text-dark-muted mt-1">
                         <strong>Reason:</strong> {dispute.reason}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-dark-muted">
                         <strong>Description:</strong> {dispute.description}
                       </p>
                       {dispute.requestedResolution && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-dark-muted">
                           <strong>Requested Resolution:</strong> {dispute.requestedResolution}
                         </p>
                       )}
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900">Resolution</h4>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-dark-primary">Resolution</h4>
                       {dispute.resolution ? (
                         <div className="mt-1">
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 dark:text-dark-muted">
                             <strong>Outcome:</strong> 
                             <span className={`ml-2 font-bold ${getResolutionColor(dispute.resolution)}`}>
                               {getResolutionText(dispute.resolution)}
                             </span>
                           </p>
                           <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs text-gray-500">Favors:</span>
+                            <span className="text-xs text-gray-500 dark:text-dark-muted">Favors:</span>
                             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                               getResolutionSide(dispute.resolution) === 'buyer' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
                               getResolutionSide(dispute.resolution) === 'seller' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
@@ -227,23 +227,23 @@ const DisputeTracker = ({ userId, userRole }) => {
                             </span>
                           </div>
                           {dispute.resolutionAmount && (
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-dark-muted">
                               <strong>Amount:</strong> ${dispute.resolutionAmount}
                             </p>
                           )}
                           {dispute.resolutionNotes && (
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-dark-muted">
                               <strong>Notes:</strong> {dispute.resolutionNotes}
                             </p>
                           )}
                           {dispute.resolvedAt && (
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-dark-muted">
                               <strong>Resolved:</strong> {new Date(dispute.resolvedAt).toLocaleDateString()}
                             </p>
                           )}
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 mt-1">Pending resolution</p>
+                        <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">Pending resolution</p>
                 )}
               </div>
                   </div>
@@ -251,7 +251,7 @@ const DisputeTracker = ({ userId, userRole }) => {
                   {/* Evidence */}
                   {dispute.evidenceUrls && dispute.evidenceUrls.length > 0 && (
                     <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-900">Evidence</h4>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-dark-primary">Evidence</h4>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {dispute.evidenceUrls.map((url, index) => (
                           <a
@@ -259,7 +259,7 @@ const DisputeTracker = ({ userId, userRole }) => {
                             href={url.startsWith('http') ? url : `${window.location.origin}${url}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:text-blue-400"
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-dark-border rounded-md text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:text-blue-400"
                           >
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -274,7 +274,7 @@ const DisputeTracker = ({ userId, userRole }) => {
                   {/* Timeline */}
                   {dispute.timeline && dispute.timeline.length > 0 && (
                     <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-900">Timeline</h4>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-dark-primary">Timeline</h4>
                       <div className="mt-2 space-y-2">
                         {dispute.timeline.map((event, index) => (
                           <div key={index} className="flex items-start space-x-3">
@@ -282,9 +282,9 @@ const DisputeTracker = ({ userId, userRole }) => {
                               <div className="h-2 w-2 bg-blue-400 rounded-full mt-2"></div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900">{event.event}</p>
-                              <p className="text-sm text-gray-600">{event.description}</p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-sm font-medium text-gray-900 dark:text-dark-primary">{event.event}</p>
+                              <p className="text-sm text-gray-600 dark:text-dark-muted">{event.description}</p>
+                              <p className="text-xs text-gray-500 dark:text-dark-muted">
                                 {new Date(event.timestamp).toLocaleString()}
                 </p>
               </div>
@@ -350,10 +350,10 @@ const DisputeDetailModal = ({ dispute, userRole, onClose, onAddEvidence }) => {
       <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-dark-surface">
         <div className="mt-3">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Dispute Details</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-dark-primary">Dispute Details</h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 dark:text-dark-muted"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -363,36 +363,36 @@ const DisputeDetailModal = ({ dispute, userRole, onClose, onAddEvidence }) => {
 
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium text-gray-900">Order Information</h4>
-              <p className="text-sm text-gray-600">Platform: {dispute.Order?.platform}</p>
-              <p className="text-sm text-gray-600">Status: {dispute.Order?.status}</p>
+              <h4 className="font-medium text-gray-900 dark:text-dark-primary">Order Information</h4>
+              <p className="text-sm text-gray-600 dark:text-dark-muted">Platform: {dispute.Order?.platform}</p>
+              <p className="text-sm text-gray-600 dark:text-dark-muted">Status: {dispute.Order?.status}</p>
                   </div>
                   
                     <div>
-              <h4 className="font-medium text-gray-900">Dispute Information</h4>
-              <p className="text-sm text-gray-600">Raised by: {dispute.raisedBy}</p>
-              <p className="text-sm text-gray-600">Reason: {dispute.reason}</p>
-              <p className="text-sm text-gray-600">Description: {dispute.description}</p>
-              <p className="text-sm text-gray-600">Status: {dispute.status}</p>
-              <p className="text-sm text-gray-600">Priority: {dispute.priority}</p>
+              <h4 className="font-medium text-gray-900 dark:text-dark-primary">Dispute Information</h4>
+              <p className="text-sm text-gray-600 dark:text-dark-muted">Raised by: {dispute.raisedBy}</p>
+              <p className="text-sm text-gray-600 dark:text-dark-muted">Reason: {dispute.reason}</p>
+              <p className="text-sm text-gray-600 dark:text-dark-muted">Description: {dispute.description}</p>
+              <p className="text-sm text-gray-600 dark:text-dark-muted">Status: {dispute.status}</p>
+              <p className="text-sm text-gray-600 dark:text-dark-muted">Priority: {dispute.priority}</p>
                     </div>
 
             {dispute.resolution && (
                     <div>
-                <h4 className="font-medium text-gray-900">Resolution</h4>
-                <p className="text-sm text-gray-600">Outcome: {dispute.resolution}</p>
+                <h4 className="font-medium text-gray-900 dark:text-dark-primary">Resolution</h4>
+                <p className="text-sm text-gray-600 dark:text-dark-muted">Outcome: {dispute.resolution}</p>
                 {dispute.resolutionAmount && (
-                  <p className="text-sm text-gray-600">Amount: ${dispute.resolutionAmount}</p>
+                  <p className="text-sm text-gray-600 dark:text-dark-muted">Amount: ${dispute.resolutionAmount}</p>
                 )}
                 {dispute.resolutionNotes && (
-                  <p className="text-sm text-gray-600">Notes: {dispute.resolutionNotes}</p>
+                  <p className="text-sm text-gray-600 dark:text-dark-muted">Notes: {dispute.resolutionNotes}</p>
                 )}
                       </div>
                     )}
 
             {dispute.evidenceUrls && dispute.evidenceUrls.length > 0 && (
                 <div>
-                <h4 className="font-medium text-gray-900">Evidence</h4>
+                <h4 className="font-medium text-gray-900 dark:text-dark-primary">Evidence</h4>
                 <div className="space-y-2">
                   {dispute.evidenceUrls.map((url, index) => (
                     <a
@@ -411,13 +411,13 @@ const DisputeDetailModal = ({ dispute, userRole, onClose, onAddEvidence }) => {
 
             {dispute.timeline && dispute.timeline.length > 0 && (
                 <div>
-                <h4 className="font-medium text-gray-900">Timeline</h4>
+                <h4 className="font-medium text-gray-900 dark:text-dark-primary">Timeline</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {dispute.timeline.map((event, index) => (
-                    <div key={index} className="text-sm text-gray-600 border-l-2 border-gray-200 pl-3">
+                    <div key={index} className="text-sm text-gray-600 dark:text-dark-muted border-l-2 border-gray-200 dark:border-dark-border pl-3">
                       <p className="font-medium">{event.event}</p>
                       <p>{event.description}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-dark-muted">
                         {new Date(event.timestamp).toLocaleString()}
                       </p>
                           </div>
@@ -429,20 +429,20 @@ const DisputeDetailModal = ({ dispute, userRole, onClose, onAddEvidence }) => {
             {/* Add Evidence Section */}
             {dispute.status !== 'RESOLVED' && dispute.status !== 'CLOSED' && (
               <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Add Evidence</h4>
+                <h4 className="font-medium text-gray-900 dark:text-dark-primary mb-3">Add Evidence</h4>
                 <div className="space-y-3">
                   <input
                     type="file"
                     multiple
                     onChange={handleFileChange}
                     accept="image/*,.pdf,.doc,.docx,.txt"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-dark-border rounded-md px-3 py-2"
                   />
                     <textarea
                     placeholder="Description of evidence"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 dark:border-dark-border rounded-md px-3 py-2"
                       rows={3}
                     />
                     <button

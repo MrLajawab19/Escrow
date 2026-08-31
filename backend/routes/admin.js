@@ -55,7 +55,7 @@ router.get('/stats', adminAuth, async (req, res) => {
       prisma.deed.count({ where: { status: { in: activeStatuses } } }),
       prisma.deed.count({ where: { status: { in: completedStatuses } } }),
       prisma.deedDispute.count(),
-      prisma.deedDispute.count({ where: { status: 'OPEN' } }),
+      prisma.deedDispute.count({ where: { status: { in: ['OPEN', 'CHALLENGE_PHASE', 'ESCALATED'] } } }),
       prisma.deedDispute.count({ where: { status: 'CHALLENGE_PHASE' } }),
       prisma.deedDispute.count({ where: { status: 'ESCALATED' } }),
       prisma.deedDispute.count({ where: { status: 'RESOLVED' } }),
@@ -265,11 +265,12 @@ const getDisputeFull = async (req, res) => {
     return res.json({
       success: true,
       data: {
-        dispute,
+        dispute: { ...dispute, events: disputeEvents },
         deed: deed ? {
           id: deed.id, status: deed.status, scopeBox: deed.scopeBox,
           buyerName: buyer ? `${buyer.firstName} ${buyer.lastName}` : 'Unknown', buyerEmail: buyer?.email,
           currency: deed.currency, sellerContact: seller?.email,
+          amount: deed.amount, deadline: deed.deadline, description: deed.description,
           deliveryFiles: deliveryFiles, createdAt: deed.createdAt, updatedAt: deed.updatedAt,
         } : null,
         buyer: buyer ? { id: buyer.id, firstName: buyer.firstName, lastName: buyer.lastName, email: buyer.email } : null,

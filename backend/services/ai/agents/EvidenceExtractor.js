@@ -149,7 +149,8 @@ Output ONLY valid JSON matching this schema exactly:
     {
       "fact": "<short, concrete factual statement — e.g. 'Seller wrote on Aug 5: delivery will be 2 days late'>",
       "source": "<one of: buyer_evidence_image | seller_evidence_image | buyer_evidence_text | seller_evidence_text | buyer_rebuttal | seller_rebuttal | dispute_reason>",
-      "confidence": <float 0.0 to 1.0 — lower if image is blurry, cropped, or text is ambiguous>
+      "confidence": <float 0.0 to 1.0 — lower if image is blurry, cropped, or text is ambiguous>,
+      "mediaUrl": "<If this fact was derived from a specific uploaded file (like an image), put the exact file URL here. Omit or set to null if not derived from a specific file.>"
     }
   ],
   "unresolvedGaps": ["<what is still unclear from the evidence, e.g. 'No evidence of actual delivery date'>"],

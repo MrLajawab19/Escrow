@@ -36,7 +36,7 @@ const BuyerProfilePage = () => {
   }, [id]);
 
   if (loading) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-bg flex items-center justify-center pt-20">
       <Helmet>
         <title>Profile | ScrowX</title>
       </Helmet>
@@ -45,11 +45,11 @@ const BuyerProfilePage = () => {
   );
   
   if (!profile) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-bg flex items-center justify-center pt-20">
       <Helmet>
         <title>Profile Not Found | ScrowX</title>
       </Helmet>
-      <div className="text-gray-500">Profile not found</div>
+      <div className="text-gray-500 dark:text-dark-muted">Profile not found</div>
     </div>
   );
 
@@ -63,7 +63,7 @@ const BuyerProfilePage = () => {
       </Helmet>
       
       {/* Profile Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 mb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6 mb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative">
         {isOwnProfile && (
           <button 
             onClick={() => setIsEditModalOpen(true)}
@@ -72,7 +72,7 @@ const BuyerProfilePage = () => {
             Edit Picture
           </button>
         )}
-        <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-3xl text-slate-400 overflow-hidden shrink-0">
+        <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-dark-elevated flex items-center justify-center text-3xl text-slate-400 dark:text-dark-muted overflow-hidden shrink-0">
           {buyer.profileImage ? (
             <img src={`${import.meta.env.VITE_API_URL}${buyer.profileImage}`} alt={buyer.firstName} className="w-full h-full object-cover" />
           ) : (
@@ -81,15 +81,15 @@ const BuyerProfilePage = () => {
         </div>
         
         <div className="flex-1 text-center md:text-left">
-          <h1 className="text-2xl font-bold text-gray-900">{buyer.firstName} {buyer.lastName}</h1>
-          <p className="text-gray-500 mb-4">{buyer.country || 'Global'}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-dark-primary">{buyer.firstName} {buyer.lastName}</h1>
+          <p className="text-gray-500 dark:text-dark-muted mb-4">{buyer.country || 'Global'}</p>
           <div className="flex justify-center md:justify-start gap-2">
             {(buyer.isVerified || buyer.kycComplete) && (
               <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                 Verified Buyer
               </span>
             )}
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-dark-elevated text-gray-800 dark:text-dark-primary">
               Joined {buyer.createdAt ? new Date(buyer.createdAt).getFullYear() : 'N/A'}
             </span>
           </div>
@@ -98,17 +98,17 @@ const BuyerProfilePage = () => {
 
       {/* Stats row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-xl border border-neutral-200 text-center">
-          <p className="text-3xl font-bold text-gray-900">{stats.totalDeeds}</p>
-          <p className="text-sm text-gray-500 mt-1">Total Deeds</p>
+        <div className="bg-white dark:bg-dark-surface p-6 rounded-xl border border-neutral-200 dark:border-dark-border text-center">
+          <p className="text-3xl font-bold text-gray-900 dark:text-dark-primary">{stats.totalDeeds}</p>
+          <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">Total Deeds</p>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-neutral-200 text-center">
+        <div className="bg-white dark:bg-dark-surface p-6 rounded-xl border border-neutral-200 dark:border-dark-border text-center">
           <p className="text-3xl font-bold text-blue-600">{stats.activeDeedsCount}</p>
-          <p className="text-sm text-gray-500 mt-1">Active Deeds</p>
+          <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">Active Deeds</p>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-neutral-200 text-center">
+        <div className="bg-white dark:bg-dark-surface p-6 rounded-xl border border-neutral-200 dark:border-dark-border text-center">
           <p className="text-3xl font-bold text-emerald-600">{formatCurrency(stats.totalSpent)}</p>
-          <p className="text-sm text-gray-500 mt-1">Total Spent</p>
+          <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">Total Spent</p>
         </div>
       </div>
 

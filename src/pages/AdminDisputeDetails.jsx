@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import EnhancedDisputeResolution from '../components/EnhancedDisputeResolution';
+import AdminAISummaryTab from '../components/admin/views/AdminAISummaryTab';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ export default function AdminDisputeDetails() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('summary');
 
   // Resolution form
   const [resolution, setResolution] = useState('');
@@ -255,6 +257,11 @@ export default function AdminDisputeDetails() {
   const { dispute, deed: order, buyer, seller, financial, ruleFlags: rf, aiAnalysis: ai, evidenceResponses, chatMessages } = data || {};
   const recCfg = REC_CFG[ai?.recommendation || rf?.autoRecommendation] || REC_CFG.ESCALATE;
 
+  // Extract Verdict 1 and Verdict 2 from AI_REPORT events
+  const aiEvents = dispute?.events?.filter(e => e.type === 'AI_REPORT').sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) || [];
+  const verdict1 = aiEvents.length > 0 ? aiEvents[0].payload : null;
+  const verdict2 = aiEvents.length > 1 ? aiEvents[aiEvents.length - 1].payload : null;
+
   return (
     <div className="min-h-screen bg-[#F6F9FC] py-8 px-4">
       <div className="max-w-6xl mx-auto space-y-5">
@@ -282,7 +289,7 @@ export default function AdminDisputeDetails() {
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-white dark:bg-dark-surface/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-white/10 dark:bg-dark-surface/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <span className="text-xl">⚖️</span>
                 </div>
                 <div>
@@ -292,12 +299,12 @@ export default function AdminDisputeDetails() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                 {[
-                  { label: 'Escrow Amount', value: `$${(financial?.escrowAmount / 100)?.toFixed(2) || '0.00'}`, icon: '💰' },
-                  { label: 'Platform Fee (5%)', value: `$${(financial?.platformFee / 100)?.toFixed(2) || '0.00'}`, icon: '🏛️' },
+                  { label: 'Escrow Amount', value: `₹${(financial?.escrowAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: '💰' },
+                  { label: 'Platform Fee (5%)', value: `₹${(financial?.platformFee ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: '🏛️' },
                   { label: 'Raised By', value: dispute?.raisedBy?.charAt(0).toUpperCase() + dispute?.raisedBy?.slice(1), icon: '👤' },
                   { label: 'Filed', value: fmt(dispute?.createdAt), icon: '📅' },
                 ].map((item, i) => (
-                  <div key={i} className="bg-white dark:bg-dark-surface/5 rounded-xl p-3 border border-white/10">
+                  <div key={i} className="bg-white/5 dark:bg-dark-surface/5 rounded-xl p-3 border border-white/10">
                     <p className="text-[10px] text-white/40 font-inter uppercase tracking-wider mb-0.5">{item.icon} {item.label}</p>
                     <p className="text-sm font-bold text-white font-inter">{item.value}</p>
                   </div>
@@ -314,17 +321,63 @@ export default function AdminDisputeDetails() {
           {/* ── LEFT COL ───────────────────────────────────────────────────── */}
           <div className="lg:col-span-2 space-y-5">
 
+            {/* Tabs */}
+            <div className="flex gap-4 border-b border-neutral-200 dark:border-dark-border mb-4">
+              <button
+                onClick={() => setActiveTab('summary')}
+                className={`pb-2 text-sm font-bold font-inter transition-colors border-b-2 ${
+                  activeTab === 'summary' 
+                    ? 'border-indigo-500 text-indigo-700 dark:text-indigo-400' 
+                    : 'border-transparent text-neutral-500 dark:text-dark-muted hover:text-neutral-700 dark:text-dark-primary dark:hover:text-dark-primary'
+                }`}
+              >
+                AI Summary
+              </button>
+              <button
+                onClick={() => setActiveTab('raw')}
+                className={`pb-2 text-sm font-bold font-inter transition-colors border-b-2 ${
+                  activeTab === 'raw' 
+                    ? 'border-indigo-500 text-indigo-700 dark:text-indigo-400' 
+                    : 'border-transparent text-neutral-500 dark:text-dark-muted hover:text-neutral-700 dark:text-dark-primary dark:hover:text-dark-primary'
+                }`}
+              >
+                Raw Evidence & Logs
+              </button>
+            </div>
+
+            {activeTab === 'summary' ? (
+              verdict1 || verdict2 ? (
+                <AdminAISummaryTab 
+                  aiEvents={aiEvents} 
+                  dispute={dispute} 
+                  order={order} 
+                  buyer={buyer} 
+                  seller={seller} 
+                />
+              ) : (
+                <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-8 text-center">
+                  <span className="text-4xl mb-3 block">🤖</span>
+                  <h3 className="text-lg font-bold text-neutral-800 dark:text-dark-primary font-inter mb-2">AI-extracted summary not available for this dispute</h3>
+                  <p className="text-sm text-neutral-500 dark:text-dark-muted font-inter max-w-md mx-auto mb-6">
+                    This dispute was processed before the advanced AI context extraction feature was deployed, or it bypassed the new pipeline.
+                  </p>
+                  <button onClick={() => setActiveTab('raw')} className="px-5 py-2 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 font-inter font-bold text-sm rounded-xl hover:bg-indigo-100 transition-colors">
+                    View Raw Evidence Instead
+                  </button>
+                </div>
+              )
+            ) : (
+            <>
+
             {/* Order snapshot */}
             <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
               <h2 className="text-sm font-bold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-4">Order Snapshot</h2>
               <div className="space-y-3">
                 {[
-                  { label: 'Product Type', value: order?.scopeBox?.productType || 'Unknown' },
-                  { label: 'Scope Title', value: order?.scopeBox?.title || order?.scopeBox?.topic || '—' },
-                  ...(order?.scopeBox?.contentWritingSpecific?.wordCount ? [{ label: 'Expected Words', value: `${order.scopeBox.contentWritingSpecific.wordCount} words` }] : []),
-                  ...(order?.scopeBox?.logoSpecific?.fileFormats ? [{ label: 'Required Formats', value: order.scopeBox.logoSpecific.fileFormats.join(', ') }] : []),
+                  { label: 'Amount', value: `₹${((order?.amount || 0) / 100).toFixed(2)}` },
+                  { label: 'Description', value: order?.description || '—' },
                   { label: 'Delivery Files', value: `${order?.deliveryFiles?.length || 0} file(s)` },
-                  { label: 'Deadline', value: fmt(order?.scopeBox?.deadline) },
+                  { label: 'Deadline', value: fmt(order?.deadline) },
                   { label: 'Buyer', value: buyer ? `${buyer.firstName} ${buyer.lastName} (${buyer.email})` : order?.buyerName || '—' },
                   { label: 'Seller', value: seller ? `${seller.firstName} ${seller.lastName}` : order?.sellerContact || '—' },
                 ].map((row, i) => (
@@ -516,6 +569,10 @@ export default function AdminDisputeDetails() {
                 </div>
               </div>
             )}
+            
+            </>
+            )}
+
           </div>
 
           {/* ── RIGHT COL ──────────────────────────────────────────────────── */}
@@ -527,9 +584,9 @@ export default function AdminDisputeDetails() {
 
               <div className="space-y-2 mb-4">
                 {[
-                  { label: 'Escrow Held', value: `$${(financial?.escrowAmount / 100)?.toFixed(2) || '0'}`, color: 'text-[#0A2540]', bold: true },
-                  { label: 'Platform Fee (2%)', value: `-$${(financial?.platformFee / 100)?.toFixed(2) || '0'}`, color: 'text-neutral-500 dark:text-dark-muted' },
-                  { label: 'Net to Seller', value: `$${(financial?.netToSeller / 100)?.toFixed(2) || '0'}`, color: 'text-emerald-600 dark:text-emerald-400' },
+                  { label: 'Escrow Held', value: `₹${(financial?.escrowAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: 'text-[#0A2540]', bold: true },
+                  { label: 'Platform Fee (2%)', value: `-₹${(financial?.platformFee ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: 'text-neutral-500 dark:text-dark-muted' },
+                  { label: 'Net to Seller', value: `₹${(financial?.netToSeller ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: 'text-emerald-600 dark:text-emerald-400' },
                 ].map((row, i) => (
                   <div key={i} className={`flex justify-between items-center py-2 ${i === 0 ? 'border-b border-neutral-100 dark:border-dark-border' : ''}`}>
                     <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter">{row.label}</p>
@@ -546,9 +603,9 @@ export default function AdminDisputeDetails() {
                   <span className="text-base">💸</span>
                   <div className="flex-1 text-xs font-inter">
                     <p className="font-bold text-red-700 dark:text-red-400 mb-1">Full Refund to Buyer</p>
-                    <p className="text-neutral-500 dark:text-dark-muted">Buyer gets: <strong className="text-red-600 dark:text-red-400">${(financial?.refundScenario?.buyerReceives / 100)?.toFixed(2) || '0'}</strong></p>
-                    <p className="text-neutral-500 dark:text-dark-muted">Seller gets: <strong>$0</strong></p>
-                    <p className="text-neutral-500 dark:text-dark-muted">Platform: <strong>$0</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Buyer gets: <strong className="text-red-600 dark:text-red-400">₹{(financial?.refundScenario?.buyerReceives ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Seller gets: <strong>₹0</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Platform: <strong>₹0</strong></p>
                   </div>
                 </div>
 
@@ -557,9 +614,9 @@ export default function AdminDisputeDetails() {
                   <span className="text-base">✅</span>
                   <div className="flex-1 text-xs font-inter">
                     <p className="font-bold text-emerald-700 dark:text-emerald-400 mb-1">Release to Seller</p>
-                    <p className="text-neutral-500 dark:text-dark-muted">Buyer gets: <strong>$0</strong></p>
-                    <p className="text-neutral-500 dark:text-dark-muted">Seller gets: <strong className="text-emerald-600 dark:text-emerald-400">${(financial?.releaseScenario?.sellerReceives / 100)?.toFixed(2) || '0'}</strong></p>
-                    <p className="text-neutral-500 dark:text-dark-muted">Platform: <strong>${(financial?.releaseScenario?.platformReceives / 100)?.toFixed(2) || '0'}</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Buyer gets: <strong>₹0</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Seller gets: <strong className="text-emerald-600 dark:text-emerald-400">₹{(financial?.releaseScenario?.sellerReceives ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></p>
+                    <p className="text-neutral-500 dark:text-dark-muted">Platform: <strong>₹{(financial?.releaseScenario?.platformReceives ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></p>
                   </div>
                 </div>
 
@@ -569,7 +626,7 @@ export default function AdminDisputeDetails() {
                     <span className="text-base">⚖️</span>
                     <div className="flex-1 text-xs font-inter">
                       <p className="font-bold text-amber-700 dark:text-amber-400 mb-1">{s.label}</p>
-                      <p className="text-neutral-500 dark:text-dark-muted">Buyer: <strong className="text-amber-600 dark:text-amber-400">${(s.buyerReceives / 100)?.toFixed(2)}</strong> · Seller: <strong>${(s.sellerReceives / 100)?.toFixed(2)}</strong></p>
+                      <p className="text-neutral-500 dark:text-dark-muted">Buyer: <strong className="text-amber-600 dark:text-amber-400">₹{(s.buyerReceives ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> · Seller: <strong>₹{(s.sellerReceives ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></p>
                     </div>
                   </div>
                 ))}
@@ -608,7 +665,7 @@ export default function AdminDisputeDetails() {
                         key={opt.val}
                         onClick={() => setResolution(prev => prev === opt.val ? '' : opt.val)}
                         className={`w-full py-2.5 rounded-xl border text-sm font-bold font-inter transition-all flex items-center justify-between px-3
-                          ${resolution === opt.val ? opt.cls + ' ring-2 ring-offset-1 ring-current' : 'border-neutral-200 dark:border-dark-border hover:bg-neutral-50 dark:bg-dark-bg text-neutral-600 dark:text-dark-muted'}`}
+                          ${resolution === opt.val ? opt.cls + ' ring-2 ring-offset-1 ring-current' : 'border-neutral-200 dark:border-dark-border hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg text-neutral-600 dark:text-dark-muted'}`}
                       >
                         <span>{opt.label}</span>
                         {resolution === opt.val && <span>✓</span>}

@@ -317,14 +317,14 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white dark:bg-dark-surface rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-dark-border">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-dark-primary flex items-center">
               <span className="text-red-500 mr-2">🚨</span>
               Raise Dispute
             </h2>
             <button
               onClick={handleCancel}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:text-dark-muted transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -336,7 +336,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Reason */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-primary mb-2">
                 Reason for Dispute *
               </label>
               <select
@@ -344,7 +344,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
                 value={formData.reason}
                 onChange={handleInputChange}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.reason ? 'border-red-500' : 'border-gray-300'
+                  errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
                 }`}
               >
                 <option value="">Select a reason</option>
@@ -361,7 +361,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-primary mb-2">
                 Description *
               </label>
               <textarea
@@ -371,7 +371,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
                 rows={4}
                 placeholder="Please provide detailed information about the issue..."
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.description ? 'border-red-500' : 'border-gray-300'
+                  errors.description ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
                 }`}
               />
               {errors.description && (
@@ -381,10 +381,10 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
 
             {/* Evidence Upload - Multiple Files */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-primary mb-2">
                 Evidence Files (Optional)
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 dark:border-dark-border rounded-md p-4 text-center hover:border-gray-400 transition-colors">
                 <input
                   type="file"
                   onChange={handleFileChange}
@@ -394,13 +394,13 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
                   id="evidence-upload"
                 />
                 <label htmlFor="evidence-upload" className="cursor-pointer">
-                  <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                  <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-dark-muted" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <p className="mt-1 text-sm text-gray-600 dark:text-dark-muted">
                     Click to upload evidence files
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-dark-muted">
                     PDF, DOC, DOCX, JPG, PNG, GIF, TXT up to 5MB each (Max 5 files)
                   </p>
                 </label>
@@ -409,15 +409,15 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
               {/* File List */}
               {formData.evidenceFiles.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Uploaded Files:</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-dark-primary">Uploaded Files:</p>
                   {formData.evidenceFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                    <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-dark-bg p-2 rounded-md">
                       <div className="flex items-center space-x-2">
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-gray-500 dark:text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span className="text-sm text-gray-700">{file.name}</span>
-                        <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
+                        <span className="text-sm text-gray-700 dark:text-dark-primary">{file.name}</span>
+                        <span className="text-xs text-gray-500 dark:text-dark-muted">({formatFileSize(file.size)})</span>
                       </div>
                       <button
                         type="button"
@@ -440,7 +440,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
 
             {/* Requested Resolution - Dropdown */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-primary mb-2">
                 Requested Resolution *
               </label>
               <select
@@ -448,7 +448,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
                 value={formData.requestedResolution}
                 onChange={handleInputChange}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.requestedResolution ? 'border-red-500' : 'border-gray-300'
+                  errors.requestedResolution ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
                 }`}
               >
                 <option value="">Select a resolution</option>
@@ -484,7 +484,7 @@ const DisputeModal = ({ isOpen, onClose, deed, onSubmit, userType }) => {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                className="px-4 py-2 text-gray-700 dark:text-dark-primary bg-gray-100 dark:bg-dark-elevated rounded-md hover:bg-gray-200 dark:bg-dark-border focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 Cancel
               </button>

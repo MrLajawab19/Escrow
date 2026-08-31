@@ -91,10 +91,10 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
       <div className="bg-white dark:bg-dark-surface rounded-lg shadow-xl max-w-md w-full p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Add Funds</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-primary">Add Funds</h2>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-dark-primary dark:text-dark-primary text-2xl"
           >
             ×
           </button>
@@ -103,8 +103,8 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
         {success ? (
           <div className="text-center py-8">
             <div className="text-5xl mb-4 text-green-600 animate-pulse">↻</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Payment Received</h3>
-            <p className="text-gray-600">Finishing setup. Your top-up of {currencySymbol}{amount} will reflect in your wallet shortly.</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-dark-primary mb-2">Payment Received</h3>
+            <p className="text-gray-600 dark:text-dark-muted">Finishing setup. Your top-up of {currencySymbol}{amount} will reflect in your wallet shortly.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -116,7 +116,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
 
             {/* Predefined Amounts */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-3">
                 Quick Select
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -128,7 +128,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
                     className={`py-2 px-4 rounded-lg font-semibold transition ${
                       amount === preset.toString()
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-dark-elevated text-gray-800 dark:text-dark-primary hover:bg-gray-200 dark:bg-dark-border'
                     }`}
                   >
                     {currencySymbol}{preset}
@@ -139,11 +139,11 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
 
             {/* Custom Amount */}
             <div>
-              <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                 Enter Amount
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-gray-600 font-semibold">{currencySymbol}</span>
+                <span className="absolute left-4 top-3 text-gray-600 dark:text-dark-muted font-semibold">{currencySymbol}</span>
                 <input
                   id="amount"
                   type="number"
@@ -152,21 +152,21 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Minimum: {currencySymbol}1 | Maximum: {currencySymbol}10,000</p>
+              <p className="text-xs text-gray-500 dark:text-dark-muted mt-1">Minimum: {currencySymbol}1 | Maximum: {currencySymbol}10,000</p>
             </div>
 
             {/* Payment Method */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-dark-primary mb-2">
                 Payment Method
               </label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               >
                 <option value="card">Credit/Debit Card</option>
                 <option value="bank-transfer">Bank Transfer</option>
@@ -179,17 +179,17 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
             {amount && (
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200">
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-700">Amount:</span>
-                  <span className="font-semibold text-gray-900">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
+                  <span className="text-gray-700 dark:text-dark-primary">Amount:</span>
+                  <span className="font-semibold text-gray-900 dark:text-dark-primary">{currencySymbol}{parseFloat(amount).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-700">Processing Fee (1%):</span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="text-gray-700 dark:text-dark-primary">Processing Fee (1%):</span>
+                  <span className="font-semibold text-gray-900 dark:text-dark-primary">
                     {currencySymbol}{(parseFloat(amount) * 0.01).toFixed(2)}
                   </span>
                 </div>
                 <div className="border-t border-blue-300 pt-2 flex justify-between">
-                  <span className="text-gray-700 font-semibold">You'll get:</span>
+                  <span className="text-gray-700 dark:text-dark-primary font-semibold">You'll get:</span>
                   <span className="font-bold text-blue-600">
                     {currencySymbol}{(parseFloat(amount) * 0.99).toFixed(2)}
                   </span>
@@ -198,7 +198,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
             )}
 
             {/* Terms & Conditions */}
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-600 dark:text-dark-muted">
               <input
                 type="checkbox"
                 id="terms"
@@ -215,7 +215,7 @@ const TopUpModal = ({ isOpen, onClose, onSuccess }) => {
               <button
                 type="button"
                 onClick={handleClose}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-primary font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition"
               >
                 Cancel
               </button>

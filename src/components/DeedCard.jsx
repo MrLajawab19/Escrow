@@ -27,12 +27,12 @@ const DeedCard = ({ deed, onClick }) => {
       case 'ARBITRATING':
       case 'ARBITRATED':
       case 'ESCALATED':
-        return 'bg-red-500/10 text-red-500 border-red-500/20';
+        return 'bg-red-500/10 text-red-500 dark:text-red-400 border-red-500/20';
       case 'CANCELLED':
-        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+        return 'bg-gray-500/10 text-neutral-500 dark:text-dark-muted border-gray-500/20';
       case 'DRAFT':
       default:
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+        return 'bg-gray-500/10 text-neutral-500 dark:text-dark-muted border-gray-500/20';
     }
   };
 
@@ -74,12 +74,12 @@ const DeedCard = ({ deed, onClick }) => {
   return (
     <div 
       onClick={() => onClick && onClick(deed)}
-      className="bg-[#0B0F19] border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-all cursor-pointer group"
+      className="bg-white dark:bg-dark-surface dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-xl p-5 hover:border-neutral-300 dark:hover:border-dark-border transition-all cursor-pointer group"
     >
       <div className="flex justify-between items-start mb-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors">
+            <h3 className="font-semibold text-navy-900 dark:text-dark-primary dark:text-dark-primary group-hover:text-blue-400 transition-colors">
               {deed.title || 'Untitled Deed'}
             </h3>
             <span className={`px-2.5 py-1 rounded-full text-xs font-medium border flex items-center gap-1.5 ${getStatusColor(deed.status)}`}>
@@ -87,28 +87,28 @@ const DeedCard = ({ deed, onClick }) => {
               {getDisplayStatus(deed.status)}
             </span>
           </div>
-          <p className="text-sm text-gray-400 line-clamp-2">{deed.description}</p>
+          <p className="text-sm text-neutral-500 dark:text-dark-muted line-clamp-2">{deed.description}</p>
         </div>
         <div className="text-right">
-          <p className="text-lg font-bold text-white">
+          <p className="text-lg font-bold text-navy-900 dark:text-dark-primary dark:text-dark-primary">
             {formatCurrency(deed.amount, deed.currency)}
           </p>
-          <p className="text-xs text-gray-500 mt-1 uppercase">
+          <p className="text-xs text-neutral-500 dark:text-dark-muted mt-1 uppercase">
             {deed.transactionType}
           </p>
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-gray-800/50">
+      <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-neutral-200 dark:border-dark-border/50">
         <div>
-          <p className="text-xs text-gray-500 mb-1">Created</p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs text-neutral-500 dark:text-dark-muted mb-1">Created</p>
+          <p className="text-sm text-neutral-600 dark:text-dark-muted">
             {deed.createdAt ? new Date(deed.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-500 mb-1">Deadline</p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs text-neutral-500 dark:text-dark-muted mb-1">Deadline</p>
+          <p className="text-sm text-neutral-600 dark:text-dark-muted">
             {deed.deadline ? new Date(deed.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'No deadline'}
           </p>
         </div>

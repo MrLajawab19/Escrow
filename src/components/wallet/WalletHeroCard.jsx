@@ -25,7 +25,7 @@ const WalletHeroCard = ({ walletSummary, isBuyer }) => {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2 text-primary-100">
             <span className="text-sm font-semibold uppercase tracking-wider">Available Balance</span>
-            <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center cursor-help" title="Funds available to use or withdraw">
+            <div className="w-4 h-4 rounded-full bg-white/20 dark:bg-dark-surface/20 flex items-center justify-center cursor-help" title="Funds available to use or withdraw">
               <span className="text-[10px] font-bold">?</span>
             </div>
           </div>
@@ -71,7 +71,7 @@ const WalletHeroCard = ({ walletSummary, isBuyer }) => {
 
         {/* Right Side: Secondary Metrics (Seller Only) */}
         {!isBuyer && (
-          <div className="lg:w-72 flex flex-col justify-center bg-white/10 rounded-2xl p-5 backdrop-blur-sm border border-white/10">
+          <div className="lg:w-72 flex flex-col justify-center bg-white/10 dark:bg-dark-surface/10 rounded-2xl p-5 backdrop-blur-sm border border-white/10">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 text-primary-100">

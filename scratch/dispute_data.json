@@ -1,0 +1,550 @@
+[
+  {
+    "id": "68851cde-3f08-4d72-a1cb-a5d066067218",
+    "deedId": "1cb997f6-fade-4f6c-b0f7-c4201895fbe9",
+    "buyerId": "4dfe450d-f914-4b0a-b870-afd2d904c8fc",
+    "sellerId": "db350f5e-1564-49d5-b065-a8b7c8ff43b1",
+    "raisedBy": "buyer",
+    "reason": "quality_issues",
+    "description": "Bad API response",
+    "evidenceUrls": [],
+    "requestedResolution": null,
+    "priority": "MEDIUM",
+    "status": "ESCALATED",
+    "ruleFlags": null,
+    "aiAnalysis": {
+      "faultSide": "BUYER",
+      "reasoning": "The buyer initiated the dispute immediately upon deed creation without providing any supporting evidence for the claim. Due to the high risk score, incomplete KYC on a high-value transaction, and unverified seller evidence, a manual review is required to prevent potential fraud.",
+      "resolvedBy": "new_system",
+      "disputeContext": {
+        "deedSummary": {
+          "amount": 2000000,
+          "currency": "INR",
+          "description": "API test",
+          "isHighStakes": true
+        },
+        "evidenceGaps": [
+          "No evidence was submitted by the buyer to support the claim of a 'Bad API response'.",
+          "The content of the seller's uploaded file '/uploads/evidence-1788129068011-665134469.txt' is unavailable for extraction."
+        ],
+        "evidenceFlags": [
+          "Complete absence of evidence from the buyer.",
+          "Buyer submitted no evidence within the dispute window."
+        ],
+        "disputeSummary": {
+          "reason": "quality_issues",
+          "raisedBy": "buyer",
+          "description": "Bad API response",
+          "isReAnalysis": false
+        },
+        "extractedFacts": [
+          {
+            "fact": "Dispute initiated with the reason 'quality_issues' and description 'Bad API response'.",
+            "source": "dispute_reason",
+            "confidence": 1
+          },
+          {
+            "fact": "Seller submitted a rebuttal stating 'Seller says perfect.'",
+            "source": "seller_rebuttal",
+            "confidence": 1
+          },
+          {
+            "fact": "Seller uploaded a file named '/uploads/evidence-1788129068011-665134469.txt'.",
+            "source": "seller_evidence_text",
+            "confidence": 1
+          }
+        ],
+        "riskAssessment": {
+          "level": "high",
+          "score": 73,
+          "factors": [
+            {
+              "factor": "accountAgeRisk",
+              "points": 18,
+              "explanation": "seller account is <1 day old (0.0h)."
+            },
+            {
+              "factor": "kycRisk",
+              "points": 20,
+              "explanation": "KYC incomplete for: buyer, seller. Deed value (2000000 paise) exceeds ₹10,000 threshold — KYC was required."
+            },
+            {
+              "factor": "disputeSpeedRisk",
+              "points": 20,
+              "explanation": "Dispute raised only 0.0 min after deed creation — faster than any real work timeline."
+            },
+            {
+              "factor": "ruleViolationRisk",
+              "points": 10,
+              "explanation": "2 RuleChecker automated flag(s): +8pts; 1 RuleChecker evidence flag(s): +2pts"
+            },
+            {
+              "factor": "highValueRisk",
+              "points": 5,
+              "explanation": "Deed value INR 20,000 exceeds KYC threshold."
+            }
+          ],
+          "limitations": [
+            "repeatOffenderRisk not calculated — No prior dispute history provided — repeatOffenderRisk cannot be calculated."
+          ]
+        },
+        "ruleViolations": {
+          "automatedFlags": [
+            "Deadline compliance could not be determined — no deadline set on deed.",
+            "Dispute was raised within 1 hour of the last deed update — possible premature dispute."
+          ],
+          "deadlineViolation": {
+            "details": "No delivery deadline set on this deed — cannot determine deadline compliance.",
+            "daysLate": null,
+            "violated": false,
+            "indeterminate": true
+          },
+          "revisionLimitCheck": {
+            "count": 0,
+            "limit": 3,
+            "details": "Revisions within limit: 0 of 3 used.",
+            "exceeded": false
+          },
+          "milestoneCompliance": null
+        },
+        "overallDataQuality": "partial"
+      },
+      "recommendation": "MANUAL_REVIEW_REQUIRED",
+      "confidenceScore": 85,
+      "pipelineVersion": "full_v1"
+    },
+    "evidenceResponses": {
+      "buyer": {
+        "rebuttal": "Buyer says bad.",
+        "evidenceUrls": []
+      },
+      "seller": {
+        "rebuttal": "Seller says perfect.",
+        "submittedAt": "2026-08-30T22:31:08.038Z",
+        "evidenceUrls": [
+          "/uploads/evidence-1788129068011-665134469.txt"
+        ]
+      }
+    },
+    "timeline": [],
+    "resolution": null,
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "escalatedAt": null,
+    "autoFlaggedAt": null,
+    "lastActivity": "2026-08-30T22:31:23.284Z",
+    "enhancedAnalysis": null,
+    "scopeCompliance": null,
+    "createdAt": "2026-08-30T22:31:07.989Z",
+    "updatedAt": "2026-08-30T22:31:23.285Z",
+    "deed": {
+      "id": "1cb997f6-fade-4f6c-b0f7-c4201895fbe9",
+      "title": "API Test Deed",
+      "transactionType": "SERVICE",
+      "description": "API test",
+      "acceptanceCriteria": "Needs to work",
+      "buyerId": "4dfe450d-f914-4b0a-b870-afd2d904c8fc",
+      "sellerId": "db350f5e-1564-49d5-b065-a8b7c8ff43b1",
+      "inviteToken": null,
+      "inviteExpiresAt": null,
+      "amount": 2000000,
+      "currency": "INR",
+      "paymentMethod": null,
+      "paymentReference": null,
+      "deadline": null,
+      "revisionLimit": 3,
+      "revisionCount": 0,
+      "deliverableFormats": [],
+      "isMilestone": false,
+      "scopeBox": null,
+      "contentHash": null,
+      "buyerSignedAt": null,
+      "sellerSignedAt": null,
+      "disputeWindowEnds": null,
+      "status": "DISPUTED",
+      "createdAt": "2026-08-30T22:31:07.984Z",
+      "updatedAt": "2026-08-30T22:31:07.984Z"
+    },
+    "events": [
+      {
+        "id": "68f5a34c-c6d5-445f-a76f-1146baa65a87",
+        "deedDisputeId": "68851cde-3f08-4d72-a1cb-a5d066067218",
+        "type": "AI_REPORT",
+        "actorRole": "ai",
+        "actorId": null,
+        "payload": {
+          "faultSide": "BUYER",
+          "reasoning": "The buyer initiated the dispute immediately upon deed creation without providing any supporting evidence for the claim. Due to the high risk score, incomplete KYC on a high-value transaction, and unverified seller evidence, a manual review is required to prevent potential fraud.",
+          "resolvedBy": "new_system",
+          "disputeContext": {
+            "deedSummary": {
+              "amount": 2000000,
+              "currency": "INR",
+              "description": "API test",
+              "isHighStakes": true
+            },
+            "evidenceGaps": [
+              "No evidence was submitted by the buyer to support the claim of a 'Bad API response'.",
+              "The content of the seller's uploaded file '/uploads/evidence-1788129068011-665134469.txt' is unavailable for extraction."
+            ],
+            "evidenceFlags": [
+              "Complete absence of evidence from the buyer.",
+              "Buyer submitted no evidence within the dispute window."
+            ],
+            "disputeSummary": {
+              "reason": "quality_issues",
+              "raisedBy": "buyer",
+              "description": "Bad API response",
+              "isReAnalysis": false
+            },
+            "extractedFacts": [
+              {
+                "fact": "Dispute initiated with the reason 'quality_issues' and description 'Bad API response'.",
+                "source": "dispute_reason",
+                "confidence": 1
+              },
+              {
+                "fact": "Seller submitted a rebuttal stating 'Seller says perfect.'",
+                "source": "seller_rebuttal",
+                "confidence": 1
+              },
+              {
+                "fact": "Seller uploaded a file named '/uploads/evidence-1788129068011-665134469.txt'.",
+                "source": "seller_evidence_text",
+                "confidence": 1
+              }
+            ],
+            "riskAssessment": {
+              "level": "high",
+              "score": 73,
+              "factors": [
+                {
+                  "factor": "accountAgeRisk",
+                  "points": 18,
+                  "explanation": "seller account is <1 day old (0.0h)."
+                },
+                {
+                  "factor": "kycRisk",
+                  "points": 20,
+                  "explanation": "KYC incomplete for: buyer, seller. Deed value (2000000 paise) exceeds ₹10,000 threshold — KYC was required."
+                },
+                {
+                  "factor": "disputeSpeedRisk",
+                  "points": 20,
+                  "explanation": "Dispute raised only 0.0 min after deed creation — faster than any real work timeline."
+                },
+                {
+                  "factor": "ruleViolationRisk",
+                  "points": 10,
+                  "explanation": "2 RuleChecker automated flag(s): +8pts; 1 RuleChecker evidence flag(s): +2pts"
+                },
+                {
+                  "factor": "highValueRisk",
+                  "points": 5,
+                  "explanation": "Deed value INR 20,000 exceeds KYC threshold."
+                }
+              ],
+              "limitations": [
+                "repeatOffenderRisk not calculated — No prior dispute history provided — repeatOffenderRisk cannot be calculated."
+              ]
+            },
+            "ruleViolations": {
+              "automatedFlags": [
+                "Deadline compliance could not be determined — no deadline set on deed.",
+                "Dispute was raised within 1 hour of the last deed update — possible premature dispute."
+              ],
+              "deadlineViolation": {
+                "details": "No delivery deadline set on this deed — cannot determine deadline compliance.",
+                "daysLate": null,
+                "violated": false,
+                "indeterminate": true
+              },
+              "revisionLimitCheck": {
+                "count": 0,
+                "limit": 3,
+                "details": "Revisions within limit: 0 of 3 used.",
+                "exceeded": false
+              },
+              "milestoneCompliance": null
+            },
+            "overallDataQuality": "partial"
+          },
+          "recommendation": "MANUAL_REVIEW_REQUIRED",
+          "confidenceScore": 85,
+          "pipelineVersion": "full_v1"
+        },
+        "createdAt": "2026-08-30T22:31:23.261Z"
+      }
+    ]
+  },
+  {
+    "id": "e98ff96b-fda2-4e82-84e3-46f205acc0bc",
+    "deedId": "c5c09892-7532-4c1c-933b-b1d07e11b14e",
+    "buyerId": "6787ab44-7e31-4045-ab5c-cd27238642fe",
+    "sellerId": "1f4a03cf-89ff-4fa0-b86b-f0a109a24fa9",
+    "raisedBy": "buyer",
+    "reason": "quality_issues",
+    "description": "Bad API response",
+    "evidenceUrls": [],
+    "requestedResolution": null,
+    "priority": "MEDIUM",
+    "status": "CHALLENGE_PHASE",
+    "ruleFlags": null,
+    "aiAnalysis": {
+      "faultSide": "BUYER",
+      "reasoning": "The buyer filed the dispute instantly upon deed creation with zero supporting evidence, failing to substantiate the claim of a bad API response, while the seller actively submitted a rebuttal.",
+      "resolvedBy": "new_system",
+      "disputeContext": {
+        "deedSummary": {
+          "amount": 50000,
+          "currency": "INR",
+          "description": "API test",
+          "isHighStakes": false
+        },
+        "evidenceGaps": [
+          "No evidence was submitted by the buyer to support the claim of a 'Bad API response'.",
+          "The content of the seller's uploaded text file is not available for extraction, leaving only the filename as record of submission."
+        ],
+        "evidenceFlags": [
+          "Buyer has submitted zero evidence to back up the dispute claim.",
+          "The content of the seller's evidence file is missing/unreadable.",
+          "Buyer submitted no evidence within the dispute window."
+        ],
+        "disputeSummary": {
+          "reason": "quality_issues",
+          "raisedBy": "buyer",
+          "description": "Bad API response",
+          "isReAnalysis": false
+        },
+        "extractedFacts": [
+          {
+            "fact": "Buyer filed a dispute for quality issues, describing the issue as 'Bad API response'.",
+            "source": "dispute_reason",
+            "confidence": 1
+          },
+          {
+            "fact": "Seller stated 'Seller says perfect.' in their rebuttal text.",
+            "source": "seller_rebuttal",
+            "confidence": 1
+          },
+          {
+            "fact": "Seller submitted a file named '/uploads/evidence-1788129047910-392342685.txt'.",
+            "source": "seller_evidence_text",
+            "confidence": 1
+          }
+        ],
+        "riskAssessment": {
+          "level": "medium",
+          "score": 58,
+          "factors": [
+            {
+              "factor": "accountAgeRisk",
+              "points": 18,
+              "explanation": "seller account is <1 day old (0.0h)."
+            },
+            {
+              "factor": "kycRisk",
+              "points": 10,
+              "explanation": "KYC incomplete for: buyer, seller. Deed value is below ₹10,000 threshold but KYC is still incomplete."
+            },
+            {
+              "factor": "disputeSpeedRisk",
+              "points": 20,
+              "explanation": "Dispute raised only 0.0 min after deed creation — faster than any real work timeline."
+            },
+            {
+              "factor": "ruleViolationRisk",
+              "points": 10,
+              "explanation": "2 RuleChecker automated flag(s): +8pts; 1 RuleChecker evidence flag(s): +2pts"
+            }
+          ],
+          "limitations": [
+            "repeatOffenderRisk not calculated — No prior dispute history provided — repeatOffenderRisk cannot be calculated."
+          ]
+        },
+        "ruleViolations": {
+          "automatedFlags": [
+            "Deadline compliance could not be determined — no deadline set on deed.",
+            "Dispute was raised within 1 hour of the last deed update — possible premature dispute."
+          ],
+          "deadlineViolation": {
+            "details": "No delivery deadline set on this deed — cannot determine deadline compliance.",
+            "daysLate": null,
+            "violated": false,
+            "indeterminate": true
+          },
+          "revisionLimitCheck": {
+            "count": 0,
+            "limit": 3,
+            "details": "Revisions within limit: 0 of 3 used.",
+            "exceeded": false
+          },
+          "milestoneCompliance": null
+        },
+        "overallDataQuality": "partial"
+      },
+      "recommendation": "RELEASE_TO_SELLER",
+      "confidenceScore": 85,
+      "pipelineVersion": "full_v1"
+    },
+    "evidenceResponses": {
+      "buyer": {
+        "rebuttal": "Buyer says bad.",
+        "evidenceUrls": []
+      },
+      "seller": {
+        "rebuttal": "Seller says perfect.",
+        "submittedAt": "2026-08-30T22:30:47.932Z",
+        "evidenceUrls": [
+          "/uploads/evidence-1788129047910-392342685.txt"
+        ]
+      }
+    },
+    "timeline": [],
+    "resolution": null,
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "escalatedAt": null,
+    "autoFlaggedAt": null,
+    "lastActivity": "2026-08-30T22:31:00.464Z",
+    "enhancedAnalysis": null,
+    "scopeCompliance": null,
+    "createdAt": "2026-08-30T22:30:47.681Z",
+    "updatedAt": "2026-08-30T22:31:00.466Z",
+    "deed": {
+      "id": "c5c09892-7532-4c1c-933b-b1d07e11b14e",
+      "title": "API Test Deed",
+      "transactionType": "SERVICE",
+      "description": "API test",
+      "acceptanceCriteria": "Needs to work",
+      "buyerId": "6787ab44-7e31-4045-ab5c-cd27238642fe",
+      "sellerId": "1f4a03cf-89ff-4fa0-b86b-f0a109a24fa9",
+      "inviteToken": null,
+      "inviteExpiresAt": null,
+      "amount": 50000,
+      "currency": "INR",
+      "paymentMethod": null,
+      "paymentReference": null,
+      "deadline": null,
+      "revisionLimit": 3,
+      "revisionCount": 0,
+      "deliverableFormats": [],
+      "isMilestone": false,
+      "scopeBox": null,
+      "contentHash": null,
+      "buyerSignedAt": null,
+      "sellerSignedAt": null,
+      "disputeWindowEnds": null,
+      "status": "DISPUTED",
+      "createdAt": "2026-08-30T22:30:47.671Z",
+      "updatedAt": "2026-08-30T22:30:47.671Z"
+    },
+    "events": [
+      {
+        "id": "bbb2671a-8c44-4ac9-8b93-95c1ae4e556a",
+        "deedDisputeId": "e98ff96b-fda2-4e82-84e3-46f205acc0bc",
+        "type": "AI_REPORT",
+        "actorRole": "ai",
+        "actorId": null,
+        "payload": {
+          "faultSide": "BUYER",
+          "reasoning": "The buyer filed the dispute instantly upon deed creation with zero supporting evidence, failing to substantiate the claim of a bad API response, while the seller actively submitted a rebuttal.",
+          "resolvedBy": "new_system",
+          "disputeContext": {
+            "deedSummary": {
+              "amount": 50000,
+              "currency": "INR",
+              "description": "API test",
+              "isHighStakes": false
+            },
+            "evidenceGaps": [
+              "No evidence was submitted by the buyer to support the claim of a 'Bad API response'.",
+              "The content of the seller's uploaded text file is not available for extraction, leaving only the filename as record of submission."
+            ],
+            "evidenceFlags": [
+              "Buyer has submitted zero evidence to back up the dispute claim.",
+              "The content of the seller's evidence file is missing/unreadable.",
+              "Buyer submitted no evidence within the dispute window."
+            ],
+            "disputeSummary": {
+              "reason": "quality_issues",
+              "raisedBy": "buyer",
+              "description": "Bad API response",
+              "isReAnalysis": false
+            },
+            "extractedFacts": [
+              {
+                "fact": "Buyer filed a dispute for quality issues, describing the issue as 'Bad API response'.",
+                "source": "dispute_reason",
+                "confidence": 1
+              },
+              {
+                "fact": "Seller stated 'Seller says perfect.' in their rebuttal text.",
+                "source": "seller_rebuttal",
+                "confidence": 1
+              },
+              {
+                "fact": "Seller submitted a file named '/uploads/evidence-1788129047910-392342685.txt'.",
+                "source": "seller_evidence_text",
+                "confidence": 1
+              }
+            ],
+            "riskAssessment": {
+              "level": "medium",
+              "score": 58,
+              "factors": [
+                {
+                  "factor": "accountAgeRisk",
+                  "points": 18,
+                  "explanation": "seller account is <1 day old (0.0h)."
+                },
+                {
+                  "factor": "kycRisk",
+                  "points": 10,
+                  "explanation": "KYC incomplete for: buyer, seller. Deed value is below ₹10,000 threshold but KYC is still incomplete."
+                },
+                {
+                  "factor": "disputeSpeedRisk",
+                  "points": 20,
+                  "explanation": "Dispute raised only 0.0 min after deed creation — faster than any real work timeline."
+                },
+                {
+                  "factor": "ruleViolationRisk",
+                  "points": 10,
+                  "explanation": "2 RuleChecker automated flag(s): +8pts; 1 RuleChecker evidence flag(s): +2pts"
+                }
+              ],
+              "limitations": [
+                "repeatOffenderRisk not calculated — No prior dispute history provided — repeatOffenderRisk cannot be calculated."
+              ]
+            },
+            "ruleViolations": {
+              "automatedFlags": [
+                "Deadline compliance could not be determined — no deadline set on deed.",
+                "Dispute was raised within 1 hour of the last deed update — possible premature dispute."
+              ],
+              "deadlineViolation": {
+                "details": "No delivery deadline set on this deed — cannot determine deadline compliance.",
+                "daysLate": null,
+                "violated": false,
+                "indeterminate": true
+              },
+              "revisionLimitCheck": {
+                "count": 0,
+                "limit": 3,
+                "details": "Revisions within limit: 0 of 3 used.",
+                "exceeded": false
+              },
+              "milestoneCompliance": null
+            },
+            "overallDataQuality": "partial"
+          },
+          "recommendation": "RELEASE_TO_SELLER",
+          "confidenceScore": 85,
+          "pipelineVersion": "full_v1"
+        },
+        "createdAt": "2026-08-30T22:31:00.438Z"
+      }
+    ]
+  }
+]

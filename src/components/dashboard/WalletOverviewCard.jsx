@@ -11,7 +11,7 @@ const WalletOverviewCard = ({ userId, walletSummary, walletLoading, onNavigateTo
   const [showWithdraw, setShowWithdraw] = useState(false);
 
   const balance = walletSummary?.balance || 0;
-  const lockedBalance = walletSummary?.lockedEscrowBalance || 0;
+  const lockedBalance = walletSummary?.lockedBalance || 0;
   const totalBalance = balance + lockedBalance;
 
   const quickActions = [
@@ -39,22 +39,22 @@ const WalletOverviewCard = ({ userId, walletSummary, walletLoading, onNavigateTo
 
   return (
     <>
-      <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
         {/* Header */}
         <div className="px-5 pt-4 pb-3 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-navy-900">Wallet Overview</h3>
+          <h3 className="text-sm font-bold text-navy-900 dark:text-dark-primary">Wallet Overview</h3>
           <div className="relative">
             <select
               value={currency}
               onChange={(e) => changeCurrency(e.target.value)}
               disabled={loadingRates}
-              className="appearance-none bg-neutral-100 text-xs font-semibold text-neutral-600 pl-2.5 pr-7 py-1.5 rounded-lg border-none focus:outline-none focus:ring-1 focus:ring-primary-400 cursor-pointer"
+              className="appearance-none bg-neutral-100 dark:bg-dark-elevated text-xs font-semibold text-neutral-600 dark:text-dark-muted pl-2.5 pr-7 py-1.5 rounded-lg border-none focus:outline-none focus:ring-1 focus:ring-primary-400 cursor-pointer"
             >
               {availableCurrencies.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-dark-muted pointer-events-none" />
           </div>
         </div>
 
@@ -62,8 +62,8 @@ const WalletOverviewCard = ({ userId, walletSummary, walletLoading, onNavigateTo
         <div className="mx-5 mb-4">
           <div className="bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-2xl p-5 relative overflow-hidden">
             {/* Decorative circles */}
-            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-white/10" />
-            <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-white/5" />
+            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-white/10 dark:bg-dark-surface/10" />
+            <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-white/5 dark:bg-dark-surface/5" />
 
             <p className="text-xs text-primary-200 font-medium mb-1">Available Balance</p>
             <p className="text-2xl font-bold text-white mb-4">
@@ -99,7 +99,7 @@ const WalletOverviewCard = ({ userId, walletSummary, walletLoading, onNavigateTo
                 <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center group-hover:bg-primary-100 transition-colors duration-200">
                   {action.icon}
                 </div>
-                <span className="text-[10px] font-medium text-neutral-500 group-hover:text-navy-900 transition-colors">{action.label}</span>
+                <span className="text-[10px] font-medium text-neutral-500 dark:text-dark-muted group-hover:text-navy-900 dark:hover:text-dark-primary dark:text-dark-primary transition-colors">{action.label}</span>
               </button>
             ))}
           </div>

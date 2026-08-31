@@ -11,8 +11,9 @@ const prisma = new PrismaClient();
 
 // Phase 5: new multi-provider arbitration path (low-stakes only, feature-flagged)
 const { runFullArbitrationPipeline } = require('./ai/runFullArbitrationPipeline');
+const ledgerService = require('./ledgerService');
 
-const generateAIReport = async (deedDisputeId) => {
+const generateAIReport = async (deedDisputeId, options = {}) => {
   try {
     const dispute = await prisma.deedDispute.findUnique({
       where: { id: deedDisputeId },
@@ -72,7 +73,7 @@ Analyze this dispute impartially based on the provided evidence ledger.
 
 --- PASS TYPE ---
 ${isReAnalysis 
-  ? "This is a CHALLENGE RE-ANALYSIS. The original AI Report is provided below. One or both parties submitted rebuttals to your original verdict. You must re-evaluate your original verdict based strictly on these new rebuttals." 
+  ? "This is a CHALLENGE RE-ANALYSIS. The original AI Report is provided below. One or both parties submitted rebuttals to your original verdict. You must re-evaluate your original verdict based strictly on these new rebuttals. IMPORTANT: You are the final arbiter. You MUST make a definitive decision (REFUND_BUYER or RELEASE_TO_SELLER) based on the balance of probabilities. Do NOT output MANUAL_REVIEW_REQUIRED unless absolutely technically impossible to decide." 
   : "This is a FIRST-PASS ANALYSIS. You are evaluating the initial evidence submitted by both parties."}
 
 --- ORDER DETAILS ---
@@ -137,13 +138,13 @@ EXPECTED JSON FORMAT:
        return;
     }
 
-    // ── Phase 5: New arbitration path (LOW-STAKES + flag ON only) ────────────────
-    // HIGH-STAKES disputes ALWAYS bypass this block and use the legacy path below,
-    // regardless of the flag value. This is a hard requirement, not a default.
-    let faultSide, recommendation, confidenceScore, reasoning, resolvedBy, pipelineVersion;
-
-    if (process.env.FEATURE_NEW_ARBITRATION_LOW_STAKES === 'true' && !highStakes) {
-      try {
+      // 🚀 Phase 5: New arbitration path (Controlled via feature flag only) 
+      // This path handles ALL disputes (low and high stakes) when the flag is enabled.
+      // If it fails for any reason, it automatically falls back to the legacy Gemini path.
+      let faultSide, recommendation, confidenceScore, reasoning, resolvedBy, pipelineVersion, disputeContext;
+  
+      if (process.env.FEATURE_NEW_ARBITRATION_ENABLED === 'true') {
+        try {
         const [buyer, seller] = await Promise.all([
           prisma.buyer.findUnique({ where: { id: dispute.buyerId } }),
           prisma.seller.findUnique({ where: { id: dispute.sellerId } })
@@ -164,7 +165,7 @@ EXPECTED JSON FORMAT:
           throw new Error('parseError from new system');
         }
 
-        ({ faultSide, recommendation, confidenceScore, reasoning } = newResult);
+        ({ faultSide, recommendation, confidenceScore, reasoning, disputeContext } = newResult);
         resolvedBy = 'new_system';
         pipelineVersion = 'full_v1';
         console.log(`[AI] Dispute ${deedDisputeId} resolved via NEW arbitration system (low-stakes, provider=${newResult.providerUsed}, quality=${newResult.disputeContext?.overallDataQuality})`);
@@ -210,6 +211,9 @@ EXPECTED JSON FORMAT:
     if (pipelineVersion) {
       payload.pipelineVersion = pipelineVersion;
     }
+    if (disputeContext) {
+      payload.disputeContext = disputeContext;
+    }
 
     try {
       await prisma.disputeEvent.create({
@@ -227,6 +231,17 @@ EXPECTED JSON FORMAT:
       });
       
       console.log(`[AI] Successfully generated ${isReAnalysis ? 're-analysis' : 'first-pass'} AI_REPORT for ${deedDisputeId}`);
+
+      // Mirror into AuditLedger so the Activity Log reflects the verdict.
+      // deedId is on the dispute record — re-fetch it from the dispute we already have.
+      ledgerService.appendEvent(dispute.deed.id, 'AI_VERDICT_ISSUED', 'system', 'ai', {
+        recommendation: payload.recommendation,
+        confidenceScore: payload.confidenceScore,
+        faultSide: payload.faultSide,
+        isReAnalysis,
+        resolvedBy: payload.resolvedBy,
+        disputeId: deedDisputeId
+      }).catch(err => console.error('[Ledger] AI_VERDICT_ISSUED write failed:', err.message));
 
       // --- STAGE C3: Value Threshold & Confidence Wiring ---
       
@@ -262,13 +277,15 @@ EXPECTED JSON FORMAT:
         });
         console.log(`[AI] Dispute ${deedDisputeId} ESCALATED: ${escalationReason}`);
       } else if (!isReAnalysis) {
-        // Safe to proceed to Challenge Phase
+        // Safe to proceed to Challenge Phase (first-pass analysis)
         await prisma.deedDispute.update({
           where: { id: deedDisputeId },
           data: { status: 'CHALLENGE_PHASE', lastActivity: new Date() }
         });
         console.log(`[AI] Dispute ${deedDisputeId} moved to CHALLENGE_PHASE.`);
       }
+      // isReAnalysis: re-analysis verdict landed, no automatic
+      // status transition — dispute stays in CHALLENGE_PHASE until admin or rules engine acts.
     } catch (dbError) {
       console.log(`[AI] Failed to write report — dispute record may have changed state or been removed`);
       return; // Do not fall through to the fallback block if it's a DB consistency error
@@ -277,7 +294,8 @@ EXPECTED JSON FORMAT:
   } catch (error) {
     console.error("[AI] Orchestration Error:", error);
     
-    // Graceful fallback to unblock the frontend
+    // Graceful fallback: try to escalate so the dispute doesn't stall.
+    let fallbackSucceeded = false;
     try {
       await prisma.disputeEvent.create({
         data: {
@@ -291,8 +309,43 @@ EXPECTED JSON FORMAT:
         where: { id: deedDisputeId },
         data: { status: 'ESCALATED', lastActivity: new Date(), aiAnalysis: { faultSide: "NEUTRAL", recommendation: "ESCALATE_TO_HUMAN", confidenceScore: 0, reasoning: "AI Service unavailable. Human intervention required." } }
       });
+      fallbackSucceeded = true;
     } catch (fallbackError) {
-      console.error("[AI] Fallback Error:", fallbackError);
+      console.error("[AI] Fallback ALSO failed:", fallbackError);
+    }
+
+    // If both the AI generation AND the fallback escalation failed, write a durable
+    // AI_TRIGGER_FAILED marker so the failure is visible in the DB, not just in logs.
+    // Then re-throw the original error so the caller's .catch() can apply its own
+    // last-resort escalation (e.g. the controller's setImmediate wrapper).
+    if (!fallbackSucceeded) {
+      try {
+        await prisma.disputeEvent.create({
+          data: {
+            deedDisputeId,
+            type: 'AI_TRIGGER_FAILED',
+            actorRole: 'system',
+            payload: {
+              error: error.message,
+              stage: 'ai_generation_and_fallback',
+              timestamp: new Date().toISOString()
+            }
+          }
+        });
+        console.error(`[AI] AI_TRIGGER_FAILED event written for dispute ${deedDisputeId}. Manual intervention required.`);
+        // Also mirror the failure into AuditLedger so it's visible in the deed Activity Log.
+        if (dispute?.deed?.id) {
+          ledgerService.appendEvent(dispute.deed.id, 'DISPUTE_ESCALATED', 'system', 'ai', {
+            reason: 'AI analysis failed. Escalated for manual review.',
+            triggeredBy: 'error_fallback',
+            disputeId: deedDisputeId
+          }).catch(err => console.error('[Ledger] DISPUTE_ESCALATED (error_fallback) write failed:', err.message));
+        }
+      } catch (markerError) {
+        // DB itself is unreachable — nothing more we can do here except log.
+        console.error(`[AI] Could not write AI_TRIGGER_FAILED marker for ${deedDisputeId}:`, markerError.message);
+      }
+      throw error; // Re-throw: lets the setImmediate wrapper apply emergency escalation.
     }
   }
 };

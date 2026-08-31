@@ -149,10 +149,6 @@ export default function NewDeedPage() {
       if (form.milestones.length === 0) missing.push("At least 1 Milestone");
       else if (form.milestones.some(m => !m.title || !m.amount || !m.deadline)) missing.push("Incomplete Milestone details");
     }
-    if (step >= 4) {
-      if (!form.amount) missing.push("Total Amount");
-      if (form.isMilestone && !isMilestoneMathValid()) missing.push("Milestone Sum Mismatch");
-    }
     return missing;
   };
 
@@ -313,7 +309,7 @@ export default function NewDeedPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-dark-bg pb-24 font-inter">
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-dark-bg dark:bg-dark-bg pb-24 font-inter">
       {/* 4. Minimalist Hero (Height reduced by ~60%) */}
       <div className="bg-white dark:bg-dark-surface border-b border-neutral-200 dark:border-dark-border pt-8 pb-6 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -474,7 +470,7 @@ export default function NewDeedPage() {
                     <h2 className="text-sm font-black text-neutral-400 dark:text-dark-muted uppercase tracking-widest">Milestones</h2>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" name="isMilestone" checked={form.isMilestone} onChange={handleInput} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-dark-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-dark-surface after:border-gray-300 dark:border-dark-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                     </label>
                   </div>
 
@@ -504,7 +500,7 @@ export default function NewDeedPage() {
                           </div>
                         </div>
                       ))}
-                      <button onClick={addMilestone} className="w-full py-4 border-2 border-dashed border-neutral-300 hover:border-indigo-400 rounded-2xl text-indigo-600 font-bold transition-colors flex items-center justify-center">
+                      <button onClick={addMilestone} className="w-full py-4 border-2 border-dashed border-neutral-300 dark:border-dark-border hover:border-indigo-400 rounded-2xl text-indigo-600 font-bold transition-colors flex items-center justify-center">
                         + Add Milestone Chunk
                       </button>
                     </div>
@@ -535,11 +531,11 @@ export default function NewDeedPage() {
                     <div className="space-y-6">
                       <div>
                         <div className="text-xs font-bold text-neutral-400 dark:text-dark-muted uppercase tracking-wider mb-1">Description</div>
-                        <p className="text-neutral-700 text-sm leading-relaxed">{form.description}</p>
+                        <p className="text-neutral-700 dark:text-dark-primary text-sm leading-relaxed">{form.description}</p>
                       </div>
                       <div>
                         <div className="text-xs font-bold text-neutral-400 dark:text-dark-muted uppercase tracking-wider mb-1">Acceptance Criteria</div>
-                        <p className="text-neutral-700 text-sm leading-relaxed bg-neutral-50 dark:bg-dark-bg p-4 rounded-xl border border-neutral-100 dark:border-dark-border">{form.acceptanceCriteria}</p>
+                        <p className="text-neutral-700 dark:text-dark-primary text-sm leading-relaxed bg-neutral-50 dark:bg-dark-bg p-4 rounded-xl border border-neutral-100 dark:border-dark-border">{form.acceptanceCriteria}</p>
                       </div>
                     </div>
                   </div>
@@ -552,7 +548,7 @@ export default function NewDeedPage() {
                       name="isReviewed"
                       checked={!!form.isReviewed}
                       onChange={handleInput}
-                      className="mt-1 w-5 h-5 text-indigo-600 border-neutral-300 rounded focus:ring-indigo-500 cursor-pointer"
+                      className="mt-1 w-5 h-5 text-indigo-600 border-neutral-300 dark:border-dark-border rounded focus:ring-indigo-500 cursor-pointer"
                     />
                     <label htmlFor="isReviewed" className="text-sm font-medium text-navy-900 dark:text-dark-primary cursor-pointer select-none">
                       I have reviewed the project details and acceptance criteria. I confirm they accurately represent the agreement.
@@ -681,7 +677,7 @@ export default function NewDeedPage() {
                   </h3>
                 </div>
                 
-                <div className="p-6 space-y-5 bg-[#FAFAFA] dark:bg-dark-bg">
+                <div className="p-6 space-y-5 bg-[#FAFAFA] dark:bg-dark-bg dark:bg-dark-bg">
                   <div className="flex justify-between items-start pb-4 border-b border-neutral-200 dark:border-dark-border border-dashed">
                     <div className="text-xs font-black text-neutral-500 dark:text-dark-muted uppercase tracking-widest">Buyer</div>
                     <div className="text-sm font-bold text-navy-900 dark:text-dark-primary">{buyerData?.firstName} {buyerData?.lastName}</div>
@@ -693,7 +689,7 @@ export default function NewDeedPage() {
                   <div className="flex justify-between items-start pb-4 border-b border-neutral-200 dark:border-dark-border border-dashed">
                     <div className="text-xs font-black text-neutral-500 dark:text-dark-muted uppercase tracking-widest">Escrow</div>
                     <div className="text-sm font-black text-indigo-600">
-                      {form.amount ? formatCurrency(form.amount, form.currency) : 'Pending'}
+                      {form.amount ? formatCurrency(Math.round(parseFloat(form.amount) * 100), form.currency) : 'Pending'}
                     </div>
                   </div>
                   <div className="flex justify-between items-start pb-4 border-b border-neutral-200 dark:border-dark-border border-dashed">
@@ -726,7 +722,10 @@ export default function NewDeedPage() {
               {getMissingFields().length > 0 && step > 2 && (
                  <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-500/50 rounded-r-xl p-5 shadow-sm">
                    <h4 className="font-bold text-red-700 dark:text-red-400 text-sm mb-2 uppercase tracking-wide">Action Required</h4>
-                   <p className="text-xs text-red-600 dark:text-red-400 font-medium">You have incomplete fields in previous stages. Review is locked.</p>
+                   <p className="text-xs text-red-600 dark:text-red-400 font-medium mb-1">Please provide the following information to continue:</p>
+                   <ul className="list-disc pl-5 text-xs text-red-600 dark:text-red-400 font-medium space-y-1">
+                     {getMissingFields().map((err, i) => <li key={i}>{err}</li>)}
+                   </ul>
                  </div>
               )}
             </div>

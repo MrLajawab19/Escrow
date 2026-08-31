@@ -34,17 +34,18 @@ const RecentTransactions = ({ userId, onViewAll }) => {
   };
 
 
-  const getIcon = (type) => {
-    if (type === 'CREDIT') {
+  const getIcon = (tx) => {
+    const isCredit = (tx.netAmount ?? 0) < 0 ? tx.type !== 'CREDIT' : tx.type === 'CREDIT';
+    if (isCredit) {
       return (
-        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-          <CheckCircle2 size={16} className="text-emerald-500" />
+        <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
+          <CheckCircle2 size={16} className="text-emerald-500 dark:text-emerald-400" />
         </div>
       );
     }
     return (
-      <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
-        <ArrowUpRight size={16} className="text-red-500" />
+      <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
+        <ArrowUpRight size={16} className="text-red-500 dark:text-red-400" />
       </div>
     );
   };
@@ -57,10 +58,10 @@ const RecentTransactions = ({ userId, onViewAll }) => {
   };
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden mt-4">
+    <div className="bg-white dark:bg-dark-surface border border-neutral-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden mt-4">
       {/* Header */}
       <div className="px-5 pt-4 pb-3 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-navy-900">Recent Transactions</h3>
+        <h3 className="text-sm font-bold text-navy-900 dark:text-dark-primary">Recent Transactions</h3>
         <button
           onClick={onViewAll}
           className="text-[10px] font-semibold text-primary-500 hover:text-primary-600 transition-colors"
@@ -77,26 +78,30 @@ const RecentTransactions = ({ userId, onViewAll }) => {
           </div>
         ) : transactions.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-xs text-neutral-400">No transactions yet</p>
+            <p className="text-xs text-neutral-400 dark:text-dark-muted">No transactions yet</p>
           </div>
         ) : (
-          transactions.map((tx) => (
-            <div key={tx.id} className="flex items-center gap-3">
-              {getIcon(tx.type)}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-navy-900 truncate">{tx.description || 'Transaction'}</p>
-                <p className="text-[10px] text-neutral-400">{formatDate(tx.createdAt)}</p>
+          transactions.map((tx) => {
+            const isCredit = (tx.netAmount ?? 0) < 0 ? tx.type !== 'CREDIT' : tx.type === 'CREDIT';
+            const displayAmount = Math.abs(tx.netAmount ?? tx.amount ?? 0);
+            return (
+              <div key={tx.id} className="flex items-center gap-3">
+                {getIcon(tx)}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-navy-900 dark:text-dark-primary truncate">{tx.description || 'Transaction'}</p>
+                  <p className="text-[10px] text-neutral-400 dark:text-dark-muted">{formatDate(tx.createdAt)}</p>
+                </div>
+                <p
+                  className={`text-xs font-bold flex-shrink-0 ${
+                    isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
+                  }`}
+                >
+                  {isCredit ? '+' : '-'}
+                  {formatCurrency(displayAmount, tx.currency || 'INR')}
+                </p>
               </div>
-              <p
-                className={`text-xs font-bold flex-shrink-0 ${
-                  tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-500'
-                }`}
-              >
-                {tx.type === 'CREDIT' ? '+' : '-'}
-                {formatCurrency(tx.amount || 0, tx.currency || 'INR')}
-              </p>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

@@ -13,21 +13,21 @@ import ReviewModal from '../components/ReviewModal';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  DRAFT:             { label: 'Draft',             cls: 'bg-neutral-100 text-neutral-700 border-neutral-300', dot: 'bg-neutral-400' },
+  DRAFT:             { label: 'Draft',             cls: 'bg-neutral-100 dark:bg-dark-elevated text-neutral-700 dark:text-dark-primary border-neutral-300 dark:border-dark-border', dot: 'bg-neutral-400' },
   PENDING_SELLER:    { label: 'Pending Seller',    cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
   PENDING_SIGNATURES:{ label: 'Pending Signatures',cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
   ESCROW_LOCKED:     { label: 'Escrow Locked',     cls: 'bg-indigo-50 text-indigo-700 border-indigo-200',    dot: 'bg-indigo-500' },
-  ACTIVE:            { label: 'Active',            cls: 'bg-amber-50 text-amber-700 border-amber-200',       dot: 'bg-amber-500' },
-  IN_PROGRESS:       { label: 'In Progress',        cls: 'bg-amber-50 text-amber-700 border-amber-200',       dot: 'bg-amber-500' },
+  ACTIVE:            { label: 'Active',            cls: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 border-amber-200',       dot: 'bg-amber-500' },
+  IN_PROGRESS:       { label: 'In Progress',        cls: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 border-amber-200',       dot: 'bg-amber-500' },
   CHANGES_REQUESTED: { label: 'Changes Requested',  cls: 'bg-orange-50 text-orange-700 border-orange-200',    dot: 'bg-orange-500' },
   SUBMITTED:         { label: 'Delivered',          cls: 'bg-purple-50 text-purple-700 border-purple-200',    dot: 'bg-purple-500' },
-  CONFIRMED:         { label: 'Confirmed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-  CLOSED:            { label: 'Completed',          cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-  DISPUTED:          { label: 'Disputed',           cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
-  ARBITRATING:       { label: 'Arbitrating',        cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
-  ARBITRATED:        { label: 'Arbitrated',         cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-  ESCALATED:         { label: 'Escalated',          cls: 'bg-red-50 text-red-700 border-red-200',             dot: 'bg-red-500' },
-  CANCELLED:         { label: 'Cancelled',          cls: 'bg-neutral-100 text-neutral-600 border-neutral-200', dot: 'bg-neutral-400' },
+  CONFIRMED:         { label: 'Confirmed',          cls: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  CLOSED:            { label: 'Completed',          cls: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  DISPUTED:          { label: 'Disputed',           cls: 'bg-red-50 dark:bg-red-900/20 text-red-700 border-red-200',             dot: 'bg-red-500' },
+  ARBITRATING:       { label: 'Arbitrating',        cls: 'bg-red-50 dark:bg-red-900/20 text-red-700 border-red-200',             dot: 'bg-red-500' },
+  ARBITRATED:        { label: 'Arbitrated',         cls: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  ESCALATED:         { label: 'Escalated',          cls: 'bg-red-50 dark:bg-red-900/20 text-red-700 border-red-200',             dot: 'bg-red-500' },
+  CANCELLED:         { label: 'Cancelled',          cls: 'bg-neutral-100 dark:bg-dark-elevated text-neutral-600 dark:text-dark-muted border-neutral-200 dark:border-dark-border', dot: 'bg-neutral-400' },
 };
 
 function formatDate(d) {
@@ -47,7 +47,7 @@ function timeRemaining(deadline) {
 
 // ─── Skeleton loader ──────────────────────────────────────────────────────────
 const Skeleton = ({ className }) => (
-  <div className={`animate-pulse bg-neutral-200 rounded-xl ${className}`} />
+  <div className={`animate-pulse bg-neutral-200 dark:bg-dark-border rounded-xl ${className}`} />
 );
 
 const PageSkeleton = () => (
@@ -95,7 +95,7 @@ const InviteLinkBanner = ({ deed }) => {
         {new Date(deed.inviteExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.
       </p>
       <div className="flex items-center gap-2">
-        <div className="flex-1 min-w-0 bg-white border border-indigo-200 rounded-xl px-3 py-2">
+        <div className="flex-1 min-w-0 bg-white dark:bg-dark-surface border border-indigo-200 rounded-xl px-3 py-2">
           <p className="text-xs font-mono text-indigo-800 truncate">{inviteUrl}</p>
         </div>
         <button
@@ -188,17 +188,18 @@ const DeedDetails = () => {
     ? deed.deliverableFormats
     : deed?.scopeBox?.deliverables || [];
 
-  const timeLeft = timeRemaining(deedDeadline);
+  const isDeadlineIrrelevant = ['CLOSED', 'CANCELLED', 'CONFIRMED', 'DISPUTED', 'ARBITRATING', 'ARBITRATED', 'ESCALATED'].includes(deed?.status);
+  const timeLeft = isDeadlineIrrelevant ? null : timeRemaining(deedDeadline);
   const dashboardPath = userType === 'buyer' ? '/buyer/dashboard' : '/seller/dashboard';
 
   return (
-    <div className="min-h-screen bg-[#F6F9FC] py-8 px-4">
+    <div className="min-h-screen bg-[#F6F9FC] dark:bg-dark-bg py-8 px-4">
       <div className="max-w-5xl mx-auto space-y-5">
 
         {/* ── Back button ──────────────────────────────────────────────────── */}
         <button
           onClick={() => navigate(dashboardPath)}
-          className="flex items-center gap-2 text-sm text-neutral-500 hover:text-[#0A2540] font-inter font-medium transition-colors group"
+          className="flex items-center gap-2 text-sm text-neutral-500 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary font-inter font-medium transition-colors group"
         >
           <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -209,15 +210,15 @@ const DeedDetails = () => {
         {loading && <PageSkeleton />}
 
         {error && (
-          <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-8 text-center">
-            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl border border-red-100 shadow-sm p-8 text-center">
+            <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <p className="text-base font-bold text-[#0A2540] font-inter mb-1">Error Loading Order</p>
-            <p className="text-sm text-neutral-500 font-inter mb-5">{error}</p>
+            <p className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter mb-1">Error Loading Order</p>
+            <p className="text-sm text-neutral-500 dark:text-dark-muted font-inter mb-5">{error}</p>
             <button onClick={fetchOrder} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold font-inter transition-colors">
               Retry
             </button>
@@ -227,7 +228,7 @@ const DeedDetails = () => {
         {!loading && !error && deed && (
           <>
             {/* ── ORDER HEADER ────────────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap mb-2">
@@ -237,7 +238,7 @@ const DeedDetails = () => {
                     </span>
                     {timeLeft && (
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full font-inter
-                        ${timeLeft.urgent ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>
+                        ${timeLeft.urgent ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 border border-emerald-100'}`}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -245,18 +246,18 @@ const DeedDetails = () => {
                       </span>
                     )}
                   </div>
-                  <h1 className="text-xl sm:text-2xl font-black text-[#0A2540] font-inter leading-tight">
+                  <h1 className="text-xl sm:text-2xl font-black text-[#0A2540] dark:text-dark-primary font-inter leading-tight">
                     {deedTitle || 'Untitled Order'}
                   </h1>
-                  <p className="text-xs text-neutral-400 font-inter mt-1 font-mono">
+                  <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter mt-1 font-mono">
                     Order ID: {deed.id}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-3xl font-black text-[#0A2540] font-inter">
+                  <p className="text-3xl font-black text-[#0A2540] dark:text-dark-primary font-inter">
                     {formatCurrency(deedAmount, deed.currency || 'INR')}
                   </p>
-                  <p className="text-xs text-neutral-400 font-inter mt-0.5">Escrow Amount</p>
+                  <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter mt-0.5">Escrow Amount</p>
                 </div>
               </div>
             </div>
@@ -284,7 +285,7 @@ const DeedDetails = () => {
               </Link>
               <Link 
                 to={`/${userType}/deed/${deed.id}/audit`}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium font-inter hover:bg-slate-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-dark-elevated text-slate-700 dark:text-dark-primary rounded-xl font-medium font-inter hover:bg-slate-200 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 Audit Ledger
@@ -299,7 +300,7 @@ const DeedDetails = () => {
               <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div>
                   <h3 className="text-lg font-bold text-emerald-800 font-inter">How was your experience?</h3>
-                  <p className="text-emerald-600 text-sm mt-1">Leave a review for your seller to help them grow.</p>
+                  <p className="text-emerald-600 dark:text-emerald-400 text-sm mt-1">Leave a review for your seller to help them grow.</p>
                 </div>
                 <button 
                   onClick={() => setIsReviewModalOpen(true)}
@@ -318,33 +319,33 @@ const DeedDetails = () => {
                   label: 'Order Placed',
                   value: formatDate(deed.createdAt),
                   sub: null,
-                  cls: 'border-neutral-200',
+                  cls: 'border-neutral-200 dark:border-dark-border',
                 },
                 {
                   icon: '⏰',
                   label: 'Deadline',
                   value: formatDate(deedDeadline),
                   sub: timeLeft?.label,
-                  cls: timeLeft?.urgent ? 'border-red-200 bg-red-50/30' : 'border-neutral-200',
+                  cls: timeLeft?.urgent ? 'border-red-200 bg-red-50/30' : 'border-neutral-200 dark:border-dark-border',
                 },
                 {
                   icon: '💰',
                   label: 'Platform',
                   value: deed.platform || 'ScrowX',
                   sub: deed.currency || 'USD',
-                  cls: 'border-neutral-200',
+                  cls: 'border-neutral-200 dark:border-dark-border',
                 },
               ].map((card, i) => (
-                <div key={i} className={`bg-white rounded-2xl shadow-sm border p-5 ${card.cls}`}>
+                <div key={i} className={`bg-white dark:bg-dark-surface rounded-2xl shadow-sm border p-5 ${card.cls}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">{card.icon}</span>
-                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter">
+                    <p className="text-xs font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter">
                       {card.label}
                     </p>
                   </div>
-                  <p className="text-base font-bold text-[#0A2540] font-inter">{card.value}</p>
+                  <p className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">{card.value}</p>
                   {card.sub && (
-                    <p className={`text-xs font-inter mt-0.5 ${timeLeft?.urgent ? 'text-red-500 font-semibold' : 'text-neutral-400'}`}>
+                    <p className={`text-xs font-inter mt-0.5 ${timeLeft?.urgent ? 'text-red-500 dark:text-red-400 font-semibold' : 'text-neutral-400 dark:text-dark-muted'}`}>
                       {card.sub}
                     </p>
                   )}
@@ -353,7 +354,7 @@ const DeedDetails = () => {
             </div>
 
             {/* ── SCOPE BOX ───────────────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
                   <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,16 +362,16 @@ const DeedDetails = () => {
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
-                <h2 className="text-base font-bold text-[#0A2540] font-inter">Scope of Work</h2>
+                <h2 className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">Scope of Work</h2>
               </div>
 
-              <p className="text-sm text-neutral-600 font-inter leading-relaxed bg-neutral-50 p-4 rounded-xl border border-neutral-100 mb-4">
+              <p className="text-sm text-neutral-600 dark:text-dark-muted font-inter leading-relaxed bg-neutral-50 dark:bg-dark-bg p-4 rounded-xl border border-neutral-100 dark:border-dark-border mb-4">
                 {deedDescription || 'No description provided.'}
               </p>
 
               {deedDeliverables.length > 0 && (
                 <>
-                  <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider font-inter mb-2">
+                  <p className="text-xs font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter mb-2">
                     Deliverables
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -388,9 +389,9 @@ const DeedDetails = () => {
               )}
 
               {deed.scopeBox?.condition && (
-                <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100">
                   <p className="text-xs font-semibold text-amber-700 font-inter mb-1">Conditions</p>
-                  <p className="text-xs text-amber-600 font-inter">{deed.scopeBox.condition}</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-inter">{deed.scopeBox.condition}</p>
                 </div>
               )}
             </div>
@@ -416,11 +417,11 @@ const DeedDetails = () => {
 
             {/* ── DISPUTE RESOLUTION FLOW (shown when order is DISPUTED) ─────── */}
             {deed.status === 'DISPUTED' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-1">
+              <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-red-100 p-1">
                 <div className="px-5 pt-4 pb-2 flex items-center gap-2 border-b border-red-50">
                   <span className="text-lg">⚖️</span>
-                  <h2 className="text-base font-bold text-[#0A2540] font-inter">Dispute Resolution</h2>
-                  <span className="ml-auto text-[10px] font-bold px-2 py-1 bg-red-50 text-red-600 rounded-full border border-red-100 uppercase tracking-wider font-inter">Active</span>
+                  <h2 className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">Dispute Resolution</h2>
+                  <span className="ml-auto text-[10px] font-bold px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full border border-red-100 uppercase tracking-wider font-inter">Active</span>
                 </div>
                 <div className="p-5">
                   <DisputeResolutionFlow
@@ -434,17 +435,60 @@ const DeedDetails = () => {
               </div>
             )}
 
+            {/* ── FINAL DISPUTE OUTCOME SUMMARY (shown when resolved) ──────── */}
+            {deed.deedDispute?.status === 'RESOLVED' && (
+              <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl shadow-sm border border-emerald-200 dark:border-emerald-900/50 p-6">
+                <div className="flex items-center gap-3 mb-4 border-b border-emerald-100 dark:border-emerald-900/30 pb-4">
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl">🏁</span>
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-emerald-900 dark:text-emerald-400 font-inter">Dispute Resolution Finalized</h2>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-500 font-inter mt-0.5">
+                      This order was disputed and has been permanently closed.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white dark:bg-dark-surface p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                    <p className="text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wide mb-1">Final Result</p>
+                    <p className="text-sm font-black text-[#0A2540] dark:text-dark-primary font-inter">
+                      {deed.deedDispute.resolution?.replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <div className="bg-white dark:bg-dark-surface p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                    <p className="text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wide mb-1">Resolved By</p>
+                    <p className="text-sm font-black text-[#0A2540] dark:text-dark-primary font-inter capitalize">
+                      {deed.deedDispute.resolvedBy === 'system' ? 'AI Arbiter (Auto-Settled)' : 'Human Admin'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-dark-surface p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wide mb-2">Resolution Reason</p>
+                  <p className="text-sm text-neutral-700 dark:text-dark-muted font-inter leading-relaxed">
+                    {deed.deedDispute.resolvedBy === 'system' 
+                      ? (deed.deedDispute.aiAnalysis?.reasoning || "Auto-settled via timeout.")
+                      : (Array.isArray(deed.deedDispute.timeline) 
+                          ? (deed.deedDispute.timeline.find(t => t.event === 'DISPUTE_RESOLVED')?.notes || "Admin resolved without providing notes.")
+                          : "Admin resolved.")}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* ── LEDGER ENTRIES ──────────────────────────────────────────────── */}
             {deed.ledgerEntries?.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+              <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-neutral-100 dark:bg-dark-elevated rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-neutral-500 dark:text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
-                  <h2 className="text-base font-bold text-[#0A2540] font-inter">Activity Log</h2>
+                  <h2 className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">Activity Log</h2>
                 </div>
                 <div className="space-y-3">
                   {deed.ledgerEntries.map((log, i) => {
@@ -452,17 +496,44 @@ const DeedDetails = () => {
                     try {
                       if (log.payload) payloadObj = typeof log.payload === 'string' ? JSON.parse(log.payload) : log.payload;
                     } catch(e) {}
-                    
-                    let eventTitle = typeof log === 'string' ? log : (log.eventType || log.message || JSON.stringify(log));
-                    if (typeof eventTitle === 'string' && log.eventType) {
-                      eventTitle = eventTitle.replace(/_/g, ' ').replace(/\\w\\S*/g, w => (w.replace(/^\\w/, c => c.toUpperCase())));
-                    }
+
+                    // Human-readable title — replace underscores and title-case
+                    const RAW_TITLE_MAP = {
+                      DEED_CREATED:       'Deed Created',
+                      SELLER_JOINED:      'Seller Joined',
+                      DEED_LOCKED:        'Deed Locked',
+                      FUNDS_LOCKED:       'Funds Locked in Escrow',
+                      DELIVERY_CLAIMED:   'Delivery Submitted',
+                      DELIVERY_CONFIRMED: 'Delivery Confirmed',
+                      PAYMENT_RELEASED:   'Payment Released',
+                      PAYMENT_REFUNDED:   'Payment Refunded',
+                      CHANGES_REQUESTED:  'Changes Requested',
+                      CHANGES_ACCEPTED:   'Changes Accepted',
+                      DISPUTE_RAISED:     'Dispute Raised',
+                      EVIDENCE_SUBMITTED: 'Evidence Submitted',
+                      DISPUTE_CHALLENGE:  'Verdict Challenged',
+                      AI_VERDICT_ISSUED:  'AI Verdict Issued',
+                      DISPUTE_ESCALATED:  'Escalated to Human Review',
+                      DISPUTE_RESOLVED:   'Dispute Resolved',
+                    };
+                    const eventTitle = RAW_TITLE_MAP[log.eventType] || (log.eventType || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+                    // Dot color per event semantic
+                    const DOT_COLOR = {
+                      DISPUTE_RAISED:     'bg-red-500',
+                      EVIDENCE_SUBMITTED: 'bg-amber-400',
+                      DISPUTE_CHALLENGE:  'bg-purple-400',
+                      AI_VERDICT_ISSUED:  'bg-blue-400',
+                      DISPUTE_ESCALATED:  'bg-orange-500',
+                      DISPUTE_RESOLVED:   'bg-emerald-500',
+                    };
+                    const dotCls = DOT_COLOR[log.eventType] || 'bg-indigo-400';
 
                     return (
                     <div key={i} className="flex items-start gap-3">
-                      <div className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" />
+                      <div className={`w-2 h-2 rounded-full ${dotCls} mt-1.5 flex-shrink-0`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#0A2540] font-inter font-medium">
+                        <p className="text-sm text-[#0A2540] dark:text-dark-primary font-inter font-medium">
                           {eventTitle}
                         </p>
                         
@@ -481,13 +552,58 @@ const DeedDetails = () => {
                         )}
 
                         {payloadObj && log.eventType === 'DISPUTE_RAISED' && (
-                          <div className="mt-1.5 p-2.5 bg-red-50 border border-red-100 rounded-lg text-xs text-red-800 font-inter">
+                          <div className="mt-1.5 p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-100 rounded-lg text-xs text-red-800 font-inter">
                             <span className="font-bold block">Reason: {payloadObj.reason}</span>
                           </div>
                         )}
 
+                        {payloadObj && log.eventType === 'EVIDENCE_SUBMITTED' && (
+                          <div className="mt-1.5 p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 rounded-lg text-xs text-amber-800 font-inter">
+                            {payloadObj.isLate && <span className="font-bold block text-red-600">Submitted late</span>}
+                            {payloadObj.fileCount > 0
+                              ? <span className="block">{payloadObj.fileCount} file(s) attached</span>
+                              : <span className="block text-amber-700">Text evidence only</span>}
+                          </div>
+                        )}
+
+                        {payloadObj && log.eventType === 'DISPUTE_CHALLENGE' && (
+                          <div className="mt-1.5 p-2.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 rounded-lg text-xs text-purple-800 font-inter">
+                            <span className="block">Formal challenge submitted to AI verdict</span>
+                            {payloadObj.fileCount > 0 && <span className="block">{payloadObj.fileCount} supporting file(s) attached</span>}
+                          </div>
+                        )}
+
+                        {payloadObj && log.eventType === 'AI_VERDICT_ISSUED' && (
+                          <div className="mt-1.5 p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 rounded-lg text-xs text-blue-800 font-inter">
+                            <span className="font-bold block">
+                              {payloadObj.isReAnalysis ? 'Verdict 2 (Re-analysis)' : 'Verdict 1 (First Pass)'}
+                              {' — '}{(payloadObj.recommendation || '').replace(/_/g, ' ')}
+                            </span>
+                            {payloadObj.confidenceScore != null && (
+                              <span className="block text-blue-700">Confidence: {payloadObj.confidenceScore}%</span>
+                            )}
+                          </div>
+                        )}
+
+                        {payloadObj && log.eventType === 'DISPUTE_ESCALATED' && (
+                          <div className="mt-1.5 p-2.5 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 rounded-lg text-xs text-orange-800 font-inter">
+                            <span className="font-bold block">An admin will review and issue the final decision</span>
+                          </div>
+                        )}
+
+                        {payloadObj && log.eventType === 'DISPUTE_RESOLVED' && (
+                          <div className="mt-1.5 p-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 rounded-lg text-xs text-emerald-800 font-inter">
+                            <span className="font-bold block">
+                              Resolution: {(payloadObj.resolution || '').replace(/_/g, ' ')}
+                            </span>
+                            {payloadObj.finalBuyerPct != null && payloadObj.finalBuyerPct !== 100 && payloadObj.finalBuyerPct !== 0 && (
+                              <span className="block text-emerald-700">Buyer: {payloadObj.finalBuyerPct}% · Seller: {100 - payloadObj.finalBuyerPct}%</span>
+                            )}
+                          </div>
+                        )}
+
                         {log.timestamp && (
-                          <p className="text-[11px] text-neutral-400 font-inter mt-1">
+                          <p className="text-[11px] text-neutral-400 dark:text-dark-muted font-inter mt-1">
                             {formatDate(log.timestamp)}
                           </p>
                         )}
@@ -500,7 +616,7 @@ const DeedDetails = () => {
 
             {/* ── EMBEDDED CHAT ────────────────────────────────────────────── */}
             {showChat && currentUser && (
-              <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
+              <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
                 <div className="px-6 py-4 border-b border-indigo-50 flex items-center gap-3">
                   <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -508,8 +624,8 @@ const DeedDetails = () => {
                         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
-                  <h2 className="text-base font-bold text-[#0A2540] font-inter">Order Chat</h2>
-                  <span className="text-xs text-neutral-400 font-inter ml-auto">
+                  <h2 className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">Order Chat</h2>
+                  <span className="text-xs text-neutral-400 dark:text-dark-muted font-inter ml-auto">
                     Secure · End-to-end
                   </span>
                 </div>

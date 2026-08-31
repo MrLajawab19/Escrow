@@ -78,7 +78,7 @@ const OrderTimeline = ({ status }) => {
 
   if (status === 'REJECTED' || status === 'CANCELLED') {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6 bg-red-50/30">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-red-100 p-6 bg-red-50/30">
         <div className="flex items-center gap-3 text-red-600">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -93,12 +93,12 @@ const OrderTimeline = ({ status }) => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+    <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-neutral-200 dark:border-dark-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-base font-bold text-[#0A2540] font-inter">Order Timeline</h2>
+        <h2 className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">Order Timeline</h2>
         <div className="flex items-center gap-2">
-          <div className="text-xs text-neutral-400 font-inter">{percentage}% complete</div>
-          <div className="w-20 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+          <div className="text-xs text-neutral-400 dark:text-dark-muted font-inter">{percentage}% complete</div>
+          <div className="w-20 h-1.5 bg-neutral-100 dark:bg-dark-elevated rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-full transition-all duration-700"
               style={{ width: `${percentage}%` }}
@@ -130,7 +130,7 @@ const OrderTimeline = ({ status }) => {
                     ? 'bg-emerald-500 ring-emerald-100 text-white shadow-md shadow-emerald-200'
                     : isCurrent
                     ? 'bg-indigo-600 ring-indigo-100 text-white shadow-md shadow-indigo-200 scale-110'
-                    : 'bg-white ring-neutral-100 text-neutral-300 border border-neutral-200'
+                    : 'bg-white dark:bg-dark-surface ring-neutral-100 text-neutral-300 border border-neutral-200 dark:border-dark-border'
                   }`}
               >
                 {isDone ? (
@@ -146,7 +146,7 @@ const OrderTimeline = ({ status }) => {
                 className={`text-xs font-semibold font-inter text-center leading-tight max-w-[80px]
                   ${isDone ? 'text-emerald-600'
                   : isCurrent ? 'text-indigo-600'
-                  : 'text-neutral-400'}`}
+                  : 'text-neutral-400 dark:text-dark-muted'}`}
               >
                 {step.label}
               </span>
@@ -171,7 +171,7 @@ const OrderTimeline = ({ status }) => {
                 className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0
                   ${isDone ? 'bg-emerald-500 text-white'
                   : isCurrent ? 'bg-indigo-600 text-white ring-4 ring-indigo-100'
-                  : 'bg-neutral-100 text-neutral-400'}`}
+                  : 'bg-neutral-100 dark:bg-dark-elevated text-neutral-400 dark:text-dark-muted'}`}
               >
                 {isDone ? (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,7 +181,7 @@ const OrderTimeline = ({ status }) => {
               </div>
               <div>
                 <p className={`text-sm font-semibold font-inter
-                  ${isDone ? 'text-emerald-600' : isCurrent ? 'text-indigo-600' : 'text-neutral-400'}`}>
+                  ${isDone ? 'text-emerald-600' : isCurrent ? 'text-indigo-600' : 'text-neutral-400 dark:text-dark-muted'}`}>
                   {step.label}
                 </p>
                 {isCurrent && (
@@ -199,7 +199,7 @@ const OrderTimeline = ({ status }) => {
       {(status === 'DISPUTED' || status === 'CANCELLED') && (
         <div className={`mt-4 px-4 py-3 rounded-xl text-sm font-inter flex items-center gap-2
           ${status === 'DISPUTED' ? 'bg-red-50 text-red-700 border border-red-100'
-          : 'bg-neutral-50 text-neutral-600 border border-neutral-200'}`}>
+          : 'bg-neutral-50 dark:bg-dark-bg text-neutral-600 dark:text-dark-muted border border-neutral-200 dark:border-dark-border'}`}>
           <span>{status === 'DISPUTED' ? '⚠️' : '❌'}</span>
           <span>
             {status === 'DISPUTED' && 'This order has an active dispute under review.'}

@@ -68,10 +68,10 @@ const MyDisputesPage = ({ userType, onClose }) => {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-        <div className="bg-white rounded-xl shadow-elevation p-8 max-w-sm mx-4 w-full">
+        <div className="bg-white dark:bg-dark-surface rounded-xl shadow-elevation p-8 max-w-sm mx-4 w-full">
           <div className="text-center">
             <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-neutral-500 font-medium">Loading your disputes...</p>
+            <p className="text-neutral-500 dark:text-dark-muted font-medium">Loading your disputes...</p>
           </div>
         </div>
       </div>
@@ -81,7 +81,7 @@ const MyDisputesPage = ({ userType, onClose }) => {
   if (error) {
     return (
       <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-        <div className="bg-white rounded-xl shadow-elevation p-8 max-w-sm mx-4 w-full">
+        <div className="bg-white dark:bg-dark-surface rounded-xl shadow-elevation p-8 max-w-sm mx-4 w-full">
           <div className="text-center">
             <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -89,7 +89,7 @@ const MyDisputesPage = ({ userType, onClose }) => {
               </svg>
             </div>
             <h3 className="text-lg font-bold text-navy-900 mb-2">Error</h3>
-            <p className="text-neutral-600 mb-6 text-sm leading-relaxed">{error}</p>
+            <p className="text-neutral-600 dark:text-dark-muted mb-6 text-sm leading-relaxed">{error}</p>
             <button
               onClick={fetchDisputedOrders}
               className="btn btn-primary w-full"
@@ -104,9 +104,9 @@ const MyDisputesPage = ({ userType, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-elevation w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-neutral-200">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-elevation w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-neutral-200 dark:border-dark-border">
         {/* Header */}
-        <div className="px-6 sm:px-8 py-5 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+        <div className="px-6 sm:px-8 py-5 border-b border-neutral-100 flex items-center justify-between bg-neutral-50 dark:bg-dark-bg/50">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center text-red-600">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,7 +122,7 @@ const MyDisputesPage = ({ userType, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-dark-primary dark:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated dark:bg-dark-elevated transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -131,21 +131,21 @@ const MyDisputesPage = ({ userType, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-neutral-50/30">
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-neutral-50 dark:bg-dark-bg/30">
           {disputedOrders.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-xl border border-neutral-200 border-dashed max-w-lg mx-auto">
+            <div className="text-center py-16 bg-white dark:bg-dark-surface rounded-xl border border-neutral-200 dark:border-dark-border border-dashed max-w-lg mx-auto">
               <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
                 <svg className="w-8 h-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <h3 className="text-lg font-bold text-navy-900 mb-2">No active disputes</h3>
-              <p className="text-neutral-500 mb-8 leading-relaxed max-w-sm mx-auto">
+              <p className="text-neutral-500 dark:text-dark-muted mb-8 leading-relaxed max-w-sm mx-auto">
                 Great! All your orders are progressing smoothly. You have no active disputes at the moment.
               </p>
               <button
                 onClick={onClose}
-                className="btn btn-outline border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                className="btn btn-outline border-neutral-200 dark:border-dark-border text-neutral-700 dark:text-dark-primary hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg"
               >
                 Return to Dashboard
               </button>
@@ -165,7 +165,7 @@ const MyDisputesPage = ({ userType, onClose }) => {
                       Dispute #{order.disputeId?.slice(0, 8) || order.id.slice(0, 8)}
                     </span>
                   </div>
-                  <div className="bg-white rounded-b-lg">
+                  <div className="bg-white dark:bg-dark-surface rounded-b-lg">
                     <DeedCard
                       deed={order}
                     />
@@ -177,13 +177,13 @@ const MyDisputesPage = ({ userType, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 sm:px-8 py-4 border-t border-neutral-200 bg-neutral-50 flex items-center justify-between">
-          <div className="text-sm text-neutral-500 font-medium hidden sm:block">
+        <div className="px-6 sm:px-8 py-4 border-t border-neutral-200 dark:border-dark-border bg-neutral-50 dark:bg-dark-bg flex items-center justify-between">
+          <div className="text-sm text-neutral-500 dark:text-dark-muted font-medium hidden sm:block">
             Showing {disputedOrders.length} disputed order{disputedOrders.length !== 1 ? 's' : ''}
           </div>
           <button
             onClick={onClose}
-            className="btn btn-outline border-neutral-300 text-neutral-700 hover:bg-neutral-100 bg-white ml-auto"
+            className="btn btn-outline border-neutral-300 dark:border-dark-border text-neutral-700 dark:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated bg-white dark:bg-dark-surface ml-auto"
           >
             Close
           </button>

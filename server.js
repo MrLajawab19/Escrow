@@ -18,6 +18,7 @@ const deedsRoutes = require('./backend/routes/deeds');
 const kycRoutes = require('./backend/routes/kyc');
 const { registerChatSocket } = require('./backend/socket/chatSocket'); // ← NEW: socket handler
 const { startChatExpiryCron } = require('./backend/jobs/chatExpiry'); // ← NEW: expiry cron
+const { startDisputeTimeoutCron } = require('./backend/jobs/disputeTimeout');
 const fs = require('fs');
 
 const app = express();
@@ -181,4 +182,6 @@ function startServer(port, attemptsLeft = 3) {
   return server;
 }
 
+startChatExpiryCron();
+startDisputeTimeoutCron();
 startServer(PORT);

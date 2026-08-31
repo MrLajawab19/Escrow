@@ -417,7 +417,7 @@ class WalletService {
         where: { 
           walletId: wallet.id, 
           type: 'CREDIT', 
-          category: 'ESCROW_RELEASE', 
+          category: { in: ['ESCROW_RELEASE', 'DISPUTE_RELEASE'] }, 
           status: 'SUCCESS' 
         }
       });

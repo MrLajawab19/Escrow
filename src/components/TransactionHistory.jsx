@@ -74,18 +74,18 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
       WITHDRAWAL: 'bg-red-100 text-red-800',
       REFUND: 'bg-blue-100 text-blue-800',
       TOP_UP: 'bg-green-100 text-green-800',
-      FEE: 'bg-gray-100 text-gray-800',
+      FEE: 'bg-gray-100 dark:bg-dark-surface text-gray-800 dark:text-dark-primary',
     };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+    return colors[category] || 'bg-gray-100 dark:bg-dark-surface text-gray-800 dark:text-dark-primary';
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      SUCCESS: 'text-green-600 bg-green-50',
+      SUCCESS: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20',
       PENDING: 'text-yellow-600 bg-yellow-50',
-      FAILED: 'text-red-600 bg-red-50',
+      FAILED: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
     };
-    return colors[status] || 'text-gray-600 bg-gray-50';
+    return colors[status] || 'text-gray-600 dark:text-dark-muted bg-gray-50 dark:bg-dark-bg';
   };
 
   if (loading) {
@@ -93,7 +93,7 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading transactions...</p>
+          <p className="text-gray-600 dark:text-dark-muted">Loading transactions...</p>
         </div>
       </div>
     );
@@ -102,11 +102,11 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 bg-gray-50 p-4 rounded-lg">
+      <div className="flex flex-wrap gap-4 bg-gray-50 dark:bg-dark-bg p-4 rounded-lg">
         <select
           value={filters.category}
           onChange={(e) => handleFilterChange('category', e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+          className="px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 text-navy-900 dark:text-dark-primary bg-white dark:bg-dark-surface"
         >
           <option value="">All Categories</option>
           <option value="ESCROW_LOCK">Escrow Lock</option>
@@ -120,7 +120,7 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
         <select
           value={filters.type}
           onChange={(e) => handleFilterChange('type', e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+          className="px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 text-navy-900 dark:text-dark-primary bg-white dark:bg-dark-surface"
         >
           <option value="">All Types</option>
           <option value="CREDIT">Credit (In)</option>
@@ -130,7 +130,7 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
         <select
           value={filters.status}
           onChange={(e) => handleFilterChange('status', e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+          className="px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 text-navy-900 dark:text-dark-primary bg-white dark:bg-dark-surface"
         >
           <option value="">All Status</option>
           <option value="SUCCESS">Successful</option>
@@ -143,14 +143,14 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
             setFilters({ category: '', type: '', status: '' });
             setCurrentPage(1);
           }}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+          className="px-4 py-2 bg-gray-300 dark:bg-dark-surface text-gray-700 dark:text-dark-primary rounded-lg hover:bg-gray-400 dark:hover:bg-dark-elevated transition"
         >
           Clear Filters
         </button>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-lg text-red-700">
           {error}
         </div>
       )}
@@ -160,20 +160,20 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-100 border-b-2 border-gray-200">
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Type</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Description</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Category</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Amount</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Fee</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Net Amount</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
+              <tr className="bg-gray-100 dark:bg-dark-surface border-b-2 border-gray-200 dark:border-dark-border">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-dark-primary">Type</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-dark-primary">Description</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-dark-primary">Category</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-dark-primary">Amount</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-dark-primary">Fee</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-dark-primary">Net Amount</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-dark-primary">Status</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-dark-primary">Date</th>
               </tr>
             </thead>
             <tbody>
               {transactions.map((transaction) => (
-                <tr key={transaction.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                <tr key={transaction.id} className="border-b border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition">
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-3 py-1 rounded-full font-semibold ${
                       transaction.type === 'CREDIT'
@@ -183,7 +183,7 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
                       {transaction.type === 'CREDIT' ? '↓ IN' : '↑ OUT'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-dark-primary font-medium">
                     {transaction.description}
                   </td>
                   <td className="px-6 py-4 text-sm">
@@ -191,15 +191,15 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
                       {getCategoryIcon(transaction.category)} {transaction.category.replace(/_/g, ' ')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">
+                  <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900 dark:text-dark-primary">
                     {formatCurrency(transaction.amount || 0, transaction.currency || 'INR')}
                   </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-600">
+                  <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-dark-muted">
                     {transaction.fee > 0 ? formatCurrency(transaction.fee, transaction.currency || 'INR') : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-right font-semibold">
-                    <span className={transaction.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}>
-                      {transaction.type === 'CREDIT' ? '+' : '-'}{formatCurrency(transaction.netAmount || 0, transaction.currency || 'INR')}
+                    <span className={((transaction.netAmount ?? 0) < 0 ? transaction.type !== 'CREDIT' : transaction.type === 'CREDIT') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                      {((transaction.netAmount ?? 0) < 0 ? transaction.type !== 'CREDIT' : transaction.type === 'CREDIT') ? '+' : '-'}{formatCurrency(Math.abs(transaction.netAmount || 0), transaction.currency || 'INR')}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">
@@ -207,7 +207,7 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
                       {transaction.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-dark-muted">
                     {new Date(transaction.createdAt).toLocaleDateString()} {new Date(transaction.createdAt).toLocaleTimeString()}
                   </td>
                 </tr>
@@ -216,16 +216,16 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
           </table>
         </div>
       ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-600 mb-2">No transactions found</p>
-          <p className="text-sm text-gray-500">Start by adding funds or making your first transaction</p>
+        <div className="text-center py-12 bg-gray-50 dark:bg-dark-bg rounded-lg">
+          <p className="text-gray-600 dark:text-dark-muted mb-2">No transactions found</p>
+          <p className="text-sm text-gray-500 dark:text-dark-muted">Start by adding funds or making your first transaction</p>
         </div>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-between items-center mt-6">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-dark-muted">
             Showing {(currentPage - 1) * transactionsPerPage + 1} to{' '}
             {Math.min(currentPage * transactionsPerPage, totalTransactions)} of {totalTransactions} transactions
           </div>
@@ -233,7 +233,7 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-elevated dark:bg-dark-bg disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               Previous
             </button>
@@ -244,8 +244,8 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
                   onClick={() => setCurrentPage(page)}
                   className={`px-3 py-2 rounded-lg transition ${
                     page === currentPage
-                      ? 'bg-blue-600 text-white'
-                      : 'border border-gray-300 hover:bg-gray-50'
+                      ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                      : 'border border-gray-300 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-elevated dark:bg-dark-bg text-navy-900 dark:text-dark-primary'
                   }`}
                 >
                   {page}
@@ -255,7 +255,7 @@ const TransactionHistory = ({ userId, refreshTrigger }) => {
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-elevated dark:bg-dark-bg disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               Next
             </button>

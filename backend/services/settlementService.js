@@ -3,6 +3,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { convertCurrency } = require('../utils/currencyUtils');
+const ledgerService = require('./ledgerService');
 
 /**
  * Shared transaction logic for resolving a dispute and moving funds.
@@ -74,7 +75,7 @@ async function executeSettlementTransaction({
       await tx.walletTransaction.create({
         data: {
           walletId: buyerWallet.id,
-          type: "CREDIT",
+          type: split.buyerNet >= 0 ? "CREDIT" : "DEBIT",
           category: "DISPUTE_REFUND",
           amount: split.buyerGross,
           currency: deed?.currency || "INR",
@@ -114,7 +115,7 @@ async function executeSettlementTransaction({
       await tx.walletTransaction.create({
         data: {
           walletId: sellerWallet.id,
-          type: "CREDIT",
+          type: split.sellerNet >= 0 ? "CREDIT" : "DEBIT",
           category: "DISPUTE_RELEASE",
           amount: split.sellerGross,
           currency: deed?.currency || "INR",
@@ -165,6 +166,16 @@ async function executeSettlementTransaction({
       }
     });
 
+    // Mirror resolution into AuditLedger (outside tx — fire-and-forget).
+    // Do this inline via setImmediate so it doesn’t participate in the Prisma tx.
+    setImmediate(() => {
+      ledgerService.appendEvent(deed.id, 'DISPUTE_RESOLVED', actorRole, actorId || 'system', {
+        resolution,
+        finalBuyerPct,
+        disputeId: dispute.id
+      }).catch(err => console.error('[Ledger] DISPUTE_RESOLVED write failed:', err.message));
+    });
+
     const currentTimeline = Array.isArray(dispute.timeline) ? dispute.timeline : [];
     const updateData = {
       status: 'RESOLVED',
@@ -200,4 +211,46 @@ async function executeSettlementTransaction({
   });
 }
 
-module.exports = { executeSettlementTransaction };
+/**
+ * Sweeps a dispute whose challenge window has expired and auto-settles it.
+ * Uses an atomic status update (CHALLENGE_PHASE -> RESOLVED) to prevent race conditions.
+ * 
+ * @param {object} params
+ * @param {object} params.dispute - The DeedDispute record.
+ * @param {object} params.deed - The Deed record.
+ * @param {string} params.recommendation - Action string, e.g. "REFUND_BUYER", "RELEASE_TO_SELLER".
+ * @param {string} params.triggerSource - E.g. 'system-cron' or 'system-lazy-eval'
+ * @returns {Promise<boolean>} True if settled, false if it was already settled or escalated
+ */
+async function processTimeoutSettlement({ dispute, deed, recommendation, triggerSource }) {
+  const buyerPct = recommendation === 'REFUND_BUYER' ? 100 : 0;
+  
+  // Atomic lock: Only update if it's currently CHALLENGE_PHASE
+  const updated = await prisma.deedDispute.updateMany({
+    where: { id: dispute.id, status: 'CHALLENGE_PHASE' },
+    data: { status: 'RESOLVED', lastActivity: new Date() }
+  });
+  
+  if (updated.count === 1) {
+    console.log(`[Auto-Settlement] ${triggerSource}: 24h elapsed in CHALLENGE_PHASE. Auto-settling ${dispute.id} with ${recommendation}...`);
+    
+    await executeSettlementTransaction({
+      dispute,
+      deed,
+      recommendation,
+      buyerPct,
+      actorRole: triggerSource,
+      actorId: null,
+      notes: `Auto-settled via challenge-phase timeout (${triggerSource})`
+    });
+
+    return true;
+  }
+  
+  return false;
+}
+
+module.exports = {
+  executeSettlementTransaction,
+  processTimeoutSettlement
+};

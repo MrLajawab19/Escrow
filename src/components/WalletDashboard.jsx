@@ -113,9 +113,9 @@ const WalletDashboard = ({ userId }) => {
   const isBuyer = walletSummary?.userRole === 'buyer' || !!localStorage.getItem('buyerToken');
 
   return (
-    <div className="w-full bg-neutral-50 min-h-screen pb-12 font-inter animate-fadeIn">
+    <div className="w-full bg-neutral-50 dark:bg-dark-bg min-h-screen pb-12 font-inter animate-fadeIn">
       {walletError && (
-        <div className="mb-6 p-4 bg-red-50/80 border border-red-200 rounded-2xl text-red-700 shadow-sm flex items-center gap-3">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20/80 border border-red-200 rounded-2xl text-red-700 shadow-sm flex items-center gap-3">
           <span className="text-xl">⚠️</span> {walletError}
         </div>
       )}

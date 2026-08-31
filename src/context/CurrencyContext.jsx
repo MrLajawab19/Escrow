@@ -59,27 +59,44 @@ export const CurrencyProvider = ({ children }) => {
   };
 
   const formatCurrency = (amount, sourceCurrency = 'USD') => {
-    // 1. Convert source to USD
-    let amountInUSD = parseFloat(amount || 0) / 100;
+    // 1. Original representation
+    let originalAmount = parseFloat(amount || 0) / 100;
+    const originalSymbol = currencySymbols[sourceCurrency] || '$';
+    let originalLocale = 'en-US';
+    if (sourceCurrency === 'INR') originalLocale = 'en-IN';
+    if (sourceCurrency === 'EUR') originalLocale = 'de-DE';
+    if (sourceCurrency === 'GBP') originalLocale = 'en-GB';
+    
+    const originalFormatted = `${originalSymbol}${originalAmount.toLocaleString(originalLocale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+
+    // If preferred currency matches source, just return the original
+    if (sourceCurrency === currency) return originalFormatted;
+
+    // 2. Convert source to USD
+    let amountInUSD = originalAmount;
     if (sourceCurrency !== 'USD' && exchangeRates[sourceCurrency]) {
       amountInUSD = amountInUSD / exchangeRates[sourceCurrency];
     }
     
-    // 2. Convert USD to target currency
+    // 3. Convert USD to target currency
     const rate = exchangeRates[currency] || 1;
     const convertedAmount = amountInUSD * rate;
-    const symbol = currencySymbols[currency] || '$';
+    const targetSymbol = currencySymbols[currency] || '$';
     
-    // Formatting correctly based on the locale to look native (e.g. 1,000.00)
-    let locale = 'en-US';
-    if (currency === 'INR') locale = 'en-IN';
-    if (currency === 'EUR') locale = 'de-DE';
-    if (currency === 'GBP') locale = 'en-GB';
+    let targetLocale = 'en-US';
+    if (currency === 'INR') targetLocale = 'en-IN';
+    if (currency === 'EUR') targetLocale = 'de-DE';
+    if (currency === 'GBP') targetLocale = 'en-GB';
 
-    return `${symbol}${convertedAmount.toLocaleString(locale, {
+    const targetFormatted = `${targetSymbol}${convertedAmount.toLocaleString(targetLocale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })}`;
+
+    return `${originalFormatted} (≈${targetFormatted})`;
   };
 
   const formatCurrencyRaw = (amount, sourceCurrency = 'USD') => {

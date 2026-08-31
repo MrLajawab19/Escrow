@@ -3,7 +3,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 import { ArrowDownLeft, ArrowUpRight, Search, Filter, ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react';
 
 const TransactionRow = ({ transaction, formatCurrency }) => {
-  const isCredit = transaction.type === 'CREDIT';
+  const isCredit = (transaction.netAmount ?? 0) < 0 ? transaction.type !== 'CREDIT' : transaction.type === 'CREDIT';
   
   const getCategoryIcon = (category) => {
     switch(category) {
@@ -71,7 +71,7 @@ const TransactionRow = ({ transaction, formatCurrency }) => {
       {/* Amount & Fee */}
       <td className="py-4 px-4 text-right">
         <p className={`text-sm font-black ${isCredit && transaction.status === 'SUCCESS' ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-dark-muted'}`}>
-          {isCredit ? '+' : '-'}{formatCurrency(transaction.netAmount || 0, transaction.currency || 'INR')}
+          {isCredit ? '+' : '-'}{formatCurrency(Math.abs(transaction.netAmount || 0), transaction.currency || 'INR')}
         </p>
         {transaction.fee > 0 && (
           <p className="text-xs text-neutral-500 dark:text-dark-muted mt-0.5">

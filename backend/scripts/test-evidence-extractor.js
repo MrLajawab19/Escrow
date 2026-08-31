@@ -31,7 +31,7 @@ function printResult(result) {
   console.log(`  providerUsed:    ${result.providerUsed}`);
   console.log(`  facts (${result.facts.length}):`);
   for (const f of result.facts) {
-    console.log(`    [${f.source}] (conf=${f.confidence}) ${f.fact}`);
+    console.log(`    [${f.source}] (conf=${f.confidence}) (media=${f.mediaUrl || 'none'}) ${f.fact}`);
   }
   if (result.unresolvedGaps.length > 0) {
     console.log(`  unresolvedGaps (${result.unresolvedGaps.length}):`);

@@ -7,7 +7,7 @@ import { Plus, ChevronDown, ShieldCheck, AlertTriangle, ArrowDownToLine } from '
 
 const DashboardHeader = ({ userData, kycStatus, walletBalance, walletCurrency, walletLoading, onKycClick, userType = 'buyer', onDisputesClick, onViewRequestsClick }) => {
   const navigate = useNavigate();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currency, changeCurrency, availableCurrencies, loadingRates } = useCurrency();
   const firstName = userData?.firstName || 'User';
 
   return (
@@ -53,6 +53,21 @@ const DashboardHeader = ({ userData, kycStatus, walletBalance, walletCurrency, w
                 {walletLoading ? '...' : formatCurrency(walletBalance || 0, walletCurrency || 'INR')}
               </p>
             </div>
+          </div>
+
+          {/* Currency Selector */}
+          <div className="hidden sm:flex items-center relative mr-2">
+            <select
+              value={currency}
+              onChange={(e) => changeCurrency(e.target.value)}
+              disabled={loadingRates}
+              className="appearance-none bg-neutral-100 dark:bg-dark-elevated text-xs font-bold text-neutral-600 dark:text-dark-muted pl-3 pr-7 py-2 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+            >
+              {availableCurrencies?.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
           </div>
 
           {/* Theme Toggle */}

@@ -108,7 +108,7 @@ const AppNav = ({
             {showHomeAction && (
               <Link
                 to="/"
-                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary dark:hover:text-dark-primary hover:bg-neutral-100 dark:bg-dark-elevated dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 onClick={handleHomeClick}
               >
                 Home
@@ -119,21 +119,21 @@ const AppNav = ({
               <>
                 <Link
                   to="/buyer/dashboard"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary dark:hover:text-dark-primary hover:bg-neutral-100 dark:bg-dark-elevated dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 >
                   Buyer Dashboard
                 </Link>
                 <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200 dark:border-dark-border">
                   <Link to={`/buyer/profile/${buyerData?.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     {buyerData?.profileImage ? (
-                      <img src={`${import.meta.env.VITE_API_URL}${buyerData.profileImage}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                      <img src={`${import.meta.env.VITE_API_URL}${buyerData.profileImage}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-dark-border" />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
                         {buyerData?.firstName?.charAt(0) || 'B'}
                       </div>
                     )}
                     <span className="text-sm text-neutral-500 dark:text-dark-muted font-inter">
-                      Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary">{buyerData?.firstName || 'Buyer'}</span>
+                      Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary dark:text-dark-primary">{buyerData?.firstName || 'Buyer'}</span>
                     </span>
                   </Link>
                   <button
@@ -148,21 +148,21 @@ const AppNav = ({
               <>
                 <Link
                   to="/seller/dashboard"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary dark:hover:text-dark-primary hover:bg-neutral-100 dark:bg-dark-elevated dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 >
                   Seller Dashboard
                 </Link>
                 <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200 dark:border-dark-border">
                   <Link to={`/seller/profile/${sellerData?.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     {sellerData?.profileImage ? (
-                      <img src={`${import.meta.env.VITE_API_URL}${sellerData.profileImage}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                      <img src={`${import.meta.env.VITE_API_URL}${sellerData.profileImage}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-dark-border" />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm">
                         {sellerData?.firstName?.charAt(0) || 'S'}
                       </div>
                     )}
                     <span className="text-sm text-neutral-500 dark:text-dark-muted font-inter">
-                      Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary">{sellerData?.firstName || 'Seller'}</span>
+                      Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary dark:text-dark-primary">{sellerData?.firstName || 'Seller'}</span>
                     </span>
                   </Link>
                   <button
@@ -183,7 +183,7 @@ const AppNav = ({
                 </Link>
                 <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200 dark:border-dark-border">
                   <span className="text-sm text-neutral-500 dark:text-dark-muted font-inter">
-                    Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary">{adminData?.name || 'Admin'}</span>
+                    Welcome, <span className="font-semibold text-[#0A2540] dark:text-dark-primary dark:text-dark-primary">{adminData?.name || 'Admin'}</span>
                   </span>
                   <button
                     onClick={handleAdminLogout}
@@ -196,14 +196,14 @@ const AppNav = ({
             ) : isBuyerArea ? (
               <Link
                 to="/buyer/auth"
-                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary dark:hover:text-dark-primary hover:bg-neutral-100 dark:bg-dark-elevated dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
               >
                 Buyer Login
               </Link>
             ) : isSellerArea ? (
               <Link
                 to="/seller/auth"
-                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary dark:hover:text-dark-primary hover:bg-neutral-100 dark:bg-dark-elevated dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
               >
                 Seller Login
               </Link>
@@ -218,13 +218,13 @@ const AppNav = ({
               <>
                 <Link
                   to="/buyer/auth"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary dark:hover:text-dark-primary hover:bg-neutral-100 dark:bg-dark-elevated dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 >
                   Buyer Login
                 </Link>
                 <Link
                   to="/seller/auth"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary dark:hover:text-dark-primary hover:bg-neutral-100 dark:bg-dark-elevated dark:hover:bg-dark-elevated transition-all duration-200 font-inter"
                 >
                   Seller Login
                 </Link>
@@ -237,7 +237,7 @@ const AppNav = ({
             <ThemeToggle />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg text-neutral-500 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated transition-colors"
+              className="p-2 rounded-lg text-neutral-500 dark:text-dark-muted hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary dark:hover:text-dark-primary hover:bg-neutral-100 dark:bg-dark-elevated dark:hover:bg-dark-elevated transition-colors"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {isMobileMenuOpen ? (
@@ -252,12 +252,12 @@ const AppNav = ({
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-neutral-100 bg-white py-4 absolute inset-x-0 shadow-lg">
+          <div className="md:hidden border-t border-neutral-100 bg-white dark:bg-dark-surface py-4 absolute inset-x-0 shadow-lg">
             <div className="flex flex-col px-4 space-y-1">
               {showHomeAction && (
                 <Link
                   to="/"
-                  className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] hover:bg-neutral-50 transition-colors font-inter"
+                  className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 hover:text-[#0A2540] dark:hover:text-dark-primary dark:text-dark-primary hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors font-inter"
                   onClick={() => { handleHomeClick(); setIsMobileMenuOpen(false); }}
                 >
                   Home
@@ -266,38 +266,38 @@ const AppNav = ({
 
               {isBuyerAuthenticated ? (
                 <>
-                  <Link to="/buyer/dashboard" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link to="/buyer/dashboard" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
                     Buyer Dashboard
                   </Link>
-                  <div className="px-4 py-2 text-sm text-neutral-500 font-inter">Welcome, {buyerData?.firstName || 'Buyer'}</div>
+                  <div className="px-4 py-2 text-sm text-neutral-500 dark:text-dark-muted font-inter">Welcome, {buyerData?.firstName || 'Buyer'}</div>
                   <button onClick={() => { handleBuyerLogout(); setIsMobileMenuOpen(false); }} className="block w-full text-left px-4 py-3 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors font-inter font-medium">
                     Logout
                   </button>
                 </>
               ) : isSellerAuthenticated ? (
                 <>
-                  <Link to="/seller/dashboard" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link to="/seller/dashboard" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
                     Seller Dashboard
                   </Link>
-                  <div className="px-4 py-2 text-sm text-neutral-500 font-inter">Welcome, {sellerData?.firstName || 'Seller'}</div>
+                  <div className="px-4 py-2 text-sm text-neutral-500 dark:text-dark-muted font-inter">Welcome, {sellerData?.firstName || 'Seller'}</div>
                   <button onClick={() => { handleSellerLogout(); setIsMobileMenuOpen(false); }} className="block w-full text-left px-4 py-3 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors font-inter font-medium">
                     Logout
                   </button>
                 </>
               ) : isBuyerArea ? (
-                <Link to="/buyer/auth" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to="/buyer/auth" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
                   Buyer Login
                 </Link>
               ) : isSellerArea ? (
-                <Link to="/seller/auth" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to="/seller/auth" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
                   Seller Login
                 </Link>
               ) : (
                 <>
-                  <Link to="/buyer/auth" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link to="/buyer/auth" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
                     Buyer Login
                   </Link>
-                  <Link to="/seller/auth" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link to="/seller/auth" className="block px-4 py-3 rounded-lg text-sm font-medium text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors font-inter" onClick={() => setIsMobileMenuOpen(false)}>
                     Seller Login
                   </Link>
                 </>
@@ -401,17 +401,17 @@ const HomePage = ({ onAuthClear }) => {
 
         {/* Enhanced Features Grid */}
         <div className="grid md:grid-cols-3 gap-8 mb-12">
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-2 group">
+          <div className="bg-white dark:bg-dark-surface/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white dark:bg-dark-surface/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-2 group">
             <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">⚖️</div>
             <h3 className="text-xl font-inter font-bold text-white mb-3">Dispute Resolution</h3>
             <p className="text-white/80 font-inter">Raise disputes and track resolution with evidence upload. Our AI-powered system ensures fair resolution for all parties.</p>
           </div>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-teal-500/10 hover:-translate-y-2 group">
+          <div className="bg-white dark:bg-dark-surface/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white dark:bg-dark-surface/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-teal-500/10 hover:-translate-y-2 group">
             <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🔒</div>
             <h3 className="text-xl font-inter font-bold text-white mb-3">ScrowX</h3>
             <p className="text-white/80 font-inter">Funds held securely with blockchain-level encryption until both parties are satisfied. No more payment disputes or delivery issues.</p>
           </div>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 group">
+          <div className="bg-white dark:bg-dark-surface/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 text-center hover:bg-white dark:bg-dark-surface/10 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 group">
             <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">📊</div>
             <h3 className="text-xl font-inter font-bold text-white mb-3">Order Tracking</h3>
             <p className="text-white/80 font-inter">Real-time order status updates and timeline tracking with advanced analytics. Stay informed throughout the entire process.</p>
@@ -420,7 +420,7 @@ const HomePage = ({ onAuthClear }) => {
       </div>
 
       {/* How It Works */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 lg:p-12 transition-all duration-300 hover:shadow-xl animate-slide-up shadow-lg" style={{ animationDelay: '0.3s' }}>
+      <div className="bg-white dark:bg-dark-surface/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 lg:p-12 transition-all duration-300 hover:shadow-xl animate-slide-up shadow-lg" style={{ animationDelay: '0.3s' }}>
         <h2 className="text-3xl sm:text-4xl font-inter font-black mb-8 text-center bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">How It Works</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {[

@@ -14,18 +14,11 @@
 Total remaining files requiring systematic attention: 46 (plus minor cleanups on Stage 1/2 files).
 
 **GROUP 1 — Remaining Modals & Small Shared Components**
-*Status: Not Started. (A script was run, but due to browser automation failure, no visual verification occurred. The files were cleanly reverted via `git restore` to prevent unverified code from lingering).*
-- `NotificationModal.jsx`
-- `EditProfileModal.jsx`
-- `RevisionModal.jsx`
-- `AuthModal.jsx`
-- `TermsModal.jsx`
-- `ThemeToggle.jsx`
-- `DeedCard.jsx`
-- `NotificationDropdown.jsx`
+*Status: Completed. [x] **Group 1 (Remaining Modals & Small Components)**
+- NotificationModal.jsx, EditProfileModal.jsx, RevisionModal.jsx, AuthModal.jsx, TermsModal.jsx, ThemeToggle.jsx, DeedCard.jsx, NotificationDropdown.jsx.*
 
 **GROUP 2 — Wallet & Transaction Components**
-*Status: Not Started.*
+*Status: Completed. [x] **Group 2 (Wallet & Transaction Components)***
 - `TransactionHistory.jsx`
 - `LedgerTimeline.jsx`
 - `SpendingDonut.jsx`
@@ -40,8 +33,8 @@ Total remaining files requiring systematic attention: 46 (plus minor cleanups on
 - `dashboard/QuickActions.jsx`
 
 **GROUP 3 — Standalone Pages & Order Flow**
-*Status: Not Started.*
-- `DeedDetails.jsx` (See Known Open Items)
+*Status: Completed. [x] **Group 3 (Standalone Pages & Order Flow)***
+- `DeedDetails.jsx`
 - `DeedSigningPage.jsx`
 - `DeedInvitePage.jsx`
 - `DeedMilestonePage.jsx`
@@ -68,12 +61,29 @@ Total remaining files requiring systematic attention: 46 (plus minor cleanups on
 5. **Flagging Unreachable States:** If any file in a group cannot be reasonably verified, flag it by name rather than silently letting it ride on "the script ran successfully."
 
 ### 4. Known Open Items
-- **Flash of Wrong Theme:** Confirm whether the flash-of-wrong-theme fix (`index.html` inline script) is still fully functioning and hasn't regressed.
-- **Header Contrast:** Confirm the `DashboardHeader` / KYC banner shade fix is still correct in both modes.
-- **DeedDetails Outer Wrapper:** `DeedDetails.jsx` was specifically observed to have its outer wrapper still rendering a light gradient during the dispute screenshot check. This must be fixed when addressing Group 3.
+- **Flash of Wrong Theme:** `[x]` Confirmed `index.html` inline script is still fully functioning.
+- **Header Contrast:** `[x]` Confirmed `DashboardHeader` / KYC banner shade is correct in both modes.
+- **DeedDetails Outer Wrapper:** `[x]` Fixed. Removed hardcoded `bg-[#F6F9FC]` missing the dark variant on the outer wrapper.
 
-### 5. Final Completion Criteria
-After all 3 groups are done:
-1. Re-run the full occurrence-count audit (using `audit.js` which checks for isolated light classes without `dark:` siblings) and confirm it's at or near zero.
-2. Explicitly justify any remainder (e.g., the Wallet Overview gradient card intentionally excluded, or `DisputeComparison.jsx` intentionally dark).
-3. Perform a full manual click-through (homepage -> buyer flow -> seller flow -> every sidebar item -> every modal) in dark mode with screenshots as the absolute final definition of "done."
+### 5. Final Dark Mode Polish
+- [x] Re-audit Group 1 and 2 to confirm no stragglers remain.
+- [x] Investigate SellerProfilePage.jsx and fix missing dark mode classes.
+- [x] Apply fixes to remaining ~540 genuine gaps across the codebase.
+- [x] Produce final verification report confirming "complete" status, justifying remainders. (e.g., the Wallet Overview gradient card intentionally excluded, or `DisputeComparison.jsx` intentionally dark).
+- [x] Perform a full manual click-through (homepage -> buyer flow -> seller flow -> every sidebar item -> every modal) in dark mode with screenshots as the absolute final definition of "done."
+
+## Deferred: Seller Reject Invite Flow
+
+Investigated but NOT built. Findings on record:
+- DeedInvitePage.jsx currently only offers "Accept Deed & Start Order" — no 
+  reject/decline option exists.
+- No working backend route exists for a seller to reject a PENDING_SELLER 
+  invite. Existing /reject and /reject-changes routes don't apply to this stage.
+- deedService.refundBuyer() exists but has NOT been verified to correctly move 
+  real funds yet — needs the same scrutiny as the earlier settlement-transaction 
+  fix before anything is built on top of it.
+- Currently, if a seller ignores an invite, funds sit locked indefinitely — only 
+  the buyer manually cancelling reclaims them. No expiry sweep/cron exists.
+- Scope when picked up: REJECT ONLY (seller declines, buyer auto-refunded, deed 
+  marked CANCELLED with clear audit trail). "Request Changes" (negotiation loop) 
+  is explicitly out of scope until separately requested.

@@ -45,7 +45,7 @@ const TermsModal = ({ show, onClose }) => {
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={onClose}
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                  className="w-10 h-10 rounded-full bg-white/10 dark:bg-dark-surface/10 hover:bg-white/20 dark:bg-dark-surface/20 flex items-center justify-center text-white transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

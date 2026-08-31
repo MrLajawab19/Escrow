@@ -7,23 +7,23 @@ const QuickActionButton = ({ icon: Icon, label, onClick, disabled, badge }) => (
     disabled={disabled}
     className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-300 group
       ${disabled 
-        ? 'bg-neutral-50 border-neutral-100 cursor-not-allowed opacity-60' 
-        : 'bg-white border-neutral-200 shadow-sm hover:shadow-md hover:border-primary-200 hover:-translate-y-1'
+        ? 'bg-neutral-50 dark:bg-dark-bg border-neutral-100 dark:border-dark-border cursor-not-allowed opacity-60' 
+        : 'bg-white dark:bg-dark-surface border-neutral-200 dark:border-dark-border shadow-sm hover:shadow-md hover:border-primary-200 hover:-translate-y-1'
       }
     `}
   >
     <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors duration-300
-      ${disabled ? 'bg-neutral-100 text-neutral-400' : 'bg-primary-50 text-primary-600 group-hover:bg-primary-100'}
+      ${disabled ? 'bg-neutral-100 dark:bg-dark-elevated text-neutral-400 dark:text-dark-muted' : 'bg-primary-50 text-primary-600 group-hover:bg-primary-100'}
     `}>
       <Icon size={20} />
     </div>
     <span className={`text-sm font-semibold text-center
-      ${disabled ? 'text-neutral-400' : 'text-navy-900'}
+      ${disabled ? 'text-neutral-400 dark:text-dark-muted' : 'text-navy-900 dark:text-dark-primary'}
     `}>
       {label}
     </span>
     {badge && (
-      <span className="mt-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500">
+      <span className="mt-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-dark-elevated text-neutral-500 dark:text-dark-muted">
         {badge}
       </span>
     )}

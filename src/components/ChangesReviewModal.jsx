@@ -103,7 +103,7 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
             <h2 className="text-xl font-bold text-navy-900 dark:text-dark-primary tracking-tight">Review Proposed Changes</h2>
           </div>
           <button
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 dark:text-dark-muted hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-dark-elevated dark:bg-dark-elevated transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 dark:text-dark-muted hover:text-neutral-700 dark:hover:text-dark-primary dark:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated dark:bg-dark-elevated transition-colors"
             onClick={onClose}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -126,7 +126,7 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
             {/* Original Scope Box */}
             <div className="bg-neutral-50 dark:bg-dark-bg rounded-xl border border-neutral-200 dark:border-dark-border overflow-hidden">
               <div className="px-5 py-3 border-b border-neutral-200 dark:border-dark-border bg-neutral-100 dark:bg-dark-elevated/50">
-                <h3 className="font-bold text-neutral-700 text-sm uppercase tracking-wider flex items-center">
+                <h3 className="font-bold text-neutral-700 dark:text-dark-primary text-sm uppercase tracking-wider flex items-center">
                   Original Scope
                 </h3>
               </div>
@@ -137,7 +137,7 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
                 </div>
                 <div>
                   <span className="block text-xs font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider mb-1">Description</span>
-                  <span className="text-neutral-700 leading-relaxed bg-white dark:bg-dark-surface p-3 rounded border border-neutral-200 dark:border-dark-border block">{originalScopeBox?.description}</span>
+                  <span className="text-neutral-700 dark:text-dark-primary leading-relaxed bg-white dark:bg-dark-surface p-3 rounded border border-neutral-200 dark:border-dark-border block">{originalScopeBox?.description}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -157,7 +157,7 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
                   <span className="block text-xs font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider mb-2">Deliverables</span>
                   <ul className="space-y-1.5">
                     {(originalScopeBox?.deliverables || []).map((d, i) => (
-                      <li key={i} className="flex items-start text-neutral-700">
+                      <li key={i} className="flex items-start text-neutral-700 dark:text-dark-primary">
                         <svg className="w-4 h-4 text-neutral-400 dark:text-dark-muted mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
@@ -184,7 +184,7 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
                 </div>
                 <div>
                   <span className="block text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">Description</span>
-                  <span className="text-neutral-700 leading-relaxed bg-neutral-50 dark:bg-dark-bg p-3 rounded border border-neutral-100 dark:border-dark-border block">{proposedScopeBox?.description}</span>
+                  <span className="text-neutral-700 dark:text-dark-primary leading-relaxed bg-neutral-50 dark:bg-dark-bg p-3 rounded border border-neutral-100 dark:border-dark-border block">{proposedScopeBox?.description}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -204,7 +204,7 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
                   <span className="block text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">Deliverables</span>
                   <ul className="space-y-1.5">
                     {(proposedScopeBox?.deliverables || []).map((d, i) => (
-                      <li key={i} className="flex items-start text-neutral-700">
+                      <li key={i} className="flex items-start text-neutral-700 dark:text-dark-primary">
                         <svg className="w-4 h-4 text-indigo-500 mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
@@ -223,7 +223,7 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
                     </svg>
                     Message from Seller
                   </h4>
-                  <p className="text-sm text-neutral-700 italic">"{proposedScopeBox.changeReason}"</p>
+                  <p className="text-sm text-neutral-700 dark:text-dark-primary italic">"{proposedScopeBox.changeReason}"</p>
                 </div>
               )}
             </div>
@@ -274,7 +274,7 @@ const ChangesReviewModal = ({ order, onClose, onUpdate }) => {
         {/* Action Buttons */}
         <div className="px-6 sm:px-8 py-5 border-t border-neutral-200 dark:border-dark-border bg-neutral-50 dark:bg-dark-bg flex flex-col sm:flex-row justify-end items-center gap-3">
           <button
-            className="btn btn-outline border-neutral-300 text-neutral-700 hover:bg-neutral-100 dark:hover:bg-dark-elevated dark:bg-dark-elevated bg-white dark:bg-dark-surface w-full sm:w-auto"
+            className="btn btn-outline border-neutral-300 dark:border-dark-border text-neutral-700 dark:text-dark-primary hover:bg-neutral-100 dark:hover:bg-dark-elevated dark:bg-dark-elevated bg-white dark:bg-dark-surface w-full sm:w-auto"
             onClick={onClose}
             disabled={loading}
           >

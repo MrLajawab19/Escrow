@@ -225,7 +225,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
           <div className="w-8 h-8 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
             <span className="text-lg">⚖️</span>
           </div>
-          <h2 className="text-base font-bold text-[#0A2540] font-inter">Dispute Resolution Center</h2>
+          <h2 className="text-base font-bold text-[#0A2540] dark:text-dark-primary font-inter">Dispute Resolution Center</h2>
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
@@ -257,6 +257,10 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
   const iAmFlagged = rf.requiresEvidence?.includes(myRole);
   const recConfig = REC_CONFIG[ai?.recommendation || rf.autoRecommendation] || REC_CONFIG.ESCALATE;
   const disputeStatus = dispute.status;
+  
+  const counterpartyRole = userType === 'buyer' ? 'seller' : 'buyer';
+  const counterpartyChallenge = detail?.dispute?.events?.find(e => e.type === 'CHALLENGE' && e.actorRole === counterpartyRole);
+  const myChallenge = detail?.dispute?.events?.find(e => e.type === 'CHALLENGE' && e.actorRole === userType);
 
   return (
     <div className="space-y-4">
@@ -269,7 +273,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               <span className="text-xl">⚖️</span>
             </div>
             <div>
-              <h2 className="text-base font-black text-[#0A2540] font-inter">Dispute Resolution Center</h2>
+              <h2 className="text-base font-black text-[#0A2540] dark:text-dark-primary font-inter">Dispute Resolution Center</h2>
               <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter mt-0.5">
                 Status:&nbsp;
                 <span className={`font-bold ${
@@ -295,7 +299,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
           <div className="mt-4 grid grid-cols-3 gap-3">
             <div className="bg-white dark:bg-dark-surface/70 rounded-xl p-3 border border-white">
               <p className="text-[10px] font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter">Min Word Count</p>
-              <p className="text-lg font-black text-[#0A2540] font-inter">{rf.minWordCount.toLocaleString()}</p>
+              <p className="text-lg font-black text-[#0A2540] dark:text-dark-primary font-inter">{rf.minWordCount.toLocaleString()}</p>
             </div>
             <div className={`rounded-xl p-3 border ${rf.analyzedWordCount < rf.minWordCount ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/50' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50'}`}>
               <p className="text-[10px] font-semibold text-neutral-500 dark:text-dark-muted uppercase tracking-wider font-inter">Words Delivered</p>
@@ -325,7 +329,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#0A2540] font-inter">Auto-Detection Flags</h3>
+              <h3 className="text-sm font-bold text-[#0A2540] dark:text-dark-primary font-inter">Auto-Detection Flags</h3>
               <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">{rf.flags.length} issue{rf.flags.length !== 1 ? 's' : ''} detected by rule engine</p>
             </div>
           </div>
@@ -355,7 +359,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#0A2540] font-inter">
+              <h3 className="text-sm font-bold text-[#0A2540] dark:text-dark-primary font-inter">
                 Your Statement
               </h3>
               <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter font-semibold">
@@ -444,7 +448,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               <span className="text-emerald-600 dark:text-emerald-400">📋</span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#0A2540] font-inter">Scope Box Analysis</h3>
+              <h3 className="text-sm font-bold text-[#0A2540] dark:text-dark-primary font-inter">Scope Box Analysis</h3>
               <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Original requirements vs delivery</p>
             </div>
           </div>
@@ -464,15 +468,15 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
           <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-900/50">
             <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-inter mb-1">Requirements</p>
             <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 font-inter">
-              {detail.deed?.scopeBox?.deliverables?.length || 0}
+              {detail.deed?.deliverableFormats?.length || 0}
             </p>
             <p className="text-xs text-emerald-600 dark:text-emerald-400 font-inter">deliverables</p>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 border border-blue-100 dark:border-blue-900/50">
             <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider font-inter mb-1">Deadline</p>
             <p className="text-lg font-black text-blue-700 dark:text-blue-400 font-inter">
-              {detail.deed?.scopeBox?.deadline ? 
-                new Date(detail.deed.scopeBox.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 
+              {detail.deed?.deadline ? 
+                new Date(detail.deed.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 
                 'Not set'
               }
             </p>
@@ -481,27 +485,27 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-100 dark:border-amber-900/50">
             <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider font-inter mb-1">Value</p>
             <p className="text-lg font-black text-amber-700 dark:text-amber-400 font-inter">
-              ${detail.deed?.scopeBox?.price || '0'}
+              ₹{detail.deed?.amount ? (detail.deed.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
             </p>
             <p className="text-xs text-amber-600 dark:text-amber-400 font-inter">order value</p>
           </div>
         </div>
 
         {/* Detailed Scope Box */}
-        {showScopeBoxDetails && detail.deed?.scopeBox && (
+        {showScopeBoxDetails && detail.deed && (
           <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/50 space-y-4">
             <div>
               <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-2">📝 Description</p>
               <p className="text-sm text-emerald-800 dark:text-emerald-400 leading-relaxed bg-white dark:bg-dark-surface rounded-lg p-3 border border-emerald-200 dark:border-emerald-900/50">
-                {detail.deed.scopeBox.description || 'No description provided'}
+                {detail.deed.description || 'No description provided'}
               </p>
             </div>
 
-            {detail.deed.scopeBox.deliverables && (
+            {detail.deed.deliverableFormats && detail.deed.deliverableFormats.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-2">✅ Deliverables Required</p>
                 <ul className="space-y-1">
-                  {detail.deed.scopeBox.deliverables.map((item, i) => (
+                  {detail.deed.deliverableFormats.map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-emerald-800 dark:text-emerald-400">
                       <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
                       <span>{item}</span>
@@ -512,11 +516,11 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {detail.deed.scopeBox.deadline && (
+              {detail.deed.deadline && (
                 <div>
                   <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-1">📅 Deadline</p>
                   <p className="text-sm text-emerald-800 dark:text-emerald-400">
-                    {new Date(detail.deed.scopeBox.deadline).toLocaleDateString('en-US', { 
+                    {new Date(detail.deed.deadline).toLocaleDateString('en-US', { 
                       weekday: 'short', 
                       year: 'numeric', 
                       month: 'short', 
@@ -524,14 +528,14 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                     })}
                   </p>
                   <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                    {new Date(detail.deed.scopeBox.deadline) < new Date() ? '⚠️ Overdue' : '⏱️ Pending'}
+                    {new Date(detail.deed.deadline) < new Date() ? '⚠️ Overdue' : '⏱️ Pending'}
                   </p>
                 </div>
               )}
               <div>
                 <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-400 mb-1">💰 Price</p>
                 <p className="text-sm text-emerald-800 dark:text-emerald-400 font-semibold">
-                  ${detail.deed.scopeBox.price?.toLocaleString() || '0'}
+                  ₹{detail.deed.amount ? (detail.deed.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
                 </p>
                 <p className="text-xs text-emerald-600 dark:text-emerald-400">Escrow amount</p>
               </div>
@@ -570,7 +574,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             <span className="text-red-600 dark:text-red-400">⚠️</span>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[#0A2540] font-inter">Dispute Details</h3>
+            <h3 className="text-sm font-bold text-[#0A2540] dark:text-dark-primary font-inter">Dispute Details</h3>
             <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">What went wrong</p>
           </div>
         </div>
@@ -622,7 +626,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#0A2540] font-inter">Automated Analysis</h3>
+              <h3 className="text-sm font-bold text-[#0A2540] dark:text-dark-primary font-inter">Automated Analysis</h3>
               <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">{rf.flags.length} issue{rf.flags.length !== 1 ? 's' : ''} detected</p>
             </div>
           </div>
@@ -643,7 +647,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#0A2540] font-inter">AI Analysis & Recommendation</h3>
+              <h3 className="text-sm font-bold text-[#0A2540] dark:text-dark-primary font-inter">AI Analysis & Recommendation</h3>
               <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Powered by Google Gemini</p>
             </div>
           </div>
@@ -730,7 +734,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
             <div className="w-8 h-8 bg-neutral-100 dark:bg-dark-elevated rounded-lg flex items-center justify-center">
               <span>📋</span>
             </div>
-            <h3 className="text-sm font-bold text-[#0A2540] font-inter">Submitted Evidence</h3>
+            <h3 className="text-sm font-bold text-[#0A2540] dark:text-dark-primary font-inter">Submitted Evidence</h3>
           </div>
           <div className="space-y-3">
             {evidenceResponses?.seller?.text && (
@@ -750,36 +754,110 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
       )}
 
       {/* ── CHALLENGE PHASE ──────────────────────────────────────────────────── */}
-      {disputeStatus === 'CHALLENGE_PHASE' && ai && !detail?.dispute?.events?.some(e => e.type === 'CHALLENGE' && e.actorRole === userType) && (
-        <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-indigo-100 p-6">
-          <div className="flex items-start gap-4 flex-wrap">
-            <div className="flex-1 min-w-48">
-              <h3 className="text-sm font-bold text-[#0A2540] font-inter mb-1">Challenge AI Decision?</h3>
-              <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter leading-relaxed">
-                If you disagree with the AI's first-pass recommendation, you can submit a formal challenge with additional context.
-              </p>
+      {disputeStatus === 'CHALLENGE_PHASE' && ai && (
+        <div className="space-y-4">
+          
+          {/* Counterparty Challenge */}
+          {counterpartyChallenge && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl border border-orange-200 dark:border-orange-900/50 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">⚠️</span>
+                <div>
+                  <h3 className="text-sm font-bold text-orange-900 dark:text-orange-400 font-inter capitalize">
+                    {counterpartyRole} Challenged the AI Decision
+                  </h3>
+                  <p className="text-xs text-orange-700 dark:text-orange-500 font-inter">
+                    They have submitted the following new allegations/evidence:
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white/60 dark:bg-dark-surface/60 rounded-xl p-4 mb-4 text-sm text-neutral-800 dark:text-dark-primary font-inter leading-relaxed">
+                {counterpartyChallenge.payload?.rebuttal}
+              </div>
+              {counterpartyChallenge.payload?.evidenceUrls?.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-orange-900 dark:text-orange-400 mb-2">Attached Evidence:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {counterpartyChallenge.payload.evidenceUrls.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-white border border-orange-200 rounded-lg text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                        View File {i+1}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {!myChallenge && (
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-200 dark:border-red-900/50 flex items-start gap-3 mt-4">
+                  <span className="mt-0.5 text-lg">⏰</span>
+                  <div className="flex-1">
+                    <p className="text-sm text-red-800 dark:text-red-400 font-bold mb-1">
+                      Action Required: Submit Your Counter-Challenge
+                    </p>
+                    <p className="text-xs text-red-700 dark:text-red-400 leading-relaxed">
+                      If you do not submit a counter-challenge before the 24-hour challenge window expires, the AI will perform its final re-analysis based solely on the new evidence they submitted.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setShowChallengeModal(true)}
-              className="flex-shrink-0 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-inter font-bold text-sm rounded-xl transition-colors flex items-center gap-2"
-            >
-              Submit Challenge
-            </button>
-          </div>
-        </div>
-      )}
+          )}
 
-      {disputeStatus === 'CHALLENGE_PHASE' && ai && detail?.dispute?.events?.some(e => e.type === 'CHALLENGE' && e.actorRole === userType) && (
-        <div className="bg-indigo-50 rounded-2xl shadow-sm border border-indigo-200 p-6">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⏳</span>
-            <div>
-              <h3 className="text-sm font-bold text-indigo-900 font-inter">Challenge Submitted</h3>
-              <p className="text-xs text-indigo-700 font-inter mt-1">
-                Your challenge has been submitted successfully. Waiting for the other party to respond or for the challenge window to close.
-              </p>
+          {/* My Challenge Submission Box */}
+          {!myChallenge && (
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-indigo-100 p-6">
+              <div className="flex items-start gap-4 flex-wrap">
+                <div className="flex-1 min-w-48">
+                  <h3 className="text-sm font-bold text-[#0A2540] dark:text-dark-primary font-inter mb-1">
+                    {counterpartyChallenge ? "Submit Counter-Evidence" : "Challenge AI Decision?"}
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-dark-muted font-inter leading-relaxed">
+                    {counterpartyChallenge 
+                      ? "Review the other party's challenge above and submit your counter-evidence for the final AI Verdict."
+                      : "If you disagree with the AI's first-pass recommendation or need to respond to the other party's allegations, you can submit a formal challenge with additional context."}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowChallengeModal(true)}
+                  className="flex-shrink-0 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-inter font-bold text-sm rounded-xl transition-colors flex items-center gap-2"
+                >
+                  {counterpartyChallenge ? "Submit Counter-Evidence" : "Submit Challenge"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* My Challenge Submitted Status */}
+          {myChallenge && (
+            <div className="bg-indigo-50 rounded-2xl shadow-sm border border-indigo-200 p-6">
+              <div className="flex items-center gap-3">
+                {!counterpartyChallenge ? (
+                  <>
+                    <span className="text-2xl">⏳</span>
+                    <div>
+                      <h3 className="text-sm font-bold text-indigo-900 font-inter">Challenge Submitted</h3>
+                      <p className="text-xs text-indigo-700 font-inter mt-1">
+                        Your challenge has been submitted successfully. Waiting for the other party to respond or for the challenge window to close.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <svg className="animate-spin w-6 h-6 text-indigo-600" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.3" />
+                      <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                    <div>
+                      <h3 className="text-sm font-bold text-indigo-900 font-inter">Generating Final AI Verdict...</h3>
+                      <p className="text-xs text-indigo-700 font-inter mt-1">
+                        Both parties have submitted challenges. The AI is now re-analyzing the dispute based on the new evidence.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -821,8 +899,12 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                 <span className="text-xl">⚖️</span>
               </div>
               <div>
-                <h3 className="text-base font-black text-[#0A2540] font-inter">Submit Challenge</h3>
-                <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">Explain why the AI's reasoning is incorrect</p>
+                <h3 className="text-base font-black text-[#0A2540] dark:text-dark-primary font-inter">
+                  {counterpartyChallenge ? "Submit Counter-Evidence" : "Submit Challenge"}
+                </h3>
+                <p className="text-xs text-neutral-400 dark:text-dark-muted font-inter">
+                  {counterpartyChallenge ? "Provide evidence to refute their claims." : "Explain why the AI's reasoning is incorrect"}
+                </p>
               </div>
             </div>
 
@@ -850,7 +932,7 @@ const DisputeResolutionFlow = ({ deedId, deed, userType, token, onDeedUpdate }) 
                 <button
                   type="button"
                   onClick={() => setShowChallengeModal(false)}
-                  className="flex-1 py-2.5 border border-neutral-200 dark:border-dark-border rounded-xl text-sm font-inter font-semibold text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:bg-dark-bg transition-colors"
+                  className="flex-1 py-2.5 border border-neutral-200 dark:border-dark-border rounded-xl text-sm font-inter font-semibold text-neutral-600 dark:text-dark-muted hover:bg-neutral-50 dark:hover:bg-dark-elevated dark:bg-dark-bg transition-colors"
                 >
                   Cancel
                 </button>
