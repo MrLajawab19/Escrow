@@ -69,8 +69,8 @@ graph TB
         G[API Gateway\nRate Limiter · JWT · Helmet]
         H[Deed Service]
         I[Wallet Service]
-        J[Dispute Engine]
-        K[AI Service — Gemini]
+        J[Dispute System\nMulti-Agent Pipeline]
+        K[AI Providers\nGemini & Claude]
         L[Audit Ledger]
     end
 
@@ -142,11 +142,15 @@ DRAFT → PENDING_SELLER → ACTIVE → SUBMITTED → CONFIRMED → CLOSED
 
 ### 🤖 AI Dispute Resolution
 
-Disputes are processed through three tiers:
+Disputes are processed through a 5-stage multi-agent pipeline:
 
-1. **Rule Engine** (`disputeEngine.js`) — Category-specific checks (design, dev, content, physical goods, etc.) produce a risk score and fault flags
-2. **Gemini AI** (`disputeAI.js`) — Google Gemini analyzes evidence files and deed context, returns a confidence-scored verdict
-3. **Human Escalation** — Auto-triggered for deals > ₹10,000 or AI confidence < 70. Admin reviews the full evidence packet and makes a binding final decision
+1. **Evidence Extractor (AI)** — Uses Gemini Vision to parse chat screenshots and text to extract neutral, factual bullet points without assigning blame.
+2. **Rule Checker (Deterministic)** — A pure math engine that checks hard contractual rules (deadlines, revision limits, late submissions).
+3. **Risk Scorer (Heuristic)** — Calculates a 0-100 behavioral risk score based on account age, KYC status, and dispute history.
+4. **Context Builder (Combiner)** — Merges the outputs of the previous stages into a unified, structured dispute context.
+5. **Verdict Synthesizer (AI)** — The final arbiter. A multi-provider LLM setup (Gemini Flash → Flash Lite → Claude fallback) that issues a verdict (`REFUND_BUYER`, `RELEASE_TO_SELLER`, or `MANUAL_REVIEW_REQUIRED`).
+
+Deals over ₹10,000 (high-stakes) or with low AI confidence are automatically escalated to **Human Review**, where an admin makes the binding final decision using the AI report as advisory context.
 
 ---
 
@@ -157,7 +161,7 @@ Disputes are processed through three tiers:
 | **Frontend** | React 19, React Router v7, Vite 7, TailwindCSS, Framer Motion |
 | **Backend** | Node.js, Express.js, Socket.IO |
 | **Database** | PostgreSQL via Prisma ORM v5 |
-| **AI — Disputes** | Google Gemini (`@google/genai`) |
+| **AI — Disputes** | Google Gemini (`@google/genai`) with Anthropic Claude fallback |
 | **AI — Support** | xAI Grok with OpenAI fallback |
 | **Payments** | Razorpay (INR) |
 | **Email** | Resend |
@@ -210,7 +214,7 @@ npm run dev         # Frontend: http://localhost:5173
 
 ## Further Reading
 
-For a complete technical deep-dive — sequence diagrams, database schema, wallet concurrency guards, AI confidence scoring model, scalability architecture — open the **[System Architecture Document](./ScrowX-System-Architecture.pdf)** in this repository.
+For a complete technical deep-dive — sequence diagrams, database schema, wallet concurrency guards, AI confidence scoring model, scalability architecture — refer to the internal engineering documentation in this repository.
 
 ---
 
