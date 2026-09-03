@@ -171,22 +171,7 @@ Deals over ₹10,000 (high-stakes) or with low AI confidence are automatically e
 
 ---
 
-## Project Status
 
-| Area | Status |
-|---|---|
-| Wallet & Escrow (INR) | ✅ Production-ready |
-| Deed Creation & Lifecycle | ✅ Production-ready |
-| AI Dispute Resolution | ✅ Live (Gemini) |
-| SHA-256 Audit Ledger | ✅ Production-ready |
-| Real-time Chat (Socket.IO) | ✅ Live |
-| Milestone Escrow | ⚠️ Schema ready, logic pending |
-| Auto-release cron (48h) | ⚠️ In development |
-| Multi-currency Wallets | 🔵 Roadmap |
-| Stablecoin / On-chain Escrow | 🔵 Roadmap |
-| Mobile Apps (React Native) | 🔵 Roadmap |
-
----
 
 ## Quick Start
 
