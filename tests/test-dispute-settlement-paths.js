@@ -1,9 +1,9 @@
 'use strict';
 
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { resolveDispute, getFullDisputeDetail } = require('../controllers/disputeController');
+const { resolveDispute, getFullDisputeDetail } = require('../backend/controllers/disputeController');
 
 async function createSyntheticDispute(testName, aiRecommendation) {
   // Create buyer and seller

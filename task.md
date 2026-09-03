@@ -87,3 +87,41 @@ Investigated but NOT built. Findings on record:
 - Scope when picked up: REJECT ONLY (seller declines, buyer auto-refunded, deed 
   marked CANCELLED with clear audit trail). "Request Changes" (negotiation loop) 
   is explicitly out of scope until separately requested.
+
+## Known Issues — Unverified Test Failures (Logged During Cleanup)
+
+Discovered while migrating/consolidating test files into tests/. NOT yet root-
+caused. Test files themselves were left as-is, uncommitted assumptions were not 
+made about severity.
+
+### 1. tests/test-concurrency.js — fundDeed failure
+- Status: FAILING as of this session.
+- Unknown whether this is a pre-existing bug (predating this cleanup session) or 
+  something affected by the file migration itself. Not yet distinguished.
+- The original test-file inventory (earlier in this same session) reported this 
+  test as "Healthy" before the migration — meaning either something in the 
+  migration affected it, or the original healthy-check wasn't rigorous enough. 
+  Needs investigation to determine which.
+- Actual error output was NOT yet captured/reviewed in detail.
+
+### 2. tests/test-arbitration-pipeline-routing.js — simulated-failure case
+- Status: FAILING (specifically the simulated Pipeline-2-failure/fallback test 
+  case) as of this session.
+- Explanation offered was "a known Node.js quirk with mocking a destructured 
+  require" — this was NOT independently verified and should not be trusted at 
+  face value.
+- This test specifically validates Pipeline 2's fallback-to-legacy behavior on 
+  failure — a reliability mechanism this project has treated as high-priority 
+  elsewhere (Phase 5 fallback testing, the settlement/escalation reliability 
+  work). Deserves real investigation before being dismissed as cosmetic.
+- Actual error output was NOT yet captured/reviewed in detail.
+
+### Next steps when picked up
+1. Run both tests fresh, capture full error output verbatim.
+2. For #1: confirm whether this predates the cleanup session (check if anything 
+   the migration touched — deedService.js, wallet funding logic, test fixtures — 
+   could plausibly be the cause) or was already broken.
+3. For #2: confirm whether the REAL fallback logic works correctly and only the 
+   test's own mocking mechanism is broken, or whether the fallback itself has a 
+   genuine problem.
+4. Do not treat either as resolved until actual error output has been reviewed.

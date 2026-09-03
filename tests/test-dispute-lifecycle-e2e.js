@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const disputeController = require('./backend/controllers/disputeController');
+const disputeController = require('../backend/controllers/disputeController');
 
 async function runE2E() {
   console.log('--- STARTING E2E TEST ---');
