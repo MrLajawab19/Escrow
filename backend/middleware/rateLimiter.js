@@ -46,7 +46,7 @@ const authLimiter = rateLimit({
  */
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000,                  // 1000 requests per window per IP (increased for testing)
+  max: Number(process.env.GLOBAL_RATE_LIMIT) || 100000,                  // Configurable via env, high ceiling for testing
   standardHeaders: true,
   legacyHeaders: false,
   message: {

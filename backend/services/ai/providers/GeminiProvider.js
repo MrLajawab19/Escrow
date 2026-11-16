@@ -50,10 +50,19 @@ class GeminiProvider extends BaseProvider {
     try {
       const ai = getGeminiClient();
 
-      const raw = await ai.models.generateContent({
-        model: this.model,
-        contents: fullPrompt,
+      const timeoutMs = 12000;
+      let timer;
+      const timeoutPromise = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`Gemini API timeout after ${timeoutMs}ms`)), timeoutMs);
       });
+
+      const raw = await Promise.race([
+        ai.models.generateContent({
+          model: this.model,
+          contents: fullPrompt,
+        }),
+        timeoutPromise
+      ]).finally(() => clearTimeout(timer));
 
       const latencyMs = Date.now() - startMs;
 

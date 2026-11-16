@@ -120,6 +120,11 @@ app.use('/uploads', express.static(uploadDir));
 const { globalLimiter } = require('./backend/middleware/rateLimiter');
 app.use('/api', globalLimiter);
 
+// ── Health endpoint (no DB, no auth, no rate-limit) ──────────────────────────
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // ── Routes (all originals unchanged + new chat route) ────────────────────────
 
 app.use('/api/auth', authRoutes);

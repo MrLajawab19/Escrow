@@ -1,0 +1,34 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Ping every 10 minutes to prevent Render free-tier spin-down
+    - cron: "*/10 * * * *"
+  workflow_dispatch: # allow manual trigger from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping /health
+        run: |
+          echo "Pinging $BACKEND_URL/health ..."
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt..."
+            STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+              --max-time 60 \
+              "$BACKEND_URL/health")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Backend is awake (HTTP $STATUS)"
+              exit 0
+            fi
+            echo "⚠️  Got HTTP $STATUS, retrying in 15s..."
+            sleep 15
+          done
+          echo "❌ Backend did not respond after 3 attempts"
+          exit 1
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+

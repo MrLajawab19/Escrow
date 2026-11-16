@@ -23,6 +23,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import ThemeToggle from './components/ThemeToggle';
 import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
+import WakeUpBanner from './components/WakeUpBanner';
 import { useParams } from 'react-router-dom';
 
 const RedirectLegacyOrder = ({ toPrefix }) => {
@@ -576,6 +577,7 @@ function App() {
   return (
     <CurrencyProvider>
       <Toaster position="top-right" />
+      <WakeUpBanner />
       <Router>
         <ThemeProvider>
           <div className="App">
